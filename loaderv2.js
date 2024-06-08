@@ -31,8 +31,6 @@ export async function loadRust(contract) {
                 data = __retain(__lowerTypedArray(Uint8Array, 13, 0, data) || __notnull());
                 caller = __lowerString(caller);
 
-                console.log('contractPointer', contractPointer)
-
                 try {
                     const resp = contract.call("readMethod", [method, contractPointer, data, caller]).filter((n) => n !== undefined);
 
@@ -55,18 +53,17 @@ export async function loadRust(contract) {
                     __release(owner);
                 }
             },
-            readView(method, contract) {
+            readView(method, contractPointer) {
                 // src/btc/exports/index/readView(u32, src/btc/contracts/BTCContract/BTCContract | null) => ~lib/typedarray/Uint8Array
-                contract = __lowerInternref(contract);
+                contractPointer = __lowerInternref(contractPointer);
 
-                const resp = contract.call("readView", [method, contract]).filter((n) => n !== undefined);
+                const resp = contract.call("readView", [method, contractPointer]).filter((n) => n !== undefined);
 
                 return __liftTypedArray(Uint8Array, resp[0] >>> 0);
             },
             getViewABI() {
                 // src/btc/exports/index/getViewABI() => ~lib/typedarray/Uint8Array
                 const resp = contract.call("getViewABI", []).filter((n) => n !== undefined);
-                console.log('getViewABI', resp);
 
                 return __liftTypedArray(Uint8Array, resp[0] >>> 0);
             },
@@ -83,11 +80,6 @@ export async function loadRust(contract) {
             getWriteMethods() {
                 // src/btc/exports/index/getMethodABI() => ~lib/typedarray/Uint8Array
                 const resp = contract.call("getWriteMethods", []).filter((n) => n !== undefined);
-                return __liftTypedArray(Uint8Array, resp[0] >>> 0);
-            },
-            getRequiredStorage() {
-                // src/btc/exports/index/getRequiredStorage() => ~lib/typedarray/Uint8Array
-                const resp = contract.call("getRequiredStorage", []).filter((n) => n !== undefined);
                 return __liftTypedArray(Uint8Array, resp[0] >>> 0);
             },
             getModifiedStorage() {
