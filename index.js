@@ -1,6 +1,8 @@
-import { Contract } from '@btc-vision/bsi-wasmer-vm';
+import { Contract, init } from '@btc-vision/bsi-wasmer-vm';
 import fs from "fs";
 import { loadRust } from "./loaderv2.js";
+
+init();
 
 const bytecode = fs.readFileSync('./bytecode/contract.wasm');
 const address = 'bcrt1qu3gfcxncadq0wt3hz5l28yr86ecf2f0eema3em';
@@ -14,35 +16,51 @@ const deployer = 'bcrt1pqdekymf30t583r8r9q95jyrgvyxcgrprajmyc9q8twae7ec275kq85vs
          * @type {import('@btc-vision/bsi-wasmer-vm').Contract}
          */
 
-        for(let i = 0; i < 1; i++) {
-            const contract = Contract.instanciate(bytecode, address, deployer);
+        for(let i = 0; i < 6; i++) {
+            const contract = new Contract(bytecode);
             contract.init(address,deployer);
 
-            //const contract = Contract.instanciate(bytecode, address, deployer);
-            const rust = await loadRust(contract);
+            const rustObj = await loadRust(contract);
+            const rust = rustObj.adaptedExports;
 
-            const contractPointer = rust.getContract();
-            const viewABI3 = rust.getMethodABI();
-            const viewABI4 = rust.getViewABI();
+            try {
+                const contractPointer = rust.getContract();
+                const viewABI3 = rust.getMethodABI();
+                const viewABI4 = rust.getViewABI();
+                rust.setEnvironment(Buffer.alloc(0));
+                console.log('hello')
 
-            const calldata = Buffer.from('7462317076616a6476676873733074633733377a373273713032636761396864377776647561397663716a33353761367971686c687934736575643433390000', 'hex');
-            const caller = 'bcrt1pqdekymf30t583r8r9q95jyrgvyxcgrprajmyc9q8twae7ec275kq85vsev';
+                const calldata = Buffer.from('0000000000000000000000000000000000000000000000000000000001312d00', 'hex');
 
-            let callTime = Date.now();
-            const resp = rust.readMethod(0x82d62f3d, contractPointer, calldata, caller);
-            console.log('resp', resp, `Took ${Date.now() - init}ms Call took ${Date.now() - callTime}ms`);
+                let callTime = Date.now();
+                const resp = rust.readMethod(0x859facc5, contractPointer, calldata);
+                console.log('resp', resp, `Took ${Date.now() - init}ms Call took ${Date.now() - callTime}ms`);
 
-            const events = rust.getEvents();
-            const getModifiedStorage = rust.getModifiedStorage();
-            const initializeStorage = rust.initializeStorage();
+                const events = rust.getEvents();
+                const getModifiedStorage = rust.getModifiedStorage();
+                const initializeStorage = rust.initializeStorage();
 
-            console.log('events', events);
-            console.log('getModifiedStorage', getModifiedStorage);
-            console.log('initializeStorage', initializeStorage);
+                console.log('events', events);
+                console.log('getModifiedStorage', getModifiedStorage);
+                console.log('initializeStorage', initializeStorage);
+
+            } catch(err) {
+                const msg = err.message;
+                if(msg.includes('Execution aborted')) {
+                    const errorMessage = rustObj.__liftString(contract.getRevertPointer());
+
+                    console.log('Execution aborted', errorMessage);
+                } else {
+                    console.error(err);
+                }
+            }
         }
+
         console.log(`Total time: ${Date.now() - init}ms`);
     } catch (err) {
-        console.log('error', err);
+        console.error(err);
     }
+
+    console.log('hello2');
 
 })();

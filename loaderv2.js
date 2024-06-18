@@ -25,14 +25,13 @@ export async function loadRust(contract) {
 
                 return __liftInternref(resp[0] >>> 0);
             },
-            readMethod(method, contractPointer, data, caller) {
+            readMethod(method, contractPointer, data) {
                 // src/btc/exports/index/readMethod(u32, src/btc/contracts/BTCContract/BTCContract | null, ~lib/typedarray/Uint8Array, ~lib/string/String | null) => ~lib/typedarray/Uint8Array
                 contractPointer = __retain(__lowerInternref(contractPointer));
                 data = __retain(__lowerTypedArray(Uint8Array, 13, 0, data) || __notnull());
-                caller = __lowerString(caller);
 
                 try {
-                    const resp = contract.call("readMethod", [method, contractPointer, data, caller]).filter((n) => n !== undefined);
+                    const resp = contract.call("readMethod", [method, contractPointer, data]).filter((n) => n !== undefined);
 
                     return __liftTypedArray(
                         Uint8Array,
@@ -99,8 +98,24 @@ export async function loadRust(contract) {
 
                 return resp[0];
             },
+            loadCallsResponse(data) {
+                // src/btc/exports/index/loadCallsResponse(~lib/typedarray/Uint8Array) => void
+                data = __lowerTypedArray(Uint8Array, 13, 0, data) || __notnull();
+
+                const resp = contract.call("loadCallsResponse", [data]).filter((n) => n !== undefined);
+
+                return resp[0];
+            },
+            getCalls() {
+                const resp = contract.call("getCalls", []).filter((n) => n !== undefined);
+                return __liftTypedArray(Uint8Array, resp[0] >>> 0);
+            },
+            setEnvironment(data) {
+                data = __lowerTypedArray(Uint8Array, 13, 0, data) || __notnull();
+
+                contract.call("setEnvironment", [data]).filter((n) => n !== undefined);
+            },
             isInitialized() {
-                // src/btc/exports/index/isInitialized() => bool
                 const resp = contract.call("isInitialized", []).filter((n) => n !== undefined);
                 return resp[0] !== 0;
             },
@@ -113,8 +128,7 @@ export async function loadRust(contract) {
 
         // Read the length of the string
         const lengthPointer = pointer - 4;
-        const lengthBuffer = new Uint8Array(4);
-        contract.readMemory(lengthPointer, lengthBuffer);
+        const lengthBuffer = contract.readMemory(BigInt(lengthPointer), 4n);
         const length = new Uint32Array(lengthBuffer.buffer)[0];
 
         const end = (pointer + length) >>> 1;
@@ -122,15 +136,13 @@ export async function loadRust(contract) {
         let start = pointer >>> 1;
 
         while (end - start > 1024) {
-            const chunkBuffer = new Uint8Array(2048); // 1024 * 2 bytes per char
-            contract.readMemory(start * 2, chunkBuffer);
+            const chunkBuffer = contract.readMemory(BigInt(start * 2), 2048n);
             const memoryU16 = new Uint16Array(chunkBuffer.buffer);
             stringParts.push(String.fromCharCode(...memoryU16));
             start += 1024;
         }
 
-        const remainingBuffer = new Uint8Array((end - start) * 2);
-        contract.readMemory(start * 2, remainingBuffer);
+        const remainingBuffer = contract.readMemory(BigInt(start * 2), BigInt((end - start) * 2));
         const remainingU16 = new Uint16Array(remainingBuffer.buffer);
         stringParts.push(String.fromCharCode(...remainingU16));
 
@@ -239,5 +251,8 @@ export async function loadRust(contract) {
         throw TypeError('value must not be null');
     }
 
-    return adaptedExports
+    return {
+        adaptedExports,
+        __liftString
+    }
 }
