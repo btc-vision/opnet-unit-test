@@ -47,9 +47,14 @@ const deployer = 'bcrt1pqdekymf30t583r8r9q95jyrgvyxcgrprajmyc9q8twae7ec275kq85vs
             } catch(err) {
                 const msg = err.message;
                 if(msg.includes('Execution aborted')) {
-                    const errorMessage = rustObj.__liftString(contract.getRevertPointer());
+                    const abortData = contract.getAbortData();
+                    const message = rustObj.__liftString(abortData.message);
+                    const fileName = rustObj.__liftString(abortData.fileName);
+                    const line = abortData.line;
+                    const column = abortData.column;
 
-                    console.log('Execution aborted', errorMessage);
+                    console.log('Error:', message);
+                    console.log(`    at ${fileName}:${line}:${column}`);
                 } else {
                     console.error(err);
                 }
@@ -61,6 +66,6 @@ const deployer = 'bcrt1pqdekymf30t583r8r9q95jyrgvyxcgrprajmyc9q8twae7ec275kq85vs
         console.error(err);
     }
 
-    console.log('hello2');
+    console.log('End');
 
 })();
