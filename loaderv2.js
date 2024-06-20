@@ -17,107 +17,123 @@ export async function loadRust(contract) {
         return resp[0];
     }
 
+    function gasCallback(gasUsed) {}
+
     const adaptedExports = Object.setPrototypeOf(
         {
             getContract() {
-                // src/index/getContract() => src/btc/contracts/BTCContract/BTCContract
-                const resp = contract.call("getContract", []).filter((n) => n !== undefined);
+                const resp = contract.call('getContract', []);
+                gasCallback(resp.gasUsed);
 
-                return __liftInternref(resp[0] >>> 0);
+                const result = resp.result.filter((n) => n !== undefined);
+                return __liftInternref(result[0] >>> 0);
             },
             readMethod(method, contractPointer, data) {
-                // src/btc/exports/index/readMethod(u32, src/btc/contracts/BTCContract/BTCContract | null, ~lib/typedarray/Uint8Array, ~lib/string/String | null) => ~lib/typedarray/Uint8Array
                 contractPointer = __retain(__lowerInternref(contractPointer));
                 data = __retain(__lowerTypedArray(Uint8Array, 13, 0, data) || __notnull());
 
                 try {
-                    const resp = contract.call("readMethod", [method, contractPointer, data]).filter((n) => n !== undefined);
+                    const resp = contract.call('readMethod', [method, contractPointer, data]);
 
-                    return __liftTypedArray(
-                        Uint8Array,
-                        resp[0] >>> 0,
-                    );
+                    gasCallback(resp.gasUsed);
+
+                    const result = resp.result.filter((n) => n !== undefined);
+                    return __liftTypedArray(Uint8Array, result[0] >>> 0);
                 } finally {
                     __release(contractPointer);
                     __release(data);
                 }
             },
-            INIT(owner, contractAddress) {
-                // src/btc/exports/index/INIT(~lib/string/String, ~lib/string/String) => void
-                owner = __retain(__lowerString(owner) || __notnull());
-                contractAddress = __lowerString(contractAddress) || __notnull();
-                try {
-                    contract.call("INIT", [owner, contractAddress]);
-                } finally {
-                    __release(owner);
-                }
-            },
             readView(method, contractPointer) {
-                // src/btc/exports/index/readView(u32, src/btc/contracts/BTCContract/BTCContract | null) => ~lib/typedarray/Uint8Array
                 contractPointer = __lowerInternref(contractPointer);
 
-                const resp = contract.call("readView", [method, contractPointer]).filter((n) => n !== undefined);
+                const resp = contract.call('readView', [method, contractPointer]);
 
-                return __liftTypedArray(Uint8Array, resp[0] >>> 0);
+                gasCallback(resp.gasUsed);
+                const result = resp.result.filter((n) => n !== undefined);
+
+                return __liftTypedArray(Uint8Array, result[0] >>> 0);
             },
             getViewABI() {
-                // src/btc/exports/index/getViewABI() => ~lib/typedarray/Uint8Array
-                const resp = contract.call("getViewABI", []).filter((n) => n !== undefined);
+                const resp = contract.call('getViewABI', []);
 
-                return __liftTypedArray(Uint8Array, resp[0] >>> 0);
+                gasCallback(resp.gasUsed);
+                const result = resp.result.filter((n) => n !== undefined);
+
+                return __liftTypedArray(Uint8Array, result[0] >>> 0);
             },
             getEvents() {
-                // src/btc/exports/index/getEvents() => ~lib/typedarray/Uint8Array
-                const resp = contract.call("getEvents", []).filter((n) => n !== undefined);
-                return __liftTypedArray(Uint8Array, resp[0] >>> 0);
+                const resp = contract.call('getEvents', []);
+
+                gasCallback(resp.gasUsed);
+                const result = resp.result.filter((n) => n !== undefined);
+
+                return __liftTypedArray(Uint8Array, result[0] >>> 0);
             },
             getMethodABI() {
-                // src/btc/exports/index/getMethodABI() => ~lib/typedarray/Uint8Array
-                const resp = contract.call("getMethodABI", []).filter((n) => n !== undefined);
-                return __liftTypedArray(Uint8Array, resp[0] >>> 0);
+                const resp = contract.call('getMethodABI', []);
+
+                gasCallback(resp.gasUsed);
+                const result = resp.result.filter((n) => n !== undefined);
+
+                return __liftTypedArray(Uint8Array, result[0] >>> 0);
             },
             getWriteMethods() {
-                // src/btc/exports/index/getMethodABI() => ~lib/typedarray/Uint8Array
-                const resp = contract.call("getWriteMethods", []).filter((n) => n !== undefined);
-                return __liftTypedArray(Uint8Array, resp[0] >>> 0);
+                const resp = contract.call('getWriteMethods', []);
+
+                gasCallback(resp.gasUsed);
+                const result = resp.result.filter((n) => n !== undefined);
+
+                return __liftTypedArray(Uint8Array, result[0] >>> 0);
             },
             getModifiedStorage() {
-                // src/btc/exports/index/getModifiedStorage() => ~lib/typedarray/Uint8Array
-                const resp = contract.call("getModifiedStorage", []).filter((n) => n !== undefined);
-                return __liftTypedArray(Uint8Array, resp[0] >>> 0);
+                const resp = contract.call('getModifiedStorage', []);
+
+                gasCallback(resp.gasUsed);
+                const result = resp.result.filter((n) => n !== undefined);
+
+                return __liftTypedArray(Uint8Array, result[0] >>> 0);
             },
             initializeStorage() {
-                // src/btc/exports/index/initializeStorage() => ~lib/typedarray/Uint8Array
-                const resp = contract.call("initializeStorage", []).filter((n) => n !== undefined);
-                return __liftTypedArray(Uint8Array, resp[0] >>> 0);
+                const resp = contract.call('initializeStorage', []);
+
+                gasCallback(resp.gasUsed);
+                const result = resp.result.filter((n) => n !== undefined);
+
+                return __liftTypedArray(Uint8Array, result[0] >>> 0);
             },
             loadStorage(data) {
-                // src/btc/exports/index/loadStorage(~lib/typedarray/Uint8Array) => void
                 data = __lowerTypedArray(Uint8Array, 13, 0, data) || __notnull();
-                const resp = contract.call("loadStorage", [data]).filter((n) => n !== undefined);
+                const resp = contract.call('loadStorage', [data]);
 
-                return resp[0];
+                gasCallback(resp.gasUsed);
+                const result = resp.result.filter((n) => n !== undefined);
+
+                return result[0];
             },
             loadCallsResponse(data) {
-                // src/btc/exports/index/loadCallsResponse(~lib/typedarray/Uint8Array) => void
                 data = __lowerTypedArray(Uint8Array, 13, 0, data) || __notnull();
 
-                const resp = contract.call("loadCallsResponse", [data]).filter((n) => n !== undefined);
+                const resp = contract.call('loadCallsResponse', [data]);
 
-                return resp[0];
+                gasCallback(resp.gasUsed);
+                const result = resp.result.filter((n) => n !== undefined);
+
+                return result[0];
             },
             getCalls() {
-                const resp = contract.call("getCalls", []).filter((n) => n !== undefined);
-                return __liftTypedArray(Uint8Array, resp[0] >>> 0);
+                const resp = contract.call('getCalls', []);
+
+                gasCallback(resp.gasUsed);
+                const result = resp.result.filter((n) => n !== undefined);
+
+                return __liftTypedArray(Uint8Array, result[0] >>> 0);
             },
             setEnvironment(data) {
                 data = __lowerTypedArray(Uint8Array, 13, 0, data) || __notnull();
 
-                contract.call("setEnvironment", [data]).filter((n) => n !== undefined);
-            },
-            isInitialized() {
-                const resp = contract.call("isInitialized", []).filter((n) => n !== undefined);
-                return resp[0] !== 0;
+                const resp = contract.call('setEnvironment', [data]);
+                gasCallback(resp.gasUsed);
             },
         },
         contract,
