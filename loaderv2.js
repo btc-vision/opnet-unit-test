@@ -1,21 +1,39 @@
 export async function loadRust(contract) {
-    contract.__pin = function(pointer) {
-        const resp = contract.call("__pin", [pointer]).filter((n) => n !== undefined);
+    contract.__pin = function (pointer) {
+        try {
+            const resp = contract.call('__pin', [pointer]);
+            gasCallback(resp.gasUsed);
 
-        return resp[0];
-    }
+            const result = resp.result.filter((n) => n !== undefined);
+            return result[0];
+        } catch (e) {
+            throw (e);
+        }
+    };
 
-    contract.__unpin = function(pointer) {
-        const resp = contract.call("__unpin", [pointer]).filter((n) => n !== undefined);
+    contract.__unpin = function (pointer) {
+        try {
+            const resp = contract.call('__unpin', [pointer]);
+            gasCallback(resp.gasUsed);
 
-        return resp[0];
-    }
+            const result = resp.result.filter((n) => n !== undefined);
+            return result[0];
+        } catch (e) {
+            throw (e);
+        }
+    };
 
-    contract.__new = function(size, align) {
-        const resp = contract.call("__new", [size, align]).filter((n) => n !== undefined);
+    contract.__new = function (size, align) {
+        try {
+            const resp = contract.call('__new', [size, align]).filter((n) => n !== undefined);
+            gasCallback(resp.gasUsed);
 
-        return resp[0];
-    }
+            const result = resp.result.filter((n) => n !== undefined);
+            return result[0];
+        } catch (e) {
+            throw (e);
+        }
+    };
 
     function gasCallback(gasUsed) {}
 
@@ -42,6 +60,15 @@ export async function loadRust(contract) {
                 } finally {
                     __release(contractPointer);
                     __release(data);
+                }
+            },
+            purgeMemory() {
+                try {
+                    const resp = contract.call('purgeMemory', []);
+
+                    gasCallback(resp.gasUsed);
+                } catch (e) {
+                    throw (e);
                 }
             },
             readView(method, contractPointer) {
