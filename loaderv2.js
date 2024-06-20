@@ -25,7 +25,7 @@ export async function loadRust(contract) {
 
     contract.__new = function (size, align) {
         try {
-            const resp = contract.call('__new', [size, align]).filter((n) => n !== undefined);
+            const resp = contract.call('__new', [size, align]);
             gasCallback(resp.gasUsed);
 
             const result = resp.result.filter((n) => n !== undefined);
