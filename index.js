@@ -17,7 +17,7 @@ const deployer = 'bcrt1pqdekymf30t583r8r9q95jyrgvyxcgrprajmyc9q8twae7ec275kq85vs
          */
 
         for(let i = 0; i < 6; i++) {
-            const contract = new Contract(bytecode, 100000000000000000n);
+            const contract = new Contract(bytecode, 300_000_000_000n);
             contract.init(address,deployer);
 
             const rustObj = await loadRust(contract);
