@@ -17,7 +17,7 @@ const deployer = 'bcrt1pqdekymf30t583r8r9q95jyrgvyxcgrprajmyc9q8twae7ec275kq85vs
          */
 
         for(let i = 0; i < 6; i++) {
-            const contract = new Contract(bytecode);
+            const contract = new Contract(bytecode, 100000000000000000n);
             contract.init(address,deployer);
 
             const rustObj = await loadRust(contract);
@@ -45,6 +45,7 @@ const deployer = 'bcrt1pqdekymf30t583r8r9q95jyrgvyxcgrprajmyc9q8twae7ec275kq85vs
                 console.log('initializeStorage', initializeStorage);
 
             } catch(err) {
+                console.log(err);
                 const msg = err.message;
                 if(msg.includes('Execution aborted')) {
                     const abortData = contract.getAbortData();
