@@ -16,7 +16,10 @@ class ContractRuntime {
         'bcrt1pqdekymf30t583r8r9q95jyrgvyxcgrprajmyc9q8twae7ec275kq85vsev';
     private readonly address: string = 'bcrt1qu3gfcxncadq0wt3hz5l28yr86ecf2f0eema3em';
 
-    constructor(bytecode: Buffer, private readonly gasLimit: bigint = 300_000_000_000n) {
+    constructor(
+        bytecode: Buffer,
+        private readonly gasLimit: bigint = 300_000_000_000n,
+    ) {
         void this.init(bytecode);
     }
 
@@ -48,8 +51,26 @@ class ContractRuntime {
         calldata.writeAddress('bcrt1qh0qmsl04mpy3u8gvur0ghn6gc9x7t38n8avn32'); // token b
 
         const buf = calldata.getBuffer();
-        const result = await this.contract.readMethod(selector, buf);
+
+        const result = await this.readMethod(selector, buf);
+
         console.log('Result:', result);
+    }
+
+    private async readMethod(
+        selector: number,
+        calldata: Buffer,
+    ): Promise<{ response: Uint8Array; error?: Error }> {
+        let error: Error | undefined;
+        const response = await this.contract
+            .readMethod(selector, calldata)
+            .catch(async (e: unknown) => {
+                this.contract.dispose();
+
+                error = (await e) as Error;
+            });
+
+        return { response, error };
     }
 
     private async init(bytecode: Buffer): Promise<void> {
