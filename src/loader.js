@@ -1,10 +1,10 @@
 import { Contract } from '@btc-vision/bsi-wasmer-vm';
 
 export async function loadRust(bytecode, MAX_GAS, gasCallbackDifference) {
-    const contract = new Contract(bytecode, MAX_GAS, function (_, pointer) {
-        console.log('requested deployment pointer', pointer);
+    const contract = new Contract(bytecode, MAX_GAS, function (_, value) {
+        console.log('requested deployment pointer', value);
 
-        return 2;
+        return value;
     });
 
     contract.lastGas = 0n;
