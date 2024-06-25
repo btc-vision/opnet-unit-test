@@ -24,16 +24,16 @@ function deasyncFunction(promise) {
 }
 
 export async function loadRust(bytecode, MAX_GAS, gasCallbackDifference) {
-    const contract = new Contract(bytecode, MAX_GAS, function (_, pointer) {
+    const contract = new Contract(bytecode, MAX_GAS, function (_, value) {
         let took = Date.now();
-        contract.onInstantiate(pointer);
-       
+        // contract.onInstantiate(value);
+
         //const result = deasyncFunction(promise);
         const d = Date.now() - took;
 
-        console.log('received deployment pointer', result, 'wasted', d, 'ms');
+        console.log('received deployment value', value, 'wasted', d, 'ms');
 
-        return 1; //result.result;
+        return value; //result.result;
     });
 
     contract.onInstantiate = function (pointer) {
