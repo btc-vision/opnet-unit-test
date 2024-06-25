@@ -1,7 +1,12 @@
 import { Contract } from '@btc-vision/bsi-wasmer-vm';
 
 export async function loadRust(bytecode, MAX_GAS, gasCallbackDifference) {
-    const contract = new Contract(bytecode, MAX_GAS);
+    const contract = new Contract(bytecode, MAX_GAS, async (pointer) => {
+        console.log('pointer', pointer);
+
+        return 0n;
+    });
+
     contract.lastGas = 0n;
 
     contract.garbageCollector = function () {
@@ -21,7 +26,7 @@ export async function loadRust(bytecode, MAX_GAS, gasCallbackDifference) {
 
         //console.log('Gas used', diff, method);
 
-        gasCallbackDifference(diff);
+        gasCallbackDifference(diff, method);
     };
 
     contract.abort = function () {

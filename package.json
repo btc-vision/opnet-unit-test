@@ -10,6 +10,16 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
-    "@btc-vision/bsi-binary": "^1.0.17"
+    "@btc-vision/bsi-binary": "^1.0.17",
+    "@typescript-eslint/eslint-plugin": "^7.14.1",
+    "@typescript-eslint/parser": "^7.14.1",
+    "gulp": "^5.0.0",
+    "gulp-cached": "^1.1.1",
+    "gulp-clean": "^0.4.0",
+    "gulp-eslint": "^6.0.0",
+    "gulp-logger": "^0.0.2",
+    "gulp-typescript": "^6.0.0-alpha.1",
+    "prettier": "^3.3.2",
+    "typescript": "^5.5.2"
   }
 }
