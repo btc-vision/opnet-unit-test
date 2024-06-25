@@ -1,11 +1,46 @@
 import { Contract } from '@btc-vision/bsi-wasmer-vm';
+import deasync from 'deasync';
+
+function deasyncFunction(promise) {
+    let result;
+    let error;
+    let done;
+    promise
+        .then((r) => {
+            result = r;
+        })
+        .catch((e) => {
+            error = e;
+        })
+        .finally(() => {
+            done = true;
+        });
+
+    while (!done) {
+        deasync.sleep(5);
+    }
+
+    return { result, error };
+}
 
 export async function loadRust(bytecode, MAX_GAS, gasCallbackDifference) {
     const contract = new Contract(bytecode, MAX_GAS, function (_, pointer) {
-        console.log('requested deployment pointer', pointer);
+        let took = Date.now();
+        contract.onInstantiate(pointer);
+       
+        //const result = deasyncFunction(promise);
+        //const d = Date.now() - took;
 
-        return 2;
+        //console.log('received deployment pointer', result, 'wasted', d, 'ms');
+
+        return 1; //result.result;
     });
+
+    contract.onInstantiate = function (pointer) {
+        console.log(pointer);
+        const data = __liftTypedArray(Uint8Array, pointer >>> 0);
+        console.log(data);
+    };
 
     contract.lastGas = 0n;
 
@@ -44,7 +79,6 @@ export async function loadRust(bytecode, MAX_GAS, gasCallbackDifference) {
         if (msg.includes('Execution aborted')) {
             return contract.abort();
         } else {
-            console.log(err);
             return err;
         }
     };

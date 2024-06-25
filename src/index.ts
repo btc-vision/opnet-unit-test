@@ -52,7 +52,7 @@ class ContractRuntime {
 
         const buf = calldata.getBuffer();
 
-        const result = await this.readMethod(selector, buf);
+        const result = await this.readMethod(selector, Buffer.from(buf));
 
         console.log('Result:', result);
     }

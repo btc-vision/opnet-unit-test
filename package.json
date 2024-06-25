@@ -13,6 +13,7 @@
     "@btc-vision/bsi-binary": "^1.0.17",
     "@typescript-eslint/eslint-plugin": "^7.14.1",
     "@typescript-eslint/parser": "^7.14.1",
+    "deasync": "^0.1.30",
     "gulp": "^5.0.0",
     "gulp-cached": "^1.1.1",
     "gulp-clean": "^0.4.0",
