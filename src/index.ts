@@ -6,7 +6,7 @@ import { Contract } from '@btc-vision/bsi-wasmer-vm';
 
 // init();
 
-const bytecode = fs.readFileSync('./bytecode/contract.wasm');
+const bytecode = fs.readFileSync('./bytecode/factory.wasm');
 const abiCoder = new ABICoder();
 
 class ContractRuntime {
@@ -81,6 +81,8 @@ class ContractRuntime {
 
         await this.setEnvironment();
         await this.call();
+        
+        this.contract.dispose();
 
         console.log('End');
         console.log('Time:', Date.now() - now, 'ms');
