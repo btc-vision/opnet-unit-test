@@ -105,22 +105,26 @@ class ContractRuntime extends Logger {
     }
 
     private async deployContractAtAddress(data: Buffer): Promise<Buffer | Uint8Array> {
-        const reader = new BinaryReader(data);
+        return new Promise((resolve, reject) => {
+            const reader = new BinaryReader(data);
 
-        const address: Address = reader.readAddress();
-        const salt: Buffer = Buffer.from(reader.readBytes(32));
+            const address: Address = reader.readAddress();
+            const salt: Buffer = Buffer.from(reader.readBytes(32));
 
-        this.log(
-            `This contract wants to deploy the same bytecode as ${address}. Salt: ${salt.toString('hex')}`,
-        );
+            this.log(
+                `This contract wants to deploy the same bytecode as ${address}. Salt: ${salt.toString('hex')}`,
+            );
 
-        const deployResult = this.generateAddress(salt);
+            const deployResult = this.generateAddress(salt);
 
-        const response = new BinaryWriter();
-        response.writeBytes(deployResult.virtualAddress);
-        response.writeAddress(deployResult.contractAddress);
+            const response = new BinaryWriter();
+            response.writeBytes(deployResult.virtualAddress);
+            response.writeAddress(deployResult.contractAddress);
 
-        return response.getBuffer();
+            setTimeout(() => {
+                resolve(response.getBuffer());
+            }, 1000);
+        });
     }
 
     private async init(bytecode: Buffer): Promise<void> {
@@ -148,4 +152,6 @@ class ContractRuntime extends Logger {
     }
 }
 
-const runtime = new ContractRuntime(bytecode);
+for (let i = 0; i < 10; i++) {
+    new ContractRuntime(bytecode);
+}
