@@ -11,9 +11,11 @@
   "license": "ISC",
   "dependencies": {
     "@btc-vision/bsi-binary": "^1.0.17",
+    "@btc-vision/logger": "^1.0.2",
+    "@btc-vision/transaction": "^1.0.38",
     "@typescript-eslint/eslint-plugin": "^7.14.1",
     "@typescript-eslint/parser": "^7.14.1",
-    "deasync": "^0.1.30",
+    "bitcoinjs-lib": "github:btc-vision/bitcoinjs-lib",
     "gulp": "^5.0.0",
     "gulp-cached": "^1.1.1",
     "gulp-clean": "^0.4.0",

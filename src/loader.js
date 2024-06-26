@@ -1,39 +1,17 @@
 import { Contract } from '@btc-vision/bsi-wasmer-vm';
-import deasync from 'deasync';
 
-function deasyncFunction(promise) {
-    let result;
-    let error;
-    let done;
-    promise
-        .then((r) => {
-            result = r;
-        })
-        .catch((e) => {
-            error = e;
-        })
-        .finally(() => {
-            done = true;
-        });
+/**
+ * Load the Rust contract
+ * @param {ContractParameters} params
+ * @returns {Promise<ExportedContract>}
+ */
+export async function loadRust(params) {
+    const contract = new Contract(params.bytecode, params.gasLimit, function (_, value) {
+        const u = new Uint8Array(value.buffer);
+        const buf = Buffer.from(u.buffer, u.byteOffset, u.byteLength);
 
-    while (!done) {
-        deasync.sleep(5);
-    }
-
-    return { result, error };
-}
-
-export async function loadRust(bytecode, MAX_GAS, gasCallbackDifference) {
-    const contract = new Contract(bytecode, MAX_GAS, function (_, value) {
-        return contract.onInstantiate(value);
+        return params.deployContractAtAddress(buf);
     });
-
-    contract.onInstantiate = async function (resp) {
-        const buf = Buffer.from(new Uint8Array(resp.buffer));
-        console.log(buf);
-
-        return buf;
-    };
 
     contract.lastGas = 0n;
 
@@ -48,11 +26,18 @@ export async function loadRust(bytecode, MAX_GAS, gasCallbackDifference) {
         }
     };
 
+    /**
+     * @param {bigint} gas
+     * @param {string} method
+     */
     contract.gasCallback = function (gas, method) {
+        /**
+         * @type {bigint}
+         */
         const diff = gas - contract.lastGas;
         contract.lastGas = gas;
 
-        gasCallbackDifference(diff, method);
+        params.gasCallback(diff, method);
     };
 
     contract.abort = async function () {
