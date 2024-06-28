@@ -152,6 +152,12 @@ class ContractRuntime extends Logger {
         return response.getBuffer();
     }
 
+    public async call(data: Buffer): Promise<Buffer | Uint8Array> {
+        const reader = new BinaryReader(data);
+
+        throw new Error('Not implemented');
+    }
+
     private generateParams(): ContractParameters {
         return {
             bytecode: this.bytecode,
@@ -160,6 +166,7 @@ class ContractRuntime extends Logger {
             deployContractAtAddress: this.deployContractAtAddress.bind(this),
             load: this.load.bind(this),
             store: this.store.bind(this),
+            call: this.call.bind(this),
         };
     }
 
