@@ -25,13 +25,13 @@ export async function loadRust(params) {
             const u = new Uint8Array(value.buffer);
             const buf = Buffer.from(u.buffer, u.byteOffset, u.byteLength);
 
-            return params.deployContractAtAddress(buf);
+            return params.call(buf);
         },
         function (_, value) {
             const u = new Uint8Array(value.buffer);
             const buf = Buffer.from(u.buffer, u.byteOffset, u.byteLength);
 
-            return params.call(buf);
+            return params.deployContractAtAddress(buf);
         },
     );
 
