@@ -134,7 +134,7 @@ class ContractRuntime extends Logger {
         const reader = new BinaryReader(data);
         const pointer = reader.readU256();
 
-        this.log(`Attempting to load pointer ${pointer}`);
+        //this.log(`Attempting to load pointer ${pointer}`);
 
         const response: BinaryWriter = new BinaryWriter();
         response.writeU256(0n);
@@ -147,7 +147,7 @@ class ContractRuntime extends Logger {
         const pointer: bigint = reader.readU256();
         const value: bigint = reader.readU256();
 
-        this.log(`Attempting to store pointer ${pointer} - value ${value}`);
+        //this.log(`Attempting to store pointer ${pointer} - value ${value}`);
 
         const response: BinaryWriter = new BinaryWriter();
         response.writeU256(0n);
@@ -183,12 +183,12 @@ class ContractRuntime extends Logger {
         await this.setEnvironment();
         await this.createPair();
 
-        this.contract.dispose();
         this.log('Time:', Date.now() - now, 'ms');
+        this.contract.dispose();
     }
 
     private onGas(gas: bigint, method: string): void {
-        this.debug('Gas:', gas, method);
+        //this.debug('Gas:', gas, method);
     }
 }
 

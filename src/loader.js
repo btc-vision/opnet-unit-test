@@ -51,7 +51,7 @@ export async function loadRust(params) {
      * @param {string} method
      */
     contract.gasCallback = function (gas, method) {
-        params.gasCallback(diff, method);
+        params.gasCallback(gas, method);
     };
 
     contract.abort = async function () {
