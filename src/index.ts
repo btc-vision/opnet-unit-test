@@ -57,6 +57,9 @@ class ContractRuntime extends Logger {
         calldata.writeAddress('bcrt1qh0qmsl04mpy3u8gvur0ghn6gc9x7t38n8avn32'); // token b
 
         const buf = calldata.getBuffer();
+
+        console.log(Buffer.from(buf).toString('hex'), abiCoder.encodeSelector('createPool'));
+
         const result = await this.readMethod(selector, Buffer.from(buf));
 
         const reader: BinaryReader = new BinaryReader(result.response);

@@ -35,8 +35,6 @@ export async function loadRust(params) {
         },
     );
 
-    contract.lastGas = 0n;
-
     contract.garbageCollector = async function () {
         try {
             const resp = await contract.call('__collect', []);
@@ -53,12 +51,6 @@ export async function loadRust(params) {
      * @param {string} method
      */
     contract.gasCallback = function (gas, method) {
-        /**
-         * @type {bigint}
-         */
-        const diff = gas - contract.lastGas;
-        contract.lastGas = gas;
-
         params.gasCallback(diff, method);
     };
 
@@ -73,8 +65,6 @@ export async function loadRust(params) {
     };
 
     contract.getError = function (err) {
-        contract.lastGas = 0n;
-
         const msg = err.message;
         if (msg.includes('Execution aborted')) {
             return contract.abort();
@@ -131,11 +121,7 @@ export async function loadRust(params) {
     const adaptedContract = Object.setPrototypeOf(
         {
             dispose() {
-                contract.lastGas = 0n;
-
-                if ('destroy' in contract) {
-                    contract.destroy();
-                }
+                contract.destroy();
             },
             async defineSelectors() {
                 try {
@@ -261,8 +247,6 @@ export async function loadRust(params) {
                 return finalResult;
             },
             setUsedGas(gas) {
-                contract.lastGas = gas;
-
                 try {
                     contract.setUsedGas(gas);
                 } catch (e) {
