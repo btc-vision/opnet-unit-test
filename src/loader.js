@@ -6,12 +6,28 @@ import { Contract } from '@btc-vision/bsi-wasmer-vm';
  * @returns {Promise<ExportedContract>}
  */
 export async function loadRust(params) {
-    const contract = new Contract(params.bytecode, params.gasLimit, function (_, value) {
-        const u = new Uint8Array(value.buffer);
-        const buf = Buffer.from(u.buffer, u.byteOffset, u.byteLength);
+    const contract = new Contract(
+        params.bytecode,
+        params.gasLimit,
+        function (_, value) {
+            const u = new Uint8Array(value.buffer);
+            const buf = Buffer.from(u.buffer, u.byteOffset, u.byteLength);
 
-        return params.deployContractAtAddress(buf);
-    });
+            return params.load(buf);
+        },
+        function (_, value) {
+            const u = new Uint8Array(value.buffer);
+            const buf = Buffer.from(u.buffer, u.byteOffset, u.byteLength);
+
+            return params.store(buf);
+        },
+        function (_, value) {
+            const u = new Uint8Array(value.buffer);
+            const buf = Buffer.from(u.buffer, u.byteOffset, u.byteLength);
+
+            return params.deployContractAtAddress(buf);
+        },
+    );
 
     contract.lastGas = 0n;
 

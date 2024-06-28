@@ -26,7 +26,7 @@ class ContractRuntime extends Logger {
     ) {
         super();
 
-        void this.init(bytecode);
+        void this.init();
     }
 
     public get contract(): any {
@@ -105,7 +105,7 @@ class ContractRuntime extends Logger {
     }
 
     private async deployContractAtAddress(data: Buffer): Promise<Buffer | Uint8Array> {
-        return new Promise((resolve, reject) => {
+        return new Promise((resolve, _reject) => {
             const reader = new BinaryReader(data);
 
             const address: Address = reader.readAddress();
@@ -121,23 +121,53 @@ class ContractRuntime extends Logger {
             response.writeBytes(deployResult.virtualAddress);
             response.writeAddress(deployResult.contractAddress);
 
-            setTimeout(() => {
-                resolve(response.getBuffer());
-            }, 1000);
+            //setTimeout(() => {
+            resolve(response.getBuffer());
+            //}, 1000);
         });
     }
 
-    private async init(bytecode: Buffer): Promise<void> {
-        this.log('Start');
-        let now = Date.now();
+    public async load(data: Buffer): Promise<Buffer | Uint8Array> {
+        const reader = new BinaryReader(data);
+        const pointer = reader.readU256();
 
-        let params: ContractParameters = {
-            bytecode,
+        this.log(`Attempting to load pointer ${pointer}`);
+
+        const response: BinaryWriter = new BinaryWriter();
+        response.writeU256(0n);
+
+        return response.getBuffer();
+    }
+
+    public async store(data: Buffer): Promise<Buffer | Uint8Array> {
+        const reader = new BinaryReader(data);
+        const pointer: bigint = reader.readU256();
+        const value: bigint = reader.readU256();
+
+        this.log(`Attempting to store pointer ${pointer} - value ${value}`);
+
+        const response: BinaryWriter = new BinaryWriter();
+        response.writeU256(0n);
+
+        return response.getBuffer();
+    }
+
+    private generateParams(): ContractParameters {
+        return {
+            bytecode: this.bytecode,
             gasLimit: this.gasLimit,
             gasCallback: this.onGas.bind(this),
             deployContractAtAddress: this.deployContractAtAddress.bind(this),
+            load: this.load.bind(this),
+            store: this.store.bind(this),
         };
+    }
 
+    private async init(): Promise<void> {
+        this.log('Start');
+        let now = Date.now();
+
+        let params: ContractParameters = this.generateParams();
         this.#contract = await loadRust(params);
 
         await this.setEnvironment();
