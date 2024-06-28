@@ -2,14 +2,18 @@ import fs from 'fs';
 // @ts-ignore
 import { ContractParameters, ExportedContract, loadRust } from './loader.js';
 import { ABICoder, Address, BinaryReader, BinaryWriter } from '@btc-vision/bsi-binary';
-import bitcoin from 'bitcoinjs-lib';
+import bitcoin, { crypto as bitCrypto } from 'bitcoinjs-lib';
 import { AddressGenerator, TapscriptVerificator } from '@btc-vision/transaction';
 import { Logger } from '@btc-vision/logger';
 
 // init();
 
 const bytecode = fs.readFileSync('./bytecode/factory.wasm');
+const pool = fs.readFileSync('./bytecode/pool.wasm');
 const abiCoder = new ABICoder();
+
+const poolBytecodeHash = bitCrypto.hash256(pool);
+console.log('Pool bytecode hash:', poolBytecodeHash.toString('hex'), Array.from(poolBytecodeHash));
 
 class ContractRuntime extends Logger {
     #contract: ExportedContract | undefined;
@@ -17,7 +21,8 @@ class ContractRuntime extends Logger {
     public readonly logColor: string = '#f3a239';
 
     private readonly deployer: string =
-        'bcrt1pqdekymf30t583r8r9q95jyrgvyxcgrprajmyc9q8twae7ec275kq85vsev';
+        'bcrt1pe0slk2klsxckhf90hvu8g0688rxt9qts6thuxk3u4ymxeejw53gs0xjlhn';
+
     private readonly address: string = 'bcrt1qu3gfcxncadq0wt3hz5l28yr86ecf2f0eema3em';
 
     constructor(
@@ -58,27 +63,28 @@ class ContractRuntime extends Logger {
 
         const buf = calldata.getBuffer();
 
-        console.log(Buffer.from(buf).toString('hex'), abiCoder.encodeSelector('createPool'));
+        //console.log(Buffer.from(buf).toString('hex'), abiCoder.encodeSelector('createPool'));
 
         const result = await this.readMethod(selector, Buffer.from(buf));
+
+        let response = result.response;
+        if (!response) {
+            throw result.error;
+        }
 
         const reader: BinaryReader = new BinaryReader(result.response);
         const virtualAddress: bigint = reader.readU256();
         const pairAddress: Address = reader.readAddress();
 
         this.log(
-            `Pair created at ${pairAddress}. Virtual address: 0x${virtualAddress.toString(16)}`,
+            `Pair created at ${pairAddress}. Virtual address: 0x${virtualAddress.toString(16)} or ${virtualAddress}`,
         );
-    }
-
-    private internalPubKeyToXOnly(): Buffer {
-        return Buffer.from(this.address, 'utf-8');
     }
 
     private generateAddress(salt: Buffer): { contractAddress: Address; virtualAddress: Buffer } {
         const contractVirtualAddress = TapscriptVerificator.getContractSeed(
-            bitcoin.crypto.hash256(this.internalPubKeyToXOnly()),
-            this.bytecode,
+            bitcoin.crypto.hash256(Buffer.from(this.address, 'utf-8')),
+            pool,
             salt,
         );
 
@@ -112,10 +118,13 @@ class ContractRuntime extends Logger {
             const reader = new BinaryReader(data);
 
             const address: Address = reader.readAddress();
-            const salt: Buffer = Buffer.from(reader.readBytes(32));
+            const salt: Buffer = Buffer.from(reader.readBytes(32)); //Buffer.from(`${reader.readU256().toString(16)}`, 'hex');
+            const saltBig = BigInt(
+                '0x' + salt.reduce((acc, byte) => acc + byte.toString(16).padStart(2, '0'), ''),
+            );
 
             this.log(
-                `This contract wants to deploy the same bytecode as ${address}. Salt: ${salt.toString('hex')}`,
+                `This contract wants to deploy the same bytecode as ${address}. Salt: ${salt.toString('hex')} or ${saltBig}`,
             );
 
             const deployResult = this.generateAddress(salt);
