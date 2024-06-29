@@ -6,6 +6,16 @@ import { Contract } from '@btc-vision/bsi-wasmer-vm';
  * @returns {Promise<ExportedContract>}
  */
 export async function loadRust(params) {
+    async function abort() {
+        const abortData = contract.getAbortData();
+        const message = __liftString(abortData.message);
+        const fileName = __liftString(abortData.fileName);
+        const line = abortData.line;
+        const column = abortData.column;
+
+        return new Error(`Execution aborted: ${message} at ${fileName}:${line}:${column}`);
+    }
+
     const contract = new Contract(
         params.bytecode,
         params.gasLimit,
@@ -54,15 +64,7 @@ export async function loadRust(params) {
         params.gasCallback(gas, method);
     };
 
-    contract.abort = async function () {
-        const abortData = contract.getAbortData();
-        const message = __liftString(abortData.message);
-        const fileName = __liftString(abortData.fileName);
-        const line = abortData.line;
-        const column = abortData.column;
-
-        return new Error(`Execution aborted: ${message} at ${fileName}:${line}:${column}`);
-    };
+    contract.abort = abort;
 
     contract.getError = function (err) {
         const msg = err.message;

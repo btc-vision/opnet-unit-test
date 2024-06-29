@@ -25,6 +25,8 @@ class ContractRuntime extends Logger {
 
     private readonly address: string = 'bcrt1qu3gfcxncadq0wt3hz5l28yr86ecf2f0eema3em';
 
+    private readonly states: Map<bigint, bigint> = new Map();
+
     constructor(
         private readonly bytecode: Buffer,
         private readonly gasLimit: bigint = 300_000_000_000n,
@@ -81,6 +83,47 @@ class ContractRuntime extends Logger {
         );
     }
 
+    private async initializePool(): Promise<void> {
+        const selector = Number(`0x${abiCoder.encodeSelector('initialize')}`);
+
+        const calldata = new BinaryWriter();
+        calldata.writeAddress('bcrt1qh0qmsl04mpy3u8gvur0ghn6gc9x7t38n8avn2r'); // token a
+        calldata.writeAddress('bcrt1qh0qmsl04mpy3u8gvur0ghn6gc9x7t38n8avn32'); // token b
+
+        const buf = calldata.getBuffer();
+        console.log(
+            'initialize',
+            abiCoder.encodeSelector('initialize'),
+            Buffer.from(buf).toString('hex'),
+        );
+
+        const result = await this.readMethod(selector, Buffer.from(buf));
+
+        let response = result.response;
+        if (!response) {
+            throw result.error;
+        }
+
+        console.log('response', response);
+    }
+
+    private async getToken0(): Promise<void> {
+        const selector = Number(`0x${abiCoder.encodeSelector('token0')}`);
+
+        console.log('token0 selector', abiCoder.encodeSelector('token0'));
+        const result = await this.readView(selector);
+
+        let response = result.response;
+        if (!response) {
+            throw result.error;
+        }
+
+        const reader: BinaryReader = new BinaryReader(result.response);
+        const token0: Address = reader.readAddress();
+
+        this.info(`Token0: ${token0}`);
+    }
+
     private generateAddress(salt: Buffer): { contractAddress: Address; virtualAddress: Buffer } {
         const contractVirtualAddress = TapscriptVerificator.getContractSeed(
             bitcoin.crypto.hash256(Buffer.from(this.address, 'utf-8')),
@@ -113,6 +156,17 @@ class ContractRuntime extends Logger {
         return { response, error };
     }
 
+    private async readView(selector: number): Promise<{ response: Uint8Array; error?: Error }> {
+        let error: Error | undefined;
+        const response = await this.contract.readView(selector).catch(async (e: unknown) => {
+            this.contract.dispose();
+
+            error = (await e) as Error;
+        });
+
+        return { response, error };
+    }
+
     private async deployContractAtAddress(data: Buffer): Promise<Buffer | Uint8Array> {
         return new Promise((resolve, _reject) => {
             const reader = new BinaryReader(data);
@@ -128,14 +182,11 @@ class ContractRuntime extends Logger {
             );
 
             const deployResult = this.generateAddress(salt);
-
             const response = new BinaryWriter();
             response.writeBytes(deployResult.virtualAddress);
             response.writeAddress(deployResult.contractAddress);
 
-            //setTimeout(() => {
             resolve(response.getBuffer());
-            //}, 1000);
         });
     }
 
@@ -143,10 +194,12 @@ class ContractRuntime extends Logger {
         const reader = new BinaryReader(data);
         const pointer = reader.readU256();
 
-        //this.log(`Attempting to load pointer ${pointer}`);
+        const value = this.states.get(pointer) || 0n;
+
+        this.log(`Attempting to load pointer ${pointer} - value ${value}`);
 
         const response: BinaryWriter = new BinaryWriter();
-        response.writeU256(0n);
+        response.writeU256(value);
 
         return response.getBuffer();
     }
@@ -156,7 +209,9 @@ class ContractRuntime extends Logger {
         const pointer: bigint = reader.readU256();
         const value: bigint = reader.readU256();
 
-        //this.log(`Attempting to store pointer ${pointer} - value ${value}`);
+        this.log(`Attempting to store pointer ${pointer} - value ${value}`);
+
+        this.states.set(pointer, value);
 
         const response: BinaryWriter = new BinaryWriter();
         response.writeU256(0n);
@@ -183,22 +238,36 @@ class ContractRuntime extends Logger {
     }
 
     private async init(): Promise<void> {
-        this.log('Start');
         let now = Date.now();
 
         let params: ContractParameters = this.generateParams();
         this.#contract = await loadRust(params);
 
         await this.setEnvironment();
-        await this.createPair();
+        await this.initializePool();
+
+        this.log('Time:', Date.now() - now, 'ms');
+        this.contract.dispose();
+
+        await this.secondCall();
+    }
+
+    private async secondCall(): Promise<void> {
+        let now = Date.now();
+
+        let params: ContractParameters = this.generateParams();
+        this.#contract = await loadRust(params);
+
+        await this.setEnvironment();
+        await this.getToken0();
 
         this.log('Time:', Date.now() - now, 'ms');
         this.contract.dispose();
     }
 
     private onGas(gas: bigint, method: string): void {
-        //this.debug('Gas:', gas, method);
+        this.debug('Gas:', gas, method);
     }
 }
 
-new ContractRuntime(bytecode);
+new ContractRuntime(pool);
