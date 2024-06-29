@@ -2,7 +2,7 @@ import { ContractRuntime } from '../modules/ContractRuntime.js';
 import { Address, BinaryReader, BinaryWriter } from '@btc-vision/bsi-binary';
 import { BytecodeManager } from '../modules/GetBytecode.js';
 
-export class Factory extends ContractRuntime {
+export class MotoswapFactory extends ContractRuntime {
     private readonly createPoolSelector: number = Number(
         `0x${this.abiCoder.encodeSelector('createPool')}`,
     );

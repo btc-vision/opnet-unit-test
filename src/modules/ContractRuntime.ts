@@ -189,7 +189,7 @@ export abstract class ContractRuntime extends Logger {
             this.#contract.dispose();
         }
     }
-    
+
     protected abstract defineRequiredBytecodes(): void;
 
     protected async loadContract(): Promise<void> {
