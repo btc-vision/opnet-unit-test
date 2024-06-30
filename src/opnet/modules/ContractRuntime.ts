@@ -4,28 +4,33 @@ import bitcoin from 'bitcoinjs-lib';
 import { AddressGenerator, TapscriptVerificator } from '@btc-vision/transaction';
 import { Logger } from '@btc-vision/logger';
 import { BytecodeManager } from './GetBytecode.js';
+import { Blockchain } from '../../blockchain/Blockchain.js';
 
-export abstract class ContractRuntime extends Logger {
+export class ContractRuntime extends Logger {
     #contract: ExportedContract | undefined;
 
-    public readonly logColor: string = '#f3a239';
-
-    protected readonly deployer: string =
-        'bcrt1pe0slk2klsxckhf90hvu8g0688rxt9qts6thuxk3u4ymxeejw53gs0xjlhn';
-
-    protected readonly address: string = 'bcrt1qu3gfcxncadq0wt3hz5l28yr86ecf2f0eema3em';
+    public readonly logColor: string = '#39b2f3';
 
     protected readonly states: Map<bigint, bigint> = new Map();
 
     protected readonly deployedContracts: Map<string, Buffer> = new Map();
 
     protected readonly abiCoder = new ABICoder();
+    protected _bytecode: Buffer | undefined;
 
     protected constructor(
-        protected readonly bytecode: Buffer,
+        public readonly address: string,
+        public readonly deployer: string,
         protected readonly gasLimit: bigint = 300_000_000_000n,
+        private readonly potentialBytecode?: Buffer,
     ) {
         super();
+    }
+
+    protected get bytecode(): Buffer {
+        if (!this._bytecode) throw new Error(`Bytecode not found`);
+
+        return this._bytecode;
     }
 
     public get contract(): any {
@@ -114,8 +119,21 @@ export abstract class ContractRuntime extends Logger {
                 throw new Error('Contract already deployed');
             }
 
-            const requestedContractBytecode = BytecodeManager.getBytecode(address);
-            console.log(requestedContractBytecode);
+            if (address === this.address) {
+                throw new Error('Cannot deploy the same contract');
+            }
+
+            const requestedContractBytecode = BytecodeManager.getBytecode(address) as Buffer;
+            const newContract: ContractRuntime = new ContractRuntime(
+                deployResult.contractAddress,
+                this.address,
+                this.gasLimit,
+                requestedContractBytecode,
+            );
+
+            Blockchain.register(newContract);
+
+            this.log(`Deployed contract at ${deployResult.contractAddress.toString()}`);
 
             this.deployedContracts.set(deployResult.contractAddress, this.bytecode);
 
@@ -161,13 +179,17 @@ export abstract class ContractRuntime extends Logger {
         const contractAddress: Address = reader.readAddress();
         const calldata: Uint8Array = reader.readBytesWithLength();
 
-        this.log(`Attempting to call contract ${contractAddress}`);
+        this.info(`Attempting to call contract ${contractAddress}`);
 
-        throw new Error('Not implemented');
+        const contract: ContractRuntime = Blockchain.getContract(contractAddress);
+
+        return await contract.onCall(calldata);
     }
 
     public async onCall(data: Buffer | Uint8Array): Promise<Buffer | Uint8Array> {
         const reader = new BinaryReader(data);
+
+        this.log(`Called externally by an other contract.`);
 
         throw new Error('Not implemented');
     }
@@ -190,7 +212,13 @@ export abstract class ContractRuntime extends Logger {
         }
     }
 
-    protected abstract defineRequiredBytecodes(): void;
+    protected defineRequiredBytecodes(): void {
+        if (this.potentialBytecode) {
+            BytecodeManager.setBytecode(this.address, this.potentialBytecode);
+        } else {
+            throw new Error('Not implemented');
+        }
+    }
 
     protected async loadContract(): Promise<void> {
         this.dispose();
@@ -202,11 +230,15 @@ export abstract class ContractRuntime extends Logger {
     }
 
     private onGas(gas: bigint, method: string): void {
-        this.debug('Gas:', gas, method);
+        if (Blockchain.traceGas) {
+            this.debug('Gas:', gas, method);
+        }
     }
 
     public async init(): Promise<void> {
         this.defineRequiredBytecodes();
+
+        this._bytecode = BytecodeManager.getBytecode(this.address) as Buffer;
 
         await this.loadContract();
     }
