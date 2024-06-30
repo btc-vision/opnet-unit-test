@@ -244,6 +244,7 @@ export class ContractRuntime extends Logger {
     }
 
     protected async loadContract(): Promise<void> {
+        this.states.clear();
         this.dispose();
 
         let params: ContractParameters = this.generateParams();
