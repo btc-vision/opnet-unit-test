@@ -143,7 +143,5 @@ await opnet('Motoswap Pool', async (vm: OPNetUnit) => {
         const reserves = await pool.getReserves();
         Assert.expect(reserves.reserve0).toEqual(amountTokenA);
         Assert.expect(reserves.reserve1).toEqual(amountTokenB);
-
-        console.log(pool);
     });
 });
