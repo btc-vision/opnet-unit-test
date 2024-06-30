@@ -101,7 +101,7 @@ export class ContractRuntime extends Logger {
     }
 
     private async deployContractAtAddress(data: Buffer): Promise<Buffer | Uint8Array> {
-        return new Promise((resolve, _reject) => {
+        return new Promise(async (resolve, _reject) => {
             const reader = new BinaryReader(data);
 
             const address: Address = reader.readAddress();
@@ -132,6 +132,8 @@ export class ContractRuntime extends Logger {
             );
 
             Blockchain.register(newContract);
+
+            await newContract.init();
 
             this.log(`Deployed contract at ${deployResult.contractAddress.toString()}`);
 
@@ -188,10 +190,29 @@ export class ContractRuntime extends Logger {
 
     public async onCall(data: Buffer | Uint8Array): Promise<Buffer | Uint8Array> {
         const reader = new BinaryReader(data);
+        const selector: number = reader.readSelector();
+        const calldata: Buffer = data.subarray(4) as Buffer;
 
-        this.log(`Called externally by an other contract.`);
+        this.log(
+            `Called externally by an other contract. Selector: ${selector.toString(16)} - Calldata: ${calldata.toString('hex')}`,
+        );
 
-        throw new Error('Not implemented');
+        await this.loadContract();
+
+        let response: { response: Uint8Array; error?: Error };
+        if (calldata.length === 0) {
+            response = await this.readView(selector);
+        } else {
+            response = await this.readMethod(selector, calldata);
+        }
+
+        this.dispose();
+
+        if (response.error) {
+            throw response.error;
+        }
+
+        return response.response;
     }
 
     private generateParams(): ContractParameters {
@@ -214,6 +235,8 @@ export class ContractRuntime extends Logger {
 
     protected defineRequiredBytecodes(): void {
         if (this.potentialBytecode) {
+            this._bytecode = this.potentialBytecode;
+
             BytecodeManager.setBytecode(this.address, this.potentialBytecode);
         } else {
             throw new Error('Not implemented');
