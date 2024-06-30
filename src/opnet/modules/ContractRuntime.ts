@@ -1,10 +1,17 @@
 import { ContractParameters, ExportedContract, loadRust } from '../vm/loader.js';
-import { ABICoder, Address, BinaryReader, BinaryWriter } from '@btc-vision/bsi-binary';
+import { ABICoder, Address, BinaryReader, BinaryWriter, NetEvent } from '@btc-vision/bsi-binary';
 import bitcoin from 'bitcoinjs-lib';
 import { AddressGenerator, TapscriptVerificator } from '@btc-vision/transaction';
 import { Logger } from '@btc-vision/logger';
 import { BytecodeManager } from './GetBytecode.js';
 import { Blockchain } from '../../blockchain/Blockchain.js';
+
+export interface CallResponse {
+    response: Uint8Array;
+    error?: Error;
+    events: NetEvent[];
+    callStack: Address[];
+}
 
 export class ContractRuntime extends Logger {
     #contract: ExportedContract | undefined;
@@ -12,6 +19,10 @@ export class ContractRuntime extends Logger {
     public readonly logColor: string = '#39b2f3';
 
     protected readonly states: Map<bigint, bigint> = new Map();
+    protected shouldPreserveState: boolean = false;
+
+    protected events: NetEvent[] = [];
+    protected callStack: Address[] = [];
 
     protected readonly deployedContracts: Map<string, Buffer> = new Map();
 
@@ -25,6 +36,10 @@ export class ContractRuntime extends Logger {
         private readonly potentialBytecode?: Buffer,
     ) {
         super();
+    }
+
+    public preserveState(): void {
+        this.shouldPreserveState = true;
     }
 
     public getStates(): Map<bigint, bigint> {
@@ -45,13 +60,19 @@ export class ContractRuntime extends Logger {
         return this.#contract;
     }
 
-    private async setEnvironment(): Promise<void> {
+    public async setEnvironment(
+        caller: Address = Blockchain.caller || this.deployer,
+        callee: Address = Blockchain.callee || this.deployer,
+        currentBlock: bigint = Blockchain.blockNumber,
+        owner: Address = this.deployer,
+        address: Address = this.address,
+    ): Promise<void> {
         const writer = new BinaryWriter();
-        writer.writeAddress(this.deployer);
-        writer.writeAddress(this.deployer);
-        writer.writeU256(0n);
-        writer.writeAddress(this.deployer);
-        writer.writeAddress(this.address);
+        writer.writeAddress(caller);
+        writer.writeAddress(callee);
+        writer.writeU256(currentBlock);
+        writer.writeAddress(owner);
+        writer.writeAddress(address);
         writer.writeU64(BigInt(Date.now()));
 
         await this.contract.setEnvironment(writer.getBuffer());
@@ -77,10 +98,25 @@ export class ContractRuntime extends Logger {
         return { contractAddress: contractSegwitAddress, virtualAddress: contractVirtualAddress };
     }
 
+    public async getEvents(): Promise<NetEvent[]> {
+        const events = await this.contract.getEvents();
+        const reader = new BinaryReader(events);
+
+        return reader.readEvents();
+    }
+
     protected async readMethod(
         selector: number,
         calldata: Buffer,
-    ): Promise<{ response: Uint8Array; error?: Error }> {
+        caller?: Address,
+        callee?: Address,
+    ): Promise<CallResponse> {
+        await this.loadContract();
+
+        if (!!caller) {
+            await this.setEnvironment(caller, callee);
+        }
+
         let error: Error | undefined;
         const response = await this.contract
             .readMethod(selector, calldata)
@@ -90,10 +126,32 @@ export class ContractRuntime extends Logger {
                 error = (await e) as Error;
             });
 
-        return { response, error };
+        const events = await this.getEvents();
+        this.events = [...this.events, ...events];
+
+        const resp = {
+            response,
+            error,
+            events: this.events,
+            callStack: this.callStack,
+        };
+
+        this.checkReentrancy();
+
+        return resp;
     }
 
-    protected async readView(selector: number): Promise<{ response: Uint8Array; error?: Error }> {
+    protected async readView(
+        selector: number,
+        caller?: Address,
+        callee?: Address,
+    ): Promise<CallResponse> {
+        await this.loadContract();
+
+        if (caller) {
+            await this.setEnvironment(caller, callee);
+        }
+
         let error: Error | undefined;
         const response = await this.contract.readView(selector).catch(async (e: unknown) => {
             this.contract.dispose();
@@ -101,7 +159,19 @@ export class ContractRuntime extends Logger {
             error = (await e) as Error;
         });
 
-        return { response, error };
+        const events = await this.getEvents();
+        this.events = [...this.events, ...events];
+
+        const resp: CallResponse = {
+            response,
+            error,
+            events: this.events,
+            callStack: this.callStack,
+        };
+
+        this.checkReentrancy();
+
+        return resp;
     }
 
     private async deployContractAtAddress(data: Buffer): Promise<Buffer | Uint8Array> {
@@ -157,7 +227,9 @@ export class ContractRuntime extends Logger {
 
         const value = this.states.get(pointer) || 0n;
 
-        this.log(`Attempting to load pointer ${pointer} - value ${value}`);
+        if (Blockchain.tracePointers) {
+            this.log(`Attempting to load pointer ${pointer} - value ${value}`);
+        }
 
         const response: BinaryWriter = new BinaryWriter();
         response.writeU256(value);
@@ -170,7 +242,9 @@ export class ContractRuntime extends Logger {
         const pointer: bigint = reader.readU256();
         const value: bigint = reader.readU256();
 
-        this.log(`Attempting to store pointer ${pointer} - value ${value}`);
+        if (Blockchain.tracePointers) {
+            this.log(`Attempting to store pointer ${pointer} - value ${value}`);
+        }
 
         this.states.set(pointer, value);
 
@@ -178,6 +252,12 @@ export class ContractRuntime extends Logger {
         response.writeU256(0n);
 
         return response.getBuffer();
+    }
+
+    private checkReentrancy(): void {
+        if (this.callStack.length !== new Set(this.callStack).size) {
+            throw new Error(`OPNET: REENTRANCY DETECTED`);
+        }
     }
 
     private async call(data: Buffer): Promise<Buffer | Uint8Array> {
@@ -188,11 +268,17 @@ export class ContractRuntime extends Logger {
         this.info(`Attempting to call contract ${contractAddress}`);
 
         const contract: ContractRuntime = Blockchain.getContract(contractAddress);
+        const callResponse = await contract.onCall(calldata);
 
-        return await contract.onCall(calldata);
+        this.events = [...this.events, ...callResponse.events];
+        this.callStack.push(...callResponse.callStack);
+
+        this.checkReentrancy();
+
+        return callResponse.response;
     }
 
-    public async onCall(data: Buffer | Uint8Array): Promise<Buffer | Uint8Array> {
+    public async onCall(data: Buffer | Uint8Array): Promise<CallResponse> {
         const reader = new BinaryReader(data);
         const selector: number = reader.readSelector();
         const calldata: Buffer = data.subarray(4) as Buffer;
@@ -203,7 +289,7 @@ export class ContractRuntime extends Logger {
 
         await this.loadContract();
 
-        let response: { response: Uint8Array; error?: Error };
+        let response: CallResponse;
         if (calldata.length === 0) {
             response = await this.readView(selector);
         } else {
@@ -216,7 +302,11 @@ export class ContractRuntime extends Logger {
             throw response.error;
         }
 
-        return response.response;
+        return {
+            response: response.response,
+            events: response.events,
+            callStack: this.callStack,
+        };
     }
 
     private generateParams(): ContractParameters {
@@ -248,7 +338,13 @@ export class ContractRuntime extends Logger {
     }
 
     protected async loadContract(): Promise<void> {
-        this.states.clear();
+        if (!this.shouldPreserveState) {
+            this.states.clear();
+        }
+
+        this.events = [];
+        this.callStack = [this.address];
+
         this.dispose();
 
         let params: ContractParameters = this.generateParams();

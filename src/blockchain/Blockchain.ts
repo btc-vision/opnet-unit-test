@@ -1,14 +1,62 @@
 import { ContractRuntime } from '../opnet/modules/ContractRuntime.js';
 import { Logger } from '@btc-vision/logger';
+import { Address } from '@btc-vision/bsi-binary';
+import { AddressGenerator, EcKeyPair } from '@btc-vision/transaction';
+import { Network, networks } from 'bitcoinjs-lib';
 
 class BlockchainBase extends Logger {
     public readonly logColor: string = '#8332ff';
+    public readonly deadAddress: Address = 'bc1dead';
 
     public traceGas: boolean = false;
+    public tracePointers: boolean = false;
+
+    private _blockNumber: bigint = 1n;
+
     private readonly contracts: Map<string, ContractRuntime> = new Map<string, ContractRuntime>();
 
-    constructor() {
+    constructor(public readonly network: Network) {
         super();
+    }
+
+    public get blockNumber(): bigint {
+        return this._blockNumber;
+    }
+
+    public get caller(): Address {
+        return this._caller;
+    }
+
+    public set caller(caller: Address) {
+        this._caller = caller;
+    }
+
+    private _caller: Address = '';
+    private _callee: Address = '';
+
+    public get callee(): Address {
+        return this._callee;
+    }
+
+    public set callee(callee: Address) {
+        this._callee = callee;
+    }
+
+    public set blockNumber(blockNumber: bigint) {
+        this._blockNumber = blockNumber;
+    }
+
+    private getRandomBytes(length: number): Buffer {
+        return Buffer.from(crypto.getRandomValues(new Uint8Array(length)));
+    }
+
+    public generateRandomSegwitAddress(): Address {
+        return AddressGenerator.generatePKSH(this.getRandomBytes(32), this.network);
+    }
+
+    public generateRandomTaprootAddress(): Address {
+        const keypair = EcKeyPair.generateRandomKeyPair(this.network);
+        return EcKeyPair.getTaprootAddress(keypair, this.network);
     }
 
     public register(contract: ContractRuntime): void {
@@ -43,6 +91,22 @@ class BlockchainBase extends Logger {
         }
     }
 
+    public expandTo18Decimals(n: number): bigint {
+        return BigInt(n) * 10n ** 18n;
+    }
+
+    public expandToDecimal(n: number, decimals: number): bigint {
+        return BigInt(n) * 10n ** BigInt(decimals);
+    }
+
+    public decodeFrom18Decimals(n: bigint): number {
+        return Number(n / 10n ** 18n);
+    }
+
+    public decodeFromDecimal(n: bigint, decimals: number): number {
+        return Number(n / 10n ** BigInt(decimals));
+    }
+
     public enableGasTracking(): void {
         this.traceGas = true;
     }
@@ -50,6 +114,14 @@ class BlockchainBase extends Logger {
     public disableGasTracking(): void {
         this.traceGas = false;
     }
+
+    public enablePointerTracking(): void {
+        this.tracePointers = true;
+    }
+
+    public disablePointerTracking(): void {
+        this.tracePointers = false;
+    }
 }
 
-export const Blockchain = new BlockchainBase();
+export const Blockchain = new BlockchainBase(networks.regtest);

@@ -3,19 +3,25 @@ export class Assertion {
 
     toEqual(expected: any) {
         if (this.actual !== expected) {
-            throw new Error(`Expected ${expected}, but got ${this.actual}`);
+            throw new Error(`Expected "${expected}", but got "${this.actual}"`);
         }
     }
 
     toNotEqual(unexpected: any) {
         if (this.actual === unexpected) {
-            throw new Error(`Expected ${unexpected} to not be equal to ${this.actual}`);
+            throw new Error(`Expected "${unexpected}" to not be equal to "${this.actual}"`);
         }
     }
 
     toDeepEqual(expected: any) {
         if (!this.deepStrictEqual(this.actual, expected)) {
             throw new Error(`Expected deep equality`);
+        }
+    }
+
+    toBeDefined() {
+        if (this.actual === undefined || this.actual === null) {
+            throw new Error(`Expected value to be defined`);
         }
     }
 

@@ -1,6 +1,7 @@
 import { ContractRuntime } from '../opnet/modules/ContractRuntime.js';
 import { Address, BinaryReader, BinaryWriter } from '@btc-vision/bsi-binary';
 import { BytecodeManager } from '../opnet/modules/GetBytecode.js';
+import { Blockchain } from '../blockchain/Blockchain.js';
 
 export class MotoswapFactory extends ContractRuntime {
     private readonly createPoolSelector: number = Number(
@@ -13,6 +14,8 @@ export class MotoswapFactory extends ContractRuntime {
             'bcrt1pe0slk2klsxckhf90hvu8g0688rxt9qts6thuxk3u4ymxeejw53gs0xjlhn',
             gasLimit,
         );
+
+        this.preserveState();
     }
 
     protected defineRequiredBytecodes(): void {
@@ -21,8 +24,8 @@ export class MotoswapFactory extends ContractRuntime {
 
     public async createPool(): Promise<void> {
         const calldata = new BinaryWriter();
-        calldata.writeAddress('bcrt1qh0qmsl04mpy3u8gvur0ghn6gc9x7t38n8avn2r'); // token a
-        calldata.writeAddress('bcrt1qh0qmsl04mpy3u8gvur0ghn6gc9x7t38n8avn32'); // token b
+        calldata.writeAddress(Blockchain.generateRandomSegwitAddress()); // token a
+        calldata.writeAddress(Blockchain.generateRandomSegwitAddress()); // token b
 
         const buf = calldata.getBuffer();
         const result = await this.readMethod(this.createPoolSelector, Buffer.from(buf));

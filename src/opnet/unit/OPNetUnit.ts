@@ -4,7 +4,6 @@ export class OPNetUnit extends Logger {
     public readonly logColor = '#FFA500';
 
     private beforeEachFunc: (() => Promise<void>) | null = null;
-    private beforeAllFunc: (() => Promise<void>) | null = null;
     private afterEachFunc: (() => Promise<void>) | null = null;
     private afterAllFunc: (() => Promise<void>) | null = null;
 
@@ -17,8 +16,8 @@ export class OPNetUnit extends Logger {
         this.beforeEachFunc = fn;
     }
 
-    beforeAll(fn: () => Promise<void>) {
-        this.beforeAllFunc = fn;
+    async beforeAll(fn: () => Promise<void>) {
+        await fn();
     }
 
     afterEach(fn: () => Promise<void>) {
@@ -33,12 +32,6 @@ export class OPNetUnit extends Logger {
     private async runBeforeEach() {
         if (this.beforeEachFunc) {
             await this.beforeEachFunc();
-        }
-    }
-
-    private async runBeforeAll() {
-        if (this.beforeAllFunc) {
-            await this.beforeAllFunc();
         }
     }
 
@@ -74,20 +67,20 @@ export class OPNetUnit extends Logger {
         this.debugBright(`Running test: ${testName}`);
 
         try {
-            await this.runBeforeAll();
             await fn();
 
             this.success(`Test passed: ${testName}`);
         } catch (e) {
             this.error(`Test failed: ${testName}`);
-            this.panic(e);
+            this.panic((e as Error).stack);
         } finally {
             await this.runAfterAll();
         }
     }
 }
 
-export function opnet(suiteName: string, fn: (vm: OPNetUnit) => void) {
+export async function opnet(suiteName: string, fn: (vm: OPNetUnit) => Promise<void>) {
     const vm = new OPNetUnit(suiteName);
-    fn(vm);
+
+    await fn(vm);
 }
