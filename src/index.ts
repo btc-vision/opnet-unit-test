@@ -29,5 +29,7 @@ opnet('Motoswap Factory', async (vm: OPNetUnit) => {
 
     await vm.it('should create a pool', async () => {
         await factory.createPool();
+
+        console.log('States:', factory.getStates());
     });
 });

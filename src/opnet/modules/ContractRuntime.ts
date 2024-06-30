@@ -27,6 +27,10 @@ export class ContractRuntime extends Logger {
         super();
     }
 
+    public getStates(): Map<bigint, bigint> {
+        return this.states;
+    }
+
     protected get bytecode(): Buffer {
         if (!this._bytecode) throw new Error(`Bytecode not found`);
 
