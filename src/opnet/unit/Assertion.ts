@@ -40,11 +40,11 @@ export class Assertion {
         return keysA.every((key) => this.deepStrictEqual(actual[key], expected[key]));
     }
 
-    toThrow(expectedError?: string | RegExp) {
+    async toThrow(expectedError?: string | RegExp): Promise<void> {
         let threw = false;
         let error = null;
         try {
-            this.actual();
+            await this.actual();
         } catch (err) {
             threw = true;
             error = err;
@@ -54,7 +54,13 @@ export class Assertion {
         }
         if (expectedError && error instanceof Error) {
             if (typeof expectedError === 'string') {
-                this.toEqual(expectedError);
+                if (error.message.includes(expectedError)) {
+                    return;
+                }
+
+                throw new Error(
+                    `Expected error message '${error.message}' to include '${expectedError}'`,
+                );
             } else if (expectedError instanceof RegExp) {
                 if (!expectedError.test(error.message)) {
                     throw new Error(

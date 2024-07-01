@@ -43,6 +43,12 @@ export async function loadRust(params) {
 
             return params.deployContractAtAddress(buf);
         },
+        function (_, value) {
+            const u = new Uint8Array(value.buffer);
+            const buf = Buffer.from(u.buffer, u.byteOffset, u.byteLength);
+
+            return params.log(buf);
+        },
     );
 
     contract.garbageCollector = async function () {
@@ -68,7 +74,7 @@ export async function loadRust(params) {
 
     contract.getError = function (err) {
         const msg = err.message;
-        if (msg.includes('Execution aborted')) {
+        if (msg.includes('Execution aborted') && !msg.includes('Execution aborted:')) {
             return contract.abort();
         } else {
             return err;

@@ -1,5 +1,14 @@
 import { ContractParameters, ExportedContract, loadRust } from '../vm/loader.js';
-import { ABICoder, Address, BinaryReader, BinaryWriter, NetEvent } from '@btc-vision/bsi-binary';
+import {
+    ABICoder,
+    Address,
+    BinaryReader,
+    BinaryWriter,
+    MethodMap,
+    NetEvent,
+    Selector,
+    SelectorsMap,
+} from '@btc-vision/bsi-binary';
 import bitcoin from 'bitcoinjs-lib';
 import { AddressGenerator, TapscriptVerificator } from '@btc-vision/transaction';
 import { Logger } from '@btc-vision/logger';
@@ -18,16 +27,22 @@ export class ContractRuntime extends Logger {
 
     public readonly logColor: string = '#39b2f3';
 
-    protected readonly states: Map<bigint, bigint> = new Map();
+    protected states: Map<bigint, bigint> = new Map();
     protected shouldPreserveState: boolean = false;
 
     protected events: NetEvent[] = [];
-    protected callStack: Address[] = [];
 
     protected readonly deployedContracts: Map<string, Buffer> = new Map();
 
     protected readonly abiCoder = new ABICoder();
     protected _bytecode: Buffer | undefined;
+
+    private _viewAbi: SelectorsMap | undefined;
+    private _writeMethods: MethodMap | undefined;
+
+    private callStack: Address[] = [];
+
+    private statesBackup: Map<bigint, bigint> = new Map();
 
     protected constructor(
         public readonly address: string,
@@ -46,6 +61,22 @@ export class ContractRuntime extends Logger {
         return this.states;
     }
 
+    public get viewAbi(): SelectorsMap {
+        if (!this._viewAbi) {
+            throw new Error('View ABI not found');
+        }
+
+        return this._viewAbi;
+    }
+
+    public get writeMethods(): MethodMap {
+        if (!this._writeMethods) {
+            throw new Error('Write methods not found');
+        }
+
+        return this._writeMethods;
+    }
+
     protected get bytecode(): Buffer {
         if (!this._bytecode) throw new Error(`Bytecode not found`);
 
@@ -58,6 +89,28 @@ export class ContractRuntime extends Logger {
         }
 
         return this.#contract;
+    }
+
+    public async resetStates(): Promise<void> {
+        this.states.clear();
+    }
+
+    public async getViewAbi(): Promise<void> {
+        const abi = await this.contract.getViewABI();
+        const reader = new BinaryReader(abi);
+
+        this._viewAbi = reader.readViewSelectorsMap();
+
+        return;
+    }
+
+    public async getWriteMethods(): Promise<void> {
+        const abi = await this.contract.getWriteMethods();
+        const reader = new BinaryReader(abi);
+
+        this._writeMethods = reader.readMethodSelectorsMap();
+
+        return;
     }
 
     public async setEnvironment(
@@ -105,6 +158,15 @@ export class ContractRuntime extends Logger {
         return reader.readEvents();
     }
 
+    public backupStates(): void {
+        this.statesBackup = new Map(this.states);
+    }
+
+    public restoreStates(): void {
+        this.states.clear();
+        this.states = new Map(this.statesBackup);
+    }
+
     protected async readMethod(
         selector: number,
         calldata: Buffer,
@@ -117,6 +179,8 @@ export class ContractRuntime extends Logger {
             await this.setEnvironment(caller, callee);
         }
 
+        const statesBackup = new Map(this.states);
+
         let error: Error | undefined;
         const response = await this.contract
             .readMethod(selector, calldata)
@@ -124,21 +188,44 @@ export class ContractRuntime extends Logger {
                 this.contract.dispose();
 
                 error = (await e) as Error;
+                
+                // Restore states
+                this.states.clear();
+                this.states = statesBackup;
             });
 
         const events = await this.getEvents();
         this.events = [...this.events, ...events];
 
-        const resp = {
+        return {
             response,
             error,
             events: this.events,
             callStack: this.callStack,
         };
+    }
 
-        this.checkReentrancy();
+    private hasModifiedStates(
+        states: Map<bigint, bigint>,
+        statesBackup: Map<bigint, bigint>,
+    ): boolean {
+        if (states.size !== statesBackup.size) {
+            return true;
+        }
 
-        return resp;
+        for (const [key, value] of states) {
+            if (statesBackup.get(key) !== value) {
+                return true;
+            }
+        }
+
+        for (const [key, value] of statesBackup) {
+            if (states.get(key) !== value) {
+                return true;
+            }
+        }
+
+        return false;
     }
 
     protected async readView(
@@ -152,26 +239,32 @@ export class ContractRuntime extends Logger {
             await this.setEnvironment(caller, callee);
         }
 
+        const statesBackup = new Map(this.states);
+
         let error: Error | undefined;
         const response = await this.contract.readView(selector).catch(async (e: unknown) => {
             this.contract.dispose();
 
             error = (await e) as Error;
+
+            // Restore states
+            this.states.clear();
+            this.states = statesBackup;
         });
+
+        if (this.hasModifiedStates(this.states, statesBackup)) {
+            throw new Error('OPNET: READONLY_MODIFIED_STATES');
+        }
 
         const events = await this.getEvents();
         this.events = [...this.events, ...events];
 
-        const resp: CallResponse = {
+        return {
             response,
             error,
             events: this.events,
             callStack: this.callStack,
         };
-
-        this.checkReentrancy();
-
-        return resp;
     }
 
     private async deployContractAtAddress(data: Buffer): Promise<Buffer | Uint8Array> {
@@ -254,10 +347,36 @@ export class ContractRuntime extends Logger {
         return response.getBuffer();
     }
 
-    private checkReentrancy(): void {
-        if (this.callStack.length !== new Set(this.callStack).size) {
+    private checkReentrancy(calls: Address[]): void {
+        /*if (this.callStack.length !== new Set(this.callStack).size) {
+            console.log(this.callStack);
+
             throw new Error(`OPNET: REENTRANCY DETECTED`);
+        }*/
+
+        if (calls.includes(this.address)) {
+            throw new Error('OPNET: REENTRANCY DETECTED');
         }
+    }
+
+    public isReadonlyMethod(selector: Selector): boolean {
+        for (const [_, value] of this.viewAbi) {
+            if (value === selector) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    private canWrite(selector: Selector): boolean {
+        for (const value of this.writeMethods) {
+            if (value === selector) {
+                return true;
+            }
+        }
+
+        return false;
     }
 
     private async call(data: Buffer): Promise<Buffer | Uint8Array> {
@@ -265,35 +384,47 @@ export class ContractRuntime extends Logger {
         const contractAddress: Address = reader.readAddress();
         const calldata: Uint8Array = reader.readBytesWithLength();
 
-        this.info(`Attempting to call contract ${contractAddress}`);
+        if (!contractAddress) {
+            throw new Error('Contract address not found [call]');
+        }
+
+        if (Blockchain.traceCalls) {
+            this.info(`Attempting to call contract ${contractAddress}`);
+        }
 
         const contract: ContractRuntime = Blockchain.getContract(contractAddress);
-        const callResponse = await contract.onCall(calldata);
+        const callResponse = await contract.onCall(calldata, Blockchain.caller, this.address);
 
         this.events = [...this.events, ...callResponse.events];
-        this.callStack.push(...callResponse.callStack);
+        this.callStack = [...this.callStack, ...callResponse.callStack];
 
-        this.checkReentrancy();
+        this.checkReentrancy(callResponse.callStack);
 
         return callResponse.response;
     }
 
-    public async onCall(data: Buffer | Uint8Array): Promise<CallResponse> {
+    public async onCall(
+        data: Buffer | Uint8Array,
+        caller: Address,
+        callee: Address,
+    ): Promise<CallResponse> {
         const reader = new BinaryReader(data);
         const selector: number = reader.readSelector();
         const calldata: Buffer = data.subarray(4) as Buffer;
 
-        this.log(
-            `Called externally by an other contract. Selector: ${selector.toString(16)} - Calldata: ${calldata.toString('hex')}`,
-        );
+        if (Blockchain.traceCalls) {
+            this.log(
+                `Called externally by an other contract. Selector: ${selector.toString(16)}`, //- Calldata: ${calldata.toString('hex')}
+            );
+        }
 
         await this.loadContract();
 
         let response: CallResponse;
         if (calldata.length === 0) {
-            response = await this.readView(selector);
+            response = await this.readView(selector, caller, callee);
         } else {
-            response = await this.readMethod(selector, calldata);
+            response = await this.readMethod(selector, calldata, caller, callee);
         }
 
         this.dispose();
@@ -309,6 +440,13 @@ export class ContractRuntime extends Logger {
         };
     }
 
+    private onLog(data: Buffer | Uint8Array): void {
+        const reader = new BinaryReader(data);
+        const logData = reader.readStringWithLength();
+
+        this.warn(`Contract log: ${logData}`);
+    }
+
     private generateParams(): ContractParameters {
         return {
             bytecode: this.bytecode,
@@ -318,6 +456,7 @@ export class ContractRuntime extends Logger {
             load: this.load.bind(this),
             store: this.store.bind(this),
             call: this.call.bind(this),
+            log: this.onLog.bind(this),
         };
     }
 
@@ -351,6 +490,12 @@ export class ContractRuntime extends Logger {
         this.#contract = await loadRust(params);
 
         await this.setEnvironment();
+
+        if (!this._viewAbi) {
+            await this.contract.defineSelectors();
+            await this.getViewAbi();
+            await this.getWriteMethods();
+        }
     }
 
     private onGas(gas: bigint, method: string): void {

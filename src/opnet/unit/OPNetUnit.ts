@@ -69,9 +69,9 @@ export class OPNetUnit extends Logger {
         try {
             await fn();
 
-            this.success(`Test passed: ${testName}`);
+            this.success(`✔️ Test passed: ${testName}`);
         } catch (e) {
-            this.error(`Test failed: ${testName}`);
+            this.error(`❌ Test failed: ${testName}`);
             this.panic((e as Error).stack);
         } finally {
             await this.runAfterAll();

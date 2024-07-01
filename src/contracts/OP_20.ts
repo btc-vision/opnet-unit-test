@@ -14,6 +14,10 @@ export interface MintEvent {
     readonly value: bigint;
 }
 
+export interface BurnEvent {
+    readonly value: bigint;
+}
+
 export class OP_20 extends ContractRuntime {
     protected readonly transferSelector: number = Number(
         `0x${this.abiCoder.encodeSelector('transfer')}`,
@@ -49,6 +53,7 @@ export class OP_20 extends ContractRuntime {
 
         let response = result.response;
         if (!response) {
+            this.dispose();
             throw result.error;
         }
 
@@ -77,6 +82,7 @@ export class OP_20 extends ContractRuntime {
 
         let response = result.response;
         if (!response) {
+            this.dispose();
             throw result.error;
         }
 
@@ -84,6 +90,13 @@ export class OP_20 extends ContractRuntime {
         if (!reader.readBoolean()) {
             throw new Error('Mint failed');
         }
+    }
+
+    public static decodeBurnEvent(data: Buffer | Uint8Array): BurnEvent {
+        const reader = new BinaryReader(data);
+        const value = reader.readU256();
+
+        return { value };
     }
 
     public static decodeTransferEvent(data: Buffer | Uint8Array): TransferEvent {
@@ -113,6 +126,7 @@ export class OP_20 extends ContractRuntime {
 
         let response = result.response;
         if (!response) {
+            this.dispose();
             throw result.error;
         }
 
@@ -131,6 +145,7 @@ export class OP_20 extends ContractRuntime {
 
         let response = result.response;
         if (!response) {
+            this.dispose();
             throw result.error;
         }
 

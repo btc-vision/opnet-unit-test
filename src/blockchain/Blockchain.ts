@@ -10,6 +10,7 @@ class BlockchainBase extends Logger {
 
     public traceGas: boolean = false;
     public tracePointers: boolean = false;
+    public traceCalls: boolean = false;
 
     private _blockNumber: bigint = 1n;
 
@@ -77,6 +78,18 @@ class BlockchainBase extends Logger {
         return contract;
     }
 
+    public backup(): void {
+        for (const contract of this.contracts.values()) {
+            contract.backupStates();
+        }
+    }
+
+    public restore(): void {
+        for (const contract of this.contracts.values()) {
+            contract.restoreStates();
+        }
+    }
+
     public dispose(): void {
         for (const contract of this.contracts.values()) {
             contract.dispose();
@@ -107,6 +120,10 @@ class BlockchainBase extends Logger {
         return Number(n / 10n ** BigInt(decimals));
     }
 
+    public mineBlock(): void {
+        this._blockNumber += 1n;
+    }
+
     public enableGasTracking(): void {
         this.traceGas = true;
     }
@@ -121,6 +138,21 @@ class BlockchainBase extends Logger {
 
     public disablePointerTracking(): void {
         this.tracePointers = false;
+    }
+
+    public enableCallTracking(): void {
+        this.traceCalls = true;
+    }
+
+    public disableCallTracking(): void {
+        this.traceCalls = false;
+    }
+
+    public encodePrice(reserve0: bigint, reserve1: bigint): [bigint, bigint] {
+        const shift = 2n ** 112n;
+        const price0 = (reserve1 * shift) / reserve0;
+        const price1 = (reserve0 * shift) / reserve1;
+        return [price0, price1];
     }
 }
 
