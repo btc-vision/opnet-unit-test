@@ -33,6 +33,10 @@ export class OP_20 extends ContractRuntime {
         `0x${this.abiCoder.encodeSelector('totalSupply')}`,
     );
 
+    protected readonly approveSelector: number = Number(
+        `0x${this.abiCoder.encodeSelector('approve')}`,
+    );
+
     constructor(
         public readonly fileName: string,
         address: Address,
@@ -57,7 +61,7 @@ export class OP_20 extends ContractRuntime {
             throw result.error;
         }
 
-        const reader: BinaryReader = new BinaryReader(result.response);
+        const reader: BinaryReader = new BinaryReader(response);
         return reader.readU256();
     }
 
@@ -86,7 +90,27 @@ export class OP_20 extends ContractRuntime {
             throw result.error;
         }
 
-        const reader = new BinaryReader(result.response);
+        const reader = new BinaryReader(response);
+        if (!reader.readBoolean()) {
+            throw new Error('Mint failed');
+        }
+    }
+
+    public async approve(owner: Address, spender: Address, amount: bigint): Promise<void> {
+        const calldata = new BinaryWriter();
+        calldata.writeAddress(spender);
+        calldata.writeU256(amount);
+
+        const buf = calldata.getBuffer();
+        const result = await this.readMethod(this.approveSelector, Buffer.from(buf), owner, owner);
+
+        let response = result.response;
+        if (!response) {
+            this.dispose();
+            throw result.error;
+        }
+
+        const reader = new BinaryReader(response);
         if (!reader.readBoolean()) {
             throw new Error('Mint failed');
         }
@@ -130,7 +154,7 @@ export class OP_20 extends ContractRuntime {
             throw result.error;
         }
 
-        const reader = new BinaryReader(result.response);
+        const reader = new BinaryReader(response);
         if (!reader.readBoolean()) {
             throw new Error('Transfer failed');
         }
@@ -149,7 +173,7 @@ export class OP_20 extends ContractRuntime {
             throw result.error;
         }
 
-        const reader = new BinaryReader(result.response);
+        const reader = new BinaryReader(response);
         return reader.readU256();
     }
 

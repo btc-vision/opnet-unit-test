@@ -72,7 +72,7 @@ export class OPNetUnit extends Logger {
             this.success(`✔️ Test passed: ${testName}`);
         } catch (e) {
             this.error(`❌ Test failed: ${testName}`);
-            this.panic((e as Error).stack);
+            this.panic((await e) as Error);
         } finally {
             await this.runAfterAll();
         }

@@ -2,6 +2,7 @@ import { ContractRuntime } from '../opnet/modules/ContractRuntime.js';
 import { Address, BinaryReader, BinaryWriter } from '@btc-vision/bsi-binary';
 import { BytecodeManager } from '../opnet/modules/GetBytecode.js';
 import { Blockchain } from '../blockchain/Blockchain.js';
+import { FACTORY_ADDRESS } from './configs.js';
 
 export class MotoswapFactory extends ContractRuntime {
     private readonly createPoolSelector: number = Number(
@@ -10,7 +11,7 @@ export class MotoswapFactory extends ContractRuntime {
 
     constructor(gasLimit: bigint = 300_000_000_000n) {
         super(
-            'bcrt1q6tttv4cdg8eczf0cnk0fz4a65dc5yre92qa729',
+            FACTORY_ADDRESS,
             'bcrt1pe0slk2klsxckhf90hvu8g0688rxt9qts6thuxk3u4ymxeejw53gs0xjlhn',
             gasLimit,
         );
@@ -35,7 +36,7 @@ export class MotoswapFactory extends ContractRuntime {
             throw result.error;
         }
 
-        const reader: BinaryReader = new BinaryReader(result.response);
+        const reader: BinaryReader = new BinaryReader(response);
         const virtualAddress: bigint = reader.readU256();
         const pairAddress: Address = reader.readAddress();
 

@@ -91,6 +91,8 @@ await opnet('Motoswap Pool', async (vm: OPNetUnit) => {
         );
 
         const mint: CallResponse = await pool.mintPool();
+        if (!mint.response) throw new Error('Response not found');
+
         const reader = new BinaryReader(mint.response);
         const liquidity: bigint = reader.readU256();
 

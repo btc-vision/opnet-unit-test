@@ -16,7 +16,7 @@ import { BytecodeManager } from './GetBytecode.js';
 import { Blockchain } from '../../blockchain/Blockchain.js';
 
 export interface CallResponse {
-    response: Uint8Array;
+    response?: Uint8Array;
     error?: Error;
     events: NetEvent[];
     callStack: Address[];
@@ -188,7 +188,7 @@ export class ContractRuntime extends Logger {
                 this.contract.dispose();
 
                 error = (await e) as Error;
-                
+
                 // Restore states
                 this.states.clear();
                 this.states = statesBackup;
@@ -385,7 +385,7 @@ export class ContractRuntime extends Logger {
         const calldata: Uint8Array = reader.readBytesWithLength();
 
         if (!contractAddress) {
-            throw new Error('Contract address not found [call]');
+            throw new Error(`No contract address specified in call?`);
         }
 
         if (Blockchain.traceCalls) {
@@ -399,6 +399,10 @@ export class ContractRuntime extends Logger {
         this.callStack = [...this.callStack, ...callResponse.callStack];
 
         this.checkReentrancy(callResponse.callStack);
+
+        if (!callResponse.response) {
+            throw new Error(`OPNET: CALL_FAILED: ${callResponse.error}`);
+        }
 
         return callResponse.response;
     }

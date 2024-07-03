@@ -1,6 +1,7 @@
 import { CallResponse } from '../opnet/modules/ContractRuntime.js';
 import { Address, BinaryReader, BinaryWriter } from '@btc-vision/bsi-binary';
 import { OP_20 } from './OP_20.js';
+import { POOL_ADDRESS } from './configs.js';
 
 export interface SyncEvent {
     readonly reserve0: bigint;
@@ -61,7 +62,7 @@ export class MotoswapPool extends OP_20 {
         private readonly token1: Address,
         gasLimit: bigint = 300_000_000_000n,
     ) {
-        super('pool', 'bcrt1q6tttv4cdg8eczf0cnk0fz4a65dc5yre92qa728', 18, gasLimit);
+        super('pool', POOL_ADDRESS, 18, gasLimit);
 
         // This will preserve every action done in this contract
         this.preserveState();
@@ -131,7 +132,7 @@ export class MotoswapPool extends OP_20 {
             throw result.error;
         }
 
-        const reader: BinaryReader = new BinaryReader(result.response);
+        const reader: BinaryReader = new BinaryReader(response);
         return reader.readAddress();
     }
 
@@ -144,7 +145,7 @@ export class MotoswapPool extends OP_20 {
             throw result.error;
         }
 
-        const reader: BinaryReader = new BinaryReader(result.response);
+        const reader: BinaryReader = new BinaryReader(response);
         return reader.readAddress();
     }
 
@@ -181,7 +182,7 @@ export class MotoswapPool extends OP_20 {
             throw result.error;
         }
 
-        const reader: BinaryReader = new BinaryReader(result.response);
+        const reader: BinaryReader = new BinaryReader(response);
         return reader.readU256();
     }
 
@@ -194,7 +195,7 @@ export class MotoswapPool extends OP_20 {
             throw result.error;
         }
 
-        const reader: BinaryReader = new BinaryReader(result.response);
+        const reader: BinaryReader = new BinaryReader(response);
         return reader.readU256();
     }
 
@@ -234,7 +235,7 @@ export class MotoswapPool extends OP_20 {
             throw result.error;
         }
 
-        const reader = new BinaryReader(result.response);
+        const reader = new BinaryReader(response);
         if (!reader.readBoolean()) {
             throw new Error('Swap failed');
         }
@@ -255,7 +256,7 @@ export class MotoswapPool extends OP_20 {
             throw result.error;
         }
 
-        const reader = new BinaryReader(result.response);
+        const reader = new BinaryReader(response);
         if (!reader.readBoolean()) {
             throw new Error('Burn failed');
         }
@@ -272,7 +273,7 @@ export class MotoswapPool extends OP_20 {
             throw result.error;
         }
 
-        const reader: BinaryReader = new BinaryReader(result.response);
+        const reader: BinaryReader = new BinaryReader(response);
         return {
             reserve0: reader.readU256(),
             reserve1: reader.readU256(),
