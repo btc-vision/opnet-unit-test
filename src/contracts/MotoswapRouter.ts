@@ -18,14 +18,16 @@ export class MotoswapRouter extends ContractRuntime {
         this.preserveState();
     }
 
+    protected handleError(error: Error): Error {
+        return new Error(`(in router: ${this.address}) OPNET: ${error.stack}`);
+    }
+
     protected defineRequiredBytecodes(): void {
         BytecodeManager.loadBytecode('./bytecode/router.wasm', this.address);
     }
 
     public async addLiquidity(parameters: AddLiquidityParameters): Promise<CallResponse> {
         const calldata = new BinaryWriter();
-        calldata.writeSelector(this.ADD_LIQUIDITY_SELECTOR);
-
         calldata.writeAddress(parameters.tokenA);
         calldata.writeAddress(parameters.tokenB);
 

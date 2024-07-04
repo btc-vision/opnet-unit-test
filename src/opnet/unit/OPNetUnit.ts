@@ -5,7 +5,7 @@ export class OPNetUnit extends Logger {
 
     private beforeEachFunc: (() => Promise<void>) | null = null;
     private afterEachFunc: (() => Promise<void>) | null = null;
-    private afterAllFunc: (() => Promise<void>) | null = null;
+    public afterAllFunc: (() => Promise<void>) | null = null;
 
     public constructor(private name: string) {
         super();
@@ -55,7 +55,7 @@ export class OPNetUnit extends Logger {
         const wrappedFn = async () => {
             await this.runBeforeEach();
             await fn();
-            await this.runAfterEach();
+            //await this.runAfterEach();
         };
 
         // Register the test
@@ -76,6 +76,8 @@ export class OPNetUnit extends Logger {
         } finally {
             await this.runAfterAll();
         }
+
+        await this.runAfterEach();
     }
 }
 
@@ -83,4 +85,6 @@ export async function opnet(suiteName: string, fn: (vm: OPNetUnit) => Promise<vo
     const vm = new OPNetUnit(suiteName);
 
     await fn(vm);
+
+    if (vm.afterAllFunc) await vm.afterAllFunc();
 }

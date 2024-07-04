@@ -10,7 +10,7 @@ import {
     SelectorsMap,
 } from '@btc-vision/bsi-binary';
 import bitcoin from 'bitcoinjs-lib';
-import { AddressGenerator, TapscriptVerificator } from '@btc-vision/transaction';
+import { AddressGenerator } from '@btc-vision/transaction';
 import { Logger } from '@btc-vision/logger';
 import { BytecodeManager } from './GetBytecode.js';
 import { Blockchain } from '../../blockchain/Blockchain.js';
@@ -43,6 +43,8 @@ export class ContractRuntime extends Logger {
     private callStack: Address[] = [];
 
     private statesBackup: Map<bigint, bigint> = new Map();
+
+    private network: bitcoin.Network = bitcoin.networks.regtest;
 
     protected constructor(
         public readonly address: string,
@@ -129,26 +131,6 @@ export class ContractRuntime extends Logger {
         writer.writeU64(BigInt(Date.now()));
 
         await this.contract.setEnvironment(writer.getBuffer());
-    }
-
-    private generateAddress(
-        salt: Buffer,
-        from: Address,
-    ): { contractAddress: Address; virtualAddress: Buffer } {
-        const bytecode = BytecodeManager.getBytecode(from);
-        const contractVirtualAddress = TapscriptVerificator.getContractSeed(
-            bitcoin.crypto.hash256(Buffer.from(this.address, 'utf-8')),
-            Buffer.from(bytecode),
-            salt,
-        );
-
-        /** Generate contract segwit address */
-        const contractSegwitAddress = AddressGenerator.generatePKSH(
-            contractVirtualAddress,
-            bitcoin.networks.regtest,
-        );
-
-        return { contractAddress: contractSegwitAddress, virtualAddress: contractVirtualAddress };
     }
 
     public async getEvents(): Promise<NetEvent[]> {
@@ -281,7 +263,7 @@ export class ContractRuntime extends Logger {
                 `This contract wants to deploy the same bytecode as ${address}. Salt: ${salt.toString('hex')} or ${saltBig}`,
             );
 
-            const deployResult = this.generateAddress(salt, address);
+            const deployResult = Blockchain.generateAddress(this.address, salt, address);
             if (this.deployedContracts.has(deployResult.contractAddress)) {
                 throw new Error('Contract already deployed');
             }
@@ -296,6 +278,12 @@ export class ContractRuntime extends Logger {
                 this.address,
                 this.gasLimit,
                 requestedContractBytecode,
+            );
+
+            newContract.preserveState();
+
+            this.info(
+                `Deploying contract at ${deployResult.contractAddress.toString()} - virtual address 0x${deployResult.virtualAddress.toString('hex')}`,
             );
 
             Blockchain.register(newContract);
@@ -326,6 +314,22 @@ export class ContractRuntime extends Logger {
 
         const response: BinaryWriter = new BinaryWriter();
         response.writeU256(value);
+
+        return response.getBuffer();
+    }
+
+    private async encodeAddress(data: Buffer): Promise<Buffer | Uint8Array> {
+        const reader = new BinaryReader(data);
+        const virtualAddress = reader.readBytesWithLength();
+        const buf = Buffer.from(virtualAddress);
+        const address: Address = AddressGenerator.generatePKSH(buf, this.network);
+
+        this.info(
+            `Generated address: ${address} - from 0x${Buffer.from(virtualAddress).toString('hex')}`,
+        );
+
+        const response = new BinaryWriter();
+        response.writeAddress(address);
 
         return response.getBuffer();
     }
@@ -384,6 +388,8 @@ export class ContractRuntime extends Logger {
         const contractAddress: Address = reader.readAddress();
         const calldata: Uint8Array = reader.readBytesWithLength();
 
+        //console.log(data, calldata);
+
         if (!contractAddress) {
             throw new Error(`No contract address specified in call?`);
         }
@@ -401,7 +407,7 @@ export class ContractRuntime extends Logger {
         this.checkReentrancy(callResponse.callStack);
 
         if (!callResponse.response) {
-            throw new Error(`OPNET: CALL_FAILED: ${callResponse.error}`);
+            throw this.handleError(new Error(`OPNET: CALL_FAILED: ${callResponse.error}`));
         }
 
         return callResponse.response;
@@ -434,7 +440,7 @@ export class ContractRuntime extends Logger {
         this.dispose();
 
         if (response.error) {
-            throw response.error;
+            throw this.handleError(response.error);
         }
 
         return {
@@ -442,6 +448,10 @@ export class ContractRuntime extends Logger {
             events: response.events,
             callStack: this.callStack,
         };
+    }
+
+    protected handleError(error: Error): Error {
+        return new Error(`(in: ${this.address}) OPNET: ${error.stack}`);
     }
 
     private onLog(data: Buffer | Uint8Array): void {
@@ -461,6 +471,7 @@ export class ContractRuntime extends Logger {
             store: this.store.bind(this),
             call: this.call.bind(this),
             log: this.onLog.bind(this),
+            encodeAddress: this.encodeAddress.bind(this),
         };
     }
 

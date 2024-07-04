@@ -1,8 +1,9 @@
 import { ContractRuntime } from '../opnet/modules/ContractRuntime.js';
 import { Logger } from '@btc-vision/logger';
 import { Address } from '@btc-vision/bsi-binary';
-import { AddressGenerator, EcKeyPair } from '@btc-vision/transaction';
-import { Network, networks } from 'bitcoinjs-lib';
+import { AddressGenerator, EcKeyPair, TapscriptVerificator } from '@btc-vision/transaction';
+import bitcoin, { Network, networks } from 'bitcoinjs-lib';
+import { BytecodeManager } from '../opnet/modules/GetBytecode.js';
 
 class BlockchainBase extends Logger {
     public readonly logColor: string = '#8332ff';
@@ -68,9 +69,44 @@ class BlockchainBase extends Logger {
         this.contracts.set(contract.address, contract);
     }
 
-    public getContract(address: string): ContractRuntime {
-        const contract = this.contracts.get(address);
+    public clearContracts(): void {
+        this.contracts.clear();
+    }
 
+    public generateAddress(
+        deployer: Address,
+        salt: Buffer,
+        from: Address,
+    ): { contractAddress: Address; virtualAddress: Buffer } {
+        const bytecode = BytecodeManager.getBytecode(from);
+        const contractVirtualAddress = TapscriptVerificator.getContractSeed(
+            bitcoin.crypto.hash256(Buffer.from(deployer, 'utf-8')),
+            Buffer.from(bytecode),
+            salt,
+        );
+
+        /** Generate contract segwit address */
+        const contractSegwitAddress = AddressGenerator.generatePKSH(
+            contractVirtualAddress,
+            bitcoin.networks.regtest,
+        );
+
+        return { contractAddress: contractSegwitAddress, virtualAddress: contractVirtualAddress };
+    }
+
+    public convertToBech32(contractVirtualAddress: Address): Address {
+        return AddressGenerator.generatePKSH(
+            Buffer.from(contractVirtualAddress.slice(2), 'hex'),
+            this.network,
+        );
+    }
+
+    public getContract(address: Address): ContractRuntime {
+        if (address.startsWith('0x')) {
+            address = this.convertToBech32(address);
+        }
+
+        const contract = this.contracts.get(address);
         if (!contract) {
             throw new Error(`Contract not found at address ${address}`);
         }
@@ -92,7 +128,7 @@ class BlockchainBase extends Logger {
 
     public dispose(): void {
         for (const contract of this.contracts.values()) {
-            contract.dispose();
+            contract.dispose.bind(contract)();
         }
     }
 

@@ -1,5 +1,6 @@
 import { Address } from '@btc-vision/bsi-binary';
 
-export const FACTORY_ADDRESS: Address = 'bcrt1q26cxgxn8r5e3zwwc99n7tp5a0w2gqtdw9qj95r';
-export const POOL_ADDRESS: Address = 'bcrt1q6283fgpaxavy39hlyceu99sx76clk3kzhzsqx7';
-export const WBTC_ADDRESS: Address = 'bcrt1qejkd8ljvz2jctm5tfgztpkjyrljls0xu4mx47a';
+export const FACTORY_ADDRESS: Address = 'bcrt1qk56ase77pw8q6rpw59z4nfudj6kveurhgp7alw';
+export const POOL_ADDRESS: Address = 'bcrt1qf0fk2yw0k6cjj04fwks6upf30w80qlapufuuk8';
+export const WBTC_ADDRESS: Address = 'bcrt1qaa7gtxvehp7qqqynyq3uzd0fadaxgawl5l43cd';
+export const MOTO_ADDRESS: Address = 'bcrt1qqmsppzk0kwlyjm7gses90rdj2famxd3t8uvzcs';

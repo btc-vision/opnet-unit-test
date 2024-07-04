@@ -68,6 +68,10 @@ export class MotoswapPool extends OP_20 {
         this.preserveState();
     }
 
+    protected handleError(error: Error): Error {
+        return new Error(`(in pool: ${this.address}) OPNET: ${error.stack}`);
+    }
+
     public static decodePoolMintEvent(data: Uint8Array): PoolMintEvent {
         const reader: BinaryReader = new BinaryReader(data);
 

@@ -1,4 +1,4 @@
-import { ContractRuntime } from '../opnet/modules/ContractRuntime.js';
+import { CallResponse, ContractRuntime } from '../opnet/modules/ContractRuntime.js';
 import { Address, BinaryReader, BinaryWriter } from '@btc-vision/bsi-binary';
 import { BytecodeManager } from '../opnet/modules/GetBytecode.js';
 import { Blockchain } from '../blockchain/Blockchain.js';
@@ -96,7 +96,7 @@ export class OP_20 extends ContractRuntime {
         }
     }
 
-    public async approve(owner: Address, spender: Address, amount: bigint): Promise<void> {
+    public async approve(owner: Address, spender: Address, amount: bigint): Promise<CallResponse> {
         const calldata = new BinaryWriter();
         calldata.writeAddress(spender);
         calldata.writeU256(amount);
@@ -114,6 +114,8 @@ export class OP_20 extends ContractRuntime {
         if (!reader.readBoolean()) {
             throw new Error('Mint failed');
         }
+
+        return result;
     }
 
     public static decodeBurnEvent(data: Buffer | Uint8Array): BurnEvent {
@@ -160,6 +162,10 @@ export class OP_20 extends ContractRuntime {
         }
     }
 
+    protected handleError(error: Error): Error {
+        return new Error(`(in op_20: ${this.address}) OPNET: ${error.stack}`);
+    }
+
     public async balanceOf(owner: Address): Promise<bigint> {
         const calldata = new BinaryWriter();
         calldata.writeAddress(owner);
@@ -168,9 +174,9 @@ export class OP_20 extends ContractRuntime {
         const result = await this.readMethod(this.balanceOfSelector, Buffer.from(buf));
 
         let response = result.response;
-        if (!response) {
+        if (result.error || !response) {
             this.dispose();
-            throw result.error;
+            throw this.handleError(result.error || new Error('No response'));
         }
 
         const reader = new BinaryReader(response);

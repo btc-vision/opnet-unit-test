@@ -23,6 +23,10 @@ export class MotoswapFactory extends ContractRuntime {
         BytecodeManager.loadBytecode('./bytecode/factory.wasm', this.address);
     }
 
+    protected handleError(error: Error): Error {
+        return new Error(`(in factory: ${this.address}) OPNET: ${error.stack}`);
+    }
+
     public async createPool(): Promise<void> {
         const calldata = new BinaryWriter();
         calldata.writeAddress(Blockchain.generateRandomSegwitAddress()); // token a

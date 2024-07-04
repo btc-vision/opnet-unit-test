@@ -11,7 +11,6 @@ import { WBTC_ADDRESS } from '../contracts/configs.js';
 
 await opnet('Motoswap Router', async (vm: OPNetUnit) => {
     const dttAddress: Address = Blockchain.generateRandomSegwitAddress();
-    const wbtcAddress: Address = Blockchain.generateRandomSegwitAddress();
     const receiver: Address = Blockchain.generateRandomTaprootAddress();
 
     await vm.it('should init the router', async () => {
@@ -25,36 +24,88 @@ await opnet('Motoswap Router', async (vm: OPNetUnit) => {
     Blockchain.caller = receiver;
     Blockchain.callee = receiver;
 
-    /** Init factory */
-    const factory: MotoswapFactory = new MotoswapFactory();
-    Blockchain.register(factory);
+    let factory: MotoswapFactory;
+    let pool: MotoswapPool;
+    let DTT: OP_20;
+    let wbtc: OP_20;
+    let router: MotoswapRouter;
 
-    /** Init template pool */
-    const pool: MotoswapPool = new MotoswapPool(dttAddress, wbtcAddress);
-    Blockchain.register(pool);
+    async function mintTokens() {
+        await DTT.resetStates();
+        await wbtc.resetStates();
 
-    /** Init OP_20 */
-    const DTT: OP_20 = new OP_20('MyToken', dttAddress, 18);
-    const wbtc: OP_20 = new OP_20('wbtc', WBTC_ADDRESS, 8);
-    Blockchain.register(DTT);
-    Blockchain.register(wbtc);
+        let amountA = 11000000;
+        let amountB = 11000000;
 
-    // Declare all the request contracts
-    const router: MotoswapRouter = new MotoswapRouter();
-    Blockchain.register(router);
+        // Mint some token
+        await DTT.mint(receiver, amountA);
+        await wbtc.mint(receiver, amountB);
+
+        const currentBalanceTokenA = await DTT.balanceOfNoDecimals(receiver);
+        Assert.expect(currentBalanceTokenA).toEqual(amountA);
+
+        const currentBalanceTokenB = await wbtc.balanceOfNoDecimals(receiver);
+        Assert.expect(currentBalanceTokenB).toEqual(amountB);
+    }
 
     vm.beforeEach(async () => {
+        Blockchain.dispose();
+
+        /** Init factory */
+        factory = new MotoswapFactory();
+        Blockchain.register(factory);
+
+        /** Init template pool */
+        pool = new MotoswapPool(dttAddress, WBTC_ADDRESS);
+        Blockchain.register(pool);
+
+        /** Init OP_20 */
+        DTT = new OP_20('MyToken', dttAddress, 18);
+        wbtc = new OP_20('MyToken', WBTC_ADDRESS, 8);
+        Blockchain.register(DTT);
+        Blockchain.register(wbtc);
+
+        // Declare all the request contracts
+        router = new MotoswapRouter();
+        Blockchain.register(router);
+
         await Blockchain.init();
     });
 
-    vm.afterAll(async () => {
+    function dispose() {
         Blockchain.dispose();
-    });
+        Blockchain.clearContracts();
+
+        if (factory) {
+            factory.dispose();
+        }
+
+        if (pool) {
+            pool.dispose();
+        }
+
+        if (DTT) {
+            DTT.dispose();
+        }
+
+        if (wbtc) {
+            wbtc.dispose();
+        }
+
+        if (router) {
+            router.dispose();
+        }
+    }
 
     vm.afterEach(async () => {
         const wbtcBalanceOfRouter = await wbtc.balanceOf(router.address);
+        dispose();
 
         Assert.expect(wbtcBalanceOfRouter).toEqual(0n);
+    });
+
+    vm.afterAll(async () => {
+        dispose();
     });
 
     /*async function addLiquidity(dttAmount: bigint, wbtcAmount: bigint): Promise<void> {
@@ -73,20 +124,58 @@ await opnet('Motoswap Router', async (vm: OPNetUnit) => {
     }*/
 
     /** TESTS */
-    await vm.it('should add liquidity: create pool if the pool does not exist.', async () => {
+    await vm.it('should add liquidity: INSUFFICIENT_LIQUIDITY_MINTED', async () => {
+        await mintTokens();
+
+        const amountA: bigint = 100n;
+        const amountB: bigint = 100n;
+
+        await DTT.approve(receiver, router.address, amountA);
+        await wbtc.approve(receiver, router.address, amountB);
+
         const addLiquidityParameters: AddLiquidityParameters = {
-            tokenA: wbtcAddress,
+            tokenA: WBTC_ADDRESS,
             tokenB: dttAddress,
-            amountADesired: 100n,
-            amountBDesired: 100n,
+            amountADesired: amountA,
+            amountBDesired: amountB,
             amountAMin: 0n,
             amountBMin: 0n,
             to: receiver,
             deadline: 100n,
         };
 
-        const addLiquidity = await router.addLiquidity(addLiquidityParameters);
+        await Assert.expect(async () => {
+            const addLiquidity = await router.addLiquidity(addLiquidityParameters);
 
-        console.log(addLiquidity);
+            console.log(addLiquidity);
+        }).toThrow('INSUFFICIENT_LIQUIDITY_MINTED');
     });
+
+    await vm.it(
+        'should add liquidity: create pool if the pool does not exist and add liquidity.',
+        async () => {
+            await mintTokens();
+
+            const amountA: bigint = 100000n;
+            const amountB: bigint = 100000n;
+
+            await DTT.approve(receiver, router.address, amountA);
+            await wbtc.approve(receiver, router.address, amountB);
+
+            const addLiquidityParameters: AddLiquidityParameters = {
+                tokenA: WBTC_ADDRESS,
+                tokenB: dttAddress,
+                amountADesired: amountA,
+                amountBDesired: amountB,
+                amountAMin: 0n,
+                amountBMin: 0n,
+                to: receiver,
+                deadline: 100n,
+            };
+
+            const addLiquidity = await router.addLiquidity(addLiquidityParameters);
+
+            console.log(addLiquidity);
+        },
+    );
 });
