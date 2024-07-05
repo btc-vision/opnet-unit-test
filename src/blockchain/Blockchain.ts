@@ -12,6 +12,7 @@ class BlockchainBase extends Logger {
     public traceGas: boolean = false;
     public tracePointers: boolean = false;
     public traceCalls: boolean = false;
+    public traceDeployments: boolean = false;
 
     private _blockNumber: bigint = 1n;
 

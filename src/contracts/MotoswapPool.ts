@@ -1,4 +1,4 @@
-import { CallResponse } from '../opnet/modules/ContractRuntime.js';
+import { CallResponse, ContractRuntime } from '../opnet/modules/ContractRuntime.js';
 import { Address, BinaryReader, BinaryWriter } from '@btc-vision/bsi-binary';
 import { OP_20 } from './OP_20.js';
 import { POOL_ADDRESS } from './configs.js';
@@ -66,6 +66,26 @@ export class MotoswapPool extends OP_20 {
 
         // This will preserve every action done in this contract
         this.preserveState();
+    }
+
+    public setAddress(address: Address) {
+        this.address = address;
+    }
+
+    public setStates(states: Map<bigint, bigint>) {
+        this.states = states;
+    }
+
+    public static createFromRuntime(
+        runtime: ContractRuntime,
+        token0: Address,
+        token1: Address,
+    ): MotoswapPool {
+        const pool = new MotoswapPool(token0, token1);
+        pool.setAddress(runtime.address);
+        pool.setStates(runtime.getStates());
+
+        return pool;
     }
 
     protected handleError(error: Error): Error {

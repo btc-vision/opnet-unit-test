@@ -10,7 +10,7 @@
     "author": "",
     "license": "ISC",
     "dependencies": {
-        "@btc-vision/bsi-binary": "^1.0.26",
+        "@btc-vision/bsi-binary": "^1.0.27",
         "@btc-vision/bsi-wasmer-vm": "github:btc-vision/bsi-wasmer-vm",
         "@btc-vision/logger": "^1.0.2",
         "@btc-vision/transaction": "^1.0.41",

@@ -47,7 +47,7 @@ export class ContractRuntime extends Logger {
     private network: bitcoin.Network = bitcoin.networks.regtest;
 
     protected constructor(
-        public readonly address: string,
+        public address: string,
         public readonly deployer: string,
         protected readonly gasLimit: bigint = 300_000_000_000n,
         private readonly potentialBytecode?: Buffer,
@@ -259,9 +259,11 @@ export class ContractRuntime extends Logger {
                 '0x' + salt.reduce((acc, byte) => acc + byte.toString(16).padStart(2, '0'), ''),
             );
 
-            this.log(
-                `This contract wants to deploy the same bytecode as ${address}. Salt: ${salt.toString('hex')} or ${saltBig}`,
-            );
+            if (Blockchain.traceDeployments) {
+                this.log(
+                    `This contract wants to deploy the same bytecode as ${address}. Salt: ${salt.toString('hex')} or ${saltBig}`,
+                );
+            }
 
             const deployResult = Blockchain.generateAddress(this.address, salt, address);
             if (this.deployedContracts.has(deployResult.contractAddress)) {
@@ -282,15 +284,19 @@ export class ContractRuntime extends Logger {
 
             newContract.preserveState();
 
-            this.info(
-                `Deploying contract at ${deployResult.contractAddress.toString()} - virtual address 0x${deployResult.virtualAddress.toString('hex')}`,
-            );
+            if (Blockchain.traceDeployments) {
+                this.info(
+                    `Deploying contract at ${deployResult.contractAddress.toString()} - virtual address 0x${deployResult.virtualAddress.toString('hex')}`,
+                );
+            }
 
             Blockchain.register(newContract);
 
             await newContract.init();
 
-            this.log(`Deployed contract at ${deployResult.contractAddress.toString()}`);
+            if (Blockchain.traceDeployments) {
+                this.log(`Deployed contract at ${deployResult.contractAddress.toString()}`);
+            }
 
             this.deployedContracts.set(deployResult.contractAddress, this.bytecode);
 
@@ -324,9 +330,11 @@ export class ContractRuntime extends Logger {
         const buf = Buffer.from(virtualAddress);
         const address: Address = AddressGenerator.generatePKSH(buf, this.network);
 
-        this.info(
-            `Generated address: ${address} - from 0x${Buffer.from(virtualAddress).toString('hex')}`,
-        );
+        if (Blockchain.traceCalls) {
+            this.info(
+                `Generated address: ${address} - from 0x${Buffer.from(virtualAddress).toString('hex')}`,
+            );
+        }
 
         const response = new BinaryWriter();
         response.writeAddress(address);
