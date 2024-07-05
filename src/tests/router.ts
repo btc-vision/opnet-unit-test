@@ -400,7 +400,6 @@ await opnet(`Motoswap Router: liquidity`, async (vm: OPNetUnit) => {
         async () => {
             const token0Amount: bigint = Blockchain.expandTo18Decimals(1);
             const token1Amount: bigint = Blockchain.expandTo18Decimals(4);
-
             const expectedLiquidity: bigint = Blockchain.expandTo18Decimals(2);
 
             await approveTokens(token0Amount, token1Amount);
