@@ -26,6 +26,12 @@ export class MotoswapRouter extends ContractRuntime {
         `0x${this.abiCoder.encodeSelector('swapExactTokensForTokensSupportingFeeOnTransferTokens')}`,
     );
 
+    private readonly FACTORY_SELECTOR: number = Number(
+        `0x${this.abiCoder.encodeSelector('factory')}`,
+    );
+
+    private readonly WBTC_SELECTOR: number = Number(`0x${this.abiCoder.encodeSelector('WBTC')}`);
+
     constructor(gasLimit: bigint = 300_000_000_000n) {
         super(
             'bcrt1q6tttv4cdg8eczf0cnk0fz4a65dc5yre92qa721',
@@ -42,6 +48,34 @@ export class MotoswapRouter extends ContractRuntime {
 
     protected defineRequiredBytecodes(): void {
         BytecodeManager.loadBytecode('./bytecode/router.wasm', this.address);
+    }
+
+    public async getFactory(): Promise<Address> {
+        const result = await this.readView(this.FACTORY_SELECTOR);
+
+        let response = result.response;
+        if (!response) {
+            throw result.error;
+        }
+
+        this.dispose();
+
+        const reader = new BinaryReader(response);
+        return reader.readAddress();
+    }
+
+    public async getWBTC(): Promise<Address> {
+        const result = await this.readView(this.WBTC_SELECTOR);
+
+        let response = result.response;
+        if (!response) {
+            throw result.error;
+        }
+
+        this.dispose();
+
+        const reader = new BinaryReader(response);
+        return reader.readAddress();
     }
 
     public async quote(amountA: bigint, reserveA: bigint, reserveB: bigint): Promise<bigint> {

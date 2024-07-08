@@ -23,7 +23,7 @@ export interface CallResponse {
 }
 
 export class ContractRuntime extends Logger {
-    #contract: ExportedContract | undefined;
+    _contract: ExportedContract | undefined;
 
     public readonly logColor: string = '#39b2f3';
 
@@ -85,12 +85,18 @@ export class ContractRuntime extends Logger {
         return this._bytecode;
     }
 
-    public get contract(): any {
-        if (!this.#contract) {
+    public get contract(): ExportedContract {
+        if (!this._contract) {
             throw new Error('Contract not initialized');
         }
 
-        return this.#contract;
+        return this._contract;
+    }
+
+    public delete(): void {
+        this.dispose();
+
+        delete this._contract;
     }
 
     public async resetStates(): Promise<void> {
@@ -174,6 +180,8 @@ export class ContractRuntime extends Logger {
                 // Restore states
                 this.states.clear();
                 this.states = statesBackup;
+
+                return undefined;
             });
 
         const events = await this.getEvents();
@@ -232,6 +240,8 @@ export class ContractRuntime extends Logger {
             // Restore states
             this.states.clear();
             this.states = statesBackup;
+
+            return undefined;
         });
 
         if (this.hasModifiedStates(this.states, statesBackup)) {
@@ -484,8 +494,8 @@ export class ContractRuntime extends Logger {
     }
 
     public dispose(): void {
-        if (this.#contract) {
-            this.#contract.dispose();
+        if (this._contract) {
+            this._contract.dispose();
         }
     }
 
@@ -510,7 +520,7 @@ export class ContractRuntime extends Logger {
         this.dispose();
 
         let params: ContractParameters = this.generateParams();
-        this.#contract = await loadRust(params);
+        this._contract = await loadRust(params);
 
         await this.setEnvironment();
 
