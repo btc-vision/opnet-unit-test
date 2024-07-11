@@ -280,11 +280,6 @@ export class MotoswapPool extends OP_20 {
             throw result.error;
         }
 
-        const reader = new BinaryReader(response);
-        if (!reader.readBoolean()) {
-            throw new Error('Burn failed');
-        }
-
         return result;
     }
 

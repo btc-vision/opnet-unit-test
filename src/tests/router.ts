@@ -470,6 +470,7 @@ await opnet(`Motoswap Router: liquidity`, async (vm: OPNetUnit) => {
                 WBTC_ADDRESS,
                 dttAddress,
             );
+
             await pair.init();
 
             // Decode sync event

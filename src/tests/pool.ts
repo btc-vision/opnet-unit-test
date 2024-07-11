@@ -385,6 +385,10 @@ await opnet('Motoswap Pool', async (vm: OPNetUnit) => {
         await pool.transfer(receiver, pool.address, expectedLiquidity - MINIMUM_LIQUIDITY);
 
         const burn: CallResponse = await pool.burnLiquidity(receiver);
+        if (!burn.response) {
+            throw new Error('Response not found');
+        }
+
         const transferAEvent = burn.events.shift();
         const transferBEvent = burn.events.shift();
         const burnAEvent = burn.events.shift();
@@ -394,6 +398,12 @@ await opnet('Motoswap Pool', async (vm: OPNetUnit) => {
         if (!transferAEvent || !transferBEvent || !burnAEvent || !syncEvent || !burnEvent) {
             throw new Error('Events not found');
         }
+
+        const readerBurn = new BinaryReader(burn.response);
+        const amount0 = readerBurn.readU256();
+        const amount1 = readerBurn.readU256();
+
+        vm.log(`Amount0: ${amount0} - Amount1: ${amount1}`);
 
         // Event type check
         Assert.expect(transferAEvent.eventType).toEqual('Transfer');
