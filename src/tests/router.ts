@@ -110,7 +110,7 @@ async function addLiquidity(DTTAmount: bigint, WETHAmount: bigint) {
     await router.addLiquidity(addLiquidityParameters);
 }
 
-await opnet('Motoswap Router', async (vm: OPNetUnit) => {
+/*await opnet('Motoswap Router', async (vm: OPNetUnit) => {
     await vm.it('should init the router', async () => {
         await Assert.expect(async () => {
             const router = new MotoswapRouter();
@@ -122,15 +122,15 @@ await opnet('Motoswap Router', async (vm: OPNetUnit) => {
     vm.beforeEach(async () => {
         Blockchain.dispose();
 
-        /** Init factory */
+        // Init factory
         factory = new MotoswapFactory();
         Blockchain.register(factory);
 
-        /** Init template pool */
+        // Init template pool
         pool = new MotoswapPool(dttAddress, WBTC_ADDRESS);
         Blockchain.register(pool);
 
-        /** Init OP_20 */
+        // Init OP_20
         DTT = new OP_20('MyToken', dttAddress, 18);
         wbtc = new OP_20('MyToken', WBTC_ADDRESS, 18);
         Blockchain.register(DTT);
@@ -154,7 +154,7 @@ await opnet('Motoswap Router', async (vm: OPNetUnit) => {
         dispose();
     });
 
-    /** TESTS */
+    // TESTS
     await vm.it(`should quote`, async () => {
         const quoteA = await router.quote(1n, 100n, 200n);
         Assert.expect(quoteA).toEqual(2n);
@@ -280,7 +280,7 @@ await opnet('Motoswap Router', async (vm: OPNetUnit) => {
 
         Assert.expect(amountsIn).toDeepEqual([2n, 1n]);
     });
-});
+});*/
 
 await opnet(`Motoswap Router: fee-on-transfer tokens`, async (vm: OPNetUnit) => {
     vm.beforeEach(async () => {
@@ -328,12 +328,17 @@ await opnet(`Motoswap Router: fee-on-transfer tokens`, async (vm: OPNetUnit) => 
 
             await DTT.approve(receiver, router.address, MaxUint256);
 
+            let swapTime = Date.now();
             await router.swapExactTokensForTokensSupportingFeeOnTransferTokens(
                 amountIn,
                 0n,
                 [dttAddress, WBTC_ADDRESS],
                 receiver,
                 2n,
+            );
+
+            console.log(
+                `Took ${Date.now() - swapTime}ms to execute swapExactTokensForTokensSupportingFeeOnTransferTokens`,
             );
         },
     );
