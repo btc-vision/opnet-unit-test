@@ -4,7 +4,7 @@ import { Address } from '@btc-vision/bsi-binary';
 import { Blockchain } from '../blockchain/Blockchain.js';
 import { Assert } from '../opnet/unit/Assert.js';
 import fs from 'fs';
-import { Contract } from '@btc-vision/bsi-wasmer-vm';
+import { BitcoinNetworkRequest, Contract } from '@btc-vision/bsi-wasmer-vm';
 
 await opnet('VM', async (vm: OPNetUnit) => {
     /*await vm.it('should clear every contracts without hanging.', async () => {
@@ -45,9 +45,7 @@ await opnet('VM', async (vm: OPNetUnit) => {
             new Contract(
                 bytecode,
                 30000000n,
-                function () {
-                    throw new Error(`a`);
-                },
+                BitcoinNetworkRequest.Regtest,
                 function () {
                     throw new Error(`a`);
                 },

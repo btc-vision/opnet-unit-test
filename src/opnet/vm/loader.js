@@ -19,6 +19,7 @@ export async function loadRust(params) {
     const contract = new Contract(
         params.bytecode,
         params.gasLimit,
+        params.network,
         function (_, value) {
             const u = new Uint8Array(value.buffer);
             const buf = Buffer.from(u.buffer, u.byteOffset, u.byteLength);
@@ -263,6 +264,34 @@ export async function loadRust(params) {
             setUsedGas(gas) {
                 try {
                     contract.setUsedGas(gas);
+                } catch (e) {
+                    throw contract.getError(e);
+                }
+            },
+            getUsedGas() {
+                try {
+                    return contract.getUsedGas();
+                } catch (e) {
+                    throw contract.getError(e);
+                }
+            },
+            useGas(amount) {
+                try {
+                    return contract.useGas(amount);
+                } catch (e) {
+                    throw contract.getError(e);
+                }
+            },
+            getRemainingGas() {
+                try {
+                    return contract.getRemainingGas();
+                } catch (e) {
+                    throw contract.getError(e);
+                }
+            },
+            setRemainingGas(gas) {
+                try {
+                    contract.setRemainingGas(gas);
                 } catch (e) {
                     throw contract.getError(e);
                 }

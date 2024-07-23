@@ -10,10 +10,10 @@
     "author": "",
     "license": "ISC",
     "dependencies": {
-        "@btc-vision/bsi-binary": "^1.0.28",
+        "@btc-vision/bsi-binary": "^1.0.37",
         "@btc-vision/bsi-wasmer-vm": "github:btc-vision/bsi-wasmer-vm",
         "@btc-vision/logger": "^1.0.2",
-        "@btc-vision/transaction": "^1.0.41",
+        "@btc-vision/transaction": "file:../transaction",
         "@typescript-eslint/eslint-plugin": "^7.14.1",
         "@typescript-eslint/parser": "^7.14.1",
         "bitcoinjs-lib": "github:btc-vision/bitcoinjs-lib",

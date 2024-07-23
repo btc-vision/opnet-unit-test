@@ -14,12 +14,15 @@ import { AddressGenerator } from '@btc-vision/transaction';
 import { Logger } from '@btc-vision/logger';
 import { BytecodeManager } from './GetBytecode.js';
 import { Blockchain } from '../../blockchain/Blockchain.js';
+import { BitcoinNetworkRequest } from '@btc-vision/bsi-wasmer-vm';
 
 export interface CallResponse {
     response?: Uint8Array;
     error?: Error;
     events: NetEvent[];
     callStack: Address[];
+
+    usedGas: bigint;
 }
 
 export class ContractRuntime extends Logger {
@@ -192,6 +195,7 @@ export class ContractRuntime extends Logger {
             error,
             events: this.events,
             callStack: this.callStack,
+            usedGas: 0n,
         };
     }
 
@@ -256,6 +260,7 @@ export class ContractRuntime extends Logger {
             error,
             events: this.events,
             callStack: this.callStack,
+            usedGas: 0n,
         };
     }
 
@@ -406,8 +411,6 @@ export class ContractRuntime extends Logger {
         const contractAddress: Address = reader.readAddress();
         const calldata: Uint8Array = reader.readBytesWithLength();
 
-        //console.log(data, calldata);
-
         if (!contractAddress) {
             throw new Error(`No contract address specified in call?`);
         }
@@ -427,6 +430,9 @@ export class ContractRuntime extends Logger {
         if (!callResponse.response) {
             throw this.handleError(new Error(`OPNET: CALL_FAILED: ${callResponse.error}`));
         }
+
+        //this.contract.useGas(callResponse.usedGas + 1n);
+        //console.log('added gas.');
 
         return callResponse.response;
     }
@@ -465,6 +471,7 @@ export class ContractRuntime extends Logger {
             response: response.response,
             events: response.events,
             callStack: this.callStack,
+            usedGas: 0n,
         };
     }
 
@@ -479,17 +486,22 @@ export class ContractRuntime extends Logger {
         this.warn(`Contract log: ${logData}`);
     }
 
+    private getNetwork(): BitcoinNetworkRequest {
+        return BitcoinNetworkRequest.Regtest;
+    }
+
     private generateParams(): ContractParameters {
         return {
             bytecode: this.bytecode,
             gasLimit: this.gasLimit,
+            network: this.getNetwork(),
             gasCallback: this.onGas.bind(this),
             deployContractAtAddress: this.deployContractAtAddress.bind(this),
             load: this.load.bind(this),
             store: this.store.bind(this),
             call: this.call.bind(this),
             log: this.onLog.bind(this),
-            encodeAddress: this.encodeAddress.bind(this),
+            //encodeAddress: this.encodeAddress.bind(this),
         };
     }
 
