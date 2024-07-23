@@ -93,16 +93,16 @@ async function approveTokens(wbtcAmount: bigint, dttAmount: bigint): Promise<voi
     await wbtc.approve(receiver, router.address, wbtcAmount);
 }
 
-async function addLiquidity(DTTAmount: bigint, WETHAmount: bigint) {
-    await approveTokens(DTTAmount, WETHAmount);
+async function addLiquidity(DTTAmount: bigint, WBTCAmount: bigint) {
+    await approveTokens(DTTAmount, WBTCAmount);
 
     const addLiquidityParameters: AddLiquidityParameters = {
         tokenA: WBTC_ADDRESS,
         tokenB: dttAddress,
         amountADesired: DTTAmount,
-        amountBDesired: WETHAmount,
+        amountBDesired: WBTCAmount,
         amountAMin: DTTAmount,
-        amountBMin: WETHAmount,
+        amountBMin: WBTCAmount,
         to: receiver,
         deadline: 2n,
     };
@@ -322,7 +322,7 @@ await opnet(`Motoswap Router: fee-on-transfer tokens`, async (vm: OPNetUnit) => 
 
     const amountIn = Blockchain.expandTo18Decimals(1);
     await vm.it(
-        `should swapExactTokensForTokensSupportingFeeOnTransferTokens (DTT -> WETH)`,
+        `should swapExactTokensForTokensSupportingFeeOnTransferTokens (DTT -> WBTC)`,
         async () => {
             await addLiquidity(100000n, 100000n);
 
@@ -344,7 +344,7 @@ await opnet(`Motoswap Router: fee-on-transfer tokens`, async (vm: OPNetUnit) => 
     );
 
     await vm.it(
-        `should swapExactTokensForTokensSupportingFeeOnTransferTokens (WETH -> DTT)`,
+        `should swapExactTokensForTokensSupportingFeeOnTransferTokens (WBTC -> DTT)`,
         async () => {
             await addLiquidity(11000000n, 11000000n);
 

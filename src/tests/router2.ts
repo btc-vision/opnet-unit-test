@@ -93,16 +93,16 @@ async function approveTokens(wbtcAmount: bigint, dttAmount: bigint): Promise<voi
     await wbtc.approve(receiver, router.address, wbtcAmount);
 }
 
-async function addLiquidity(DTTAmount: bigint, WETHAmount: bigint) {
-    await approveTokens(DTTAmount, WETHAmount);
+async function addLiquidity(DTTAmount: bigint, WBTCAmount: bigint) {
+    await approveTokens(DTTAmount, WBTCAmount);
 
     const addLiquidityParameters: AddLiquidityParameters = {
         tokenA: WBTC_ADDRESS,
         tokenB: dttAddress,
         amountADesired: DTTAmount,
-        amountBDesired: WETHAmount,
+        amountBDesired: WBTCAmount,
         amountAMin: DTTAmount,
-        amountBMin: WETHAmount,
+        amountBMin: WBTCAmount,
         to: receiver,
         deadline: 2n,
     };
