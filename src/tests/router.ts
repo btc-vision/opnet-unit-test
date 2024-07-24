@@ -110,7 +110,7 @@ async function addLiquidity(DTTAmount: bigint, WBTCAmount: bigint) {
     await router.addLiquidity(addLiquidityParameters);
 }
 
-/*await opnet('Motoswap Router', async (vm: OPNetUnit) => {
+await opnet('Motoswap Router', async (vm: OPNetUnit) => {
     await vm.it('should init the router', async () => {
         await Assert.expect(async () => {
             const router = new MotoswapRouter();
@@ -280,7 +280,7 @@ async function addLiquidity(DTTAmount: bigint, WBTCAmount: bigint) {
 
         Assert.expect(amountsIn).toDeepEqual([2n, 1n]);
     });
-});*/
+});
 
 await opnet(`Motoswap Router: fee-on-transfer tokens`, async (vm: OPNetUnit) => {
     vm.beforeEach(async () => {
