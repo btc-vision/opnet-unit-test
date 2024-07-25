@@ -431,9 +431,6 @@ export class ContractRuntime extends Logger {
             throw this.handleError(new Error(`OPNET: CALL_FAILED: ${callResponse.error}`));
         }
 
-        //this.contract.useGas(callResponse.usedGas + 1n);
-        //console.log('added gas.');
-
         return callResponse.response;
     }
 
@@ -467,8 +464,17 @@ export class ContractRuntime extends Logger {
             throw this.handleError(response.error);
         }
 
+        const writer = new BinaryWriter();
+        writer.writeU64(99n);
+
+        if (response.response) {
+            writer.writeBytes(response.response);
+        }
+
+        const newResponse = writer.getBuffer();
+
         return {
-            response: response.response,
+            response: newResponse,
             events: response.events,
             callStack: this.callStack,
             usedGas: 0n,
