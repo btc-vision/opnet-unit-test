@@ -272,6 +272,7 @@ await opnet('Motoswap Router', async (vm: OPNetUnit) => {
 
         const path: Address[] = [WBTC_ADDRESS, dttAddress];
         const amountsOuts = await router.getAmountsOut(10000n, path);
+        console.log(amountsOuts);
         Assert.expect(amountsOuts).toDeepEqual([10000, 138]);
     });*/
 
