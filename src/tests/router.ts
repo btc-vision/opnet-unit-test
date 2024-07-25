@@ -252,9 +252,8 @@ await opnet('Motoswap Router', async (vm: OPNetUnit) => {
         }).toThrow('INVALID_PATH');
 
         const path: Address[] = [WBTC_ADDRESS, dttAddress];
-        const amountsIn = await router.getAmountsIn(1n, path);
-
-        Assert.expect(amountsIn).toDeepEqual([2n, 1n]);
+        const amountsOuts = await router.getAmountsOut(2n, path);
+        Assert.expect(amountsOuts).toDeepEqual([2n, 1n]);
     });
 
     await vm.it(`should getAmountsIn`, async () => {

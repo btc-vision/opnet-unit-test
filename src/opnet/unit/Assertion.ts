@@ -15,7 +15,9 @@ export class Assertion {
 
     toDeepEqual(expected: any) {
         if (!this.deepStrictEqual(this.actual, expected)) {
-            throw new Error(`Expected deep equality`);
+            throw new Error(
+                `Expected deep equality. Expected ${JSON.stringify(expected)}, but got ${JSON.stringify(this.actual)}`,
+            );
         }
     }
 
