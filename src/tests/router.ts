@@ -256,6 +256,25 @@ await opnet('Motoswap Router', async (vm: OPNetUnit) => {
         Assert.expect(amountsOuts).toDeepEqual([2n, 1n]);
     });
 
+    await vm.it(`should getAmountsOut - big values`, async () => {
+        await approveTokens(MaxUint256, MaxUint256);
+
+        await router.addLiquidity({
+            tokenA: WBTC_ADDRESS,
+            tokenB: dttAddress,
+            amountADesired: 10140000000n,
+            amountBDesired: 141000000n,
+            amountAMin: 0n,
+            amountBMin: 0n,
+            to: receiver,
+            deadline: 100n,
+        });
+
+        const path: Address[] = [WBTC_ADDRESS, dttAddress];
+        const amountsOuts = await router.getAmountsOut(10000n, path);
+        Assert.expect(amountsOuts).toDeepEqual([10000, 138]);
+    });
+
     await vm.it(`should getAmountsIn`, async () => {
         await approveTokens(MaxUint256, MaxUint256);
 
