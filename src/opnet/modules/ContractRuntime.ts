@@ -26,27 +26,14 @@ export interface CallResponse {
 }
 
 export class ContractRuntime extends Logger {
-    _contract: ExportedContract | undefined;
-
     public readonly logColor: string = '#39b2f3';
-
     protected states: Map<bigint, bigint> = new Map();
     protected shouldPreserveState: boolean = false;
-
     protected events: NetEvent[] = [];
-
     protected readonly deployedContracts: Map<string, Buffer> = new Map();
-
     protected readonly abiCoder = new ABICoder();
-    protected _bytecode: Buffer | undefined;
-
-    private _viewAbi: SelectorsMap | undefined;
-    private _writeMethods: MethodMap | undefined;
-
     private callStack: Address[] = [];
-
     private statesBackup: Map<bigint, bigint> = new Map();
-
     private network: bitcoin.Network = bitcoin.networks.regtest;
 
     protected constructor(
@@ -58,13 +45,17 @@ export class ContractRuntime extends Logger {
         super();
     }
 
-    public preserveState(): void {
-        this.shouldPreserveState = true;
+    _contract: ExportedContract | undefined;
+
+    public get contract(): ExportedContract {
+        if (!this._contract) {
+            throw new Error('Contract not initialized');
+        }
+
+        return this._contract;
     }
 
-    public getStates(): Map<bigint, bigint> {
-        return this.states;
-    }
+    private _viewAbi: SelectorsMap | undefined;
 
     public get viewAbi(): SelectorsMap {
         if (!this._viewAbi) {
@@ -74,6 +65,8 @@ export class ContractRuntime extends Logger {
         return this._viewAbi;
     }
 
+    private _writeMethods: MethodMap | undefined;
+
     public get writeMethods(): MethodMap {
         if (!this._writeMethods) {
             throw new Error('Write methods not found');
@@ -82,18 +75,20 @@ export class ContractRuntime extends Logger {
         return this._writeMethods;
     }
 
+    protected _bytecode: Buffer | undefined;
+
     protected get bytecode(): Buffer {
         if (!this._bytecode) throw new Error(`Bytecode not found`);
 
         return this._bytecode;
     }
 
-    public get contract(): ExportedContract {
-        if (!this._contract) {
-            throw new Error('Contract not initialized');
-        }
+    public preserveState(): void {
+        this.shouldPreserveState = true;
+    }
 
-        return this._contract;
+    public getStates(): Map<bigint, bigint> {
+        return this.states;
     }
 
     public delete(): void {
@@ -158,6 +153,75 @@ export class ContractRuntime extends Logger {
         this.states = new Map(this.statesBackup);
     }
 
+    public isReadonlyMethod(selector: Selector): boolean {
+        for (const [_, value] of this.viewAbi) {
+            if (value === selector) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    public async onCall(
+        data: Buffer | Uint8Array,
+        caller: Address,
+        callee: Address,
+    ): Promise<CallResponse> {
+        const reader = new BinaryReader(data);
+        const selector: number = reader.readSelector();
+        const calldata: Buffer = data.subarray(4) as Buffer;
+
+        if (Blockchain.traceCalls) {
+            this.log(
+                `Called externally by an other contract. Selector: ${selector.toString(16)}`, //- Calldata: ${calldata.toString('hex')}
+            );
+        }
+
+        let response: CallResponse;
+        if (calldata.length === 0) {
+            response = await this.readView(selector, caller, callee);
+        } else {
+            response = await this.readMethod(selector, calldata, caller, callee);
+        }
+
+        this.dispose();
+
+        if (response.error) {
+            throw this.handleError(response.error);
+        }
+        
+        const writer = new BinaryWriter();
+        writer.writeU64(response.usedGas);
+
+        if (response.response) {
+            writer.writeBytes(response.response);
+        }
+
+        const newResponse = writer.getBuffer();
+
+        return {
+            response: newResponse,
+            events: response.events,
+            callStack: this.callStack,
+            usedGas: response.usedGas,
+        };
+    }
+
+    public dispose(): void {
+        if (this._contract) {
+            this._contract.dispose();
+        }
+    }
+
+    public async init(): Promise<void> {
+        this.defineRequiredBytecodes();
+
+        this._bytecode = BytecodeManager.getBytecode(this.address) as Buffer;
+
+        await this.loadContract();
+    }
+
     protected async readMethod(
         selector: number,
         calldata: Buffer,
@@ -166,6 +230,7 @@ export class ContractRuntime extends Logger {
     ): Promise<CallResponse> {
         await this.loadContract();
 
+        const usedGasBefore = this.contract.getUsedGas();
         if (!!caller) {
             await this.setEnvironment(caller, callee);
         }
@@ -190,36 +255,15 @@ export class ContractRuntime extends Logger {
         const events = await this.getEvents();
         this.events = [...this.events, ...events];
 
+        const usedGas = this.contract.getUsedGas() - usedGasBefore;
+
         return {
             response,
             error,
             events: this.events,
             callStack: this.callStack,
-            usedGas: 0n,
+            usedGas: usedGas,
         };
-    }
-
-    private hasModifiedStates(
-        states: Map<bigint, bigint>,
-        statesBackup: Map<bigint, bigint>,
-    ): boolean {
-        if (states.size !== statesBackup.size) {
-            return true;
-        }
-
-        for (const [key, value] of states) {
-            if (statesBackup.get(key) !== value) {
-                return true;
-            }
-        }
-
-        for (const [key, value] of statesBackup) {
-            if (states.get(key) !== value) {
-                return true;
-            }
-        }
-
-        return false;
     }
 
     protected async readView(
@@ -229,6 +273,7 @@ export class ContractRuntime extends Logger {
     ): Promise<CallResponse> {
         await this.loadContract();
 
+        const usedGasBefore = this.contract.getUsedGas();
         if (caller) {
             await this.setEnvironment(caller, callee);
         }
@@ -255,13 +300,74 @@ export class ContractRuntime extends Logger {
         const events = await this.getEvents();
         this.events = [...this.events, ...events];
 
+        const usedGas = this.contract.getUsedGas() - usedGasBefore;
+
         return {
             response,
             error,
             events: this.events,
             callStack: this.callStack,
-            usedGas: 0n,
+            usedGas: usedGas,
         };
+    }
+
+    protected handleError(error: Error): Error {
+        return new Error(`(in: ${this.address}) OPNET: ${error.stack}`);
+    }
+
+    protected defineRequiredBytecodes(): void {
+        if (this.potentialBytecode) {
+            this._bytecode = this.potentialBytecode;
+
+            BytecodeManager.setBytecode(this.address, this.potentialBytecode);
+        } else {
+            throw new Error('Not implemented');
+        }
+    }
+
+    protected async loadContract(): Promise<void> {
+        if (!this.shouldPreserveState) {
+            this.states.clear();
+        }
+
+        this.events = [];
+        this.callStack = [this.address];
+
+        this.dispose();
+
+        let params: ContractParameters = this.generateParams();
+        this._contract = await loadRust(params);
+
+        await this.setEnvironment();
+
+        if (!this._viewAbi) {
+            await this.contract.defineSelectors();
+            await this.getViewAbi();
+            await this.getWriteMethods();
+        }
+    }
+
+    private hasModifiedStates(
+        states: Map<bigint, bigint>,
+        statesBackup: Map<bigint, bigint>,
+    ): boolean {
+        if (states.size !== statesBackup.size) {
+            return true;
+        }
+
+        for (const [key, value] of states) {
+            if (statesBackup.get(key) !== value) {
+                return true;
+            }
+        }
+
+        for (const [key, value] of statesBackup) {
+            if (states.get(key) !== value) {
+                return true;
+            }
+        }
+
+        return false;
     }
 
     private async deployContractAtAddress(data: Buffer): Promise<Buffer | Uint8Array> {
@@ -386,16 +492,6 @@ export class ContractRuntime extends Logger {
         }
     }
 
-    public isReadonlyMethod(selector: Selector): boolean {
-        for (const [_, value] of this.viewAbi) {
-            if (value === selector) {
-                return true;
-            }
-        }
-
-        return false;
-    }
-
     private canWrite(selector: Selector): boolean {
         for (const value of this.writeMethods) {
             if (value === selector) {
@@ -434,57 +530,6 @@ export class ContractRuntime extends Logger {
         return callResponse.response;
     }
 
-    public async onCall(
-        data: Buffer | Uint8Array,
-        caller: Address,
-        callee: Address,
-    ): Promise<CallResponse> {
-        const reader = new BinaryReader(data);
-        const selector: number = reader.readSelector();
-        const calldata: Buffer = data.subarray(4) as Buffer;
-
-        if (Blockchain.traceCalls) {
-            this.log(
-                `Called externally by an other contract. Selector: ${selector.toString(16)}`, //- Calldata: ${calldata.toString('hex')}
-            );
-        }
-
-        await this.loadContract();
-
-        let response: CallResponse;
-        if (calldata.length === 0) {
-            response = await this.readView(selector, caller, callee);
-        } else {
-            response = await this.readMethod(selector, calldata, caller, callee);
-        }
-
-        this.dispose();
-
-        if (response.error) {
-            throw this.handleError(response.error);
-        }
-
-        const writer = new BinaryWriter();
-        writer.writeU64(99n);
-
-        if (response.response) {
-            writer.writeBytes(response.response);
-        }
-
-        const newResponse = writer.getBuffer();
-
-        return {
-            response: newResponse,
-            events: response.events,
-            callStack: this.callStack,
-            usedGas: 0n,
-        };
-    }
-
-    protected handleError(error: Error): Error {
-        return new Error(`(in: ${this.address}) OPNET: ${error.stack}`);
-    }
-
     private onLog(data: Buffer | Uint8Array): void {
         const reader = new BinaryReader(data);
         const logData = reader.readStringWithLength();
@@ -511,55 +556,9 @@ export class ContractRuntime extends Logger {
         };
     }
 
-    public dispose(): void {
-        if (this._contract) {
-            this._contract.dispose();
-        }
-    }
-
-    protected defineRequiredBytecodes(): void {
-        if (this.potentialBytecode) {
-            this._bytecode = this.potentialBytecode;
-
-            BytecodeManager.setBytecode(this.address, this.potentialBytecode);
-        } else {
-            throw new Error('Not implemented');
-        }
-    }
-
-    protected async loadContract(): Promise<void> {
-        if (!this.shouldPreserveState) {
-            this.states.clear();
-        }
-
-        this.events = [];
-        this.callStack = [this.address];
-
-        this.dispose();
-
-        let params: ContractParameters = this.generateParams();
-        this._contract = await loadRust(params);
-
-        await this.setEnvironment();
-
-        if (!this._viewAbi) {
-            await this.contract.defineSelectors();
-            await this.getViewAbi();
-            await this.getWriteMethods();
-        }
-    }
-
     private onGas(gas: bigint, method: string): void {
         if (Blockchain.traceGas) {
             this.debug('Gas:', gas, method);
         }
-    }
-
-    public async init(): Promise<void> {
-        this.defineRequiredBytecodes();
-
-        this._bytecode = BytecodeManager.getBytecode(this.address) as Buffer;
-
-        await this.loadContract();
     }
 }
