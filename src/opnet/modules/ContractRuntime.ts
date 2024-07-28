@@ -27,14 +27,18 @@ export interface CallResponse {
 
 export class ContractRuntime extends Logger {
     public readonly logColor: string = '#39b2f3';
+
     protected states: Map<bigint, bigint> = new Map();
+
     protected shouldPreserveState: boolean = false;
     protected events: NetEvent[] = [];
+
     protected readonly deployedContracts: Map<string, Buffer> = new Map();
     protected readonly abiCoder = new ABICoder();
     private callStack: Address[] = [];
+
     private statesBackup: Map<bigint, bigint> = new Map();
-    private network: bitcoin.Network = bitcoin.networks.regtest;
+    private network: bitcoin.Network = Blockchain.network;
 
     protected constructor(
         public address: string,
@@ -190,7 +194,7 @@ export class ContractRuntime extends Logger {
         if (response.error) {
             throw this.handleError(response.error);
         }
-        
+
         const writer = new BinaryWriter();
         writer.writeU64(response.usedGas);
 
@@ -538,7 +542,7 @@ export class ContractRuntime extends Logger {
     }
 
     private getNetwork(): BitcoinNetworkRequest {
-        return BitcoinNetworkRequest.Regtest;
+        return BitcoinNetworkRequest.Testnet;
     }
 
     private generateParams(): ContractParameters {

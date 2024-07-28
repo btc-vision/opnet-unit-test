@@ -13,18 +13,23 @@ class BlockchainBase extends Logger {
     public tracePointers: boolean = false;
     public traceCalls: boolean = false;
     public traceDeployments: boolean = false;
-
-    private _blockNumber: bigint = 1n;
-
     private readonly contracts: Map<string, ContractRuntime> = new Map<string, ContractRuntime>();
 
     constructor(public readonly network: Network) {
         super();
     }
 
+    private _blockNumber: bigint = 1n;
+
     public get blockNumber(): bigint {
         return this._blockNumber;
     }
+
+    public set blockNumber(blockNumber: bigint) {
+        this._blockNumber = blockNumber;
+    }
+
+    private _caller: Address = '';
 
     public get caller(): Address {
         return this._caller;
@@ -34,7 +39,6 @@ class BlockchainBase extends Logger {
         this._caller = caller;
     }
 
-    private _caller: Address = '';
     private _callee: Address = '';
 
     public get callee(): Address {
@@ -43,14 +47,6 @@ class BlockchainBase extends Logger {
 
     public set callee(callee: Address) {
         this._callee = callee;
-    }
-
-    public set blockNumber(blockNumber: bigint) {
-        this._blockNumber = blockNumber;
-    }
-
-    private getRandomBytes(length: number): Buffer {
-        return Buffer.from(crypto.getRandomValues(new Uint8Array(length)));
     }
 
     public generateRandomSegwitAddress(): Address {
@@ -89,7 +85,7 @@ class BlockchainBase extends Logger {
         /** Generate contract segwit address */
         const contractSegwitAddress = AddressGenerator.generatePKSH(
             contractVirtualAddress,
-            bitcoin.networks.regtest,
+            this.network,
         );
 
         return { contractAddress: contractSegwitAddress, virtualAddress: contractVirtualAddress };
@@ -191,6 +187,10 @@ class BlockchainBase extends Logger {
         const price1 = (reserve0 * shift) / reserve1;
         return [price0, price1];
     }
+
+    private getRandomBytes(length: number): Buffer {
+        return Buffer.from(crypto.getRandomValues(new Uint8Array(length)));
+    }
 }
 
-export const Blockchain = new BlockchainBase(networks.regtest);
+export const Blockchain = new BlockchainBase(networks.testnet);
