@@ -3,7 +3,7 @@ import { MotoswapFactory } from '../contracts/MotoswapFactory.js';
 import { Assert } from '../opnet/unit/Assert.js';
 import { Blockchain } from '../blockchain/Blockchain.js';
 import { MotoswapPool } from '../contracts/MotoswapPool.js';
-import { Address } from '@btc-vision/bsi-binary';
+import { MOTO_ADDRESS, WBTC_ADDRESS } from '../contracts/configs.js';
 
 await opnet('Motoswap Factory', async (vm: OPNetUnit) => {
     await vm.it('should instantiate the factory', async () => {
@@ -14,12 +14,9 @@ await opnet('Motoswap Factory', async (vm: OPNetUnit) => {
         }).toNotThrow();
     });
 
-    const token0: Address = Blockchain.generateRandomSegwitAddress();
-    const token1: Address = Blockchain.generateRandomSegwitAddress();
-
     // Declare all the request contracts
     let factory: MotoswapFactory = new MotoswapFactory();
-    let pool: MotoswapPool = new MotoswapPool(token0, token1);
+    let pool: MotoswapPool = new MotoswapPool(WBTC_ADDRESS, MOTO_ADDRESS);
     Blockchain.register(pool);
     Blockchain.register(factory);
 
@@ -32,7 +29,7 @@ await opnet('Motoswap Factory', async (vm: OPNetUnit) => {
     });
 
     await vm.it('should create a pool', async () => {
-        await factory.createPool();
+        await factory.createPool(WBTC_ADDRESS, MOTO_ADDRESS);
 
         console.log('States:', factory.getStates());
     });

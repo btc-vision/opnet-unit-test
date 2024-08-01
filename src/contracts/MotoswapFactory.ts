@@ -19,18 +19,13 @@ export class MotoswapFactory extends ContractRuntime {
         this.preserveState();
     }
 
-    protected defineRequiredBytecodes(): void {
-        BytecodeManager.loadBytecode('./bytecode/factory.wasm', this.address);
-    }
-
-    protected handleError(error: Error): Error {
-        return new Error(`(in factory: ${this.address}) OPNET: ${error.stack}`);
-    }
-
-    public async createPool(): Promise<void> {
+    public async createPool(
+        a: Address = Blockchain.generateRandomSegwitAddress(),
+        b: Address = Blockchain.generateRandomSegwitAddress(),
+    ): Promise<void> {
         const calldata = new BinaryWriter();
-        calldata.writeAddress(Blockchain.generateRandomSegwitAddress()); // token a
-        calldata.writeAddress(Blockchain.generateRandomSegwitAddress()); // token b
+        calldata.writeAddress(a); // token a
+        calldata.writeAddress(b); // token b
 
         const buf = calldata.getBuffer();
         const result = await this.readMethod(this.createPoolSelector, Buffer.from(buf));
@@ -49,5 +44,13 @@ export class MotoswapFactory extends ContractRuntime {
         );
 
         this.dispose();
+    }
+
+    protected defineRequiredBytecodes(): void {
+        BytecodeManager.loadBytecode('./bytecode/factory.wasm', this.address);
+    }
+
+    protected handleError(error: Error): Error {
+        return new Error(`(in factory: ${this.address}) OPNET: ${error.stack}`);
     }
 }
