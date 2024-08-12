@@ -6,8 +6,8 @@ export const WBTC_ADDRESS: Address = 'bcrt1qdr7sjgtnudda8zrfklw8l5cnrxum5hns7e46
 export const MOTO_ADDRESS: Address = 'bcrt1q8reuxx9naek4mqesrfsgdpjv3q7a5g2llkh6ua';
 export const ROUTER_ADDRESS: Address = 'bcrt1qyx492l440f6cm5hdppw5pmkd2fc7k3qayuuvh6';*/
 
-export const FACTORY_ADDRESS: Address = 'tb1qgev5kldhp5zvg6j8t9vl6x4phkrwn8nk9felxh';
-export const POOL_ADDRESS: Address = 'tb1q6a7yw353hjmresphupytw5vczpqxtg4yrupayk';
-export const WBTC_ADDRESS: Address = 'tb1qp28xna6pv47x6wflcplhu0a9hkld5shtvjx6xv';
-export const MOTO_ADDRESS: Address = 'tb1q4tyhf8hpu04qjj3qaag20knun0spctultxzakw';
-export const ROUTER_ADDRESS: Address = 'tb1qre7tlyrxrs3lht6ls6y2wezgq8hlmr78y2j9y2';
+export const FACTORY_ADDRESS: Address = 'bc1q4h9l3ul7d06sne768y5r8jv9qvmx3jrzvdjpj5';
+export const POOL_ADDRESS: Address = 'bc1q3x6pfdvz647t7rq5zdzsy62qw5cgld092sfxsy';
+export const WBTC_ADDRESS: Address = 'bc1qeras4z6y2nx5ugqckx90wxdd02uyh8mdqptfhs';
+export const MOTO_ADDRESS: Address = 'bc1q7xnvxz7tjxdhhp7wj2dp2qm5m9sz8mveueq649';
+export const ROUTER_ADDRESS: Address = 'bc1qc8ysj702pktdc8rlxjxn3kslqnk3g7mavaa0ef';

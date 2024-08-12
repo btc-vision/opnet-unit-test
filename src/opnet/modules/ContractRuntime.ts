@@ -542,7 +542,16 @@ export class ContractRuntime extends Logger {
     }
 
     private getNetwork(): BitcoinNetworkRequest {
-        return BitcoinNetworkRequest.Testnet;
+        switch (Blockchain.network) {
+            case bitcoin.networks.bitcoin:
+                return BitcoinNetworkRequest.Mainnet;
+            case bitcoin.networks.testnet:
+                return BitcoinNetworkRequest.Testnet;
+            case bitcoin.networks.regtest:
+                return BitcoinNetworkRequest.Regtest;
+            default:
+                throw new Error('Unknown network');
+        }
     }
 
     private generateParams(): ContractParameters {

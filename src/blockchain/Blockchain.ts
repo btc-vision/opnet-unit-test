@@ -193,4 +193,4 @@ class BlockchainBase extends Logger {
     }
 }
 
-export const Blockchain = new BlockchainBase(networks.testnet);
+export const Blockchain = new BlockchainBase(networks.bitcoin);
