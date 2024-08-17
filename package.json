@@ -11,7 +11,7 @@
     "license": "ISC",
     "dependencies": {
         "@btc-vision/bsi-binary": "^1.0.37",
-        "@btc-vision/bsi-wasmer-vm": "github:btc-vision/bsi-wasmer-vm",
+        "@btc-vision/bsi-wasmer-vm": "file:../bsi-wasmer-vm",
         "@btc-vision/logger": "^1.0.2",
         "@btc-vision/transaction": "^1.0.52",
         "@typescript-eslint/eslint-plugin": "^7.14.1",
