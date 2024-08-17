@@ -42,8 +42,6 @@ export class MotoswapFactory extends ContractRuntime {
         this.log(
             `Pair created at ${pairAddress}. Virtual address: 0x${virtualAddress.toString(16)} or ${virtualAddress}`,
         );
-
-        this.dispose();
     }
 
     protected defineRequiredBytecodes(): void {

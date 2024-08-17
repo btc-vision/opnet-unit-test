@@ -245,8 +245,6 @@ export class ContractRuntime extends Logger {
         const response = await this.contract
             .readMethod(selector, calldata)
             .catch(async (e: unknown) => {
-                this.contract.dispose();
-
                 error = (await e) as Error;
 
                 // Restore states
@@ -256,8 +254,10 @@ export class ContractRuntime extends Logger {
                 return undefined;
             });
 
-        const events = await this.getEvents();
-        this.events = [...this.events, ...events];
+        if (response) {
+            const events = await this.getEvents();
+            this.events = [...this.events, ...events];
+        }
 
         const usedGas = this.contract.getUsedGas() - usedGasBefore;
 
@@ -286,7 +286,7 @@ export class ContractRuntime extends Logger {
 
         let error: Error | undefined;
         const response = await this.contract.readView(selector).catch(async (e: unknown) => {
-            this.contract.dispose();
+            //this.contract.dispose();
 
             error = (await e) as Error;
 

@@ -34,18 +34,6 @@ await opnet('Motoswap Pool', async (vm: OPNetUnit) => {
 
     function dispose() {
         Blockchain.dispose();
-
-        if (token0) {
-            token0.dispose();
-        }
-
-        if (pool) {
-            pool.dispose();
-        }
-
-        if (token1) {
-            token1.dispose();
-        }
     }
 
     vm.beforeEach(async () => {
@@ -82,10 +70,6 @@ await opnet('Motoswap Pool', async (vm: OPNetUnit) => {
         await Blockchain.init();
 
         await mintTokens();
-    });
-
-    vm.afterAll(async () => {
-        Blockchain.dispose();
     });
 
     /** TESTS */
@@ -186,8 +170,6 @@ await opnet('Motoswap Pool', async (vm: OPNetUnit) => {
         await token1.transfer(receiver, pool.address, token1Amount);
         await pool.mintPool();
     }
-
-    Blockchain.dispose();
 
     const swapTestCases: bigint[][] = [
         [1, 5, 10, 1662497915624478906n],
