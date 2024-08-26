@@ -380,6 +380,10 @@ await opnet('SimpleToken Contract', async (vm: OPNetUnit) => {
 This example provides a foundation for implementing and testing smart contracts within your OP_NET environment. Adjust
 and extend the example as needed to fit your project's requirements.
 
+### Learn more
+
+For documentation about the Blockchain object, please read the [Blockchain README](src/blockchain/README.md).
+
 ## Contributing
 
 Contributions are welcome! To contribute:
