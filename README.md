@@ -31,8 +31,8 @@ framework includes essential tools and guidelines for ensuring your contracts ar
 
 ## Introduction
 
-The **OP_NET Smart Contract Testing Framework** is designed to facilitate the development and testing of smart contracts
-on the OPNet blockchain. It includes utilities, test cases, and a structured environment to ensure that your contracts
+The **OP_NET Smart Contract Testing Framework** is designed to facilitate the development and testing of smart
+contracts. It includes utilities, test cases, and a structured environment to ensure that your contracts
 work as intended under various conditions.
 
 ## Project Structure
