@@ -124,15 +124,15 @@ export class ContractRuntime extends Logger {
     }
 
     public async setEnvironment(
-        caller: Address = Blockchain.caller || this.deployer,
-        callee: Address = Blockchain.callee || this.deployer,
+        sender: Address = Blockchain.sender || this.deployer,
+        from: Address = Blockchain.from || this.deployer,
         currentBlock: bigint = Blockchain.blockNumber,
         owner: Address = this.deployer,
         address: Address = this.address,
     ): Promise<void> {
         const writer = new BinaryWriter();
-        writer.writeAddress(caller);
-        writer.writeAddress(callee);
+        writer.writeAddress(sender);
+        writer.writeAddress(from);
         writer.writeU256(currentBlock);
         writer.writeAddress(owner);
         writer.writeAddress(address);
@@ -169,8 +169,8 @@ export class ContractRuntime extends Logger {
 
     public async onCall(
         data: Buffer | Uint8Array,
-        caller: Address,
-        callee: Address,
+        sender: Address,
+        from: Address,
     ): Promise<CallResponse> {
         const reader = new BinaryReader(data);
         const selector: number = reader.readSelector();
@@ -184,9 +184,9 @@ export class ContractRuntime extends Logger {
 
         let response: CallResponse;
         if (calldata.length === 0) {
-            response = await this.readView(selector, caller, callee);
+            response = await this.readView(selector, sender, from);
         } else {
-            response = await this.readMethod(selector, calldata, caller, callee);
+            response = await this.readMethod(selector, calldata, sender, from);
         }
 
         this.dispose();
@@ -229,14 +229,14 @@ export class ContractRuntime extends Logger {
     protected async readMethod(
         selector: number,
         calldata: Buffer,
-        caller?: Address,
-        callee?: Address,
+        sender?: Address,
+        from?: Address,
     ): Promise<CallResponse> {
         await this.loadContract();
 
         const usedGasBefore = this.contract.getUsedGas();
-        if (!!caller) {
-            await this.setEnvironment(caller, callee);
+        if (!!sender) {
+            await this.setEnvironment(sender, from);
         }
 
         const statesBackup = new Map(this.states);
@@ -272,14 +272,14 @@ export class ContractRuntime extends Logger {
 
     protected async readView(
         selector: number,
-        caller?: Address,
-        callee?: Address,
+        sender?: Address,
+        from?: Address,
     ): Promise<CallResponse> {
         await this.loadContract();
 
         const usedGasBefore = this.contract.getUsedGas();
-        if (caller) {
-            await this.setEnvironment(caller, callee);
+        if (sender) {
+            await this.setEnvironment(sender, from);
         }
 
         const statesBackup = new Map(this.states);
@@ -520,7 +520,7 @@ export class ContractRuntime extends Logger {
         }
 
         const contract: ContractRuntime = Blockchain.getContract(contractAddress);
-        const callResponse = await contract.onCall(calldata, Blockchain.caller, this.address);
+        const callResponse = await contract.onCall(calldata, Blockchain.sender, this.address);
 
         this.events = [...this.events, ...callResponse.events];
         this.callStack = [...this.callStack, ...callResponse.callStack];

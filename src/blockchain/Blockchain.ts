@@ -29,24 +29,24 @@ class BlockchainBase extends Logger {
         this._blockNumber = blockNumber;
     }
 
-    private _caller: Address = '';
+    private _sender: Address = '';
 
-    public get caller(): Address {
-        return this._caller;
+    public get sender(): Address {
+        return this._sender;
     }
 
-    public set caller(caller: Address) {
-        this._caller = caller;
+    public set sender(sender: Address) {
+        this._sender = sender;
     }
 
-    private _callee: Address = '';
+    private _from: Address = '';
 
-    public get callee(): Address {
-        return this._callee;
+    public get from(): Address {
+        return this._from;
     }
 
-    public set callee(callee: Address) {
-        this._callee = callee;
+    public set from(from: Address) {
+        this._from = from;
     }
 
     public generateRandomSegwitAddress(): Address {

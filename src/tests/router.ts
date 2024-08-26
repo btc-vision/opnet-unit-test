@@ -14,8 +14,8 @@ const dttAddress: Address = Blockchain.generateRandomSegwitAddress();
 const receiver: Address = Blockchain.generateRandomTaprootAddress();
 const MINIMUM_LIQUIDITY = 1000n;
 
-Blockchain.caller = receiver;
-Blockchain.callee = receiver;
+Blockchain.sender = receiver;
+Blockchain.from = receiver;
 
 let factory: MotoswapFactory;
 let pool: MotoswapPool;

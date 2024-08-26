@@ -19,8 +19,8 @@ await opnet('Motoswap Pool', async (vm: OPNetUnit) => {
         }).toNotThrow();
     });
 
-    Blockchain.caller = receiver;
-    Blockchain.callee = receiver;
+    Blockchain.sender = receiver;
+    Blockchain.from = receiver;
 
     /** Init OP_20 */
     const token0: OP_20 = new OP_20('MyToken', token0Address, 18);
