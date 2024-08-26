@@ -2,8 +2,9 @@ import { ContractRuntime } from '../opnet/modules/ContractRuntime.js';
 import { Logger } from '@btc-vision/logger';
 import { Address } from '@btc-vision/bsi-binary';
 import { AddressGenerator, EcKeyPair, TapscriptVerificator } from '@btc-vision/transaction';
-import bitcoin, { Network, networks } from 'bitcoinjs-lib';
+import bitcoin, { Network } from 'bitcoinjs-lib';
 import { BytecodeManager } from '../opnet/modules/GetBytecode.js';
+import { NETWORK } from '../contracts/configs';
 
 class BlockchainBase extends Logger {
     public readonly logColor: string = '#8332ff';
@@ -193,4 +194,4 @@ class BlockchainBase extends Logger {
     }
 }
 
-export const Blockchain = new BlockchainBase(networks.regtest);
+export const Blockchain = new BlockchainBase(NETWORK);
