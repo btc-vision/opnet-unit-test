@@ -1,4 +1,4 @@
-# BlockchainBase Class Documentation
+# Blockchain Class Documentation
 
 The `Blockchain` class provides a set of public methods to manage and interact with contracts on a simulated blockchain
 environment. Below is a detailed list of the available public methods, along with their descriptions and examples of

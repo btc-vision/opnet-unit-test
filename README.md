@@ -382,7 +382,7 @@ and extend the example as needed to fit your project's requirements.
 
 ### Learn more
 
-For documentation about the Blockchain object, please read the [Blockchain README](src/blockchain/README.md).
+For more advanced documentation please click [here](docs/README.md).
 
 ## Contributing
 

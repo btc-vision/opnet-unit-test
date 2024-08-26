@@ -41,8 +41,8 @@ export class ContractRuntime extends Logger {
     private network: bitcoin.Network = Blockchain.network;
 
     protected constructor(
-        public address: string,
-        public readonly deployer: string,
+        public address: Address,
+        public readonly deployer: Address,
         protected readonly gasLimit: bigint = 300_000_000_000n,
         private readonly potentialBytecode?: Buffer,
     ) {
