@@ -11,25 +11,25 @@ await opnet('Motoswap Pool', async (vm: OPNetUnit) => {
     const token1Address: Address = Blockchain.generateRandomSegwitAddress();
     const receiver: Address = Blockchain.generateRandomTaprootAddress();
 
+    Blockchain.sender = receiver;
+    Blockchain.origin = receiver;
+
     await vm.it('should init a pool', async () => {
         await Assert.expect(async () => {
-            const pool = new MotoswapPool(token0Address, token1Address);
+            const pool = new MotoswapPool(Blockchain.origin, token0Address, token1Address);
             await pool.init();
             pool.dispose();
         }).toNotThrow();
     });
 
-    Blockchain.sender = receiver;
-    Blockchain.from = receiver;
-
     /** Init OP_20 */
-    const token0: OP_20 = new OP_20('MyToken', token0Address, 18);
-    const token1: OP_20 = new OP_20('MyToken', token1Address, 18);
+    const token0: OP_20 = new OP_20('MyToken', Blockchain.origin, token0Address, 18);
+    const token1: OP_20 = new OP_20('MyToken', Blockchain.origin, token1Address, 18);
     Blockchain.register(token0);
     Blockchain.register(token1);
 
     // Declare all the request contracts
-    const pool: MotoswapPool = new MotoswapPool(token0Address, token1Address);
+    const pool: MotoswapPool = new MotoswapPool(Blockchain.origin, token0Address, token1Address);
     Blockchain.register(pool);
 
     function dispose() {

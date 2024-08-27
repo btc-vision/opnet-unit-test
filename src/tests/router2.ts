@@ -15,7 +15,7 @@ const receiver: Address = Blockchain.generateRandomTaprootAddress();
 const MINIMUM_LIQUIDITY = 1000n;
 
 Blockchain.sender = receiver;
-Blockchain.from = receiver;
+Blockchain.origin = receiver;
 
 let factory: MotoswapFactory;
 let pool: MotoswapPool;
@@ -115,21 +115,21 @@ await opnet('Motoswap Router', async (vm: OPNetUnit) => {
         Blockchain.dispose();
 
         /** Init factory */
-        factory = new MotoswapFactory();
+        factory = new MotoswapFactory(Blockchain.origin);
         Blockchain.register(factory);
 
         /** Init template pool */
-        pool = new MotoswapPool(dttAddress, WBTC_ADDRESS);
+        pool = new MotoswapPool(factory.address, dttAddress, WBTC_ADDRESS);
         Blockchain.register(pool);
 
         /** Init OP_20 */
-        DTT = new OP_20('MyToken', dttAddress, 18);
-        wbtc = new OP_20('MyToken', WBTC_ADDRESS, 18);
+        DTT = new OP_20('MyToken', Blockchain.origin, dttAddress, 18);
+        wbtc = new OP_20('MyToken', Blockchain.origin, WBTC_ADDRESS, 18);
         Blockchain.register(DTT);
         Blockchain.register(wbtc);
 
         // Declare all the request contracts
-        router = new MotoswapRouter();
+        router = new MotoswapRouter(Blockchain.origin);
         Blockchain.register(router);
 
         await Blockchain.init();
@@ -228,6 +228,7 @@ await opnet('Motoswap Router', async (vm: OPNetUnit) => {
 
         const pair: MotoswapPool = MotoswapPool.createFromRuntime(
             Blockchain.getContract(poolCreatedEvent.to),
+            factory.address,
             WBTC_ADDRESS,
             dttAddress,
         );

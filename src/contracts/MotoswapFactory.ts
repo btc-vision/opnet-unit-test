@@ -9,12 +9,8 @@ export class MotoswapFactory extends ContractRuntime {
         `0x${this.abiCoder.encodeSelector('createPool')}`,
     );
 
-    constructor(gasLimit: bigint = 300_000_000_000n) {
-        super(
-            FACTORY_ADDRESS,
-            'bcrt1pe0slk2klsxckhf90hvu8g0688rxt9qts6thuxk3u4ymxeejw53gs0xjlhn',
-            gasLimit,
-        );
+    constructor(deployer: Address, gasLimit: bigint = 300_000_000_000n) {
+        super(FACTORY_ADDRESS, deployer, gasLimit);
 
         this.preserveState();
     }

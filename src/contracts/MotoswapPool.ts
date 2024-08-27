@@ -58,11 +58,12 @@ export class MotoswapPool extends OP_20 {
     );
 
     constructor(
+        deployer: Address,
         private readonly token0: Address,
         private readonly token1: Address,
         gasLimit: bigint = 300_000_000_000n,
     ) {
-        super('pool', POOL_ADDRESS, 18, gasLimit);
+        super('pool', deployer, POOL_ADDRESS, 18, gasLimit);
 
         // This will preserve every action done in this contract
         this.preserveState();
@@ -78,10 +79,11 @@ export class MotoswapPool extends OP_20 {
 
     public static createFromRuntime(
         runtime: ContractRuntime,
+        deployer: Address,
         token0: Address,
         token1: Address,
     ): MotoswapPool {
-        const pool = new MotoswapPool(token0, token1);
+        const pool = new MotoswapPool(deployer, token0, token1);
         pool.setAddress(runtime.address);
         pool.setStates(runtime.getStates());
 

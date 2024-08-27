@@ -125,7 +125,7 @@ export class ContractRuntime extends Logger {
 
     public async setEnvironment(
         sender: Address = Blockchain.sender || this.deployer,
-        from: Address = Blockchain.from || this.deployer,
+        from: Address = Blockchain.origin || this.deployer,
         currentBlock: bigint = Blockchain.blockNumber,
         owner: Address = this.deployer,
         address: Address = this.address,

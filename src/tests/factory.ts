@@ -8,15 +8,15 @@ import { MOTO_ADDRESS, WBTC_ADDRESS } from '../contracts/configs.js';
 await opnet('Motoswap Factory', async (vm: OPNetUnit) => {
     await vm.it('should instantiate the factory', async () => {
         await Assert.expect(async () => {
-            const factory = new MotoswapFactory();
+            const factory = new MotoswapFactory(Blockchain.origin);
             await factory.init();
             factory.dispose();
         }).toNotThrow();
     });
 
     // Declare all the request contracts
-    let factory: MotoswapFactory = new MotoswapFactory();
-    let pool: MotoswapPool = new MotoswapPool(WBTC_ADDRESS, MOTO_ADDRESS);
+    let factory: MotoswapFactory = new MotoswapFactory(Blockchain.origin);
+    let pool: MotoswapPool = new MotoswapPool(Blockchain.origin, WBTC_ADDRESS, MOTO_ADDRESS);
     Blockchain.register(pool);
     Blockchain.register(factory);
 

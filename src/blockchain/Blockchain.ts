@@ -4,7 +4,7 @@ import { Address } from '@btc-vision/bsi-binary';
 import { AddressGenerator, EcKeyPair, TapscriptVerificator } from '@btc-vision/transaction';
 import bitcoin, { Network } from 'bitcoinjs-lib';
 import { BytecodeManager } from '../opnet/modules/GetBytecode.js';
-import { NETWORK } from '../contracts/configs';
+import { NETWORK } from '../contracts/configs.js';
 
 class BlockchainBase extends Logger {
     public readonly logColor: string = '#8332ff';
@@ -40,14 +40,14 @@ class BlockchainBase extends Logger {
         this._sender = sender;
     }
 
-    private _from: Address = '';
+    private _origin: Address = '';
 
-    public get from(): Address {
-        return this._from;
+    public get origin(): Address {
+        return this._origin;
     }
 
-    public set from(from: Address) {
-        this._from = from;
+    public set origin(from: Address) {
+        this._origin = from;
     }
 
     public generateRandomSegwitAddress(): Address {

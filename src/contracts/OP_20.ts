@@ -39,15 +39,12 @@ export class OP_20 extends ContractRuntime {
 
     constructor(
         public readonly fileName: string,
+        deployer: Address,
         address: Address,
         public readonly decimals: number,
         gasLimit: bigint = 300_000_000_000n,
     ) {
-        super(
-            address,
-            'bcrt1pe0slk2klsxckhf90hvu8g0688rxt9qts6thuxk3u4ymxeejw53gs0xjlhn',
-            gasLimit,
-        );
+        super(address, deployer, gasLimit);
 
         this.preserveState();
     }
