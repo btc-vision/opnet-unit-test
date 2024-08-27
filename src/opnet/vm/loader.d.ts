@@ -1,9 +1,4 @@
-import {
-    AbortDataResponse,
-    BitcoinNetworkRequest,
-    CallResponse,
-    ThreadSafeJsImportResponse,
-} from '@btc-vision/bsi-wasmer-vm';
+import { AbortDataResponse, BitcoinNetworkRequest, CallResponse, ThreadSafeJsImportResponse } from '@btc-vision/op-vm';
 
 export interface ContractParameters {
     readonly bytecode: Buffer;

@@ -14,7 +14,7 @@ import { AddressGenerator } from '@btc-vision/transaction';
 import { Logger } from '@btc-vision/logger';
 import { BytecodeManager } from './GetBytecode.js';
 import { Blockchain } from '../../blockchain/Blockchain.js';
-import { BitcoinNetworkRequest } from '@btc-vision/bsi-wasmer-vm';
+import { BitcoinNetworkRequest } from '@btc-vision/op-vm';
 
 export interface CallResponse {
     response?: Uint8Array;

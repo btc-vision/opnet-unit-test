@@ -1,4 +1,4 @@
-import { ContractManager } from '@btc-vision/bsi-wasmer-vm';
+import { ContractManager } from '@btc-vision/op-vm';
 
 const contractManager = new ContractManager();
 
