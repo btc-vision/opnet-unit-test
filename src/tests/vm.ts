@@ -91,9 +91,9 @@ await opnet('VM', async (vm: OPNetUnit) => {
             //promises.push(contract.init());
         }
 
-        for (let i = 1; i < 1000; i++) {
-            contractManager.destroy(BigInt(i));
-        }
+        //for (let i = 1; i < 1000; i++) {
+        //    contractManager.destroy(BigInt(i));
+        //}
 
         //await Promise.all(promises);
 
