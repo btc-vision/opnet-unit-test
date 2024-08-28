@@ -57,6 +57,8 @@ await opnet('VM', async (vm: OPNetUnit) => {
                 },
             );
 
+            contractManager.destroy(contract);
+
             console.log('Contract instantiated!', contract);
 
             //contractManager.destroy(contract);
