@@ -1,4 +1,3 @@
-import { ContractParameters, ExportedContract, loadRust } from '../vm/loader.js';
 import {
     ABICoder,
     Address,
@@ -15,6 +14,7 @@ import { Logger } from '@btc-vision/logger';
 import { BytecodeManager } from './GetBytecode.js';
 import { Blockchain } from '../../blockchain/Blockchain.js';
 import { BitcoinNetworkRequest } from '@btc-vision/op-vm';
+import { ContractParameters, RustContract } from '../vm/RustContract.js';
 
 export interface CallResponse {
     response?: Uint8Array;
@@ -49,9 +49,9 @@ export class ContractRuntime extends Logger {
         super();
     }
 
-    _contract: ExportedContract | undefined;
+    _contract: RustContract | undefined;
 
-    public get contract(): ExportedContract {
+    public get contract(): RustContract {
         if (!this._contract) {
             throw new Error('Contract not initialized');
         }
@@ -340,7 +340,7 @@ export class ContractRuntime extends Logger {
         this.dispose();
 
         let params: ContractParameters = this.generateParams();
-        this._contract = await loadRust(params);
+        this._contract = new RustContract(params);
 
         await this.setEnvironment();
 
