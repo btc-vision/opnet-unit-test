@@ -9,7 +9,6 @@ import {
     SelectorsMap,
 } from '@btc-vision/bsi-binary';
 import bitcoin from 'bitcoinjs-lib';
-import { AddressGenerator } from '@btc-vision/transaction';
 import { Logger } from '@btc-vision/logger';
 import { BytecodeManager } from './GetBytecode.js';
 import { Blockchain } from '../../blockchain/Blockchain.js';
@@ -305,7 +304,6 @@ export class ContractRuntime extends Logger {
         this.events = [...this.events, ...events];
 
         const usedGas = this.contract.getUsedGas() - usedGasBefore;
-
         return {
             response,
             error,
@@ -330,24 +328,40 @@ export class ContractRuntime extends Logger {
     }
 
     protected async loadContract(): Promise<void> {
-        if (!this.shouldPreserveState) {
-            this.states.clear();
-        }
+        try {
+            if (!this.shouldPreserveState) {
+                this.states.clear();
+            }
 
-        this.events = [];
-        this.callStack = [this.address];
+            this.events = [];
+            this.callStack = [this.address];
 
-        this.dispose();
+            try {
+                this.dispose();
+            } catch {}
 
-        let params: ContractParameters = this.generateParams();
-        this._contract = new RustContract(params);
+            let params: ContractParameters = this.generateParams();
+            this._contract = new RustContract(params);
 
-        await this.setEnvironment();
+            await this.setEnvironment();
 
-        if (!this._viewAbi) {
-            await this.contract.defineSelectors();
-            await this.getViewAbi();
-            await this.getWriteMethods();
+            if (!this._viewAbi) {
+                await this.contract.defineSelectors();
+
+                const promises: Promise<void>[] = [this.getViewAbi(), this.getWriteMethods()];
+
+                await Promise.all(promises);
+
+                /*await this.contract.defineSelectors();
+                await this.getViewAbi();
+                await this.getWriteMethods();*/
+            }
+        } catch (e) {
+            if (this._contract && !this._contract.disposed) {
+                this._contract.dispose();
+            }
+
+            throw e;
         }
     }
 
@@ -449,24 +463,6 @@ export class ContractRuntime extends Logger {
         return response.getBuffer();
     }
 
-    private async encodeAddress(data: Buffer): Promise<Buffer | Uint8Array> {
-        const reader = new BinaryReader(data);
-        const virtualAddress = reader.readBytesWithLength();
-        const buf = Buffer.from(virtualAddress);
-        const address: Address = AddressGenerator.generatePKSH(buf, this.network);
-
-        if (Blockchain.traceCalls) {
-            this.info(
-                `Generated address: ${address} - from 0x${Buffer.from(virtualAddress).toString('hex')}`,
-            );
-        }
-
-        const response = new BinaryWriter();
-        response.writeAddress(address);
-
-        return response.getBuffer();
-    }
-
     private async store(data: Buffer): Promise<Buffer | Uint8Array> {
         const reader = new BinaryReader(data);
         const pointer: bigint = reader.readU256();
@@ -496,16 +492,6 @@ export class ContractRuntime extends Logger {
         }
     }
 
-    private canWrite(selector: Selector): boolean {
-        for (const value of this.writeMethods) {
-            if (value === selector) {
-                return true;
-            }
-        }
-
-        return false;
-    }
-
     private async call(data: Buffer): Promise<Buffer | Uint8Array> {
         const reader = new BinaryReader(data);
         const contractAddress: Address = reader.readAddress();
@@ -520,7 +506,16 @@ export class ContractRuntime extends Logger {
         }
 
         const contract: ContractRuntime = Blockchain.getContract(contractAddress);
+        /*const code = contract.bytecode;
+        const ca = new ContractRuntime(contractAddress, contract.deployer, contract.gasLimit, code);
+        ca.preserveState();
+
+        await ca.init();*/ // TODO: Use this instead of the above line, require rework of storage slots.
+
         const callResponse = await contract.onCall(calldata, Blockchain.sender, this.address);
+        /*try {
+            ca.dispose();
+        } catch {}*/
 
         this.events = [...this.events, ...callResponse.events];
         this.callStack = [...this.callStack, ...callResponse.callStack];
@@ -556,6 +551,7 @@ export class ContractRuntime extends Logger {
 
     private generateParams(): ContractParameters {
         return {
+            address: this.address,
             bytecode: this.bytecode,
             gasLimit: this.gasLimit,
             network: this.getNetwork(),
@@ -565,7 +561,6 @@ export class ContractRuntime extends Logger {
             store: this.store.bind(this),
             call: this.call.bind(this),
             log: this.onLog.bind(this),
-            //encodeAddress: this.encodeAddress.bind(this),
         };
     }
 

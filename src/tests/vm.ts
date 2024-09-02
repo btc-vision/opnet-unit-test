@@ -1,6 +1,7 @@
 import { opnet, OPNetUnit } from '../opnet/unit/OPNetUnit.js';
 import fs from 'fs';
 import { BitcoinNetworkRequest, ContractManager } from '@btc-vision/op-vm';
+import { Blockchain } from '../blockchain/Blockchain.js';
 
 await opnet('VM', async (vm: OPNetUnit) => {
     /*await vm.it('should clear every contracts without hanging.', async () => {
@@ -30,13 +31,16 @@ await opnet('VM', async (vm: OPNetUnit) => {
 
     await vm.it('should clear every contracts without hanging.', async () => {
         //const fake: Address = Blockchain.generateRandomSegwitAddress();
-        const toInstantiate: number = 1000;
+        const toInstantiate: number = 10;
         const bytecode = fs.readFileSync('./bytecode/MyToken.wasm');
 
         const contractManager = new ContractManager();
+        const rndAddress = Blockchain.generateRandomSegwitAddress();
 
         for (let i = 0; i < toInstantiate; i++) {
+            const start = Date.now();
             const contract = contractManager.instantiate(
+                rndAddress,
                 bytecode,
                 30000000n,
                 BitcoinNetworkRequest.Regtest,
@@ -59,7 +63,7 @@ await opnet('VM', async (vm: OPNetUnit) => {
 
             contractManager.destroy(contract);
 
-            console.log('Contract instantiated!', contract);
+            console.log('Contract instantiated!', contract, `Time: ${Date.now() - start}ms`);
 
             //contractManager.destroy(contract);
 

@@ -41,7 +41,7 @@ export class OPNetUnit extends Logger {
         }
     }
 
-    private async runAfterAll() {
+    public async runAfterAll() {
         if (this.afterAllFunc) {
             await this.afterAllFunc();
         }
@@ -55,7 +55,6 @@ export class OPNetUnit extends Logger {
         const wrappedFn = async () => {
             await this.runBeforeEach();
             await fn();
-            //await this.runAfterEach();
         };
 
         // Register the test
@@ -72,19 +71,27 @@ export class OPNetUnit extends Logger {
             this.success(`✔️ Test passed: ${testName}`);
         } catch (e) {
             this.error(`❌ Test failed: ${testName}`);
-            this.panic((await e) as Error);
+            this.panic(((await e) as Error).stack);
         } finally {
-            await this.runAfterAll();
+            try {
+                await this.runAfterEach();
+            } catch (e) {
+                this.error(`❌ AfterEach failed: ${testName}`);
+                this.panic(((await e) as Error).stack);
+            }
         }
-
-        await this.runAfterEach();
     }
 }
 
 export async function opnet(suiteName: string, fn: (vm: OPNetUnit) => Promise<void>) {
     const vm = new OPNetUnit(suiteName);
 
-    await fn(vm);
+    try {
+        await fn(vm);
 
-    if (vm.afterAllFunc) await vm.afterAllFunc();
+        if (vm.runAfterAll) await vm.runAfterAll();
+    } catch (e) {
+        vm.error(`❌ Suite failed: ${suiteName}`);
+        vm.panic(((await e) as Error).stack);
+    }
 }

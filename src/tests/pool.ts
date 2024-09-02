@@ -9,8 +9,8 @@ import { CallResponse } from '../opnet/modules/ContractRuntime.js';
 await opnet('Motoswap Pool', async (vm: OPNetUnit) => {
     const token0Address: Address = Blockchain.generateRandomSegwitAddress();
     const token1Address: Address = Blockchain.generateRandomSegwitAddress();
-    const receiver: Address = Blockchain.generateRandomTaprootAddress();
 
+    const receiver: Address = Blockchain.generateRandomTaprootAddress();
     Blockchain.sender = receiver;
     Blockchain.origin = receiver;
 
@@ -24,8 +24,9 @@ await opnet('Motoswap Pool', async (vm: OPNetUnit) => {
 
     /** Init OP_20 */
     const token0: OP_20 = new OP_20('MyToken', Blockchain.origin, token0Address, 18);
-    const token1: OP_20 = new OP_20('MyToken', Blockchain.origin, token1Address, 18);
     Blockchain.register(token0);
+
+    const token1: OP_20 = new OP_20('MyToken', Blockchain.origin, token1Address, 18);
     Blockchain.register(token1);
 
     // Declare all the request contracts
