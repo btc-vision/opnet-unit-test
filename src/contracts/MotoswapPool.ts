@@ -1,7 +1,7 @@
 import { CallResponse, ContractRuntime } from '../opnet/modules/ContractRuntime.js';
 import { Address, BinaryReader, BinaryWriter } from '@btc-vision/bsi-binary';
 import { OP_20 } from './OP_20.js';
-import { POOL_ADDRESS } from './configs.js';
+import { FACTORY_ADDRESS, POOL_ADDRESS } from './configs.js';
 
 export interface SyncEvent {
     readonly reserve0: bigint;
@@ -58,12 +58,11 @@ export class MotoswapPool extends OP_20 {
     );
 
     constructor(
-        deployer: Address,
         private readonly token0: Address,
         private readonly token1: Address,
         gasLimit: bigint = 300_000_000_000n,
     ) {
-        super('pool', deployer, POOL_ADDRESS, 18, gasLimit);
+        super('pool', FACTORY_ADDRESS, POOL_ADDRESS, 18, gasLimit);
 
         // This will preserve every action done in this contract
         this.preserveState();
@@ -79,11 +78,10 @@ export class MotoswapPool extends OP_20 {
 
     public static createFromRuntime(
         runtime: ContractRuntime,
-        deployer: Address,
         token0: Address,
         token1: Address,
     ): MotoswapPool {
-        const pool = new MotoswapPool(deployer, token0, token1);
+        const pool = new MotoswapPool(token0, token1);
         pool.setAddress(runtime.address);
         pool.setStates(runtime.getStates());
 
@@ -136,8 +134,7 @@ export class MotoswapPool extends OP_20 {
         const result = await this.readMethod(
             this.initializeSelector,
             Buffer.from(buf),
-            //deployer,
-            //deployer,
+            FACTORY_ADDRESS,
         );
 
         let response = result.response;
@@ -225,10 +222,11 @@ export class MotoswapPool extends OP_20 {
         return reader.readU256();
     }
 
-    public async mintPool(): Promise<CallResponse> {
+    public async mintPool(to: Address): Promise<CallResponse> {
         const calldata = new BinaryWriter();
-        const buf = calldata.getBuffer();
+        calldata.writeAddress(to);
 
+        const buf = calldata.getBuffer();
         const result = await this.readMethod(this.mintSelector, Buffer.from(buf));
 
         let response = result.response;

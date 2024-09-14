@@ -1,7 +1,7 @@
 {
     "type": "module",
     "name": "wasmer",
-    "version": "1.0.0",
+    "version": "1.0.1",
     "description": "",
     "main": "index.js",
     "scripts": {
@@ -10,7 +10,7 @@
     "author": "",
     "license": "ISC",
     "dependencies": {
-        "@btc-vision/bsi-binary": "^1.0.37",
+        "@btc-vision/bsi-binary": "^1.0.39",
         "@btc-vision/logger": "^1.0.2",
         "@btc-vision/op-vm": "^0.1.4",
         "@btc-vision/transaction": "^1.0.52",

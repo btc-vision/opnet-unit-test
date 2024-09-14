@@ -4,16 +4,23 @@ import { Address } from '@btc-vision/bsi-binary';
 import { AddressGenerator, EcKeyPair, TapscriptVerificator } from '@btc-vision/transaction';
 import bitcoin, { Network } from 'bitcoinjs-lib';
 import { BytecodeManager } from '../opnet/modules/GetBytecode.js';
-import { NETWORK } from '../contracts/configs.js';
+import {
+    NETWORK,
+    TRACE_CALLS,
+    TRACE_DEPLOYMENTS,
+    TRACE_GAS,
+    TRACE_POINTERS,
+} from '../contracts/configs.js';
 
 class BlockchainBase extends Logger {
     public readonly logColor: string = '#8332ff';
-    public readonly deadAddress: Address = 'bc1dead';
+    public readonly DEAD_ADDRESS: Address = 'bc1dead';
 
-    public traceGas: boolean = false;
-    public tracePointers: boolean = false;
-    public traceCalls: boolean = false;
-    public traceDeployments: boolean = false;
+    public traceGas: boolean = TRACE_GAS;
+    public tracePointers: boolean = TRACE_POINTERS;
+    public traceCalls: boolean = TRACE_CALLS;
+    public traceDeployments: boolean = TRACE_DEPLOYMENTS;
+
     private readonly contracts: Map<string, ContractRuntime> = new Map<string, ContractRuntime>();
 
     constructor(public readonly network: Network) {
@@ -30,24 +37,24 @@ class BlockchainBase extends Logger {
         this._blockNumber = blockNumber;
     }
 
-    private _sender: Address = '';
+    private _msgSender: Address = '';
 
-    public get sender(): Address {
-        return this._sender;
+    public get msgSender(): Address {
+        return this._msgSender;
     }
 
-    public set sender(sender: Address) {
-        this._sender = sender;
+    public set msgSender(sender: Address) {
+        this._msgSender = sender;
     }
 
-    private _origin: Address = '';
+    private _txOrigin: Address = '';
 
-    public get origin(): Address {
-        return this._origin;
+    public get txOrigin(): Address {
+        return this._txOrigin;
     }
 
-    public set origin(from: Address) {
-        this._origin = from;
+    public set txOrigin(from: Address) {
+        this._txOrigin = from;
     }
 
     public generateRandomSegwitAddress(): Address {

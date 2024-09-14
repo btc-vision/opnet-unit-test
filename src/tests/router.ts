@@ -14,8 +14,8 @@ const dttAddress: Address = Blockchain.generateRandomSegwitAddress();
 const receiver: Address = Blockchain.generateRandomTaprootAddress();
 const MINIMUM_LIQUIDITY = 1000n;
 
-Blockchain.sender = receiver;
-Blockchain.origin = receiver;
+Blockchain.msgSender = receiver;
+Blockchain.txOrigin = receiver;
 
 let factory: MotoswapFactory;
 let pool: MotoswapPool;
@@ -113,7 +113,7 @@ async function addLiquidity(DTTAmount: bigint, WBTCAmount: bigint) {
 await opnet('Motoswap Router', async (vm: OPNetUnit) => {
     await vm.it('should init the router', async () => {
         await Assert.expect(async () => {
-            const router = new MotoswapRouter(Blockchain.origin);
+            const router = new MotoswapRouter(Blockchain.txOrigin);
             await router.init();
             router.dispose();
         }).toNotThrow();
@@ -123,21 +123,21 @@ await opnet('Motoswap Router', async (vm: OPNetUnit) => {
         Blockchain.dispose();
 
         // Init factory
-        factory = new MotoswapFactory(Blockchain.origin);
+        factory = new MotoswapFactory(Blockchain.txOrigin);
         Blockchain.register(factory);
 
         // Init template pool
-        pool = new MotoswapPool(factory.address, dttAddress, WBTC_ADDRESS);
+        pool = new MotoswapPool(dttAddress, WBTC_ADDRESS);
         Blockchain.register(pool);
 
         // Init OP_20
-        DTT = new OP_20('MyToken', Blockchain.origin, dttAddress, 18);
-        wbtc = new OP_20('MyToken', Blockchain.origin, WBTC_ADDRESS, 18);
+        DTT = new OP_20('MyToken', Blockchain.txOrigin, dttAddress, 18);
+        wbtc = new OP_20('MyToken', Blockchain.txOrigin, WBTC_ADDRESS, 18);
         Blockchain.register(DTT);
         Blockchain.register(wbtc);
 
         // Declare all the request contracts
-        router = new MotoswapRouter(Blockchain.origin);
+        router = new MotoswapRouter(Blockchain.txOrigin);
         Blockchain.register(router);
 
         await Blockchain.init();
@@ -308,21 +308,21 @@ await opnet(`Motoswap Router: fee-on-transfer tokens`, async (vm: OPNetUnit) => 
         Blockchain.dispose();
 
         /** Init factory */
-        factory = new MotoswapFactory(Blockchain.origin);
+        factory = new MotoswapFactory(Blockchain.txOrigin);
         Blockchain.register(factory);
 
         /** Init template pool */
-        pool = new MotoswapPool(factory.address, dttAddress, WBTC_ADDRESS);
+        pool = new MotoswapPool(dttAddress, WBTC_ADDRESS);
         Blockchain.register(pool);
 
         /** Init OP_20 */
-        DTT = new OP_20('MyToken', Blockchain.origin, dttAddress, 18);
-        wbtc = new OP_20('MyToken', Blockchain.origin, WBTC_ADDRESS, 18);
+        DTT = new OP_20('MyToken', Blockchain.txOrigin, dttAddress, 18);
+        wbtc = new OP_20('MyToken', Blockchain.txOrigin, WBTC_ADDRESS, 18);
         Blockchain.register(DTT);
         Blockchain.register(wbtc);
 
         // Declare all the request contracts
-        router = new MotoswapRouter(Blockchain.origin);
+        router = new MotoswapRouter(Blockchain.txOrigin);
         Blockchain.register(router);
 
         await Blockchain.init();
@@ -388,21 +388,21 @@ await opnet(`Motoswap Router: liquidity`, async (vm: OPNetUnit) => {
         Blockchain.dispose();
 
         /** Init factory */
-        factory = new MotoswapFactory(Blockchain.origin);
+        factory = new MotoswapFactory(Blockchain.txOrigin);
         Blockchain.register(factory);
 
         /** Init template pool */
-        pool = new MotoswapPool(factory.address, dttAddress, WBTC_ADDRESS);
+        pool = new MotoswapPool(dttAddress, WBTC_ADDRESS);
         Blockchain.register(pool);
 
         /** Init OP_20 */
-        DTT = new OP_20('MyToken', Blockchain.origin, dttAddress, 18);
-        wbtc = new OP_20('MyToken', Blockchain.origin, WBTC_ADDRESS, 18);
+        DTT = new OP_20('MyToken', Blockchain.txOrigin, dttAddress, 18);
+        wbtc = new OP_20('MyToken', Blockchain.txOrigin, WBTC_ADDRESS, 18);
         Blockchain.register(DTT);
         Blockchain.register(wbtc);
 
         // Declare all the request contracts
-        router = new MotoswapRouter(Blockchain.origin);
+        router = new MotoswapRouter(Blockchain.txOrigin);
         Blockchain.register(router);
 
         await Blockchain.init();
@@ -481,7 +481,7 @@ await opnet(`Motoswap Router: liquidity`, async (vm: OPNetUnit) => {
 
             // Decode mint event
             const mintedEvent = MotoswapPool.decodeMintEvent(mintEvent.eventData);
-            Assert.expect(mintedEvent.to).toEqual('bc1dead');
+            Assert.expect(mintedEvent.to).toEqual(Blockchain.DEAD_ADDRESS);
             Assert.expect(mintedEvent.value).toEqual(MINIMUM_LIQUIDITY);
 
             // Decode mint event
@@ -491,7 +491,6 @@ await opnet(`Motoswap Router: liquidity`, async (vm: OPNetUnit) => {
 
             const pair: MotoswapPool = MotoswapPool.createFromRuntime(
                 Blockchain.getContract(poolCreatedEvent.to),
-                factory.address,
                 WBTC_ADDRESS,
                 dttAddress,
             );
@@ -512,9 +511,9 @@ await opnet(`Motoswap Router: liquidity`, async (vm: OPNetUnit) => {
 
             // Decode pool mint event
             const poolMintEventDecoded = MotoswapPool.decodePoolMintEvent(poolMintEvent.eventData);
-            Assert.expect(poolMintEventDecoded.to).toEqual(receiver);
+            Assert.expect(poolMintEventDecoded.to).toEqual(router.address);
 
-            Assert.expect(poolMintEventDecoded.amount0).toEqual(sortedReserves.reserve0); // token0Amount
+            Assert.expect(poolMintEventDecoded.amount0).toEqual(sortedReserves.reserve0);
             Assert.expect(poolMintEventDecoded.amount1).toEqual(sortedReserves.reserve1);
 
             const balanceOfReceiver = await pair.balanceOf(receiver);

@@ -5,32 +5,33 @@ import { MotoswapPool } from '../contracts/MotoswapPool.js';
 import { Address, BinaryReader } from '@btc-vision/bsi-binary';
 import { OP_20 } from '../contracts/OP_20.js';
 import { CallResponse } from '../opnet/modules/ContractRuntime.js';
+import { ROUTER_ADDRESS } from '../contracts/configs.js';
 
 await opnet('Motoswap Pool', async (vm: OPNetUnit) => {
     const token0Address: Address = Blockchain.generateRandomSegwitAddress();
     const token1Address: Address = Blockchain.generateRandomSegwitAddress();
 
     const receiver: Address = Blockchain.generateRandomTaprootAddress();
-    Blockchain.sender = receiver;
-    Blockchain.origin = receiver;
+    Blockchain.msgSender = ROUTER_ADDRESS;
+    Blockchain.txOrigin = receiver; // "leftmost thing in the call chain"
 
     await vm.it('should init a pool', async () => {
         await Assert.expect(async () => {
-            const pool = new MotoswapPool(Blockchain.origin, token0Address, token1Address);
+            const pool = new MotoswapPool(token0Address, token1Address);
             await pool.init();
             pool.dispose();
         }).toNotThrow();
     });
 
     /** Init OP_20 */
-    const token0: OP_20 = new OP_20('MyToken', Blockchain.origin, token0Address, 18);
+    const token0: OP_20 = new OP_20('MyToken', Blockchain.txOrigin, token0Address, 18);
     Blockchain.register(token0);
 
-    const token1: OP_20 = new OP_20('MyToken', Blockchain.origin, token1Address, 18);
+    const token1: OP_20 = new OP_20('MyToken', Blockchain.txOrigin, token1Address, 18);
     Blockchain.register(token1);
 
     // Declare all the request contracts
-    const pool: MotoswapPool = new MotoswapPool(Blockchain.origin, token0Address, token1Address);
+    const pool: MotoswapPool = new MotoswapPool(token0Address, token1Address);
     Blockchain.register(pool);
 
     function dispose() {
@@ -99,7 +100,7 @@ await opnet('Motoswap Pool', async (vm: OPNetUnit) => {
             Math.min(token0.decimals, token1.decimals),
         );
 
-        const mint: CallResponse = await pool.mintPool();
+        const mint: CallResponse = await pool.mintPool(receiver);
         if (!mint.response) throw new Error('Response not found');
 
         const reader = new BinaryReader(mint.response);
@@ -129,7 +130,7 @@ await opnet('Motoswap Pool', async (vm: OPNetUnit) => {
         const decodedTransferAEvent = OP_20.decodeMintEvent(transferAEvent.eventData);
         const decodedTransferBEvent = OP_20.decodeMintEvent(transferBEvent.eventData);
 
-        Assert.expect(decodedTransferAEvent.to).toEqual(Blockchain.deadAddress);
+        Assert.expect(decodedTransferAEvent.to).toEqual(Blockchain.DEAD_ADDRESS);
         Assert.expect(decodedTransferAEvent.value).toEqual(MINIMUM_LIQUIDITY);
 
         Assert.expect(decodedTransferBEvent.to).toEqual(receiver);
@@ -140,7 +141,7 @@ await opnet('Motoswap Pool', async (vm: OPNetUnit) => {
         Assert.expect(decodedSyncEvent.reserve1).toEqual(amountTokenB);
 
         const poolMintEvent = MotoswapPool.decodePoolMintEvent(mintEvent.eventData);
-        Assert.expect(poolMintEvent.to).toEqual(receiver);
+        Assert.expect(poolMintEvent.to).toEqual(Blockchain.msgSender);
         Assert.expect(poolMintEvent.amount0).toEqual(amountTokenA);
         Assert.expect(poolMintEvent.amount1).toEqual(amountTokenB);
 
@@ -169,7 +170,7 @@ await opnet('Motoswap Pool', async (vm: OPNetUnit) => {
 
         await token0.transfer(receiver, pool.address, token0Amount);
         await token1.transfer(receiver, pool.address, token1Amount);
-        await pool.mintPool();
+        await pool.mintPool(Blockchain.txOrigin);
     }
 
     const swapTestCases: bigint[][] = [
@@ -252,7 +253,7 @@ await opnet('Motoswap Pool', async (vm: OPNetUnit) => {
 
         // Swap event check
         const decodedSwapEvent = MotoswapPool.decodeSwapEvent(swapEvent.eventData);
-        Assert.expect(decodedSwapEvent.sender).toEqual(receiver);
+        Assert.expect(decodedSwapEvent.sender).toEqual(Blockchain.msgSender);
         Assert.expect(decodedSwapEvent.amount0In).toEqual(swapAmount);
         Assert.expect(decodedSwapEvent.amount1In).toEqual(0n);
         Assert.expect(decodedSwapEvent.amount0Out).toEqual(0n);
@@ -328,7 +329,7 @@ await opnet('Motoswap Pool', async (vm: OPNetUnit) => {
 
         // Swap event check
         const decodedSwapEvent = MotoswapPool.decodeSwapEvent(swapEvent.eventData);
-        Assert.expect(decodedSwapEvent.sender).toEqual(receiver);
+        Assert.expect(decodedSwapEvent.sender).toEqual(Blockchain.msgSender);
         Assert.expect(decodedSwapEvent.amount0In).toEqual(0n);
         Assert.expect(decodedSwapEvent.amount1In).toEqual(swapAmount);
         Assert.expect(decodedSwapEvent.amount0Out).toEqual(expectedOutputAmount);
@@ -416,7 +417,7 @@ await opnet('Motoswap Pool', async (vm: OPNetUnit) => {
 
         // Burn event check
         const decodedBurnEvent = MotoswapPool.decodePoolBurnEvent(burnEvent.eventData);
-        Assert.expect(decodedBurnEvent.sender).toEqual(receiver);
+        Assert.expect(decodedBurnEvent.sender).toEqual(Blockchain.msgSender);
         Assert.expect(decodedBurnEvent.amount0).toEqual(token0Amount - 1000n);
         Assert.expect(decodedBurnEvent.amount1).toEqual(token1Amount - 1000n);
 

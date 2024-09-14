@@ -123,15 +123,15 @@ export class ContractRuntime extends Logger {
     }
 
     public async setEnvironment(
-        sender: Address = Blockchain.sender || this.deployer,
-        from: Address = Blockchain.origin || this.deployer,
+        msgSender: Address = Blockchain.msgSender || this.deployer,
+        txOrigin: Address = Blockchain.txOrigin || this.deployer,
         currentBlock: bigint = Blockchain.blockNumber,
         owner: Address = this.deployer,
         address: Address = this.address,
     ): Promise<void> {
         const writer = new BinaryWriter();
-        writer.writeAddress(sender);
-        writer.writeAddress(from);
+        writer.writeAddress(msgSender);
+        writer.writeAddress(txOrigin); // "leftmost thing in the call chain"
         writer.writeU256(currentBlock);
         writer.writeAddress(owner);
         writer.writeAddress(address);
@@ -202,7 +202,6 @@ export class ContractRuntime extends Logger {
         }
 
         const newResponse = writer.getBuffer();
-
         return {
             response: newResponse,
             events: response.events,
@@ -229,13 +228,13 @@ export class ContractRuntime extends Logger {
         selector: number,
         calldata: Buffer,
         sender?: Address,
-        from?: Address,
+        txOrigin?: Address,
     ): Promise<CallResponse> {
         await this.loadContract();
 
         const usedGasBefore = this.contract.getUsedGas();
         if (!!sender) {
-            await this.setEnvironment(sender, from);
+            await this.setEnvironment(sender, txOrigin);
         }
 
         const statesBackup = new Map(this.states);
@@ -272,21 +271,19 @@ export class ContractRuntime extends Logger {
     protected async readView(
         selector: number,
         sender?: Address,
-        from?: Address,
+        txOrigin?: Address,
     ): Promise<CallResponse> {
         await this.loadContract();
 
         const usedGasBefore = this.contract.getUsedGas();
         if (sender) {
-            await this.setEnvironment(sender, from);
+            await this.setEnvironment(sender, txOrigin);
         }
 
         const statesBackup = new Map(this.states);
 
         let error: Error | undefined;
         const response = await this.contract.readView(selector).catch(async (e: unknown) => {
-            //this.contract.dispose();
-
             error = (await e) as Error;
 
             // Restore states
@@ -512,7 +509,7 @@ export class ContractRuntime extends Logger {
 
         await ca.init();*/ // TODO: Use this instead of the above line, require rework of storage slots.
 
-        const callResponse = await contract.onCall(calldata, Blockchain.sender, this.address);
+        const callResponse = await contract.onCall(calldata, this.address, Blockchain.txOrigin);
         /*try {
             ca.dispose();
         } catch {}*/
