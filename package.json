@@ -14,6 +14,7 @@
         "@btc-vision/logger": "^1.0.4",
         "@btc-vision/op-vm": "^0.1.4",
         "@btc-vision/transaction": "^1.0.99",
+        "@types/node": "^22.5.5",
         "@typescript-eslint/eslint-plugin": "^7.14.1",
         "@typescript-eslint/parser": "^7.14.1",
         "bitcoinjs-lib": "github:btc-vision/bitcoinjs-lib",
