@@ -11,9 +11,9 @@
     "license": "ISC",
     "dependencies": {
         "@btc-vision/bsi-binary": "^1.0.39",
-        "@btc-vision/logger": "^1.0.2",
+        "@btc-vision/logger": "^1.0.4",
         "@btc-vision/op-vm": "^0.1.4",
-        "@btc-vision/transaction": "^1.0.52",
+        "@btc-vision/transaction": "^1.0.99",
         "@typescript-eslint/eslint-plugin": "^7.14.1",
         "@typescript-eslint/parser": "^7.14.1",
         "bitcoinjs-lib": "github:btc-vision/bitcoinjs-lib",
