@@ -242,7 +242,7 @@ export class MotoswapPool extends OP_20 {
         amount0Out: bigint,
         amount1Out: bigint,
         to: Address,
-        data: Uint8Array | Buffer,
+        data: Uint8Array,
     ): Promise<CallResponse> {
         const calldata = new BinaryWriter();
         calldata.writeU256(amount0Out);

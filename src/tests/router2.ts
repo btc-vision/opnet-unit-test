@@ -9,7 +9,6 @@ import { MotoswapFactory } from '../contracts/MotoswapFactory.js';
 import { MotoswapPool, Reserves } from '../contracts/MotoswapPool.js';
 import { WBTC_ADDRESS } from '../contracts/configs.js';
 
-const MaxUint256: bigint = 2n ** 256n - 1n;
 const dttAddress: Address = Blockchain.generateRandomSegwitAddress();
 const receiver: Address = Blockchain.generateRandomTaprootAddress();
 const MINIMUM_LIQUIDITY = 1000n;
