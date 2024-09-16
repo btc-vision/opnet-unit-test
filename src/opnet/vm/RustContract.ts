@@ -71,11 +71,14 @@ export class RustContract {
                     const buf = Buffer.from(u.buffer, u.byteOffset, u.byteLength);
                     return this.params.deployContractAtAddress(buf);
                 },
-                (_: never, value: ThreadSafeJsImportResponse): void => {
-                    const u = new Uint8Array(value.buffer);
-                    const buf = Buffer.from(u.buffer, u.byteOffset, u.byteLength);
+                (_: never, value: ThreadSafeJsImportResponse): Promise<void> => {
+                    return new Promise<void>(() => {
+                        // temporary
+                        const u = new Uint8Array(value.buffer);
+                        const buf = Buffer.from(u.buffer, u.byteOffset, u.byteLength);
 
-                    this.params.log(buf);
+                        this.params.log(buf);
+                    });
                 },
             );
 
@@ -142,7 +145,7 @@ export class RustContract {
             if (this.enableDebug) console.log('Error in defineSelectors', e);
 
             const error = e as Error;
-            throw await this.getError(error);
+            throw this.getError(error);
         }
     }
 
@@ -169,7 +172,7 @@ export class RustContract {
             if (this.enableDebug) console.log('Error in readMethod', e);
 
             const error = e as Error;
-            throw await this.getError(error);
+            throw this.getError(error);
         }
     }
 
@@ -188,7 +191,7 @@ export class RustContract {
             if (this.enableDebug) console.log('Error in readView', e);
 
             const error = e as Error;
-            throw await this.getError(error);
+            throw this.getError(error);
         }
 
         return finalResult;
@@ -208,7 +211,7 @@ export class RustContract {
             if (this.enableDebug) console.log('Error in getViewABI', e);
 
             const error = e as Error;
-            throw await this.getError(error);
+            throw this.getError(error);
         }
 
         return finalResult;
@@ -228,7 +231,7 @@ export class RustContract {
             if (this.enableDebug) console.log('Error in getEvents', e);
 
             const error = e as Error;
-            throw await this.getError(error);
+            throw this.getError(error);
         }
 
         this.dispose();
@@ -250,7 +253,7 @@ export class RustContract {
             if (this.enableDebug) console.log('Error in getMethodABI', e);
 
             const error = e as Error;
-            throw await this.getError(error);
+            throw this.getError(error);
         }
 
         return finalResult;
@@ -270,7 +273,7 @@ export class RustContract {
             if (this.enableDebug) console.log('Error in getWriteMethods', e);
 
             const error = e as Error;
-            throw await this.getError(error);
+            throw this.getError(error);
         }
 
         return finalResult;
@@ -289,7 +292,7 @@ export class RustContract {
             if (this.enableDebug) console.log('Error in setEnvironment', e);
 
             const error = e as Error;
-            throw await this.getError(error);
+            throw this.getError(error);
         }
     }
 
@@ -468,18 +471,18 @@ export class RustContract {
         this.params.gasCallback(gas, method);
     }
 
-    private async getError(err: Error): Promise<Error> {
+    private getError(err: Error): Error {
         if (this.enableDebug) console.log('Getting error', err);
 
         const msg = err.message;
         if (msg.includes('Execution aborted') && !msg.includes('Execution aborted:')) {
-            return await this.abort();
+            return this.abort();
         } else {
             return err;
         }
     }
 
-    private async abort(): Promise<Error> {
+    private abort(): Error {
         const abortData = contractManager.getAbortData(this.id);
         const message = this.__liftString(abortData.message);
         const fileName = this.__liftString(abortData.fileName);
@@ -507,7 +510,7 @@ export class RustContract {
             if (this.enableDebug) console.log('Error in __pin', e);
 
             const error = e as Error;
-            throw await this.getError(error);
+            throw this.getError(error);
         }
 
         return finalResult;
@@ -527,7 +530,7 @@ export class RustContract {
             if (this.enableDebug) console.log('Error in __unpin', e);
 
             const error = e as Error;
-            throw await this.getError(error);
+            throw this.getError(error);
         }
 
         return finalResult;
@@ -547,7 +550,7 @@ export class RustContract {
             if (this.enableDebug) console.log('Error in __new', e);
 
             const error = e as Error;
-            throw await this.getError(error);
+            throw this.getError(error);
         }
 
         return finalResult;

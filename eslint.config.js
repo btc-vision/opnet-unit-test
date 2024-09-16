@@ -21,6 +21,7 @@ export default tseslint.config(
             '@typescript-eslint/only-throw-error': 'off',
             '@typescript-eslint/no-unnecessary-condition': 'off',
             '@typescript-eslint/unbound-method': 'warn',
+            '@typescript-eslint/no-confusing-void-expression': 'off',
         },
     },
     {
