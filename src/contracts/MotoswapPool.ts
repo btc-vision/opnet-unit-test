@@ -137,7 +137,7 @@ export class MotoswapPool extends OP_20 {
             FACTORY_ADDRESS,
         );
 
-        let response = result.response;
+        const response = result.response;
         if (!response) {
             this.dispose();
             throw result.error;
@@ -149,7 +149,7 @@ export class MotoswapPool extends OP_20 {
     public async getToken0(): Promise<Address> {
         const result = await this.readView(this.token0Selector);
 
-        let response = result.response;
+        const response = result.response;
         if (!response) {
             this.dispose();
             throw result.error;
@@ -162,7 +162,7 @@ export class MotoswapPool extends OP_20 {
     public async getToken1(): Promise<Address> {
         const result = await this.readView(this.token1Selector);
 
-        let response = result.response;
+        const response = result.response;
         if (!response) {
             this.dispose();
             throw result.error;
@@ -187,7 +187,7 @@ export class MotoswapPool extends OP_20 {
     public async sync(): Promise<CallResponse> {
         const result = await this.readMethod(this.syncSelector, Buffer.alloc(0));
 
-        let response = result.response;
+        const response = result.response;
         if (!response) {
             this.dispose();
             throw result.error;
@@ -199,7 +199,7 @@ export class MotoswapPool extends OP_20 {
     public async price0CumulativeLast(): Promise<bigint> {
         const result = await this.readView(this.price0CumulativeLastSelector);
 
-        let response = result.response;
+        const response = result.response;
         if (!response) {
             this.dispose();
             throw result.error;
@@ -212,7 +212,7 @@ export class MotoswapPool extends OP_20 {
     public async price1CumulativeLast(): Promise<bigint> {
         const result = await this.readView(this.price1CumulativeLastSelector);
 
-        let response = result.response;
+        const response = result.response;
         if (!response) {
             this.dispose();
             throw result.error;
@@ -229,7 +229,7 @@ export class MotoswapPool extends OP_20 {
         const buf = calldata.getBuffer();
         const result = await this.readMethod(this.mintSelector, Buffer.from(buf));
 
-        let response = result.response;
+        const response = result.response;
         if (!response) {
             this.dispose();
             throw result.error;
@@ -253,7 +253,7 @@ export class MotoswapPool extends OP_20 {
         const buf = calldata.getBuffer();
         const result = await this.readMethod(this.swapSelector, Buffer.from(buf));
 
-        let response = result.response;
+        const response = result.response;
         if (!response) {
             this.dispose();
             throw result.error;
@@ -274,7 +274,7 @@ export class MotoswapPool extends OP_20 {
         const buf = calldata.getBuffer();
         const result = await this.readMethod(this.burnSelector, Buffer.from(buf));
 
-        let response = result.response;
+        const response = result.response;
         if (!response) {
             this.dispose();
             throw result.error;
@@ -286,7 +286,7 @@ export class MotoswapPool extends OP_20 {
     public async getReserves(): Promise<Reserves> {
         const result = await this.readView(this.reservesSelector);
 
-        let response = result.response;
+        const response = result.response;
         if (!response) {
             this.dispose();
             throw result.error;

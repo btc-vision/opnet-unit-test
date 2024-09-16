@@ -100,7 +100,7 @@ export class ContractRuntime extends Logger {
         delete this._contract;
     }
 
-    public async resetStates(): Promise<void> {
+    public resetStates(): void {
         this.states.clear();
     }
 
@@ -233,7 +233,7 @@ export class ContractRuntime extends Logger {
         await this.loadContract();
 
         const usedGasBefore = this.contract.getUsedGas();
-        if (!!sender) {
+        if (sender) {
             await this.setEnvironment(sender, txOrigin);
         }
 
@@ -337,7 +337,7 @@ export class ContractRuntime extends Logger {
                 this.dispose();
             } catch {}
 
-            let params: ContractParameters = this.generateParams();
+            const params: ContractParameters = this.generateParams();
             this._contract = new RustContract(params);
 
             await this.setEnvironment();
@@ -386,65 +386,63 @@ export class ContractRuntime extends Logger {
     }
 
     private async deployContractAtAddress(data: Buffer): Promise<Buffer | Uint8Array> {
-        return new Promise(async (resolve, _reject) => {
-            const reader = new BinaryReader(data);
+        const reader = new BinaryReader(data);
 
-            const address: Address = reader.readAddress();
-            const salt: Buffer = Buffer.from(reader.readBytes(32)); //Buffer.from(`${reader.readU256().toString(16)}`, 'hex');
-            const saltBig = BigInt(
-                '0x' + salt.reduce((acc, byte) => acc + byte.toString(16).padStart(2, '0'), ''),
+        const address: Address = reader.readAddress();
+        const salt: Buffer = Buffer.from(reader.readBytes(32)); //Buffer.from(`${reader.readU256().toString(16)}`, 'hex');
+        const saltBig = BigInt(
+            '0x' + salt.reduce((acc, byte) => acc + byte.toString(16).padStart(2, '0'), ''),
+        );
+
+        if (Blockchain.traceDeployments) {
+            this.log(
+                `This contract wants to deploy the same bytecode as ${address}. Salt: ${salt.toString('hex')} or ${saltBig}`,
             );
+        }
 
-            if (Blockchain.traceDeployments) {
-                this.log(
-                    `This contract wants to deploy the same bytecode as ${address}. Salt: ${salt.toString('hex')} or ${saltBig}`,
-                );
-            }
+        const deployResult = Blockchain.generateAddress(this.address, salt, address);
+        if (this.deployedContracts.has(deployResult.contractAddress)) {
+            throw new Error('Contract already deployed');
+        }
 
-            const deployResult = Blockchain.generateAddress(this.address, salt, address);
-            if (this.deployedContracts.has(deployResult.contractAddress)) {
-                throw new Error('Contract already deployed');
-            }
+        if (address === this.address) {
+            throw new Error('Cannot deploy the same contract');
+        }
 
-            if (address === this.address) {
-                throw new Error('Cannot deploy the same contract');
-            }
+        const requestedContractBytecode = BytecodeManager.getBytecode(address) as Buffer;
+        const newContract: ContractRuntime = new ContractRuntime(
+            deployResult.contractAddress,
+            this.address,
+            this.gasLimit,
+            requestedContractBytecode,
+        );
 
-            const requestedContractBytecode = BytecodeManager.getBytecode(address) as Buffer;
-            const newContract: ContractRuntime = new ContractRuntime(
-                deployResult.contractAddress,
-                this.address,
-                this.gasLimit,
-                requestedContractBytecode,
+        newContract.preserveState();
+
+        if (Blockchain.traceDeployments) {
+            this.info(
+                `Deploying contract at ${deployResult.contractAddress.toString()} - virtual address 0x${deployResult.virtualAddress.toString('hex')}`,
             );
+        }
 
-            newContract.preserveState();
+        Blockchain.register(newContract);
 
-            if (Blockchain.traceDeployments) {
-                this.info(
-                    `Deploying contract at ${deployResult.contractAddress.toString()} - virtual address 0x${deployResult.virtualAddress.toString('hex')}`,
-                );
-            }
+        await newContract.init();
 
-            Blockchain.register(newContract);
+        if (Blockchain.traceDeployments) {
+            this.log(`Deployed contract at ${deployResult.contractAddress.toString()}`);
+        }
 
-            await newContract.init();
+        this.deployedContracts.set(deployResult.contractAddress, this.bytecode);
 
-            if (Blockchain.traceDeployments) {
-                this.log(`Deployed contract at ${deployResult.contractAddress.toString()}`);
-            }
+        const response = new BinaryWriter();
+        response.writeBytes(deployResult.virtualAddress);
+        response.writeAddress(deployResult.contractAddress);
 
-            this.deployedContracts.set(deployResult.contractAddress, this.bytecode);
-
-            const response = new BinaryWriter();
-            response.writeBytes(deployResult.virtualAddress);
-            response.writeAddress(deployResult.contractAddress);
-
-            resolve(response.getBuffer());
-        });
+        return response.getBuffer();
     }
 
-    private async load(data: Buffer): Promise<Buffer | Uint8Array> {
+    private load(data: Buffer): Buffer | Uint8Array {
         const reader = new BinaryReader(data);
         const pointer = reader.readU256();
 
@@ -460,7 +458,7 @@ export class ContractRuntime extends Logger {
         return response.getBuffer();
     }
 
-    private async store(data: Buffer): Promise<Buffer | Uint8Array> {
+    private store(data: Buffer): Buffer | Uint8Array {
         const reader = new BinaryReader(data);
         const pointer: bigint = reader.readU256();
         const value: bigint = reader.readU256();
@@ -554,8 +552,16 @@ export class ContractRuntime extends Logger {
             network: this.getNetwork(),
             gasCallback: this.onGas.bind(this),
             deployContractAtAddress: this.deployContractAtAddress.bind(this),
-            load: this.load.bind(this),
-            store: this.store.bind(this),
+            load: (data: Buffer) => {
+                return new Promise((resolve) => {
+                    resolve(this.load(data));
+                });
+            },
+            store: (data: Buffer) => {
+                return new Promise((resolve) => {
+                    resolve(this.store(data));
+                });
+            },
             call: this.call.bind(this),
             log: this.onLog.bind(this),
         };

@@ -52,7 +52,7 @@ export class OP_20 extends ContractRuntime {
     public async totalSupply(): Promise<bigint> {
         const result = await this.readView(this.totalSupplySelector);
 
-        let response = result.response;
+        const response = result.response;
         if (!response) {
             this.dispose();
             throw result.error;
@@ -81,7 +81,7 @@ export class OP_20 extends ContractRuntime {
             this.deployer,
         );
 
-        let response = result.response;
+        const response = result.response;
         if (!response) {
             this.dispose();
             throw result.error;
@@ -101,7 +101,7 @@ export class OP_20 extends ContractRuntime {
         const buf = calldata.getBuffer();
         const result = await this.readMethod(this.approveSelector, Buffer.from(buf), owner, owner);
 
-        let response = result.response;
+        const response = result.response;
         if (!response) {
             this.dispose();
             throw result.error;
@@ -147,7 +147,7 @@ export class OP_20 extends ContractRuntime {
         const buf = calldata.getBuffer();
         const result = await this.readMethod(this.transferSelector, Buffer.from(buf), from, from);
 
-        let response = result.response;
+        const response = result.response;
         if (!response) {
             this.dispose();
             throw result.error;
@@ -170,7 +170,7 @@ export class OP_20 extends ContractRuntime {
         const buf = calldata.getBuffer();
         const result = await this.readMethod(this.balanceOfSelector, Buffer.from(buf));
 
-        let response = result.response;
+        const response = result.response;
         if (result.error || !response) {
             this.dispose();
             throw this.handleError(result.error || new Error('No response'));

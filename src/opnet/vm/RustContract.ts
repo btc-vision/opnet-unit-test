@@ -46,7 +46,6 @@ export class RustContract {
                 this.params.bytecode,
                 this.params.gasLimit,
                 this.params.network,
-                // @ts-ignore
                 (_: never, value: ThreadSafeJsImportResponse): Promise<Buffer | Uint8Array> => {
                     if (this.enableDebug) console.log('LOAD', value.buffer);
 
@@ -72,7 +71,7 @@ export class RustContract {
                     const buf = Buffer.from(u.buffer, u.byteOffset, u.byteLength);
                     return this.params.deployContractAtAddress(buf);
                 },
-                async (_: never, value: ThreadSafeJsImportResponse): Promise<void> => {
+                (_: never, value: ThreadSafeJsImportResponse): void => {
                     const u = new Uint8Array(value.buffer);
                     const buf = Buffer.from(u.buffer, u.byteOffset, u.byteLength);
 
