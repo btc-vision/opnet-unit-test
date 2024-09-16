@@ -50,7 +50,7 @@ export class MotoswapRouter extends ContractRuntime {
     public async getFactory(): Promise<Address> {
         const result = await this.readView(this.FACTORY_SELECTOR);
 
-        let response = result.response;
+        const response = result.response;
         if (!response) {
             throw result.error;
         }
@@ -64,7 +64,7 @@ export class MotoswapRouter extends ContractRuntime {
     public async getWBTC(): Promise<Address> {
         const result = await this.readView(this.WBTC_SELECTOR);
 
-        let response = result.response;
+        const response = result.response;
         if (!response) {
             throw result.error;
         }
@@ -84,7 +84,7 @@ export class MotoswapRouter extends ContractRuntime {
         const buf = calldata.getBuffer();
         const result = await this.readMethod(this.QUOTE_SELECTOR, Buffer.from(buf));
 
-        let response = result.response;
+        const response = result.response;
         if (!response) {
             throw result.error;
         }
@@ -108,7 +108,7 @@ export class MotoswapRouter extends ContractRuntime {
         const buf = calldata.getBuffer();
         const result = await this.readMethod(this.GET_AMOUNT_OUT_SELECTOR, Buffer.from(buf));
 
-        let response = result.response;
+        const response = result.response;
         if (!response) {
             throw result.error;
         }
@@ -132,7 +132,7 @@ export class MotoswapRouter extends ContractRuntime {
         const buf = calldata.getBuffer();
         const result = await this.readMethod(this.GET_AMOUNT_IN_SELECTOR, Buffer.from(buf));
 
-        let response = result.response;
+        const response = result.response;
         if (!response) {
             throw result.error;
         }
@@ -151,7 +151,7 @@ export class MotoswapRouter extends ContractRuntime {
         const buf = calldata.getBuffer();
         const result = await this.readMethod(this.GET_AMOUNTS_OUT_SELECTOR, Buffer.from(buf));
 
-        let response = result.response;
+        const response = result.response;
         if (!response) {
             throw result.error;
         }
@@ -170,7 +170,7 @@ export class MotoswapRouter extends ContractRuntime {
         const buf = calldata.getBuffer();
         const result = await this.readMethod(this.GET_AMOUNTS_IN_SELECTOR, Buffer.from(buf));
 
-        let response = result.response;
+        const response = result.response;
         if (!response) {
             throw result.error;
         }
@@ -198,7 +198,7 @@ export class MotoswapRouter extends ContractRuntime {
         const buf = calldata.getBuffer();
         const result = await this.readMethod(this.ADD_LIQUIDITY_SELECTOR, Buffer.from(buf));
 
-        let response = result.response;
+        const response = result.response;
         if (!response) {
             throw result.error;
         }
@@ -228,7 +228,7 @@ export class MotoswapRouter extends ContractRuntime {
             Buffer.from(buf),
         );
 
-        let response = result.response;
+        const response = result.response;
         if (!response) {
             throw result.error;
         }

@@ -3,28 +3,28 @@ import { Logger } from '@btc-vision/logger';
 export class OPNetUnit extends Logger {
     public readonly logColor = '#FFA500';
 
-    private beforeEachFunc: (() => Promise<void>) | null = null;
-    private afterEachFunc: (() => Promise<void>) | null = null;
-    public afterAllFunc: (() => Promise<void>) | null = null;
+    private beforeEachFunc: (() => Promise<void> | void) | null = null;
+    private afterEachFunc: (() => Promise<void> | void) | null = null;
+    public afterAllFunc: (() => Promise<void> | void) | null = null;
 
     public constructor(private name: string) {
         super();
     }
 
     // Setters for hooks
-    beforeEach(fn: () => Promise<void>) {
+    beforeEach(fn: () => Promise<void> | void) {
         this.beforeEachFunc = fn;
     }
 
-    async beforeAll(fn: () => Promise<void>) {
+    async beforeAll(fn: () => Promise<void> | void) {
         await fn();
     }
 
-    afterEach(fn: () => Promise<void>) {
+    afterEach(fn: () => Promise<void> | void) {
         this.afterEachFunc = fn;
     }
 
-    afterAll(fn: () => Promise<void>) {
+    afterAll(fn: () => Promise<void> | void) {
         this.afterAllFunc = fn;
     }
 
@@ -48,7 +48,7 @@ export class OPNetUnit extends Logger {
     }
 
     // Define the 'it' function to run individual tests
-    async it(testName: string, fn: () => Promise<void>) {
+    async it(testName: string, fn: () => Promise<void> | void) {
         const fullName = `${this.name} - ${testName}`;
 
         // Wrap the test function to include hooks
@@ -62,7 +62,7 @@ export class OPNetUnit extends Logger {
     }
 
     // Register tests (could be extended for reporting, etc.)
-    private async registerTest(testName: string, fn: () => Promise<void>) {
+    private async registerTest(testName: string, fn: () => Promise<void> | void) {
         this.debugBright(`Running test: ${testName}`);
 
         try {
@@ -83,7 +83,7 @@ export class OPNetUnit extends Logger {
     }
 }
 
-export async function opnet(suiteName: string, fn: (vm: OPNetUnit) => Promise<void>) {
+export async function opnet(suiteName: string, fn: (vm: OPNetUnit) => Promise<void> | void) {
     const vm = new OPNetUnit(suiteName);
 
     try {

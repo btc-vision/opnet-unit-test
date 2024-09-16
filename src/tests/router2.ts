@@ -141,7 +141,7 @@ await opnet('Motoswap Router', async (vm: OPNetUnit) => {
         Assert.expect(wbtcBalanceOfRouter).toEqual(0n);
     });
 
-    vm.afterAll(async () => {
+    vm.afterAll(() => {
         dispose();
     });
 

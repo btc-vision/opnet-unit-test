@@ -26,7 +26,7 @@ export class MotoswapFactory extends ContractRuntime {
         const buf = calldata.getBuffer();
         const result = await this.readMethod(this.createPoolSelector, Buffer.from(buf));
 
-        let response = result.response;
+        const response = result.response;
         if (!response) {
             throw result.error;
         }

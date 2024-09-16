@@ -150,7 +150,7 @@ await opnet('Motoswap Router', async (vm: OPNetUnit) => {
         Assert.expect(wbtcBalanceOfRouter).toEqual(0n);
     });
 
-    vm.afterAll(async () => {
+    vm.afterAll(() => {
         dispose();
     });
 
@@ -335,7 +335,7 @@ await opnet(`Motoswap Router: fee-on-transfer tokens`, async (vm: OPNetUnit) => 
         Assert.expect(wbtcBalanceOfRouter).toEqual(0n);
     });
 
-    vm.afterAll(async () => {
+    vm.afterAll(() => {
         dispose();
     });
 
@@ -347,7 +347,7 @@ await opnet(`Motoswap Router: fee-on-transfer tokens`, async (vm: OPNetUnit) => 
 
             await DTT.approve(receiver, router.address, MaxUint256);
 
-            let swapTime = Date.now();
+            const swapTime = Date.now();
             await router.swapExactTokensForTokensSupportingFeeOnTransferTokens(
                 amountIn,
                 0n,
@@ -415,7 +415,7 @@ await opnet(`Motoswap Router: liquidity`, async (vm: OPNetUnit) => {
         Assert.expect(wbtcBalanceOfRouter).toEqual(0n);
     });
 
-    vm.afterAll(async () => {
+    vm.afterAll(() => {
         dispose();
     });
 

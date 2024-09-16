@@ -19,28 +19,32 @@ export class Assert {
         }
     }
 
-    private static deepStrictEqual(actual: any, expected: any): boolean {
+    private static deepStrictEqual(actual: unknown, expected: unknown): boolean {
         if (actual === expected) return true;
         if (
             typeof actual !== 'object' ||
             typeof expected !== 'object' ||
             actual === null ||
             expected === null
-        )
+        ) {
             return false;
-        const keysA = Object.keys(actual);
-        const keysB = Object.keys(expected);
+        }
+
+        const actualObj = actual as Record<string, unknown>;
+        const expectedObj = expected as Record<string, unknown>;
+        const keysA = Object.keys(actualObj);
+        const keysB = Object.keys(expectedObj);
         if (keysA.length !== keysB.length) return false;
-        return keysA.every((key) => Assert.deepStrictEqual(actual[key], expected[key]));
+        return keysA.every((key) => Assert.deepStrictEqual(actualObj[key], expectedObj[key]));
     }
 
-    static expect(actual: any) {
+    static expect(actual: unknown) {
         return new Assertion(actual);
     }
 
     static throws(fn: () => void, expectedError?: string | RegExp) {
         let threw = false;
-        let error = null;
+        let error: unknown = null;
         try {
             fn();
         } catch (err) {

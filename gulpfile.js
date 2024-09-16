@@ -1,15 +1,18 @@
-process.on('uncaughtException', function (err) {
-    console.log('Caught exception: ', err);
-});
-
+import gulpESLintNew from 'gulp-eslint-new';
 import gulp from 'gulp';
 import gulpcache from 'gulp-cached';
 
 import clean from 'gulp-clean';
-
-import eslint from 'gulp-eslint';
 import logger from 'gulp-logger';
 import ts from 'gulp-typescript';
+
+process.on('uncaughtException', function (err) {
+    console.log('Caught exception: ', err);
+});
+
+process.on('unhandledRejection', (reason, p) => {
+    //console.error('Unhandled Rejection at:', p, 'reason:', reason);
+});
 
 const tsProject = ts.createProject('tsconfig.json');
 
@@ -18,13 +21,11 @@ function onError(e) {
 }
 
 async function build() {
-    return new Promise(async (resolve) => {
+    return new Promise((resolve) => {
         tsProject
             .src()
+            .on('error', onError)
             .pipe(gulpcache())
-            .pipe(eslint())
-            //.pipe(eslint.format())
-            //.pipe(eslint.failAfterError())
             .pipe(
                 logger({
                     before: 'Starting...',
@@ -33,8 +34,9 @@ async function build() {
                     showChange: true,
                 }),
             )
+            .pipe(gulpESLintNew())
+            .pipe(gulpESLintNew.format())
             .pipe(tsProject())
-            .on('error', onError)
             .pipe(gulp.dest('build'))
             .on('end', async () => {
                 resolve();
@@ -43,7 +45,7 @@ async function build() {
 }
 
 async function cleanFiles() {
-    return new Promise(async (resolve) => {
+    return new Promise((resolve) => {
         gulp.src('./build/src', { read: false })
             .pipe(clean())
             .on('end', async () => {
@@ -53,7 +55,7 @@ async function cleanFiles() {
 }
 
 gulp.task('default', async () => {
-    await build().catch((e) => {});
+    await build().catch(() => {});
 
     return true;
 });

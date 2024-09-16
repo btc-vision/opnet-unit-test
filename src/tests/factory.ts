@@ -15,8 +15,8 @@ await opnet('Motoswap Factory', async (vm: OPNetUnit) => {
     });
 
     // Declare all the request contracts
-    let factory: MotoswapFactory = new MotoswapFactory(Blockchain.txOrigin);
-    let pool: MotoswapPool = new MotoswapPool(WBTC_ADDRESS, MOTO_ADDRESS);
+    const factory: MotoswapFactory = new MotoswapFactory(Blockchain.txOrigin);
+    const pool: MotoswapPool = new MotoswapPool(WBTC_ADDRESS, MOTO_ADDRESS);
     Blockchain.register(pool);
     Blockchain.register(factory);
 
@@ -24,7 +24,7 @@ await opnet('Motoswap Factory', async (vm: OPNetUnit) => {
         await Blockchain.init();
     });
 
-    vm.afterAll(async () => {
+    vm.afterAll(() => {
         Blockchain.dispose();
     });
 

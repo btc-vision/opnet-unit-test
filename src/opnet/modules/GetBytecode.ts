@@ -4,8 +4,6 @@ import fs from 'fs';
 class BytecodeManagerBase {
     private bytecodeMap: Map<Address, Buffer | Uint8Array> = new Map();
 
-    constructor() {}
-
     public loadBytecode(path: string, address: Address): void {
         const bytecode = fs.readFileSync(path);
 

@@ -100,7 +100,7 @@ export class ContractRuntime extends Logger {
         delete this._contract;
     }
 
-    public resetStates(): void {
+    public resetStates(): Promise<void> | void {
         this.states.clear();
     }
 

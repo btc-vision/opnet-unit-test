@@ -42,11 +42,11 @@ await opnet('Motoswap Pool', async (vm: OPNetUnit) => {
         await Blockchain.init();
     });
 
-    vm.afterAll(async () => {
+    vm.afterAll(() => {
         dispose();
     });
 
-    vm.afterEach(async () => {
+    vm.afterEach(() => {
         dispose();
     });
 
@@ -54,8 +54,8 @@ await opnet('Motoswap Pool', async (vm: OPNetUnit) => {
         await token0.resetStates();
         await token1.resetStates();
 
-        let amountA = 11000000;
-        let amountB = 11000000;
+        const amountA = 11000000;
+        const amountB = 11000000;
 
         // Mint some token
         await token0.mint(receiver, amountA);

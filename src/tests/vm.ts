@@ -29,7 +29,7 @@ await opnet('VM', async (vm: OPNetUnit) => {
         Assert.equal(contracts.length, toInstantiate);
     });*/
 
-    await vm.it('should clear every contracts without hanging.', async () => {
+    await vm.it('should clear every contracts without hanging.', () => {
         //const fake: Address = Blockchain.generateRandomSegwitAddress();
         const toInstantiate: number = 10;
         const bytecode = fs.readFileSync('./bytecode/MyToken.wasm');
