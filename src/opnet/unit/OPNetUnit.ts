@@ -71,13 +71,13 @@ export class OPNetUnit extends Logger {
             this.success(`✔️ Test passed: ${testName}`);
         } catch (e) {
             this.error(`❌ Test failed: ${testName}`);
-            this.panic(((await e) as Error).stack);
+            this.panic(((await e) as Error).stack as string);
         } finally {
             try {
                 await this.runAfterEach();
             } catch (e) {
                 this.error(`❌ AfterEach failed: ${testName}`);
-                this.panic(((await e) as Error).stack);
+                this.panic(((await e) as Error).stack as string);
             }
         }
     }
@@ -92,6 +92,6 @@ export async function opnet(suiteName: string, fn: (vm: OPNetUnit) => Promise<vo
         if (vm.runAfterAll) await vm.runAfterAll();
     } catch (e) {
         vm.error(`❌ Suite failed: ${suiteName}`);
-        vm.panic(((await e) as Error).stack);
+        vm.panic(((await e) as Error).stack as string);
     }
 }

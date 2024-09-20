@@ -10,10 +10,10 @@
     "author": "",
     "license": "ISC",
     "dependencies": {
-        "@btc-vision/bsi-binary": "^1.0.39",
-        "@btc-vision/logger": "^1.0.4",
+        "@btc-vision/bsi-binary": "^1.0.42",
+        "@btc-vision/logger": "^1.0.6",
         "@btc-vision/op-vm": "^0.1.4",
-        "@btc-vision/transaction": "^1.0.101",
+        "@btc-vision/transaction": "^1.0.105",
         "@eslint/js": "^9.10.0",
         "@types/node": "^22.5.5",
         "@typescript-eslint/eslint-plugin": "^8.5.0",

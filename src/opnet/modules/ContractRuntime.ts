@@ -569,7 +569,7 @@ export class ContractRuntime extends Logger {
 
     private onGas(gas: bigint, method: string): void {
         if (Blockchain.traceGas) {
-            this.debug('Gas:', gas, method);
+            this.debug(`Gas: ${gas}`, method);
         }
     }
 }
