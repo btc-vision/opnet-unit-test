@@ -551,6 +551,7 @@ export class ContractRuntime extends Logger {
             gasLimit: this.gasLimit,
             network: this.getNetwork(),
             gasCallback: this.onGas.bind(this),
+            contractManager: Blockchain.contractManager,
             deployContractAtAddress: this.deployContractAtAddress.bind(this),
             load: (data: Buffer) => {
                 return new Promise((resolve) => {

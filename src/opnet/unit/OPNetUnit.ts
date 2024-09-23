@@ -1,4 +1,5 @@
 import { Logger } from '@btc-vision/logger';
+import { Blockchain } from '../../blockchain/Blockchain.js';
 
 export class OPNetUnit extends Logger {
     public readonly logColor = '#FFA500';
@@ -45,6 +46,8 @@ export class OPNetUnit extends Logger {
         if (this.afterAllFunc) {
             await this.afterAllFunc();
         }
+
+        Blockchain.cleanup();
     }
 
     // Define the 'it' function to run individual tests

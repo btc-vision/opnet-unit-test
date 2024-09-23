@@ -34,34 +34,39 @@ await opnet('VM', async (vm: OPNetUnit) => {
         const toInstantiate: number = 10;
         const bytecode = fs.readFileSync('./bytecode/MyToken.wasm');
 
-        const contractManager = new ContractManager();
+        const contractManager = new ContractManager(
+            8,
+            function () {
+                throw new Error(`a`);
+            },
+            function () {
+                throw new Error(`a`);
+            },
+            function () {
+                throw new Error(`a`);
+            },
+            function () {
+                throw new Error(`a`);
+            },
+            function () {
+                throw new Error(`a`);
+            },
+        );
+
         const rndAddress = Blockchain.generateRandomSegwitAddress();
 
         for (let i = 0; i < toInstantiate; i++) {
             const start = Date.now();
-            const contract = contractManager.instantiate(
+            const contract = contractManager.reserveId();
+            contractManager.instantiate(
+                contract,
                 rndAddress,
                 bytecode,
                 30000000n,
                 BitcoinNetworkRequest.Regtest,
-                function () {
-                    throw new Error(`a`);
-                },
-                function () {
-                    throw new Error(`a`);
-                },
-                function () {
-                    throw new Error(`a`);
-                },
-                function () {
-                    throw new Error(`a`);
-                },
-                function () {
-                    throw new Error(`a`);
-                },
             );
 
-            contractManager.destroy(contract);
+            contractManager.destroyContract(contract);
 
             console.log('Contract instantiated!', contract, `Time: ${Date.now() - start}ms`);
 
