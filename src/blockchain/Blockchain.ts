@@ -1,9 +1,8 @@
-import { ContractRuntime } from '../opnet/modules/ContractRuntime.js';
-import { Logger } from '@btc-vision/logger';
 import { Address } from '@btc-vision/bsi-binary';
+import { Logger } from '@btc-vision/logger';
+import { ContractManager, ThreadSafeJsImportResponse } from '@btc-vision/op-vm';
 import { AddressGenerator, EcKeyPair, TapscriptVerificator } from '@btc-vision/transaction';
 import bitcoin, { Network } from 'bitcoinjs-lib';
-import { BytecodeManager } from '../opnet/modules/GetBytecode.js';
 import {
     NETWORK,
     TRACE_CALLS,
@@ -11,7 +10,8 @@ import {
     TRACE_GAS,
     TRACE_POINTERS,
 } from '../contracts/configs.js';
-import { ContractManager, ThreadSafeJsImportResponse } from '../../../bsi-wasmer-vm/index.js';
+import { ContractRuntime } from '../opnet/modules/ContractRuntime.js';
+import { BytecodeManager } from '../opnet/modules/GetBytecode.js';
 import { RustContractBinding } from '../opnet/vm/RustContractBinding.js';
 
 class BlockchainBase extends Logger {
