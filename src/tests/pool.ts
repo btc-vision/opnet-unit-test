@@ -187,7 +187,6 @@ await opnet('Motoswap Pool', async (vm: OPNetUnit) => {
 
     await vm.it(`should get input price`, async () => {
         for (const swapTestCase of swapTestCases) {
-            const start = Date.now();
             vm.debugBright(`Swap test case: ${swapTestCase}`);
 
             const [swapAmount, token0Amount, token1Amount, expectedOutputAmount] = swapTestCase;
@@ -201,11 +200,14 @@ await opnet('Motoswap Pool', async (vm: OPNetUnit) => {
             }).toThrow('Motoswap: K');
             Blockchain.restore();
 
-            await pool.swap(0n, expectedOutputAmount, receiver, new Uint8Array());
+            const start = Date.now();
+            const swap = await pool.swap(0n, expectedOutputAmount, receiver, new Uint8Array());
+            const end = Date.now();
+
             Blockchain.restore();
 
             vm.success(
-                `✔️ Swap test case (${swapAmount}, ${token0Amount}, ${token1Amount}) passed in ${Date.now() - start}ms`,
+                `✔️ Swap test case (${swapAmount}, ${token0Amount}, ${token1Amount}) passed in ${end - start}ms (${swap.usedGas} gas used)`,
             );
         }
     });

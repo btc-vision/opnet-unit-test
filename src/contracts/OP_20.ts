@@ -49,6 +49,30 @@ export class OP_20 extends ContractRuntime {
         this.preserveState();
     }
 
+    public static decodeBurnEvent(data: Buffer | Uint8Array): BurnEvent {
+        const reader = new BinaryReader(data);
+        const value = reader.readU256();
+
+        return { value };
+    }
+
+    public static decodeTransferEvent(data: Buffer | Uint8Array): TransferEvent {
+        const reader = new BinaryReader(data);
+        const from = reader.readAddress();
+        const to = reader.readAddress();
+        const value = reader.readU256();
+
+        return { from, to, value };
+    }
+
+    public static decodeMintEvent(data: Buffer | Uint8Array): MintEvent {
+        const reader = new BinaryReader(data);
+        const to = reader.readAddress();
+        const value = reader.readU256();
+
+        return { to, value };
+    }
+
     public async totalSupply(): Promise<bigint> {
         const result = await this.readView(this.totalSupplySelector);
 
@@ -60,10 +84,6 @@ export class OP_20 extends ContractRuntime {
 
         const reader: BinaryReader = new BinaryReader(response);
         return reader.readU256();
-    }
-
-    protected defineRequiredBytecodes(): void {
-        BytecodeManager.loadBytecode(`./bytecode/${this.fileName}.wasm`, this.address);
     }
 
     public async mint(to: Address, amount: number): Promise<void> {
@@ -115,31 +135,7 @@ export class OP_20 extends ContractRuntime {
         return result;
     }
 
-    public static decodeBurnEvent(data: Buffer | Uint8Array): BurnEvent {
-        const reader = new BinaryReader(data);
-        const value = reader.readU256();
-
-        return { value };
-    }
-
-    public static decodeTransferEvent(data: Buffer | Uint8Array): TransferEvent {
-        const reader = new BinaryReader(data);
-        const from = reader.readAddress();
-        const to = reader.readAddress();
-        const value = reader.readU256();
-
-        return { from, to, value };
-    }
-
-    public static decodeMintEvent(data: Buffer | Uint8Array): MintEvent {
-        const reader = new BinaryReader(data);
-        const to = reader.readAddress();
-        const value = reader.readU256();
-
-        return { to, value };
-    }
-
-    public async transfer(from: Address, to: Address, amount: bigint): Promise<void> {
+    public async transfer(from: Address, to: Address, amount: bigint): Promise<CallResponse> {
         const calldata = new BinaryWriter();
         calldata.writeAddress(to);
         calldata.writeU256(amount);
@@ -157,10 +153,8 @@ export class OP_20 extends ContractRuntime {
         if (!reader.readBoolean()) {
             throw new Error('Transfer failed');
         }
-    }
 
-    protected handleError(error: Error): Error {
-        return new Error(`(in op_20: ${this.address}) OPNET: ${error.stack}`);
+        return result;
     }
 
     public async balanceOf(owner: Address): Promise<bigint> {
@@ -184,5 +178,13 @@ export class OP_20 extends ContractRuntime {
         const balance = await this.balanceOf(owner);
 
         return Blockchain.decodeFromDecimal(balance, this.decimals);
+    }
+
+    protected defineRequiredBytecodes(): void {
+        BytecodeManager.loadBytecode(`./bytecode/${this.fileName}.wasm`, this.address);
+    }
+
+    protected handleError(error: Error): Error {
+        return new Error(`(in op_20: ${this.address}) OPNET: ${error.stack}`);
     }
 }

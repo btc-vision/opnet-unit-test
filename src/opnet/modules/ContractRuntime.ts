@@ -26,16 +26,16 @@ export interface CallResponse {
 
 export class ContractRuntime extends Logger {
     public readonly logColor: string = '#39b2f3';
+    public gasUsed: bigint = 0n;
 
     protected states: Map<bigint, bigint> = new Map();
-
     protected shouldPreserveState: boolean = false;
     protected events: NetEvent[] = [];
 
     protected readonly deployedContracts: Map<string, Buffer> = new Map();
     protected readonly abiCoder = new ABICoder();
-    private callStack: Address[] = [];
 
+    private callStack: Address[] = [];
     private statesBackup: Map<bigint, bigint> = new Map();
     private network: bitcoin.Network = Blockchain.network;
 
@@ -213,6 +213,8 @@ export class ContractRuntime extends Logger {
     public dispose(): void {
         if (this._contract) {
             this._contract.dispose();
+
+            this.gasUsed = this.contract.getUsedGas();
         }
     }
 
