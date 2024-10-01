@@ -1,6 +1,6 @@
 {
     "type": "module",
-    "name": "wasmer",
+    "name": "opnet-unit-test",
     "version": "1.0.1",
     "description": "",
     "main": "index.js",
