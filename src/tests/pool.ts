@@ -188,7 +188,7 @@ await opnet('Motoswap Pool', async (vm: OPNetUnit) => {
     await vm.it(`should get input price`, async () => {
         for (const swapTestCase of swapTestCases) {
             vm.debugBright(`Swap test case: ${swapTestCase}`);
-
+            
             const [swapAmount, token0Amount, token1Amount, expectedOutputAmount] = swapTestCase;
 
             await addLiquidity(token0Amount, token1Amount);

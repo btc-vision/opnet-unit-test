@@ -348,7 +348,7 @@ await opnet(`Motoswap Router: fee-on-transfer tokens`, async (vm: OPNetUnit) => 
             await DTT.approve(receiver, router.address, MaxUint256);
 
             const swapTime = Date.now();
-            await router.swapExactTokensForTokensSupportingFeeOnTransferTokens(
+            const response = await router.swapExactTokensForTokensSupportingFeeOnTransferTokens(
                 amountIn,
                 0n,
                 [dttAddress, WBTC_ADDRESS],
@@ -356,8 +356,8 @@ await opnet(`Motoswap Router: fee-on-transfer tokens`, async (vm: OPNetUnit) => 
                 2n,
             );
 
-            console.log(
-                `Took ${Date.now() - swapTime}ms to execute swapExactTokensForTokensSupportingFeeOnTransferTokens`,
+            vm.log(
+                `swapExactTokensForTokensSupportingFeeOnTransferTokens took ${Date.now() - swapTime}ms (gas ${response.usedGas})`,
             );
         },
     );

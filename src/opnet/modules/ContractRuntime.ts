@@ -1,13 +1,4 @@
-import {
-    ABICoder,
-    Address,
-    BinaryReader,
-    BinaryWriter,
-    MethodMap,
-    NetEvent,
-    Selector,
-    SelectorsMap,
-} from '@btc-vision/bsi-binary';
+import { ABICoder, Address, BinaryReader, BinaryWriter, NetEvent } from '@btc-vision/bsi-binary';
 import bitcoin from 'bitcoinjs-lib';
 import { Logger } from '@btc-vision/logger';
 import { BytecodeManager } from './GetBytecode.js';
@@ -58,26 +49,6 @@ export class ContractRuntime extends Logger {
         return this._contract;
     }
 
-    private _viewAbi: SelectorsMap | undefined;
-
-    public get viewAbi(): SelectorsMap {
-        if (!this._viewAbi) {
-            throw new Error('View ABI not found');
-        }
-
-        return this._viewAbi;
-    }
-
-    private _writeMethods: MethodMap | undefined;
-
-    public get writeMethods(): MethodMap {
-        if (!this._writeMethods) {
-            throw new Error('Write methods not found');
-        }
-
-        return this._writeMethods;
-    }
-
     protected _bytecode: Buffer | undefined;
 
     protected get bytecode(): Buffer {
@@ -102,24 +73,6 @@ export class ContractRuntime extends Logger {
 
     public resetStates(): Promise<void> | void {
         this.states.clear();
-    }
-
-    public async getViewAbi(): Promise<void> {
-        const abi = await this.contract.getViewABI();
-        const reader = new BinaryReader(abi);
-
-        this._viewAbi = reader.readViewSelectorsMap();
-
-        return;
-    }
-
-    public async getWriteMethods(): Promise<void> {
-        const abi = await this.contract.getWriteMethods();
-        const reader = new BinaryReader(abi);
-
-        this._writeMethods = reader.readMethodSelectorsMap();
-
-        return;
     }
 
     public async setEnvironment(
@@ -154,16 +107,6 @@ export class ContractRuntime extends Logger {
     public restoreStates(): void {
         this.states.clear();
         this.states = new Map(this.statesBackup);
-    }
-
-    public isReadonlyMethod(selector: Selector): boolean {
-        for (const [_, value] of this.viewAbi) {
-            if (value === selector) {
-                return true;
-            }
-        }
-
-        return false;
     }
 
     public async onCall(
@@ -343,18 +286,7 @@ export class ContractRuntime extends Logger {
             this._contract = new RustContract(params);
 
             await this.setEnvironment();
-
-            if (!this._viewAbi) {
-                await this.contract.defineSelectors();
-
-                const promises: Promise<void>[] = [this.getViewAbi(), this.getWriteMethods()];
-
-                await Promise.all(promises);
-
-                /*await this.contract.defineSelectors();
-                await this.getViewAbi();
-                await this.getWriteMethods();*/
-            }
+            await this.contract.defineSelectors();
         } catch (e) {
             if (this._contract && !this._contract.disposed) {
                 this._contract.dispose();

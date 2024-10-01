@@ -3,10 +3,9 @@ import { Blockchain } from '../../blockchain/Blockchain.js';
 
 export class OPNetUnit extends Logger {
     public readonly logColor = '#FFA500';
-
+    public afterAllFunc: (() => Promise<void> | void) | null = null;
     private beforeEachFunc: (() => Promise<void> | void) | null = null;
     private afterEachFunc: (() => Promise<void> | void) | null = null;
-    public afterAllFunc: (() => Promise<void> | void) | null = null;
 
     public constructor(private name: string) {
         super();
@@ -27,19 +26,6 @@ export class OPNetUnit extends Logger {
 
     afterAll(fn: () => Promise<void> | void) {
         this.afterAllFunc = fn;
-    }
-
-    // Run hooks
-    private async runBeforeEach() {
-        if (this.beforeEachFunc) {
-            await this.beforeEachFunc();
-        }
-    }
-
-    private async runAfterEach() {
-        if (this.afterEachFunc) {
-            await this.afterEachFunc();
-        }
     }
 
     public async runAfterAll() {
@@ -64,22 +50,38 @@ export class OPNetUnit extends Logger {
         await this.registerTest(fullName, wrappedFn);
     }
 
+    // Run hooks
+    private async runBeforeEach() {
+        if (this.beforeEachFunc) {
+            await this.beforeEachFunc();
+        }
+    }
+
+    private async runAfterEach() {
+        if (this.afterEachFunc) {
+            await this.afterEachFunc();
+        }
+    }
+
     // Register tests (could be extended for reporting, etc.)
     private async registerTest(testName: string, fn: () => Promise<void> | void) {
         this.debugBright(`Running test: ${testName}`);
 
+        const pink = this.chalk.hex('#e56ee5');
+        const start = Date.now();
+
         try {
             await fn();
 
-            this.success(`✔️ Test passed: ${testName}`);
+            this.success(`✔️ Test passed ${pink(`(${Date.now() - start}ms)`)}: ${testName}`);
         } catch (e) {
-            this.error(`❌ Test failed: ${testName}`);
+            this.error(`❌ Test failed ${pink(`(${Date.now() - start}ms)`)}: ${testName}`);
             this.panic(((await e) as Error).stack as string);
         } finally {
             try {
                 await this.runAfterEach();
             } catch (e) {
-                this.error(`❌ AfterEach failed: ${testName}`);
+                this.error(`❌ AfterEach failed ${pink(`(${Date.now() - start}ms)`)}: ${testName}`);
                 this.panic(((await e) as Error).stack as string);
             }
         }
