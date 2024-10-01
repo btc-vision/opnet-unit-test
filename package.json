@@ -1,13 +1,13 @@
 {
     "type": "module",
     "name": "opnet-unit-test",
-    "version": "1.0.1",
-    "description": "",
+    "version": "1.0.2",
+    "description": "OP_NET unit test harness and associated mocks",
     "main": "index.js",
     "scripts": {
         "build": "gulp"
     },
-    "author": "",
+    "author": "OP_NET",
     "license": "ISC",
     "dependencies": {
         "@btc-vision/bsi-binary": "^1.0.42",
