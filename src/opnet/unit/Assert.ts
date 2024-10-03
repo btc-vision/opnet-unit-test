@@ -1,7 +1,6 @@
 import { Assertion } from './Assertion.js';
 
 export class Assert {
-    // New methods to support the assertions used in the HintHelpers tests
     public static toBeGreaterThan(actual: bigint, expected: bigint, message?: string) {
         if (actual <= expected) {
             throw new Error(message || `Expected ${actual} to be greater than ${expected}`);
