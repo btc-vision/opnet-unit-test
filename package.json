@@ -11,8 +11,9 @@
     "license": "ISC",
     "dependencies": {
         "@btc-vision/bsi-binary": "^1.0.42",
+        "@btc-vision/btc-runtime": "^1.1.11",
         "@btc-vision/logger": "^1.0.6",
-        "@btc-vision/op-vm": "https://github.com/youngslohmlife/op-vm",
+        "@btc-vision/op-vm": "^0.1.0",
         "@btc-vision/transaction": "^1.0.105",
         "@eslint/js": "^9.10.0",
         "@types/node": "^22.5.5",

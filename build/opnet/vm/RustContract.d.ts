@@ -17,7 +17,7 @@ export declare class RustContract {
     private readonly contractManager;
     constructor(params: ContractParameters);
     private _id?;
-    get id(): bigint;
+    get id(): bigint | undefined;
     private _instantiated;
     get instantiated(): boolean;
     private _disposed;
