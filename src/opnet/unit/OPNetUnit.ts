@@ -4,6 +4,7 @@ import { Blockchain } from '../../blockchain/Blockchain.js';
 export class OPNetUnit extends Logger {
     public readonly logColor = '#FFA500';
     public afterAllFunc: (() => Promise<void> | void) | null = null;
+    
     private beforeEachFunc: (() => Promise<void> | void) | null = null;
     private afterEachFunc: (() => Promise<void> | void) | null = null;
 
@@ -12,19 +13,19 @@ export class OPNetUnit extends Logger {
     }
 
     // Setters for hooks
-    beforeEach(fn: () => Promise<void> | void) {
+    public beforeEach(fn: () => Promise<void> | void) {
         this.beforeEachFunc = fn;
     }
 
-    async beforeAll(fn: () => Promise<void> | void) {
+    public async beforeAll(fn: () => Promise<void> | void) {
         await fn();
     }
 
-    afterEach(fn: () => Promise<void> | void) {
+    public afterEach(fn: () => Promise<void> | void) {
         this.afterEachFunc = fn;
     }
 
-    afterAll(fn: () => Promise<void> | void) {
+    public afterAll(fn: () => Promise<void> | void) {
         this.afterAllFunc = fn;
     }
 
