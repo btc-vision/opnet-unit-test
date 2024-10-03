@@ -2,13 +2,13 @@ import { Assertion } from './Assertion.js';
 
 export class Assert {
     // New methods to support the assertions used in the HintHelpers tests
-    static toBeGreaterThan(actual: bigint, expected: bigint, message?: string) {
+    public static toBeGreaterThan(actual: bigint, expected: bigint, message?: string) {
         if (actual <= expected) {
             throw new Error(message || `Expected ${actual} to be greater than ${expected}`);
         }
     }
 
-    static toBeGreaterThanOrEqual(actual: bigint, expected: bigint, message?: string) {
+    public static toBeGreaterThanOrEqual(actual: bigint, expected: bigint, message?: string) {
         if (actual < expected) {
             throw new Error(
                 message || `Expected ${actual} to be greater than or equal to ${expected}`,
@@ -16,7 +16,7 @@ export class Assert {
         }
     }
 
-    static toBeLessThanOrEqual(actual: bigint, expected: bigint, message?: string) {
+    public static toBeLessThanOrEqual(actual: bigint, expected: bigint, message?: string) {
         if (actual > expected) {
             throw new Error(
                 message || `Expected ${actual} to be less than or equal to ${expected}`,
@@ -24,13 +24,18 @@ export class Assert {
         }
     }
 
-    static equal<T>(actual: T, expected: T, message?: string) {
+    public static equal<T>(actual: T, expected: T, message?: string) {
         if (actual !== expected) {
             throw new Error(message || `Expected ${expected}, but got ${actual}`);
         }
     }
 
-    static toBeCloseTo(actual: bigint, expected: bigint, tolerance: bigint, message?: string) {
+    public static toBeCloseTo(
+        actual: bigint,
+        expected: bigint,
+        tolerance: bigint,
+        message?: string,
+    ) {
         if (actual < expected - tolerance || actual > expected + tolerance) {
             throw new Error(
                 message ||
@@ -39,23 +44,23 @@ export class Assert {
         }
     }
 
-    static notEqual<T>(actual: T, unexpected: T, message?: string) {
+    public static notEqual<T>(actual: T, unexpected: T, message?: string) {
         if (actual === unexpected) {
             throw new Error(message || `Expected ${unexpected} to not be equal to ${actual}`);
         }
     }
 
-    static deepEqual<T>(actual: T, expected: T, message?: string) {
+    public static deepEqual<T>(actual: T, expected: T, message?: string) {
         if (!Assert.deepStrictEqual(actual, expected)) {
             throw new Error(message || `Expected deep equality`);
         }
     }
 
-    static expect(actual: unknown) {
+    public static expect(actual: unknown) {
         return new Assertion(actual);
     }
 
-    static throws(fn: () => void, expectedError?: string | RegExp) {
+    public static throws(fn: () => void, expectedError?: string | RegExp) {
         let threw = false;
         let error: unknown = null;
         try {
