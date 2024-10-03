@@ -1,9 +1,41 @@
 import { Assertion } from './Assertion.js';
 
 export class Assert {
+    // New methods to support the assertions used in the HintHelpers tests
+    static toBeGreaterThan(actual: bigint, expected: bigint, message?: string) {
+        if (actual <= expected) {
+            throw new Error(message || `Expected ${actual} to be greater than ${expected}`);
+        }
+    }
+
+    static toBeGreaterThanOrEqual(actual: bigint, expected: bigint, message?: string) {
+        if (actual < expected) {
+            throw new Error(
+                message || `Expected ${actual} to be greater than or equal to ${expected}`,
+            );
+        }
+    }
+
+    static toBeLessThanOrEqual(actual: bigint, expected: bigint, message?: string) {
+        if (actual > expected) {
+            throw new Error(
+                message || `Expected ${actual} to be less than or equal to ${expected}`,
+            );
+        }
+    }
+
     static equal<T>(actual: T, expected: T, message?: string) {
         if (actual !== expected) {
             throw new Error(message || `Expected ${expected}, but got ${actual}`);
+        }
+    }
+
+    static toBeCloseTo(actual: bigint, expected: bigint, tolerance: bigint, message?: string) {
+        if (actual < expected - tolerance || actual > expected + tolerance) {
+            throw new Error(
+                message ||
+                    `Expected ${actual} to be close to ${expected} within a tolerance of ${tolerance}`,
+            );
         }
     }
 
@@ -17,25 +49,6 @@ export class Assert {
         if (!Assert.deepStrictEqual(actual, expected)) {
             throw new Error(message || `Expected deep equality`);
         }
-    }
-
-    private static deepStrictEqual(actual: unknown, expected: unknown): boolean {
-        if (actual === expected) return true;
-        if (
-            typeof actual !== 'object' ||
-            typeof expected !== 'object' ||
-            actual === null ||
-            expected === null
-        ) {
-            return false;
-        }
-
-        const actualObj = actual as Record<string, unknown>;
-        const expectedObj = expected as Record<string, unknown>;
-        const keysA = Object.keys(actualObj);
-        const keysB = Object.keys(expectedObj);
-        if (keysA.length !== keysB.length) return false;
-        return keysA.every((key) => Assert.deepStrictEqual(actualObj[key], expectedObj[key]));
     }
 
     static expect(actual: unknown) {
@@ -69,5 +82,24 @@ export class Assert {
                 }
             }
         }
+    }
+
+    private static deepStrictEqual(actual: unknown, expected: unknown): boolean {
+        if (actual === expected) return true;
+        if (
+            typeof actual !== 'object' ||
+            typeof expected !== 'object' ||
+            actual === null ||
+            expected === null
+        ) {
+            return false;
+        }
+
+        const actualObj = actual as Record<string, unknown>;
+        const expectedObj = expected as Record<string, unknown>;
+        const keysA = Object.keys(actualObj);
+        const keysB = Object.keys(expectedObj);
+        if (keysA.length !== keysB.length) return false;
+        return keysA.every((key) => Assert.deepStrictEqual(actualObj[key], expectedObj[key]));
     }
 }
