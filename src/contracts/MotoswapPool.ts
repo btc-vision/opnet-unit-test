@@ -60,20 +60,12 @@ export class MotoswapPool extends OP_20 {
     constructor(
         private readonly token0: Address,
         private readonly token1: Address,
-        gasLimit: bigint = 300_000_000_000n,
+        gasLimit: bigint = 100_000_000_000n,
     ) {
         super('pool', FACTORY_ADDRESS, POOL_ADDRESS, 18, gasLimit);
 
         // This will preserve every action done in this contract
         this.preserveState();
-    }
-
-    public setAddress(address: Address) {
-        this.address = address;
-    }
-
-    public setStates(states: Map<bigint, bigint>) {
-        this.states = states;
     }
 
     public static createFromRuntime(
@@ -86,10 +78,6 @@ export class MotoswapPool extends OP_20 {
         pool.setStates(runtime.getStates());
 
         return pool;
-    }
-
-    protected handleError(error: Error): Error {
-        return new Error(`(in pool: ${this.address}) OPNET: ${error.stack}`);
     }
 
     public static decodePoolMintEvent(data: Uint8Array): PoolMintEvent {
@@ -118,6 +106,26 @@ export class MotoswapPool extends OP_20 {
             reserve0: reader.readU256(),
             reserve1: reader.readU256(),
         };
+    }
+
+    public static decodeSwapEvent(data: Uint8Array): SwapEvent {
+        const reader: BinaryReader = new BinaryReader(data);
+        return {
+            sender: reader.readAddress(),
+            amount0In: reader.readU256(),
+            amount1In: reader.readU256(),
+            amount0Out: reader.readU256(),
+            amount1Out: reader.readU256(),
+            to: reader.readAddress(),
+        };
+    }
+
+    public setAddress(address: Address) {
+        this.address = address;
+    }
+
+    public setStates(states: Map<bigint, bigint>) {
+        this.states = states;
     }
 
     public override async resetStates(): Promise<void> {
@@ -170,18 +178,6 @@ export class MotoswapPool extends OP_20 {
 
         const reader: BinaryReader = new BinaryReader(response);
         return reader.readAddress();
-    }
-
-    public static decodeSwapEvent(data: Uint8Array): SwapEvent {
-        const reader: BinaryReader = new BinaryReader(data);
-        return {
-            sender: reader.readAddress(),
-            amount0In: reader.readU256(),
-            amount1In: reader.readU256(),
-            amount0Out: reader.readU256(),
-            amount1Out: reader.readU256(),
-            to: reader.readAddress(),
-        };
     }
 
     public async sync(): Promise<CallResponse> {
@@ -298,5 +294,9 @@ export class MotoswapPool extends OP_20 {
             reserve1: reader.readU256(),
             blockTimestampLast: reader.readU64(),
         };
+    }
+
+    protected handleError(error: Error): Error {
+        return new Error(`(in pool: ${this.address}) OPNET: ${error.stack}`);
     }
 }

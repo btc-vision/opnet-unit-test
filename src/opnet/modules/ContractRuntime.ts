@@ -5,6 +5,7 @@ import { BytecodeManager } from './GetBytecode.js';
 import { Blockchain } from '../../blockchain/Blockchain.js';
 import { BitcoinNetworkRequest } from '@btc-vision/op-vm';
 import { ContractParameters, RustContract } from '../vm/RustContract.js';
+import { DISABLE_REENTRANCY_GUARD } from '../../contracts/configs.js';
 
 export interface CallResponse {
     response?: Uint8Array;
@@ -33,7 +34,7 @@ export class ContractRuntime extends Logger {
     protected constructor(
         public address: Address,
         public readonly deployer: Address,
-        protected readonly gasLimit: bigint = 300_000_000_000n,
+        protected readonly gasLimit: bigint = 100_000_000_000n,
         private readonly potentialBytecode?: Buffer,
     ) {
         super();
@@ -65,10 +66,21 @@ export class ContractRuntime extends Logger {
         return this.states;
     }
 
+    public setStates(states: Map<bigint, bigint>): void {
+        this.states = new Map(states);
+    }
+
     public delete(): void {
         this.dispose();
 
         delete this._contract;
+        delete this._bytecode;
+
+        this.states.clear();
+        this.statesBackup.clear();
+        this.events = [];
+        this.callStack = [];
+        this.deployedContracts.clear();
     }
 
     public resetStates(): Promise<void> | void {
@@ -428,6 +440,10 @@ export class ContractRuntime extends Logger {
             throw new Error(`OPNET: REENTRANCY DETECTED`);
         }*/
 
+        if (DISABLE_REENTRANCY_GUARD) {
+            return;
+        }
+
         if (calls.includes(this.address)) {
             throw new Error('OPNET: REENTRANCY DETECTED');
         }
@@ -447,16 +463,18 @@ export class ContractRuntime extends Logger {
         }
 
         const contract: ContractRuntime = Blockchain.getContract(contractAddress);
-        /*const code = contract.bytecode;
+        const code = contract.bytecode;
         const ca = new ContractRuntime(contractAddress, contract.deployer, contract.gasLimit, code);
         ca.preserveState();
 
-        await ca.init();*/ // TODO: Use this instead of the above line, require rework of storage slots.
+        await ca.init();
 
-        const callResponse = await contract.onCall(calldata, this.address, Blockchain.txOrigin);
-        /*try {
-            ca.dispose();
-        } catch {}*/
+        const callResponse = await ca.onCall(calldata, this.address, Blockchain.txOrigin);
+        contract.setStates(ca.getStates());
+
+        try {
+            ca.delete();
+        } catch {}
 
         this.events = [...this.events, ...callResponse.events];
         this.callStack = [...this.callStack, ...callResponse.callStack];
