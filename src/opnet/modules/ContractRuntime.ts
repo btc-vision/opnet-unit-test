@@ -131,6 +131,10 @@ export class ContractRuntime extends Logger {
             response = await this.readMethod(selector, calldata, sender, from);
         }
 
+        if (Blockchain.traceCalls) {
+            this.log(`Call response: ${response.response}`);
+        }
+
         this.dispose();
 
         if (response.error) {
@@ -275,12 +279,18 @@ export class ContractRuntime extends Logger {
                 this.states.clear();
             }
 
-            this.events = [];
-            this.callStack = [this.address];
-
             try {
                 this.dispose();
-            } catch {}
+            } catch (e) {
+                const strErr = (e as Error).message;
+
+                if (strErr.includes('REENTRANCY')) {
+                    this.warn(strErr);
+                }
+            }
+
+            this.events = [];
+            this.callStack = [this.address];
 
             const params: ContractParameters = this.generateParams();
             this._contract = new RustContract(params);
@@ -289,7 +299,9 @@ export class ContractRuntime extends Logger {
             await this.contract.defineSelectors();
         } catch (e) {
             if (this._contract && !this._contract.disposed) {
-                this._contract.dispose();
+                try {
+                    this._contract.dispose();
+                } catch {}
             }
 
             throw e;

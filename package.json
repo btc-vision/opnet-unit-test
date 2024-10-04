@@ -12,7 +12,7 @@
     "dependencies": {
         "@btc-vision/bsi-binary": "^1.0.42",
         "@btc-vision/logger": "^1.0.6",
-        "@btc-vision/op-vm": "^0.1.6",
+        "@btc-vision/op-vm": "^0.1.7",
         "@btc-vision/transaction": "^1.0.108",
         "@eslint/js": "^9.10.0",
         "@types/node": "^22.5.5",
