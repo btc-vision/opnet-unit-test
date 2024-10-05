@@ -24,6 +24,7 @@ export class RustContract {
                 deployContractAtAddress: this.params.deployContractAtAddress,
                 log: this.params.log,
             });
+            console.log([this._id, this.params.address, this.params.bytecode, this.params.gasLimit, this.params.network]);
             this.contractManager.instantiate(this._id, this.params.address, this.params.bytecode, this.params.gasLimit, this.params.network);
             this._instantiated = true;
         }
@@ -162,6 +163,7 @@ export class RustContract {
         if (this.enableDebug)
             console.log('Setting environment', buffer);
         try {
+		console.log(buffer);
             const data = await this.__lowerTypedArray(13, 0, buffer);
             if (data == null)
                 throw new Error('Data cannot be null');

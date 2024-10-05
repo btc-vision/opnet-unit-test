@@ -47,6 +47,7 @@ export class RustContract {
                 log: this.params.log,
             });
 
+	    console.log([this._id, this.params.address, this.params.bytecode, this.params.gasLimit, this.params.network]);
             this.contractManager.instantiate(
                 this._id,
                 this.params.address,

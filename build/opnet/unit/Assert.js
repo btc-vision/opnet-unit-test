@@ -1,8 +1,29 @@
 import { Assertion } from './Assertion.js';
 export class Assert {
+    static toBeGreaterThan(actual, expected, message) {
+        if (actual <= expected) {
+            throw new Error(message || `Expected ${actual} to be greater than ${expected}`);
+        }
+    }
+    static toBeGreaterThanOrEqual(actual, expected, message) {
+        if (actual < expected) {
+            throw new Error(message || `Expected ${actual} to be greater than or equal to ${expected}`);
+        }
+    }
+    static toBeLessThanOrEqual(actual, expected, message) {
+        if (actual > expected) {
+            throw new Error(message || `Expected ${actual} to be less than or equal to ${expected}`);
+        }
+    }
     static equal(actual, expected, message) {
         if (actual !== expected) {
             throw new Error(message || `Expected ${expected}, but got ${actual}`);
+        }
+    }
+    static toBeCloseTo(actual, expected, tolerance, message) {
+        if (actual < expected - tolerance || actual > expected + tolerance) {
+            throw new Error(message ||
+                `Expected ${actual} to be close to ${expected} within a tolerance of ${tolerance}`);
         }
     }
     static notEqual(actual, unexpected, message) {
@@ -14,23 +35,6 @@ export class Assert {
         if (!Assert.deepStrictEqual(actual, expected)) {
             throw new Error(message || `Expected deep equality`);
         }
-    }
-    static deepStrictEqual(actual, expected) {
-        if (actual === expected)
-            return true;
-        if (typeof actual !== 'object' ||
-            typeof expected !== 'object' ||
-            actual === null ||
-            expected === null) {
-            return false;
-        }
-        const actualObj = actual;
-        const expectedObj = expected;
-        const keysA = Object.keys(actualObj);
-        const keysB = Object.keys(expectedObj);
-        if (keysA.length !== keysB.length)
-            return false;
-        return keysA.every((key) => Assert.deepStrictEqual(actualObj[key], expectedObj[key]));
     }
     static expect(actual) {
         return new Assertion(actual);
@@ -58,5 +62,22 @@ export class Assert {
                 }
             }
         }
+    }
+    static deepStrictEqual(actual, expected) {
+        if (actual === expected)
+            return true;
+        if (typeof actual !== 'object' ||
+            typeof expected !== 'object' ||
+            actual === null ||
+            expected === null) {
+            return false;
+        }
+        const actualObj = actual;
+        const expectedObj = expected;
+        const keysA = Object.keys(actualObj);
+        const keysB = Object.keys(expectedObj);
+        if (keysA.length !== keysB.length)
+            return false;
+        return keysA.every((key) => Assert.deepStrictEqual(actualObj[key], expectedObj[key]));
     }
 }

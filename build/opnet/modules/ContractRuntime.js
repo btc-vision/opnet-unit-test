@@ -3,7 +3,6 @@ import bitcoin from 'bitcoinjs-lib';
 import { Logger } from '@btc-vision/logger';
 import { BytecodeManager } from './GetBytecode.js';
 import { Blockchain } from '../../blockchain/Blockchain.js';
-import { BitcoinNetworkRequest } from '@btc-vision/op-vm';
 import { RustContract } from '../vm/RustContract.js';
 export class ContractRuntime extends Logger {
     address;
@@ -328,11 +327,11 @@ export class ContractRuntime extends Logger {
     getNetwork() {
         switch (Blockchain.network) {
             case bitcoin.networks.bitcoin:
-                return BitcoinNetworkRequest.Mainnet;
+                return 0 /* BitcoinNetworkRequest.Mainnet */;
             case bitcoin.networks.testnet:
-                return BitcoinNetworkRequest.Testnet;
+                return 1 /* BitcoinNetworkRequest.Testnet */;
             case bitcoin.networks.regtest:
-                return BitcoinNetworkRequest.Regtest;
+                return 2 /* BitcoinNetworkRequest.Regtest */;
             default:
                 throw new Error('Unknown network');
         }
