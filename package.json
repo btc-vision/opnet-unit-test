@@ -3,9 +3,10 @@
     "name": "opnet-unit-test",
     "version": "1.0.2",
     "description": "OP_NET unit test harness and associated mocks",
-    "main": "index.js",
+    "main": "build/index.js",
     "scripts": {
-        "build": "gulp"
+        "build": "gulp",
+	"prepublish": "npm-run-all build"
     },
     "author": "OP_NET",
     "license": "ISC",
