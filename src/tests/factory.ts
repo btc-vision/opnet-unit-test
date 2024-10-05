@@ -1,15 +1,16 @@
-import { opnet, OPNetUnit } from '../opnet/unit/OPNetUnit.js';
-import { MotoswapFactory } from '../contracts/MotoswapFactory.js';
-import { Assert } from '../opnet/unit/Assert.js';
 import { Blockchain } from '../blockchain/Blockchain.js';
+import { MotoswapFactory } from '../contracts/MotoswapFactory.js';
 import { MotoswapPool } from '../contracts/MotoswapPool.js';
 import { MOTO_ADDRESS, WBTC_ADDRESS } from '../contracts/configs.js';
+import { Assert } from '../opnet/unit/Assert.js';
+import { opnet, OPNetUnit } from '../opnet/unit/OPNetUnit.js';
 
 await opnet('Motoswap Factory', async (vm: OPNetUnit) => {
     await vm.it('should instantiate the factory', async () => {
         await Assert.expect(async () => {
             const factory = new MotoswapFactory(Blockchain.txOrigin);
             await factory.init();
+            Blockchain.log(factory.address); // Example of logging the address of the contract.
             factory.dispose();
         }).toNotThrow();
     });

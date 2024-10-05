@@ -5,7 +5,14 @@
     "description": "",
     "main": "index.js",
     "scripts": {
-        "build": "gulp"
+        "build": "gulp",
+        "test:factory": "npx tsx ./src/tests/factory.ts",
+        "test:gas": "npx tsx ./src/tests/gas.ts",
+        "test:pool": "npx tsx ./src/tests/pool.ts",
+        "test:router": "npx tsx ./src/tests/router.ts",
+        "test:router2": "npx tsx ./src/tests/router2.ts",
+        "test:vm": "npx tsx ./src/tests/vm.ts",
+        "test": "npm run test:factory && npm run test:gas && npm run test:pool && npm run test:router && npm run test:router2 && npm run test:vm"
     },
     "author": "",
     "license": "ISC",
@@ -31,6 +38,7 @@
         "typescript-eslint": "^8.5.0"
     },
     "devDependencies": {
-        "gulp-eslint-new": "^2.3.0"
+        "gulp-eslint-new": "^2.3.0",
+        "tsx": "^4.19.1"
     }
 }
