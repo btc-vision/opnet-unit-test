@@ -9,9 +9,9 @@ const receiver: Address = Blockchain.generateRandomTaprootAddress();
 
 await opnet('Compare OP_20 gas usage', async (vm: OPNetUnit) => {
     await vm.it('should instantiate an OP_20 token', async () => {
-        await Assert.expect(async () => {
+        await Assert.expect(() => {
             const token = new OP_20('MyToken', Blockchain.txOrigin, rndAddress, 18);
-            await token.init();
+            token.init();
             token.dispose();
         }).toNotThrow();
     });
@@ -23,8 +23,8 @@ await opnet('Compare OP_20 gas usage', async (vm: OPNetUnit) => {
     const token = new OP_20('MyToken', Blockchain.txOrigin, rndAddress, 18);
     Blockchain.register(token);
 
-    vm.beforeEach(async () => {
-        await Blockchain.init();
+    vm.beforeEach(() => {
+        Blockchain.init();
     });
 
     vm.afterAll(() => {
@@ -44,7 +44,7 @@ await opnet('Compare OP_20 gas usage', async (vm: OPNetUnit) => {
     }
 
     await vm.beforeAll(async () => {
-        await Blockchain.init();
+        Blockchain.init();
 
         await mintTokens();
     });

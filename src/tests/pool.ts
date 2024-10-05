@@ -16,9 +16,9 @@ await opnet('Motoswap Pool', async (vm: OPNetUnit) => {
     Blockchain.txOrigin = receiver; // "leftmost thing in the call chain"
 
     await vm.it('should init a pool', async () => {
-        await Assert.expect(async () => {
+        await Assert.expect(() => {
             const pool = new MotoswapPool(token0Address, token1Address);
-            await pool.init();
+            pool.init();
             pool.dispose();
         }).toNotThrow();
     });
@@ -38,8 +38,8 @@ await opnet('Motoswap Pool', async (vm: OPNetUnit) => {
         Blockchain.dispose();
     }
 
-    vm.beforeEach(async () => {
-        await Blockchain.init();
+    vm.beforeEach(() => {
+        Blockchain.init();
     });
 
     vm.afterAll(() => {
@@ -69,7 +69,7 @@ await opnet('Motoswap Pool', async (vm: OPNetUnit) => {
     }
 
     await vm.beforeAll(async () => {
-        await Blockchain.init();
+        Blockchain.init();
 
         await mintTokens();
     });
@@ -188,7 +188,7 @@ await opnet('Motoswap Pool', async (vm: OPNetUnit) => {
     await vm.it(`should get input price`, async () => {
         for (const swapTestCase of swapTestCases) {
             vm.debugBright(`Swap test case: ${swapTestCase}`);
-            
+
             const [swapAmount, token0Amount, token1Amount, expectedOutputAmount] = swapTestCase;
 
             await addLiquidity(token0Amount, token1Amount);

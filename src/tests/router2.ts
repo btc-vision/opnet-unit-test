@@ -110,7 +110,7 @@ async function addLiquidity(DTTAmount: bigint, WBTCAmount: bigint) {
 }
 
 await opnet('Motoswap Router', async (vm: OPNetUnit) => {
-    vm.beforeEach(async () => {
+    vm.beforeEach(() => {
         Blockchain.dispose();
 
         /** Init factory */
@@ -131,7 +131,7 @@ await opnet('Motoswap Router', async (vm: OPNetUnit) => {
         router = new MotoswapRouter(Blockchain.txOrigin);
         Blockchain.register(router);
 
-        await Blockchain.init();
+        Blockchain.init();
     });
 
     vm.afterEach(async () => {
@@ -230,7 +230,7 @@ await opnet('Motoswap Router', async (vm: OPNetUnit) => {
             WBTC_ADDRESS,
             dttAddress,
         );
-        await pair.init();
+        pair.init();
 
         // Decode sync event
         const syncEventDecoded = MotoswapPool.decodeSyncEvent(syncEvent.eventData);

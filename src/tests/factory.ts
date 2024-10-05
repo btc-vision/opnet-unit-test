@@ -7,9 +7,9 @@ import { MOTO_ADDRESS, WBTC_ADDRESS } from '../contracts/configs.js';
 
 await opnet('Motoswap Factory', async (vm: OPNetUnit) => {
     await vm.it('should instantiate the factory', async () => {
-        await Assert.expect(async () => {
+        await Assert.expect(() => {
             const factory = new MotoswapFactory(Blockchain.txOrigin);
-            await factory.init();
+            factory.init();
             factory.dispose();
         }).toNotThrow();
     });
@@ -20,8 +20,8 @@ await opnet('Motoswap Factory', async (vm: OPNetUnit) => {
     Blockchain.register(pool);
     Blockchain.register(factory);
 
-    vm.beforeEach(async () => {
-        await Blockchain.init();
+    vm.beforeEach(() => {
+        Blockchain.init();
     });
 
     vm.afterAll(() => {

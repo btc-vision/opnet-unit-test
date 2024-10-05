@@ -177,12 +177,10 @@ export class ContractRuntime extends Logger {
         }
     }
 
-    public async init(): Promise<void> {
+    public init(): void {
         this.defineRequiredBytecodes();
 
         this._bytecode = BytecodeManager.getBytecode(this.address) as Buffer;
-
-        await this.loadContract();
     }
 
     protected async readMethod(
@@ -344,66 +342,67 @@ export class ContractRuntime extends Logger {
     }
 
     private async deployContractAtAddress(data: Buffer): Promise<Buffer | Uint8Array> {
-        const reader = new BinaryReader(data);
+        return new Promise((resolve) => {
+            const reader = new BinaryReader(data);
 
-        const address: Address = reader.readAddress();
-        const salt: Buffer = Buffer.from(reader.readBytes(32)); //Buffer.from(`${reader.readU256().toString(16)}`, 'hex');
-        const saltBig = BigInt(
-            '0x' + salt.reduce((acc, byte) => acc + byte.toString(16).padStart(2, '0'), ''),
-        );
-
-        if (Blockchain.traceDeployments) {
-            this.log(
-                `This contract wants to deploy the same bytecode as ${address}. Salt: ${salt.toString('hex')} or ${saltBig}`,
+            const address: Address = reader.readAddress();
+            const salt: Buffer = Buffer.from(reader.readBytes(32)); //Buffer.from(`${reader.readU256().toString(16)}`, 'hex');
+            const saltBig = BigInt(
+                '0x' + salt.reduce((acc, byte) => acc + byte.toString(16).padStart(2, '0'), ''),
             );
-        }
 
-        const deployResult = Blockchain.generateAddress(this.address, salt, address);
-        if (this.deployedContracts.has(deployResult.contractAddress)) {
-            throw new Error('Contract already deployed');
-        }
+            if (Blockchain.traceDeployments) {
+                this.log(
+                    `This contract wants to deploy the same bytecode as ${address}. Salt: ${salt.toString('hex')} or ${saltBig}`,
+                );
+            }
 
-        if (address === this.address) {
-            throw new Error('Cannot deploy the same contract');
-        }
+            const deployResult = Blockchain.generateAddress(this.address, salt, address);
+            if (this.deployedContracts.has(deployResult.contractAddress)) {
+                throw new Error('Contract already deployed');
+            }
 
-        const requestedContractBytecode = BytecodeManager.getBytecode(address) as Buffer;
-        const newContract: ContractRuntime = new ContractRuntime(
-            deployResult.contractAddress,
-            this.address,
-            this.gasLimit,
-            requestedContractBytecode,
-        );
+            if (address === this.address) {
+                throw new Error('Cannot deploy the same contract');
+            }
 
-        newContract.preserveState();
-
-        if (Blockchain.traceDeployments) {
-            this.info(
-                `Deploying contract at ${deployResult.contractAddress.toString()} - virtual address 0x${deployResult.virtualAddress.toString('hex')}`,
+            const requestedContractBytecode = BytecodeManager.getBytecode(address) as Buffer;
+            const newContract: ContractRuntime = new ContractRuntime(
+                deployResult.contractAddress,
+                this.address,
+                this.gasLimit,
+                requestedContractBytecode,
             );
-        }
 
-        Blockchain.register(newContract);
+            newContract.preserveState();
 
-        await newContract.init();
+            if (Blockchain.traceDeployments) {
+                this.info(
+                    `Deploying contract at ${deployResult.contractAddress.toString()} - virtual address 0x${deployResult.virtualAddress.toString('hex')}`,
+                );
+            }
 
-        if (Blockchain.traceDeployments) {
-            this.log(`Deployed contract at ${deployResult.contractAddress.toString()}`);
-        }
+            Blockchain.register(newContract);
 
-        this.deployedContracts.set(deployResult.contractAddress, this.bytecode);
+            newContract.init();
 
-        const response = new BinaryWriter();
-        response.writeBytes(deployResult.virtualAddress);
-        response.writeAddress(deployResult.contractAddress);
+            if (Blockchain.traceDeployments) {
+                this.log(`Deployed contract at ${deployResult.contractAddress.toString()}`);
+            }
 
-        return response.getBuffer();
+            this.deployedContracts.set(deployResult.contractAddress, this.bytecode);
+
+            const response = new BinaryWriter();
+            response.writeBytes(deployResult.virtualAddress);
+            response.writeAddress(deployResult.contractAddress);
+
+            resolve(response.getBuffer());
+        });
     }
 
     private load(data: Buffer): Buffer | Uint8Array {
         const reader = new BinaryReader(data);
         const pointer = reader.readU256();
-
         const value = this.states.get(pointer) || 0n;
 
         if (Blockchain.tracePointers) {
@@ -428,7 +427,7 @@ export class ContractRuntime extends Logger {
         this.states.set(pointer, value);
 
         const response: BinaryWriter = new BinaryWriter();
-        response.writeU256(0n);
+        response.writeBoolean(true);
 
         return response.getBuffer();
     }
@@ -463,12 +462,14 @@ export class ContractRuntime extends Logger {
         }
 
         const contract: ContractRuntime = Blockchain.getContract(contractAddress);
+        //const callResponse = await contract.onCall(calldata, this.address, Blockchain.txOrigin);
+
         const code = contract.bytecode;
         const ca = new ContractRuntime(contractAddress, contract.deployer, contract.gasLimit, code);
         ca.preserveState();
+        ca.setStates(contract.getStates());
 
-        await ca.init();
-
+        ca.init();
         const callResponse = await ca.onCall(calldata, this.address, Blockchain.txOrigin);
         contract.setStates(ca.getStates());
 
