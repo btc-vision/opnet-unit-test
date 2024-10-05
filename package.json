@@ -10,6 +10,9 @@
     },
     "author": "OP_NET",
     "license": "ISC",
+    "exports": {
+      ".": "build/index.js"
+    },
     "dependencies": {
         "@btc-vision/bsi-binary": "^1.0.42",
         "@btc-vision/btc-runtime": "^1.1.11",
