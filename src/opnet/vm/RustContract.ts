@@ -93,9 +93,12 @@ export class RustContract {
 
         if (this.enableDebug || this.enableDisposeLog) console.log('Disposing contract', this._id);
 
+        let deadlock: unknown;
         try {
             this.gasUsed = this.getUsedGas();
-        } catch {}
+        } catch (e) {
+            deadlock = e;
+        }
 
         delete this._params;
 
@@ -106,6 +109,14 @@ export class RustContract {
 
         Blockchain.removeBinding(this._id);
         this.contractManager.destroyContract(this._id);
+
+        if (deadlock) {
+            const strErr = (deadlock as Error).message;
+
+            if (strErr.includes('mutex')) {
+                throw new Error('OPNET: REENTRANCY DETECTED');
+            }
+        }
     }
 
     public async defineSelectors(): Promise<void> {
@@ -129,16 +140,13 @@ export class RustContract {
             const pointer = await this.__lowerTypedArray(13, 0, buffer);
             const data = await this.__retain(pointer);
 
-            let finalResult;
-            try {
-                const resp = await this.contractManager.call(this.id, 'readMethod', [method, data]);
-                this.gasCallback(resp.gasUsed, 'readMethod');
+            const resp = await this.contractManager.call(this.id, 'readMethod', [method, data]);
+            this.gasCallback(resp.gasUsed, 'readMethod');
 
-                const result = resp.result.filter((n) => n !== undefined);
-                finalResult = this.__liftTypedArray(result[0] >>> 0);
-            } finally {
-                await this.__release(data);
-            }
+            const result = resp.result.filter((n) => n !== undefined);
+            const finalResult = this.__liftTypedArray(result[0] >>> 0);
+
+            await this.__release(data);
 
             return finalResult;
         } catch (e) {

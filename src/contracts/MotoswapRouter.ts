@@ -33,18 +33,10 @@ export class MotoswapRouter extends ContractRuntime {
 
     private readonly WBTC_SELECTOR: number = Number(`0x${this.abiCoder.encodeSelector('WBTC')}`);
 
-    constructor(deployer: Address, gasLimit: bigint = 300_000_000_000n) {
+    constructor(deployer: Address, gasLimit: bigint = 100_000_000_000n) {
         super(ROUTER_ADDRESS, deployer, gasLimit);
 
         this.preserveState();
-    }
-
-    protected handleError(error: Error): Error {
-        return new Error(`(in router: ${this.address}) OPNET: ${error.stack}`);
-    }
-
-    protected defineRequiredBytecodes(): void {
-        BytecodeManager.loadBytecode('./bytecode/router.wasm', this.address);
     }
 
     public async getFactory(): Promise<Address> {
@@ -236,5 +228,13 @@ export class MotoswapRouter extends ContractRuntime {
         this.dispose();
 
         return result;
+    }
+
+    protected handleError(error: Error): Error {
+        return new Error(`(in router: ${this.address}) OPNET: ${error.stack}`);
+    }
+
+    protected defineRequiredBytecodes(): void {
+        BytecodeManager.loadBytecode('./bytecode/router.wasm', this.address);
     }
 }

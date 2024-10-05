@@ -42,7 +42,7 @@ export class OP_20 extends ContractRuntime {
         deployer: Address,
         address: Address,
         public readonly decimals: number,
-        gasLimit: bigint = 300_000_000_000n,
+        gasLimit: bigint = 100_000_000_000n,
     ) {
         super(address, deployer, gasLimit);
 
