@@ -40,7 +40,10 @@ export class MotoswapRouter extends ContractRuntime {
     }
 
     public async getFactory(): Promise<Address> {
-        const result = await this.readView(this.FACTORY_SELECTOR);
+        const binaryWriter = new BinaryWriter();
+        binaryWriter.writeSelector(this.FACTORY_SELECTOR);
+
+        const result = await this.execute(binaryWriter.getBuffer());
 
         const response = result.response;
         if (!response) {
@@ -54,7 +57,10 @@ export class MotoswapRouter extends ContractRuntime {
     }
 
     public async getWBTC(): Promise<Address> {
-        const result = await this.readView(this.WBTC_SELECTOR);
+        const binaryWriter = new BinaryWriter();
+        binaryWriter.writeSelector(this.WBTC_SELECTOR);
+
+        const result = await this.execute(binaryWriter.getBuffer());
 
         const response = result.response;
         if (!response) {
@@ -69,12 +75,13 @@ export class MotoswapRouter extends ContractRuntime {
 
     public async quote(amountA: bigint, reserveA: bigint, reserveB: bigint): Promise<bigint> {
         const calldata = new BinaryWriter();
+        calldata.writeSelector(this.QUOTE_SELECTOR);
         calldata.writeU256(amountA);
         calldata.writeU256(reserveA);
         calldata.writeU256(reserveB);
 
         const buf = calldata.getBuffer();
-        const result = await this.readMethod(this.QUOTE_SELECTOR, Buffer.from(buf));
+        const result = await this.execute(Buffer.from(buf));
 
         const response = result.response;
         if (!response) {
@@ -93,12 +100,13 @@ export class MotoswapRouter extends ContractRuntime {
         reserveOut: bigint,
     ): Promise<bigint> {
         const calldata = new BinaryWriter();
+        calldata.writeSelector(this.GET_AMOUNT_OUT_SELECTOR);
         calldata.writeU256(amountIn);
         calldata.writeU256(reserveIn);
         calldata.writeU256(reserveOut);
 
         const buf = calldata.getBuffer();
-        const result = await this.readMethod(this.GET_AMOUNT_OUT_SELECTOR, Buffer.from(buf));
+        const result = await this.execute(Buffer.from(buf));
 
         const response = result.response;
         if (!response) {
@@ -117,12 +125,13 @@ export class MotoswapRouter extends ContractRuntime {
         reserveOut: bigint,
     ): Promise<bigint> {
         const calldata = new BinaryWriter();
+        calldata.writeSelector(this.GET_AMOUNT_IN_SELECTOR);
         calldata.writeU256(amountOut);
         calldata.writeU256(reserveIn);
         calldata.writeU256(reserveOut);
 
         const buf = calldata.getBuffer();
-        const result = await this.readMethod(this.GET_AMOUNT_IN_SELECTOR, Buffer.from(buf));
+        const result = await this.execute(Buffer.from(buf));
 
         const response = result.response;
         if (!response) {
@@ -137,11 +146,12 @@ export class MotoswapRouter extends ContractRuntime {
 
     public async getAmountsOut(amountIn: bigint, path: Address[]): Promise<bigint[]> {
         const calldata = new BinaryWriter();
+        calldata.writeSelector(this.GET_AMOUNTS_OUT_SELECTOR);
         calldata.writeU256(amountIn);
         calldata.writeAddressArray(path);
 
         const buf = calldata.getBuffer();
-        const result = await this.readMethod(this.GET_AMOUNTS_OUT_SELECTOR, Buffer.from(buf));
+        const result = await this.execute(Buffer.from(buf));
 
         const response = result.response;
         if (!response) {
@@ -156,11 +166,12 @@ export class MotoswapRouter extends ContractRuntime {
 
     public async getAmountsIn(amountOut: bigint, path: Address[]): Promise<bigint[]> {
         const calldata = new BinaryWriter();
+        calldata.writeSelector(this.GET_AMOUNTS_IN_SELECTOR);
         calldata.writeU256(amountOut);
         calldata.writeAddressArray(path);
 
         const buf = calldata.getBuffer();
-        const result = await this.readMethod(this.GET_AMOUNTS_IN_SELECTOR, Buffer.from(buf));
+        const result = await this.execute(Buffer.from(buf));
 
         const response = result.response;
         if (!response) {
@@ -175,6 +186,7 @@ export class MotoswapRouter extends ContractRuntime {
 
     public async addLiquidity(parameters: AddLiquidityParameters): Promise<CallResponse> {
         const calldata = new BinaryWriter();
+        calldata.writeSelector(this.ADD_LIQUIDITY_SELECTOR);
         calldata.writeAddress(parameters.tokenA);
         calldata.writeAddress(parameters.tokenB);
 
@@ -188,7 +200,7 @@ export class MotoswapRouter extends ContractRuntime {
         calldata.writeU64(parameters.deadline);
 
         const buf = calldata.getBuffer();
-        const result = await this.readMethod(this.ADD_LIQUIDITY_SELECTOR, Buffer.from(buf));
+        const result = await this.execute(Buffer.from(buf));
 
         const response = result.response;
         if (!response) {
@@ -208,6 +220,7 @@ export class MotoswapRouter extends ContractRuntime {
         deadline: bigint,
     ): Promise<CallResponse> {
         const calldata = new BinaryWriter();
+        calldata.writeSelector(this.swapExactTokensForTokensSupportingFeeOnTransferTokensSelector);
         calldata.writeU256(amountIn);
         calldata.writeU256(amountOutMin);
         calldata.writeAddressArray(path);
@@ -215,10 +228,7 @@ export class MotoswapRouter extends ContractRuntime {
         calldata.writeU64(deadline);
 
         const buf = calldata.getBuffer();
-        const result = await this.readMethod(
-            this.swapExactTokensForTokensSupportingFeeOnTransferTokensSelector,
-            Buffer.from(buf),
-        );
+        const result = await this.execute(Buffer.from(buf));
 
         const response = result.response;
         if (!response) {

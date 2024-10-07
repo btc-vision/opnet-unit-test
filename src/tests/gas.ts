@@ -53,7 +53,7 @@ await opnet('Compare OP_20 gas usage', async (vm: OPNetUnit) => {
         const time = Date.now();
         const transfer = await token.transfer(receiver, rndAddress, 100n);
         const elapsed = Date.now() - time;
-        const currentGasUsed = 574235805n; //console.log('Gas:', transfer);
+        const currentGasUsed = 662401236n; //console.log('Gas:', transfer);
 
         if (transfer.usedGas <= currentGasUsed) {
             const savedGas = currentGasUsed - transfer.usedGas;
