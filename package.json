@@ -6,6 +6,7 @@
     "main": "index.js",
     "scripts": {
         "build": "gulp",
+        "build:pool": "tsx src/utils/pool.ts",
         "test:factory": "tsx src/tests/factory.ts",
         "test:gas": "tsx src/tests/gas.ts",
         "test:pool": "tsx src/tests/pool.ts",
