@@ -192,17 +192,21 @@ class BlockchainBase extends Logger {
     }
 
     public cleanup(): void {
+        for (const contract of this.contracts.values()) {
+            contract.delete();
+        }
+
         this.contractManager.destroyAll();
         this.contractManager.destroy();
 
         delete this._contractManager;
     }
 
-    public init(): void {
+    public async init(): Promise<void> {
         this.dispose();
 
         for (const contract of this.contracts.values()) {
-            contract.init();
+            await contract.init();
         }
     }
 

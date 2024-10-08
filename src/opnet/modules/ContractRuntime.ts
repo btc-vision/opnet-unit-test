@@ -39,6 +39,10 @@ export class ContractRuntime extends Logger {
         private readonly potentialBytecode?: Buffer,
     ) {
         super();
+
+        if (!this.deployer) {
+            throw new Error('Deployer address not provided');
+        }
     }
 
     private _deploymentCalldata: Buffer | undefined;
@@ -82,6 +86,10 @@ export class ContractRuntime extends Logger {
         return this.states;
     }
 
+    public getDeploymentStates(): Map<bigint, bigint> {
+        return this.deploymentStates;
+    }
+
     public setStates(states: Map<bigint, bigint>): void {
         this.states = new Map(states);
     }
@@ -92,15 +100,16 @@ export class ContractRuntime extends Logger {
         delete this._contract;
         delete this._bytecode;
 
-        this.states.clear();
+        this.restoreStatesToDeployment();
         this.statesBackup.clear();
+
         this.events = [];
         this.callStack = [];
         this.deployedContracts.clear();
     }
 
     public resetStates(): Promise<void> | void {
-        this.states.clear();
+        this.restoreStatesToDeployment();
     }
 
     public async setEnvironment(
@@ -128,7 +137,6 @@ export class ContractRuntime extends Logger {
     }
 
     public restoreStates(): void {
-        this.states.clear();
         this.states = new Map(this.statesBackup);
     }
 
@@ -181,10 +189,37 @@ export class ContractRuntime extends Logger {
         }
     }
 
-    public init(): void {
+    public async init(): Promise<void> {
         this.defineRequiredBytecodes();
 
         this._bytecode = BytecodeManager.getBytecode(this.address) as Buffer;
+
+        return Promise.resolve();
+    }
+
+    public async deployContract(): Promise<void> {
+        if (this.deploymentStates.size || this.states.size) {
+            return;
+        }
+
+        this.loadContract();
+        
+        await this.setEnvironment(this.deployer, this.deployer);
+
+        const calldata = this._deploymentCalldata || Buffer.alloc(0);
+
+        let error: Error | undefined;
+        await this.contract.onDeploy(calldata).catch((e: unknown) => {
+            error = e as Error;
+        });
+
+        if (error) {
+            throw this.handleError(error);
+        }
+
+        this.deploymentStates = new Map(this.states);
+
+        this.dispose();
     }
 
     protected async execute(
@@ -192,13 +227,18 @@ export class ContractRuntime extends Logger {
         sender?: Address,
         txOrigin?: Address,
     ): Promise<CallResponse> {
-        await this.loadContract();
+        // Deploy if not deployed.
+        await this.deployContract();
 
-        const usedGasBefore = this.contract.getUsedGas();
-        if (sender) {
+        this.loadContract();
+
+        if (sender || txOrigin) {
             await this.setEnvironment(sender, txOrigin);
+        } else {
+            await this.setEnvironment();
         }
 
+        const usedGasBefore = this.contract.getUsedGas();
         const statesBackup = new Map(this.states);
 
         let error: Error | undefined;
@@ -206,14 +246,12 @@ export class ContractRuntime extends Logger {
             error = (await e) as Error;
 
             // Restore states
-            this.states.clear();
             this.states = statesBackup;
 
             return undefined;
         });
 
         const usedGas = this.contract.getUsedGas() - usedGasBefore;
-
         return {
             response,
             error,
@@ -237,10 +275,9 @@ export class ContractRuntime extends Logger {
         }
     }
 
-    protected async loadContract(): Promise<void> {
+    protected loadContract(): void {
         try {
             if (!this.shouldPreserveState) {
-                this.states.clear();
                 this.states = new Map(this.deploymentStates);
             }
 
@@ -259,9 +296,6 @@ export class ContractRuntime extends Logger {
 
             const params: ContractParameters = this.generateParams();
             this._contract = new RustContract(params);
-
-            await this.setEnvironment();
-            await this.deployContract();
         } catch (e) {
             if (this._contract) {
                 try {
@@ -273,91 +307,65 @@ export class ContractRuntime extends Logger {
         }
     }
 
-    private async deployContract(): Promise<void> {
-        if (this.deploymentStates.size > 0) {
-            return;
-        }
-
-        const statesBackup = new Map(this.states);
-        const calldata = this._deploymentCalldata || Buffer.alloc(0);
-
-        let error: Error | undefined;
-        await this.contract.onDeploy(calldata).catch(async (e: unknown) => {
-            error = (await e) as Error;
-
-            // Restore states
-            this.states.clear();
-            this.states = statesBackup;
-
-            this.dispose();
-
-            return undefined;
-        });
-
-        if (error) {
-            throw this.handleError(error);
-        }
-
-        this.deploymentStates = new Map(this.states);
+    private restoreStatesToDeployment(): void {
+        this.states = new Map(this.deploymentStates);
     }
 
     private async deployContractAtAddress(data: Buffer): Promise<Buffer | Uint8Array> {
-        return new Promise((resolve) => {
-            const reader = new BinaryReader(data);
+        const reader = new BinaryReader(data);
 
-            const address: Address = reader.readAddress();
-            const salt: Buffer = Buffer.from(reader.readBytes(32)); //Buffer.from(`${reader.readU256().toString(16)}`, 'hex');
-            const saltBig = BigInt(
-                '0x' + salt.reduce((acc, byte) => acc + byte.toString(16).padStart(2, '0'), ''),
+        const address: Address = reader.readAddress();
+        const salt: Buffer = Buffer.from(reader.readBytes(32)); //Buffer.from(`${reader.readU256().toString(16)}`, 'hex');
+        const saltBig = BigInt(
+            '0x' + salt.reduce((acc, byte) => acc + byte.toString(16).padStart(2, '0'), ''),
+        );
+
+        if (Blockchain.traceDeployments) {
+            this.log(
+                `This contract wants to deploy the same bytecode as ${address}. Salt: ${salt.toString('hex')} or ${saltBig}`,
             );
+        }
 
-            if (Blockchain.traceDeployments) {
-                this.log(
-                    `This contract wants to deploy the same bytecode as ${address}. Salt: ${salt.toString('hex')} or ${saltBig}`,
-                );
-            }
+        const deployResult = Blockchain.generateAddress(this.address, salt, address);
+        if (this.deployedContracts.has(deployResult.contractAddress)) {
+            throw new Error('Contract already deployed');
+        }
 
-            const deployResult = Blockchain.generateAddress(this.address, salt, address);
-            if (this.deployedContracts.has(deployResult.contractAddress)) {
-                throw new Error('Contract already deployed');
-            }
+        if (address === this.address) {
+            throw new Error('Cannot deploy the same contract');
+        }
 
-            if (address === this.address) {
-                throw new Error('Cannot deploy the same contract');
-            }
+        const requestedContractBytecode = BytecodeManager.getBytecode(address) as Buffer;
+        const newContract: ContractRuntime = new ContractRuntime(
+            deployResult.contractAddress,
+            this.address,
+            this.gasLimit,
+            requestedContractBytecode,
+        );
 
-            const requestedContractBytecode = BytecodeManager.getBytecode(address) as Buffer;
-            const newContract: ContractRuntime = new ContractRuntime(
-                deployResult.contractAddress,
-                this.address,
-                this.gasLimit,
-                requestedContractBytecode,
+        newContract.preserveState();
+
+        if (Blockchain.traceDeployments) {
+            this.info(
+                `Deploying contract at ${deployResult.contractAddress.toString()} - virtual address 0x${deployResult.virtualAddress.toString('hex')}`,
             );
+        }
 
-            newContract.preserveState();
+        Blockchain.register(newContract);
 
-            if (Blockchain.traceDeployments) {
-                this.info(
-                    `Deploying contract at ${deployResult.contractAddress.toString()} - virtual address 0x${deployResult.virtualAddress.toString('hex')}`,
-                );
-            }
+        await newContract.init();
 
-            Blockchain.register(newContract);
+        if (Blockchain.traceDeployments) {
+            this.log(`Deployed contract at ${deployResult.contractAddress.toString()}`);
+        }
 
-            newContract.init();
+        this.deployedContracts.set(deployResult.contractAddress, this.bytecode);
 
-            if (Blockchain.traceDeployments) {
-                this.log(`Deployed contract at ${deployResult.contractAddress.toString()}`);
-            }
+        const response = new BinaryWriter();
+        response.writeBytes(deployResult.virtualAddress);
+        response.writeAddress(deployResult.contractAddress);
 
-            this.deployedContracts.set(deployResult.contractAddress, this.bytecode);
-
-            const response = new BinaryWriter();
-            response.writeBytes(deployResult.virtualAddress);
-            response.writeAddress(deployResult.contractAddress);
-
-            resolve(response.getBuffer());
-        });
+        return response.getBuffer();
     }
 
     private load(data: Buffer): Buffer | Uint8Array {
@@ -393,12 +401,6 @@ export class ContractRuntime extends Logger {
     }
 
     private checkReentrancy(calls: Address[]): void {
-        /*if (this.callStack.length !== new Set(this.callStack).size) {
-            console.log(this.callStack);
-
-            throw new Error(`OPNET: REENTRANCY DETECTED`);
-        }*/
-
         if (DISABLE_REENTRANCY_GUARD) {
             return;
         }
@@ -422,14 +424,14 @@ export class ContractRuntime extends Logger {
         }
 
         const contract: ContractRuntime = Blockchain.getContract(contractAddress);
-        //const callResponse = await contract.onCall(calldata, this.address, Blockchain.txOrigin);
-
         const code = contract.bytecode;
         const ca = new ContractRuntime(contractAddress, contract.deployer, contract.gasLimit, code);
+
         ca.preserveState();
         ca.setStates(contract.getStates());
 
-        ca.init();
+        await ca.init();
+
         const callResponse = await ca.onCall(calldata, this.address, Blockchain.txOrigin);
         contract.setStates(ca.getStates());
 

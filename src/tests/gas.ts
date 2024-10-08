@@ -8,23 +8,25 @@ const rndAddress = Blockchain.generateRandomSegwitAddress();
 const receiver: Address = Blockchain.generateRandomTaprootAddress();
 
 await opnet('Compare OP_20 gas usage', async (vm: OPNetUnit) => {
+    Blockchain.msgSender = receiver;
+    Blockchain.txOrigin = receiver; // "leftmost thing in the call chain"
+
     await vm.it('should instantiate an OP_20 token', async () => {
-        await Assert.expect(() => {
+        await Assert.expect(async () => {
             const token = new OP_20('MyToken', Blockchain.txOrigin, rndAddress, 18);
-            token.init();
+            await token.init();
+            await token.deployContract();
+
             token.dispose();
         }).toNotThrow();
     });
-
-    Blockchain.msgSender = receiver;
-    Blockchain.txOrigin = receiver; // "leftmost thing in the call chain"
 
     // Declare all the request contracts
     const token = new OP_20('MyToken', Blockchain.txOrigin, rndAddress, 18);
     Blockchain.register(token);
 
-    vm.beforeEach(() => {
-        Blockchain.init();
+    vm.beforeEach(async () => {
+        await Blockchain.init();
     });
 
     vm.afterAll(() => {
@@ -44,7 +46,7 @@ await opnet('Compare OP_20 gas usage', async (vm: OPNetUnit) => {
     }
 
     await vm.beforeAll(async () => {
-        Blockchain.init();
+        await Blockchain.init();
 
         await mintTokens();
     });

@@ -112,14 +112,14 @@ async function addLiquidity(DTTAmount: bigint, WBTCAmount: bigint) {
 
 await opnet('Motoswap Router', async (vm: OPNetUnit) => {
     await vm.it('should init the router', async () => {
-        await Assert.expect(() => {
+        await Assert.expect(async () => {
             const router = new MotoswapRouter(Blockchain.txOrigin);
-            router.init();
+            await router.init();
             router.dispose();
         }).toNotThrow();
     });
 
-    vm.beforeEach(() => {
+    vm.beforeEach(async () => {
         Blockchain.dispose();
 
         // Init factory
@@ -140,7 +140,7 @@ await opnet('Motoswap Router', async (vm: OPNetUnit) => {
         router = new MotoswapRouter(Blockchain.txOrigin);
         Blockchain.register(router);
 
-        Blockchain.init();
+        await Blockchain.init();
     });
 
     vm.afterEach(async () => {
@@ -302,7 +302,7 @@ await opnet('Motoswap Router', async (vm: OPNetUnit) => {
 });
 
 await opnet(`Motoswap Router: fee-on-transfer tokens`, async (vm: OPNetUnit) => {
-    vm.beforeEach(() => {
+    vm.beforeEach(async () => {
         Blockchain.clearContracts();
 
         Blockchain.dispose();
@@ -325,7 +325,7 @@ await opnet(`Motoswap Router: fee-on-transfer tokens`, async (vm: OPNetUnit) => 
         router = new MotoswapRouter(Blockchain.txOrigin);
         Blockchain.register(router);
 
-        Blockchain.init();
+        await Blockchain.init();
     });
 
     vm.afterEach(async () => {
@@ -381,7 +381,7 @@ await opnet(`Motoswap Router: fee-on-transfer tokens`, async (vm: OPNetUnit) => 
 });
 
 await opnet(`Motoswap Router: liquidity`, async (vm: OPNetUnit) => {
-    vm.beforeEach(() => {
+    vm.beforeEach(async () => {
         dispose();
         Blockchain.clearContracts();
 
@@ -405,7 +405,7 @@ await opnet(`Motoswap Router: liquidity`, async (vm: OPNetUnit) => {
         router = new MotoswapRouter(Blockchain.txOrigin);
         Blockchain.register(router);
 
-        Blockchain.init();
+        await Blockchain.init();
     });
 
     vm.afterEach(async () => {
@@ -495,7 +495,7 @@ await opnet(`Motoswap Router: liquidity`, async (vm: OPNetUnit) => {
                 dttAddress,
             );
 
-            pair.init();
+            await pair.init();
 
             // Decode sync event
             const syncEventDecoded = MotoswapPool.decodeSyncEvent(syncEvent.eventData);
