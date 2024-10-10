@@ -1,11 +1,12 @@
 import { ABICoder, Address, BinaryReader, BinaryWriter, NetEvent } from '@btc-vision/bsi-binary';
-import bitcoin from 'bitcoinjs-lib';
 import { Logger } from '@btc-vision/logger';
-import { BytecodeManager } from './GetBytecode.js';
-import { Blockchain } from '../../blockchain/Blockchain.js';
 import { BitcoinNetworkRequest } from '@btc-vision/op-vm';
-import { ContractParameters, RustContract } from '../vm/RustContract.js';
+import bitcoin from 'bitcoinjs-lib';
+import crypto from 'crypto';
+import { Blockchain } from '../../blockchain/Blockchain.js';
 import { DISABLE_REENTRANCY_GUARD } from '../../contracts/configs.js';
+import { ContractParameters, RustContract } from '../vm/RustContract.js';
+import { BytecodeManager } from './GetBytecode.js';
 
 export interface CallResponse {
     response?: Uint8Array;
@@ -21,6 +22,8 @@ export class ContractRuntime extends Logger {
     public gasUsed: bigint = 0n;
 
     protected states: Map<bigint, bigint> = new Map();
+    protected deploymentStates: Map<bigint, bigint> = new Map();
+
     protected shouldPreserveState: boolean = false;
     protected events: NetEvent[] = [];
 
@@ -29,7 +32,6 @@ export class ContractRuntime extends Logger {
 
     private callStack: Address[] = [];
     private statesBackup: Map<bigint, bigint> = new Map();
-    private network: bitcoin.Network = Blockchain.network;
 
     protected constructor(
         public address: Address,
@@ -38,6 +40,16 @@ export class ContractRuntime extends Logger {
         private readonly potentialBytecode?: Buffer,
     ) {
         super();
+
+        if (!this.deployer) {
+            throw new Error('Deployer address not provided');
+        }
+    }
+
+    private _deploymentCalldata: Buffer | undefined;
+
+    public set deploymentCalldata(calldata: Buffer) {
+        this._deploymentCalldata = calldata;
     }
 
     _contract: RustContract | undefined;
@@ -50,6 +62,10 @@ export class ContractRuntime extends Logger {
         return this._contract;
     }
 
+    public get safeRnd64(): bigint {
+        return Blockchain.blockNumber >> 1n; //BigInt(crypto.getRandomValues(new Uint32Array(2)).join(''));
+    }
+
     protected _bytecode: Buffer | undefined;
 
     protected get bytecode(): Buffer {
@@ -58,12 +74,21 @@ export class ContractRuntime extends Logger {
         return this._bytecode;
     }
 
+    private get transactionId(): Uint8Array {
+        // generate random 32 bytes
+        return crypto.getRandomValues(new Uint8Array(32));
+    }
+
     public preserveState(): void {
         this.shouldPreserveState = true;
     }
 
     public getStates(): Map<bigint, bigint> {
         return this.states;
+    }
+
+    public getDeploymentStates(): Map<bigint, bigint> {
+        return this.deploymentStates;
     }
 
     public setStates(states: Map<bigint, bigint>): void {
@@ -76,15 +101,16 @@ export class ContractRuntime extends Logger {
         delete this._contract;
         delete this._bytecode;
 
-        this.states.clear();
+        this.restoreStatesToDeployment();
         this.statesBackup.clear();
+
         this.events = [];
         this.callStack = [];
         this.deployedContracts.clear();
     }
 
     public resetStates(): Promise<void> | void {
-        this.states.clear();
+        this.restoreStatesToDeployment();
     }
 
     public async setEnvironment(
@@ -97,19 +123,14 @@ export class ContractRuntime extends Logger {
         const writer = new BinaryWriter();
         writer.writeAddress(msgSender);
         writer.writeAddress(txOrigin); // "leftmost thing in the call chain"
+        writer.writeBytes(this.transactionId); // "transaction id"
         writer.writeU256(currentBlock);
         writer.writeAddress(owner);
         writer.writeAddress(address);
-        writer.writeU64(BigInt(Date.now()));
+        writer.writeU64(Blockchain.medianTimestamp);
+        writer.writeU64(this.safeRnd64); // rnd number for now
 
         await this.contract.setEnvironment(writer.getBuffer());
-    }
-
-    public async getEvents(): Promise<NetEvent[]> {
-        const events = await this.contract.getEvents();
-        const reader = new BinaryReader(events);
-
-        return reader.readEvents();
     }
 
     public backupStates(): void {
@@ -117,7 +138,6 @@ export class ContractRuntime extends Logger {
     }
 
     public restoreStates(): void {
-        this.states.clear();
         this.states = new Map(this.statesBackup);
     }
 
@@ -128,7 +148,6 @@ export class ContractRuntime extends Logger {
     ): Promise<CallResponse> {
         const reader = new BinaryReader(data);
         const selector: number = reader.readSelector();
-        const calldata: Buffer = data.subarray(4) as Buffer;
 
         if (Blockchain.traceCalls) {
             this.log(
@@ -136,13 +155,7 @@ export class ContractRuntime extends Logger {
             );
         }
 
-        let response: CallResponse;
-        if (calldata.length === 0) {
-            response = await this.readView(selector, sender, from);
-        } else {
-            response = await this.readMethod(selector, calldata, sender, from);
-        }
-
+        const response: CallResponse = await this.execute(data as Buffer, sender, from);
         if (Blockchain.traceCalls) {
             this.log(`Call response: ${response.response}`);
         }
@@ -182,84 +195,62 @@ export class ContractRuntime extends Logger {
 
         this._bytecode = BytecodeManager.getBytecode(this.address) as Buffer;
 
-        await this.loadContract();
+        return Promise.resolve();
     }
 
-    protected async readMethod(
-        selector: number,
-        calldata: Buffer,
+    public async deployContract(): Promise<void> {
+        if (this.deploymentStates.size || this.states.size) {
+            return;
+        }
+
+        this.loadContract();
+
+        await this.setEnvironment(this.deployer, this.deployer);
+
+        const calldata = this._deploymentCalldata || Buffer.alloc(0);
+
+        let error: Error | undefined;
+        await this.contract.onDeploy(calldata).catch((e: unknown) => {
+            error = e as Error;
+        });
+
+        if (error) {
+            throw this.handleError(error);
+        }
+
+        this.deploymentStates = new Map(this.states);
+
+        this.dispose();
+    }
+
+    protected async execute(
+        calldata: Buffer | Uint8Array,
         sender?: Address,
         txOrigin?: Address,
     ): Promise<CallResponse> {
-        await this.loadContract();
+        // Deploy if not deployed.
+        await this.deployContract();
 
-        const usedGasBefore = this.contract.getUsedGas();
-        if (sender) {
+        this.loadContract();
+
+        if (sender || txOrigin) {
             await this.setEnvironment(sender, txOrigin);
+        } else {
+            await this.setEnvironment();
         }
 
+        const usedGasBefore = this.contract.getUsedGas();
         const statesBackup = new Map(this.states);
 
         let error: Error | undefined;
-        const response = await this.contract
-            .readMethod(selector, calldata)
-            .catch(async (e: unknown) => {
-                error = (await e) as Error;
-
-                // Restore states
-                this.states.clear();
-                this.states = statesBackup;
-
-                return undefined;
-            });
-
-        if (response) {
-            const events = await this.getEvents();
-            this.events = [...this.events, ...events];
-        }
-
-        const usedGas = this.contract.getUsedGas() - usedGasBefore;
-
-        return {
-            response,
-            error,
-            events: this.events,
-            callStack: this.callStack,
-            usedGas: usedGas,
-        };
-    }
-
-    protected async readView(
-        selector: number,
-        sender?: Address,
-        txOrigin?: Address,
-    ): Promise<CallResponse> {
-        await this.loadContract();
-
-        const usedGasBefore = this.contract.getUsedGas();
-        if (sender) {
-            await this.setEnvironment(sender, txOrigin);
-        }
-
-        const statesBackup = new Map(this.states);
-
-        let error: Error | undefined;
-        const response = await this.contract.readView(selector).catch(async (e: unknown) => {
+        const response = await this.contract.execute(calldata).catch(async (e: unknown) => {
             error = (await e) as Error;
 
             // Restore states
-            this.states.clear();
             this.states = statesBackup;
 
             return undefined;
         });
-
-        if (this.hasModifiedStates(this.states, statesBackup)) {
-            throw new Error('OPNET: READONLY_MODIFIED_STATES');
-        }
-
-        const events = await this.getEvents();
-        this.events = [...this.events, ...events];
 
         const usedGas = this.contract.getUsedGas() - usedGasBefore;
         return {
@@ -285,10 +276,10 @@ export class ContractRuntime extends Logger {
         }
     }
 
-    protected async loadContract(): Promise<void> {
+    protected loadContract(): void {
         try {
             if (!this.shouldPreserveState) {
-                this.states.clear();
+                this.states = new Map(this.deploymentStates);
             }
 
             try {
@@ -306,11 +297,8 @@ export class ContractRuntime extends Logger {
 
             const params: ContractParameters = this.generateParams();
             this._contract = new RustContract(params);
-
-            await this.setEnvironment();
-            await this.contract.defineSelectors();
         } catch (e) {
-            if (this._contract && !this._contract.disposed) {
+            if (this._contract) {
                 try {
                     this._contract.dispose();
                 } catch {}
@@ -320,27 +308,8 @@ export class ContractRuntime extends Logger {
         }
     }
 
-    private hasModifiedStates(
-        states: Map<bigint, bigint>,
-        statesBackup: Map<bigint, bigint>,
-    ): boolean {
-        if (states.size !== statesBackup.size) {
-            return true;
-        }
-
-        for (const [key, value] of states) {
-            if (statesBackup.get(key) !== value) {
-                return true;
-            }
-        }
-
-        for (const [key, value] of statesBackup) {
-            if (states.get(key) !== value) {
-                return true;
-            }
-        }
-
-        return false;
+    private restoreStatesToDeployment(): void {
+        this.states = new Map(this.deploymentStates);
     }
 
     private async deployContractAtAddress(data: Buffer): Promise<Buffer | Uint8Array> {
@@ -403,7 +372,6 @@ export class ContractRuntime extends Logger {
     private load(data: Buffer): Buffer | Uint8Array {
         const reader = new BinaryReader(data);
         const pointer = reader.readU256();
-
         const value = this.states.get(pointer) || 0n;
 
         if (Blockchain.tracePointers) {
@@ -428,18 +396,12 @@ export class ContractRuntime extends Logger {
         this.states.set(pointer, value);
 
         const response: BinaryWriter = new BinaryWriter();
-        response.writeU256(0n);
+        response.writeBoolean(true);
 
         return response.getBuffer();
     }
 
     private checkReentrancy(calls: Address[]): void {
-        /*if (this.callStack.length !== new Set(this.callStack).size) {
-            console.log(this.callStack);
-
-            throw new Error(`OPNET: REENTRANCY DETECTED`);
-        }*/
-
         if (DISABLE_REENTRANCY_GUARD) {
             return;
         }
@@ -465,7 +427,9 @@ export class ContractRuntime extends Logger {
         const contract: ContractRuntime = Blockchain.getContract(contractAddress);
         const code = contract.bytecode;
         const ca = new ContractRuntime(contractAddress, contract.deployer, contract.gasLimit, code);
+
         ca.preserveState();
+        ca.setStates(contract.getStates());
 
         await ca.init();
 
@@ -508,6 +472,23 @@ export class ContractRuntime extends Logger {
         }
     }
 
+    private onEvent(data: Buffer): void {
+        const reader = new BinaryReader(data);
+        const eventName = reader.readStringWithLength();
+        const eventData = reader.readBytesWithLength();
+
+        const event = new NetEvent(eventName, 0n, eventData);
+        this.events.push(event);
+    }
+
+    private onInputsRequested(): Promise<Buffer> {
+        return Promise.resolve(Buffer.alloc(1));
+    }
+
+    private onOutputsRequested(): Promise<Buffer> {
+        return Promise.resolve(Buffer.alloc(1));
+    }
+
     private generateParams(): ContractParameters {
         return {
             address: this.address,
@@ -529,6 +510,9 @@ export class ContractRuntime extends Logger {
             },
             call: this.call.bind(this),
             log: this.onLog.bind(this),
+            emit: this.onEvent.bind(this),
+            inputs: this.onInputsRequested.bind(this),
+            outputs: this.onOutputsRequested.bind(this),
         };
     }
 

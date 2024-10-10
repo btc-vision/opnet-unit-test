@@ -1,23 +1,25 @@
-import { opnet, OPNetUnit } from '../opnet/unit/OPNetUnit.js';
-import { Assert } from '../opnet/unit/Assert.js';
+import { Address } from '@btc-vision/bsi-binary';
 import { Blockchain } from '../blockchain/Blockchain.js';
 import { OP_20 } from '../contracts/OP_20.js';
-import { Address } from '@btc-vision/bsi-binary';
+import { Assert } from '../opnet/unit/Assert.js';
+import { opnet, OPNetUnit } from '../opnet/unit/OPNetUnit.js';
 
 const rndAddress = Blockchain.generateRandomSegwitAddress();
 const receiver: Address = Blockchain.generateRandomTaprootAddress();
 
 await opnet('Compare OP_20 gas usage', async (vm: OPNetUnit) => {
+    Blockchain.msgSender = receiver;
+    Blockchain.txOrigin = receiver; // "leftmost thing in the call chain"
+
     await vm.it('should instantiate an OP_20 token', async () => {
         await Assert.expect(async () => {
             const token = new OP_20('MyToken', Blockchain.txOrigin, rndAddress, 18);
             await token.init();
+            await token.deployContract();
+
             token.dispose();
         }).toNotThrow();
     });
-
-    Blockchain.msgSender = receiver;
-    Blockchain.txOrigin = receiver; // "leftmost thing in the call chain"
 
     // Declare all the request contracts
     const token = new OP_20('MyToken', Blockchain.txOrigin, rndAddress, 18);
@@ -53,7 +55,7 @@ await opnet('Compare OP_20 gas usage', async (vm: OPNetUnit) => {
         const time = Date.now();
         const transfer = await token.transfer(receiver, rndAddress, 100n);
         const elapsed = Date.now() - time;
-        const currentGasUsed = 574235805n; //console.log('Gas:', transfer);
+        const currentGasUsed = 673985327n; //console.log('Gas:', transfer);
 
         if (transfer.usedGas <= currentGasUsed) {
             const savedGas = currentGasUsed - transfer.usedGas;

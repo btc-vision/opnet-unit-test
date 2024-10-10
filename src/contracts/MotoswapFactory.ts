@@ -20,11 +20,12 @@ export class MotoswapFactory extends ContractRuntime {
         b: Address = Blockchain.generateRandomSegwitAddress(),
     ): Promise<void> {
         const calldata = new BinaryWriter();
+        calldata.writeSelector(this.createPoolSelector);
         calldata.writeAddress(a); // token a
         calldata.writeAddress(b); // token b
 
         const buf = calldata.getBuffer();
-        const result = await this.readMethod(this.createPoolSelector, Buffer.from(buf));
+        const result = await this.execute(Buffer.from(buf));
 
         const response = result.response;
         if (!response) {

@@ -188,7 +188,7 @@ await opnet('Motoswap Pool', async (vm: OPNetUnit) => {
     await vm.it(`should get input price`, async () => {
         for (const swapTestCase of swapTestCases) {
             vm.debugBright(`Swap test case: ${swapTestCase}`);
-            
+
             const [swapAmount, token0Amount, token1Amount, expectedOutputAmount] = swapTestCase;
 
             await addLiquidity(token0Amount, token1Amount);
@@ -375,10 +375,10 @@ await opnet('Motoswap Pool', async (vm: OPNetUnit) => {
         if (!burn.response) {
             throw new Error('Response not found');
         }
-
+        
+        const burnAEvent = burn.events.shift();
         const transferAEvent = burn.events.shift();
         const transferBEvent = burn.events.shift();
-        const burnAEvent = burn.events.shift();
         const syncEvent = burn.events.shift();
         const burnEvent = burn.events.shift();
 

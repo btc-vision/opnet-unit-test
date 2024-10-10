@@ -9,7 +9,10 @@ BigInt.prototype.toJSON = function (): string {
 };
 
 export class Assertion {
-    constructor(private actual: unknown) {}
+    public actual: any;
+    constructor(_actual: any) {
+      this.actual = _actual;
+    }
 
     toEqual(expected: unknown) {
         if (this.actual !== expected) {
@@ -66,7 +69,7 @@ export class Assertion {
         let threw = false;
         let error: unknown = null;
         try {
-            await (this.actual as () => Promise<void>)();
+            await this.actual();
         } catch (err) {
             threw = true;
             error = err;
@@ -97,7 +100,7 @@ export class Assertion {
         }
         let threw: Error | undefined;
         try {
-            await (this.actual as () => Promise<void>)();
+            await this.actual();
         } catch (err) {
             threw = err as Error;
         }

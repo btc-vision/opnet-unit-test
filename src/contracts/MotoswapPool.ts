@@ -135,15 +135,12 @@ export class MotoswapPool extends OP_20 {
 
     public async initializePool(): Promise<CallResponse> {
         const calldata = new BinaryWriter();
+        calldata.writeSelector(this.initializeSelector);
         calldata.writeAddress(this.token0); // token 0
         calldata.writeAddress(this.token1); // token 1
 
         const buf = calldata.getBuffer();
-        const result = await this.readMethod(
-            this.initializeSelector,
-            Buffer.from(buf),
-            FACTORY_ADDRESS,
-        );
+        const result = await this.execute(Buffer.from(buf), FACTORY_ADDRESS);
 
         const response = result.response;
         if (!response) {
@@ -155,7 +152,10 @@ export class MotoswapPool extends OP_20 {
     }
 
     public async getToken0(): Promise<Address> {
-        const result = await this.readView(this.token0Selector);
+        const binaryWriter = new BinaryWriter();
+        binaryWriter.writeSelector(this.token0Selector);
+
+        const result = await this.execute(Buffer.from(binaryWriter.getBuffer()));
 
         const response = result.response;
         if (!response) {
@@ -168,7 +168,10 @@ export class MotoswapPool extends OP_20 {
     }
 
     public async getToken1(): Promise<Address> {
-        const result = await this.readView(this.token1Selector);
+        const binaryWriter = new BinaryWriter();
+        binaryWriter.writeSelector(this.token1Selector);
+
+        const result = await this.execute(Buffer.from(binaryWriter.getBuffer()));
 
         const response = result.response;
         if (!response) {
@@ -181,7 +184,10 @@ export class MotoswapPool extends OP_20 {
     }
 
     public async sync(): Promise<CallResponse> {
-        const result = await this.readMethod(this.syncSelector, Buffer.alloc(0));
+        const binaryWriter = new BinaryWriter();
+        binaryWriter.writeSelector(this.syncSelector);
+
+        const result = await this.execute(Buffer.from(binaryWriter.getBuffer()));
 
         const response = result.response;
         if (!response) {
@@ -193,7 +199,10 @@ export class MotoswapPool extends OP_20 {
     }
 
     public async price0CumulativeLast(): Promise<bigint> {
-        const result = await this.readView(this.price0CumulativeLastSelector);
+        const binaryWriter = new BinaryWriter();
+        binaryWriter.writeSelector(this.price0CumulativeLastSelector);
+
+        const result = await this.execute(Buffer.from(binaryWriter.getBuffer()));
 
         const response = result.response;
         if (!response) {
@@ -206,7 +215,10 @@ export class MotoswapPool extends OP_20 {
     }
 
     public async price1CumulativeLast(): Promise<bigint> {
-        const result = await this.readView(this.price1CumulativeLastSelector);
+        const binaryWriter = new BinaryWriter();
+        binaryWriter.writeSelector(this.price1CumulativeLastSelector);
+
+        const result = await this.execute(Buffer.from(binaryWriter.getBuffer()));
 
         const response = result.response;
         if (!response) {
@@ -220,10 +232,11 @@ export class MotoswapPool extends OP_20 {
 
     public async mintPool(to: Address): Promise<CallResponse> {
         const calldata = new BinaryWriter();
+        calldata.writeSelector(this.mintSelector);
         calldata.writeAddress(to);
 
         const buf = calldata.getBuffer();
-        const result = await this.readMethod(this.mintSelector, Buffer.from(buf));
+        const result = await this.execute(Buffer.from(buf));
 
         const response = result.response;
         if (!response) {
@@ -241,13 +254,14 @@ export class MotoswapPool extends OP_20 {
         data: Uint8Array,
     ): Promise<CallResponse> {
         const calldata = new BinaryWriter();
+        calldata.writeSelector(this.swapSelector);
         calldata.writeU256(amount0Out);
         calldata.writeU256(amount1Out);
         calldata.writeAddress(to);
         calldata.writeBytesWithLength(data);
 
         const buf = calldata.getBuffer();
-        const result = await this.readMethod(this.swapSelector, Buffer.from(buf));
+        const result = await this.execute(Buffer.from(buf));
 
         const response = result.response;
         if (!response) {
@@ -265,10 +279,11 @@ export class MotoswapPool extends OP_20 {
 
     public async burnLiquidity(to: Address): Promise<CallResponse> {
         const calldata = new BinaryWriter();
+        calldata.writeSelector(this.burnSelector);
         calldata.writeAddress(to);
 
         const buf = calldata.getBuffer();
-        const result = await this.readMethod(this.burnSelector, Buffer.from(buf));
+        const result = await this.execute(Buffer.from(buf));
 
         const response = result.response;
         if (!response) {
@@ -280,7 +295,10 @@ export class MotoswapPool extends OP_20 {
     }
 
     public async getReserves(): Promise<Reserves> {
-        const result = await this.readView(this.reservesSelector);
+        const calldata = new BinaryWriter();
+        calldata.writeSelector(this.reservesSelector);
+
+        const result = await this.execute(Buffer.from(calldata.getBuffer()));
 
         const response = result.response;
         if (!response) {

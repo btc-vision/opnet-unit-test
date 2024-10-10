@@ -6,7 +6,15 @@
     "main": "build/index.js",
     "scripts": {
         "build": "gulp",
-        "prepublish": "npm-run-all build"
+        "prepublish": "npm-run-all build",
+        "build:pool": "tsx src/utils/pool.ts",
+        "test:factory": "tsx src/tests/factory.ts",
+        "test:gas": "tsx src/tests/gas.ts",
+        "test:pool": "tsx src/tests/pool.ts",
+        "test:router": "tsx src/tests/router.ts",
+        "test:router2": "tsx src/tests/router2.ts",
+        "test:vm": "tsx src/tests/vm.ts",
+        "test": "npm run test:factory && npm run test:gas && npm run test:pool && npm run test:router && npm run test:router2 && npm run test:vm"
     },
     "author": "OP_NET",
     "license": "ISC",
@@ -17,7 +25,7 @@
         "@btc-vision/bsi-binary": "^1.0.42",
         "@btc-vision/btc-runtime": "^1.1.11",
         "@btc-vision/logger": "^1.0.6",
-        "@btc-vision/op-vm": "^0.1.7",
+        "@btc-vision/op-vm": "^0.1.8",
         "@btc-vision/transaction": "^1.0.108",
         "@eslint/js": "^9.10.0",
         "@types/node": "^22.5.5",
@@ -37,6 +45,7 @@
         "typescript-eslint": "^8.5.0"
     },
     "devDependencies": {
-        "gulp-eslint-new": "^2.3.0"
+        "gulp-eslint-new": "^2.3.0",
+        "tsx": "^4.19.1"
     }
 }

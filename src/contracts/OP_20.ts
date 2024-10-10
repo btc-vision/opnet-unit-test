@@ -74,7 +74,10 @@ export class OP_20 extends ContractRuntime {
     }
 
     public async totalSupply(): Promise<bigint> {
-        const result = await this.readView(this.totalSupplySelector);
+        const writer = new BinaryWriter();
+        writer.writeSelector(this.totalSupplySelector);
+
+        const result = await this.execute(writer.getBuffer());
 
         const response = result.response;
         if (!response) {
@@ -88,18 +91,14 @@ export class OP_20 extends ContractRuntime {
 
     public async mint(to: Address, amount: number): Promise<void> {
         const calldata = new BinaryWriter();
+        calldata.writeSelector(this.mintSelector);
         calldata.writeAddress(to);
         calldata.writeU256(Blockchain.expandToDecimal(amount, this.decimals));
         calldata.writeAddressValueTupleMap(new Map());
         calldata.writeU256(0n);
 
         const buf = calldata.getBuffer();
-        const result = await this.readMethod(
-            this.mintSelector,
-            Buffer.from(buf),
-            this.deployer,
-            this.deployer,
-        );
+        const result = await this.execute(buf, this.deployer, this.deployer);
 
         const response = result.response;
         if (!response) {
@@ -115,11 +114,12 @@ export class OP_20 extends ContractRuntime {
 
     public async approve(owner: Address, spender: Address, amount: bigint): Promise<CallResponse> {
         const calldata = new BinaryWriter();
+        calldata.writeSelector(this.approveSelector);
         calldata.writeAddress(spender);
         calldata.writeU256(amount);
 
         const buf = calldata.getBuffer();
-        const result = await this.readMethod(this.approveSelector, Buffer.from(buf), owner, owner);
+        const result = await this.execute(Buffer.from(buf), owner, owner);
 
         const response = result.response;
         if (!response) {
@@ -137,11 +137,12 @@ export class OP_20 extends ContractRuntime {
 
     public async transfer(from: Address, to: Address, amount: bigint): Promise<CallResponse> {
         const calldata = new BinaryWriter();
+        calldata.writeSelector(this.transferSelector);
         calldata.writeAddress(to);
         calldata.writeU256(amount);
 
         const buf = calldata.getBuffer();
-        const result = await this.readMethod(this.transferSelector, Buffer.from(buf), from, from);
+        const result = await this.execute(buf, from, from);
 
         const response = result.response;
         if (!response) {
@@ -159,10 +160,11 @@ export class OP_20 extends ContractRuntime {
 
     public async balanceOf(owner: Address): Promise<bigint> {
         const calldata = new BinaryWriter();
+        calldata.writeSelector(this.balanceOfSelector);
         calldata.writeAddress(owner);
 
         const buf = calldata.getBuffer();
-        const result = await this.readMethod(this.balanceOfSelector, Buffer.from(buf));
+        const result = await this.execute(Buffer.from(buf));
 
         const response = result.response;
         if (result.error || !response) {
