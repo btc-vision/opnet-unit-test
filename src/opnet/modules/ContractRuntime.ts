@@ -1,11 +1,12 @@
 import { ABICoder, Address, BinaryReader, BinaryWriter, NetEvent } from '@btc-vision/bsi-binary';
-import bitcoin from 'bitcoinjs-lib';
 import { Logger } from '@btc-vision/logger';
-import { BytecodeManager } from './GetBytecode.js';
-import { Blockchain } from '../../blockchain/Blockchain.js';
 import { BitcoinNetworkRequest } from '@btc-vision/op-vm';
-import { ContractParameters, RustContract } from '../vm/RustContract.js';
+import bitcoin from 'bitcoinjs-lib';
+import crypto from 'crypto';
+import { Blockchain } from '../../blockchain/Blockchain.js';
 import { DISABLE_REENTRANCY_GUARD } from '../../contracts/configs.js';
+import { ContractParameters, RustContract } from '../vm/RustContract.js';
+import { BytecodeManager } from './GetBytecode.js';
 
 export interface CallResponse {
     response?: Uint8Array;
@@ -203,7 +204,7 @@ export class ContractRuntime extends Logger {
         }
 
         this.loadContract();
-        
+
         await this.setEnvironment(this.deployer, this.deployer);
 
         const calldata = this._deploymentCalldata || Buffer.alloc(0);

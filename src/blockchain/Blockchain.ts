@@ -3,6 +3,7 @@ import { Logger } from '@btc-vision/logger';
 import { ContractManager, ThreadSafeJsImportResponse } from '@btc-vision/op-vm';
 import { AddressGenerator, EcKeyPair, TapscriptVerificator } from '@btc-vision/transaction';
 import bitcoin, { Network } from 'bitcoinjs-lib';
+import crypto from 'crypto';
 import {
     NETWORK,
     TRACE_CALLS,
