@@ -273,7 +273,7 @@ export class RustContract {
         const length = new Uint32Array(lengthBuffer.buffer)[0];
 
         const end = (pointer + length) >>> 1;
-        const stringParts = [];
+        const stringParts: Array<string> = [];
         let start = pointer >>> 1;
 
         while (end - start > 1024) {

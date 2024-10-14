@@ -9,7 +9,10 @@ BigInt.prototype.toJSON = function (): string {
 };
 
 export class Assertion {
-    constructor(private actual: unknown) {}
+    public actual: any;
+    constructor(_actual: any) {
+      this.actual = _actual;
+    }
 
     toEqual(expected: unknown) {
         if (this.actual !== expected) {
