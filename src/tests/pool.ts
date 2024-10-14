@@ -46,20 +46,16 @@ await opnet('Motoswap Pool', async (vm: OPNetUnit) => {
     const pool: MotoswapPool = new MotoswapPool(token0Address, token1Address);
     Blockchain.register(pool);
 
-    function dispose() {
-        Blockchain.dispose();
-    }
-
     vm.beforeEach(async () => {
         await Blockchain.init();
     });
 
     vm.afterAll(() => {
-        dispose();
+        Blockchain.dispose();
     });
 
     vm.afterEach(() => {
-        dispose();
+        Blockchain.dispose();
     });
 
     async function mintTokens() {
