@@ -62,7 +62,7 @@ export class ContractRuntime extends Logger {
     }
 
     public get safeRnd64(): bigint {
-        return Blockchain.blockNumber >> 1n; //BigInt(crypto.getRandomValues(new Uint32Array(2)).join(''));
+        return Blockchain.blockNumber >> 1n;
     }
 
     protected _bytecode: Buffer | undefined;
