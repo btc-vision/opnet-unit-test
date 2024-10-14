@@ -1,8 +1,9 @@
-import { CallResponse, ContractRuntime } from '../opnet/modules/ContractRuntime.js';
+import { ContractRuntime } from '../opnet/modules/ContractRuntime.js';
 import { Address, BinaryReader, BinaryWriter } from '@btc-vision/bsi-binary';
 import { BytecodeManager } from '../opnet/modules/GetBytecode.js';
 import { AddLiquidityParameters } from '../interfaces/RouterInterfaces.js';
 import { ROUTER_ADDRESS } from './configs.js';
+import { CallResponse } from '../opnet/interfaces/CallResponse.js';
 
 export class MotoswapRouter extends ContractRuntime {
     private readonly ADD_LIQUIDITY_SELECTOR: number = Number(
@@ -34,7 +35,11 @@ export class MotoswapRouter extends ContractRuntime {
     private readonly WBTC_SELECTOR: number = Number(`0x${this.abiCoder.encodeSelector('WBTC')}`);
 
     constructor(deployer: Address, gasLimit: bigint = 100_000_000_000n) {
-        super(ROUTER_ADDRESS, deployer, gasLimit);
+        super({
+            address: ROUTER_ADDRESS,
+            deployer: deployer,
+            gasLimit,
+        });
 
         this.preserveState();
     }

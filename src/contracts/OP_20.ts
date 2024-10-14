@@ -1,7 +1,9 @@
-import { CallResponse, ContractRuntime } from '../opnet/modules/ContractRuntime.js';
+import { ContractRuntime } from '../opnet/modules/ContractRuntime.js';
 import { Address, BinaryReader, BinaryWriter } from '@btc-vision/bsi-binary';
 import { BytecodeManager } from '../opnet/modules/GetBytecode.js';
 import { Blockchain } from '../blockchain/Blockchain.js';
+import { CallResponse } from '../opnet/interfaces/CallResponse.js';
+import { ContractDetails } from '../opnet/interfaces/ContractDetails.js';
 
 export interface TransferEvent {
     readonly from: Address;
@@ -18,13 +20,20 @@ export interface BurnEvent {
     readonly value: bigint;
 }
 
+export interface OP_20Interface extends ContractDetails {
+    readonly fileName: string;
+    readonly decimals: number;
+}
+
 export class OP_20 extends ContractRuntime {
+    public readonly fileName: string;
+    public readonly decimals: number;
+
     protected readonly transferSelector: number = Number(
         `0x${this.abiCoder.encodeSelector('transfer')}`,
     );
 
     protected readonly mintSelector: number = Number(`0x${this.abiCoder.encodeSelector('mint')}`);
-
     protected readonly balanceOfSelector: number = Number(
         `0x${this.abiCoder.encodeSelector('balanceOf')}`,
     );
@@ -37,14 +46,11 @@ export class OP_20 extends ContractRuntime {
         `0x${this.abiCoder.encodeSelector('approve')}`,
     );
 
-    constructor(
-        public readonly fileName: string,
-        deployer: Address,
-        address: Address,
-        public readonly decimals: number,
-        gasLimit: bigint = 100_000_000_000n,
-    ) {
-        super(address, deployer, gasLimit);
+    constructor(details: OP_20Interface) {
+        super(details);
+
+        this.fileName = details.fileName;
+        this.decimals = details.decimals;
 
         this.preserveState();
     }

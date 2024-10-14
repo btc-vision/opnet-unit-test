@@ -1,7 +1,8 @@
-import { CallResponse, ContractRuntime } from '../opnet/modules/ContractRuntime.js';
+import { ContractRuntime } from '../opnet/modules/ContractRuntime.js';
 import { Address, BinaryReader, BinaryWriter } from '@btc-vision/bsi-binary';
 import { OP_20 } from './OP_20.js';
 import { FACTORY_ADDRESS, POOL_ADDRESS } from './configs.js';
+import { CallResponse } from '../opnet/interfaces/CallResponse.js';
 
 export interface SyncEvent {
     readonly reserve0: bigint;
@@ -62,7 +63,13 @@ export class MotoswapPool extends OP_20 {
         private readonly token1: Address,
         gasLimit: bigint = 100_000_000_000n,
     ) {
-        super('pool', FACTORY_ADDRESS, POOL_ADDRESS, 18, gasLimit);
+        super({
+            fileName: 'pool',
+            deployer: FACTORY_ADDRESS,
+            address: POOL_ADDRESS,
+            decimals: 18,
+            gasLimit,
+        });
 
         // This will preserve every action done in this contract
         this.preserveState();

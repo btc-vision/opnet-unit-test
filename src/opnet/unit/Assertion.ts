@@ -9,10 +9,7 @@ BigInt.prototype.toJSON = function (): string {
 };
 
 export class Assertion {
-    public actual: any;
-    constructor(_actual: any) {
-      this.actual = _actual;
-    }
+    public constructor(public actual: unknown) {}
 
     toEqual(expected: unknown) {
         if (this.actual !== expected) {
@@ -40,26 +37,6 @@ export class Assertion {
         if (this.actual === undefined || this.actual === null) {
             throw new Error(`Expected value to be defined`);
         }
-    }
-
-    private deepStrictEqual(actual: unknown, expected: unknown): boolean {
-        if (actual === expected) return true;
-        if (
-            typeof actual !== 'object' ||
-            typeof expected !== 'object' ||
-            actual === null ||
-            expected === null
-        ) {
-            return false;
-        }
-
-        const actualObj = actual as Record<string, unknown>;
-        const expectedObj = expected as Record<string, unknown>;
-
-        const keysA = Object.keys(actualObj);
-        const keysB = Object.keys(expectedObj);
-        if (keysA.length !== keysB.length) return false;
-        return keysA.every((key) => this.deepStrictEqual(actualObj[key], expectedObj[key]));
     }
 
     async toThrow(expectedError?: string | RegExp): Promise<void> {
@@ -108,5 +85,25 @@ export class Assertion {
         if (threw) {
             throw new Error(`Expected function not to throw an error, but it did: ${threw.stack}`);
         }
+    }
+
+    private deepStrictEqual(actual: unknown, expected: unknown): boolean {
+        if (actual === expected) return true;
+        if (
+            typeof actual !== 'object' ||
+            typeof expected !== 'object' ||
+            actual === null ||
+            expected === null
+        ) {
+            return false;
+        }
+
+        const actualObj = actual as Record<string, unknown>;
+        const expectedObj = expected as Record<string, unknown>;
+
+        const keysA = Object.keys(actualObj);
+        const keysB = Object.keys(expectedObj);
+        if (keysA.length !== keysB.length) return false;
+        return keysA.every((key) => this.deepStrictEqual(actualObj[key], expectedObj[key]));
     }
 }

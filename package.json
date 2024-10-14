@@ -1,7 +1,7 @@
 {
     "type": "module",
     "name": "opnet-unit-test",
-    "version": "1.0.2",
+    "version": "0.0.1",
     "description": "OP_NET unit test harness and associated mocks",
     "main": "build/index.js",
     "scripts": {
@@ -17,13 +17,12 @@
         "test": "npm run test:factory && npm run test:gas && npm run test:pool && npm run test:router && npm run test:router2 && npm run test:vm"
     },
     "author": "OP_NET",
-    "license": "ISC",
+    "license": "MIT",
     "exports": {
         ".": "./build/index.js"
     },
     "dependencies": {
         "@btc-vision/bsi-binary": "^1.0.42",
-        "@btc-vision/btc-runtime": "^1.1.11",
         "@btc-vision/logger": "^1.0.6",
         "@btc-vision/op-vm": "^0.1.8",
         "@btc-vision/transaction": "^1.0.108",

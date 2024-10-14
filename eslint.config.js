@@ -23,11 +23,6 @@ export default tseslint.config(
             '@typescript-eslint/unbound-method': 'warn',
             '@typescript-eslint/no-confusing-void-expression': 'off',
             '@typescript-eslint/no-extraneous-class': 'off',
-            '@typescript-eslint/no-explicit-any': 'off',
-	    '@typescript-eslint/no-unsafe-call': 'off',
-	    '@typescript-eslint/no-unsafe-assignment': 'off',
-            '@typescript-eslint/no-unsafe-return': 'off'
-
         },
     },
     {

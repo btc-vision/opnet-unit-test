@@ -5,21 +5,17 @@ import bitcoin from 'bitcoinjs-lib';
 import crypto from 'crypto';
 import { Blockchain } from '../../blockchain/Blockchain.js';
 import { DISABLE_REENTRANCY_GUARD } from '../../contracts/configs.js';
+import { CallResponse } from '../interfaces/CallResponse.js';
+import { ContractDetails } from '../interfaces/ContractDetails.js';
 import { ContractParameters, RustContract } from '../vm/RustContract.js';
 import { BytecodeManager } from './GetBytecode.js';
 
-export interface CallResponse {
-    response?: Uint8Array;
-    error?: Error;
-    events: NetEvent[];
-    callStack: Address[];
-
-    usedGas: bigint;
-}
-
 export class ContractRuntime extends Logger {
     public readonly logColor: string = '#39b2f3';
+
     public gasUsed: bigint = 0n;
+    public address: Address;
+    public readonly deployer: Address;
 
     protected states: Map<bigint, bigint> = new Map();
     protected deploymentStates: Map<bigint, bigint> = new Map();
@@ -27,29 +23,32 @@ export class ContractRuntime extends Logger {
     protected shouldPreserveState: boolean = false;
     protected events: NetEvent[] = [];
 
+    protected readonly gasLimit: bigint = 100_000_000_000n;
     protected readonly deployedContracts: Map<string, Buffer> = new Map();
     protected readonly abiCoder = new ABICoder();
 
     private callStack: Address[] = [];
     private statesBackup: Map<bigint, bigint> = new Map();
 
-    protected constructor(
-        public address: Address,
-        public readonly deployer: Address,
-        protected readonly gasLimit: bigint = 100_000_000_000n,
-        private readonly potentialBytecode?: Buffer,
-    ) {
+    private readonly potentialBytecode?: Buffer;
+    private readonly deploymentCalldata?: Buffer;
+
+    protected constructor(details: ContractDetails) {
         super();
+
+        this.deployer = details.deployer;
+        this.address = details.address;
+
+        this.potentialBytecode = details.bytecode;
+        this.deploymentCalldata = details.deploymentCalldata;
+
+        if (details.gasLimit) {
+            this.gasLimit = details.gasLimit;
+        }
 
         if (!this.deployer) {
             throw new Error('Deployer address not provided');
         }
-    }
-
-    private _deploymentCalldata: Buffer | undefined;
-
-    public set deploymentCalldata(calldata: Buffer) {
-        this._deploymentCalldata = calldata;
     }
 
     _contract: RustContract | undefined;
@@ -207,7 +206,7 @@ export class ContractRuntime extends Logger {
 
         await this.setEnvironment(this.deployer, this.deployer);
 
-        const calldata = this._deploymentCalldata || Buffer.alloc(0);
+        const calldata = this.deploymentCalldata || Buffer.alloc(0);
 
         let error: Error | undefined;
         await this.contract.onDeploy(calldata).catch((e: unknown) => {
@@ -337,12 +336,12 @@ export class ContractRuntime extends Logger {
         }
 
         const requestedContractBytecode = BytecodeManager.getBytecode(address) as Buffer;
-        const newContract: ContractRuntime = new ContractRuntime(
-            deployResult.contractAddress,
-            this.address,
-            this.gasLimit,
-            requestedContractBytecode,
-        );
+        const newContract: ContractRuntime = new ContractRuntime({
+            address: deployResult.contractAddress,
+            deployer: this.address,
+            gasLimit: this.gasLimit,
+            bytecode: requestedContractBytecode,
+        });
 
         newContract.preserveState();
 
@@ -426,7 +425,12 @@ export class ContractRuntime extends Logger {
 
         const contract: ContractRuntime = Blockchain.getContract(contractAddress);
         const code = contract.bytecode;
-        const ca = new ContractRuntime(contractAddress, contract.deployer, contract.gasLimit, code);
+        const ca = new ContractRuntime({
+            address: contractAddress,
+            deployer: contract.deployer,
+            bytecode: code,
+            gasLimit: contract.gasLimit,
+        });
 
         ca.preserveState();
         ca.setStates(contract.getStates());

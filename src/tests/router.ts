@@ -131,8 +131,20 @@ await opnet('Motoswap Router', async (vm: OPNetUnit) => {
         Blockchain.register(pool);
 
         // Init OP_20
-        DTT = new OP_20('MyToken', Blockchain.txOrigin, dttAddress, 18);
-        wbtc = new OP_20('MyToken', Blockchain.txOrigin, WBTC_ADDRESS, 18);
+        DTT = new OP_20({
+            fileName: 'MyToken',
+            deployer: Blockchain.txOrigin,
+            address: dttAddress,
+            decimals: 18,
+        });
+
+        wbtc = new OP_20({
+            fileName: 'MyToken',
+            deployer: Blockchain.txOrigin,
+            address: WBTC_ADDRESS,
+            decimals: 18,
+        });
+
         Blockchain.register(DTT);
         Blockchain.register(wbtc);
 
@@ -316,8 +328,20 @@ await opnet(`Motoswap Router: fee-on-transfer tokens`, async (vm: OPNetUnit) => 
         Blockchain.register(pool);
 
         /** Init OP_20 */
-        DTT = new OP_20('MyToken', Blockchain.txOrigin, dttAddress, 18);
-        wbtc = new OP_20('MyToken', Blockchain.txOrigin, WBTC_ADDRESS, 18);
+        DTT = new OP_20({
+            fileName: 'MyToken',
+            deployer: Blockchain.txOrigin,
+            address: dttAddress,
+            decimals: 18,
+        });
+
+        wbtc = new OP_20({
+            fileName: 'MyToken',
+            deployer: Blockchain.txOrigin,
+            address: WBTC_ADDRESS,
+            decimals: 18,
+        });
+
         Blockchain.register(DTT);
         Blockchain.register(wbtc);
 
@@ -396,8 +420,20 @@ await opnet(`Motoswap Router: liquidity`, async (vm: OPNetUnit) => {
         Blockchain.register(pool);
 
         /** Init OP_20 */
-        DTT = new OP_20('MyToken', Blockchain.txOrigin, dttAddress, 18);
-        wbtc = new OP_20('MyToken', Blockchain.txOrigin, WBTC_ADDRESS, 18);
+        DTT = new OP_20({
+            fileName: 'MyToken',
+            deployer: Blockchain.txOrigin,
+            address: dttAddress,
+            decimals: 18,
+        });
+
+        wbtc = new OP_20({
+            fileName: 'MyToken',
+            deployer: Blockchain.txOrigin,
+            address: WBTC_ADDRESS,
+            decimals: 18,
+        });
+
         Blockchain.register(DTT);
         Blockchain.register(wbtc);
 

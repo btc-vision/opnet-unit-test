@@ -55,7 +55,7 @@ export class Assert {
         }
     }
 
-    public static expect(actual: any) {
+    public static expect(actual: unknown) {
         return new Assertion(actual);
     }
 

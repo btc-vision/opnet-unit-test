@@ -10,7 +10,11 @@ export class MotoswapFactory extends ContractRuntime {
     );
 
     constructor(deployer: Address, gasLimit: bigint = 100_000_000_000n) {
-        super(FACTORY_ADDRESS, deployer, gasLimit);
+        super({
+            address: FACTORY_ADDRESS,
+            deployer,
+            gasLimit,
+        });
 
         this.preserveState();
     }

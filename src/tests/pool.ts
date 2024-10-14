@@ -4,8 +4,8 @@ import { Blockchain } from '../blockchain/Blockchain.js';
 import { MotoswapPool } from '../contracts/MotoswapPool.js';
 import { Address, BinaryReader } from '@btc-vision/bsi-binary';
 import { OP_20 } from '../contracts/OP_20.js';
-import { CallResponse } from '../opnet/modules/ContractRuntime.js';
 import { ROUTER_ADDRESS } from '../contracts/configs.js';
+import { CallResponse } from '../opnet/interfaces/CallResponse.js';
 
 await opnet('Motoswap Pool', async (vm: OPNetUnit) => {
     const token0Address: Address = Blockchain.generateRandomSegwitAddress();
@@ -24,10 +24,22 @@ await opnet('Motoswap Pool', async (vm: OPNetUnit) => {
     });
 
     /** Init OP_20 */
-    const token0: OP_20 = new OP_20('MyToken', Blockchain.txOrigin, token0Address, 18);
+    const token0: OP_20 = new OP_20({
+        fileName: 'MyToken',
+        deployer: Blockchain.txOrigin,
+        address: token0Address,
+        decimals: 18,
+    });
+
     Blockchain.register(token0);
 
-    const token1: OP_20 = new OP_20('MyToken', Blockchain.txOrigin, token1Address, 18);
+    const token1: OP_20 = new OP_20({
+        fileName: 'MyToken',
+        deployer: Blockchain.txOrigin,
+        address: token1Address,
+        decimals: 18,
+    });
+
     Blockchain.register(token1);
 
     // Declare all the request contracts
@@ -375,7 +387,7 @@ await opnet('Motoswap Pool', async (vm: OPNetUnit) => {
         if (!burn.response) {
             throw new Error('Response not found');
         }
-        
+
         const burnAEvent = burn.events.shift();
         const transferAEvent = burn.events.shift();
         const transferBEvent = burn.events.shift();
