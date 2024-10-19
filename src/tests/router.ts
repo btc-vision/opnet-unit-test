@@ -6,8 +6,9 @@ import { MotoswapRouter } from '../contracts/MotoswapRouter.js';
 import { OP_20 } from '../contracts/OP_20.js';
 import { AddLiquidityParameters } from '../interfaces/RouterInterfaces.js';
 import { MotoswapFactory } from '../contracts/MotoswapFactory.js';
-import { MotoswapPool, Reserves } from '../contracts/MotoswapPool.js';
+import { MotoswapPool } from '../contracts/MotoswapPool.js';
 import { WBTC_ADDRESS } from '../contracts/configs.js';
+import { getReserves } from '../common/UtilFunctions.js';
 
 const MaxUint256: bigint = 2n ** 256n - 1n;
 const dttAddress: Address = Blockchain.generateRandomAddress();
@@ -36,29 +37,6 @@ async function mintTokens(amountA: number = 11000000, amountB: number = 11000000
 
     const currentBalanceTokenB = await wbtc.balanceOfNoDecimals(receiver);
     Assert.expect(currentBalanceTokenB).toEqual(amountB);
-}
-
-function sortTokens(tokenA: Address, tokenB: Address): Address[] {
-    if (tokenA < tokenB) {
-        return [tokenA, tokenB];
-    } else {
-        return [tokenB, tokenA];
-    }
-}
-
-function getReserves(
-    tokenA: Address,
-    tokenB: Address,
-    reserve0: bigint,
-    reserve1: bigint,
-): Reserves {
-    const [token0, token1] = sortTokens(tokenA, tokenB);
-
-    return {
-        reserve0: token0 === tokenA ? reserve0 : reserve1,
-        reserve1: token0 === tokenA ? reserve1 : reserve0,
-        blockTimestampLast: 0n,
-    };
 }
 
 function dispose() {
@@ -393,12 +371,17 @@ await opnet(`Motoswap Router: fee-on-transfer tokens`, async (vm: OPNetUnit) => 
 
             await wbtc.approve(receiver, router.address, MaxUint256);
 
-            await router.swapExactTokensForTokensSupportingFeeOnTransferTokens(
+            const swapTime = Date.now();
+            const response = await router.swapExactTokensForTokensSupportingFeeOnTransferTokens(
                 amountIn,
                 0n,
                 [WBTC_ADDRESS, dttAddress],
                 receiver,
                 2n,
+            );
+
+            vm.log(
+                `swapExactTokensForTokensSupportingFeeOnTransferTokens took ${Date.now() - swapTime}ms (gas ${response.usedGas})`,
             );
         },
     );
@@ -507,12 +490,12 @@ await opnet(`Motoswap Router: liquidity`, async (vm: OPNetUnit) => {
 
             // Decode first transfer event
             const poolCreatedEvent = MotoswapPool.decodeTransferEvent(transferEventA.eventData);
-            Assert.expect(poolCreatedEvent.from).toEqual(receiver);
+            Assert.expect(poolCreatedEvent.from).toEqualAddress(receiver);
             Assert.expect(poolCreatedEvent.value).toEqual(token0Amount);
 
             // Decode second transfer event
             const poolCreatedEventB = MotoswapPool.decodeTransferEvent(transferEventB.eventData);
-            Assert.expect(poolCreatedEventB.from).toEqual(receiver);
+            Assert.expect(poolCreatedEventB.from).toEqualAddress(receiver);
             Assert.expect(poolCreatedEventB.value).toEqual(token1Amount);
 
             // Decode mint event
@@ -522,7 +505,7 @@ await opnet(`Motoswap Router: liquidity`, async (vm: OPNetUnit) => {
 
             // Decode mint event
             const mintedEventB = MotoswapPool.decodeMintEvent(mintBEvent.eventData);
-            Assert.expect(mintedEventB.to).toEqual(receiver);
+            Assert.expect(mintedEventB.to).toEqualAddress(receiver);
             Assert.expect(mintedEventB.value).toEqual(expectedLiquidity - MINIMUM_LIQUIDITY);
 
             const pair: MotoswapPool = MotoswapPool.createFromRuntime(
@@ -547,7 +530,7 @@ await opnet(`Motoswap Router: liquidity`, async (vm: OPNetUnit) => {
 
             // Decode pool mint event
             const poolMintEventDecoded = MotoswapPool.decodePoolMintEvent(poolMintEvent.eventData);
-            Assert.expect(poolMintEventDecoded.to).toEqual(router.address);
+            Assert.expect(poolMintEventDecoded.to).toEqualAddress(router.address);
 
             Assert.expect(poolMintEventDecoded.amount0).toEqual(sortedReserves.reserve0);
             Assert.expect(poolMintEventDecoded.amount1).toEqual(sortedReserves.reserve1);
