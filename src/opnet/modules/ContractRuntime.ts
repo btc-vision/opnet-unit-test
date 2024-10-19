@@ -2,6 +2,7 @@ import {
     ABICoder,
     Address,
     AddressMap,
+    AddressSet,
     BinaryReader,
     BinaryWriter,
     NetEvent,
@@ -11,7 +12,7 @@ import { BitcoinNetworkRequest } from '@btc-vision/op-vm';
 import bitcoin from 'bitcoinjs-lib';
 import crypto from 'crypto';
 import { Blockchain } from '../../blockchain/Blockchain.js';
-import { DISABLE_REENTRANCY_GUARD } from '../../contracts/configs.js';
+import { DISABLE_REENTRANCY_GUARD, MAX_CALL_STACK_DEPTH } from '../../contracts/configs.js';
 import { CallResponse } from '../interfaces/CallResponse.js';
 import { ContractDetails } from '../interfaces/ContractDetails.js';
 import { ContractParameters, RustContract } from '../vm/RustContract.js';
@@ -34,7 +35,7 @@ export class ContractRuntime extends Logger {
     protected readonly deployedContracts: AddressMap<Buffer> = new AddressMap<Buffer>();
     protected readonly abiCoder = new ABICoder();
 
-    private callStack: Address[] = [];
+    private callStack: AddressSet = new AddressSet();
     private statesBackup: Map<bigint, bigint> = new Map();
 
     private readonly potentialBytecode?: Buffer;
@@ -111,7 +112,8 @@ export class ContractRuntime extends Logger {
         this.statesBackup.clear();
 
         this.events = [];
-        this.callStack = [];
+
+        this.callStack.clear();
         this.deployedContracts.clear();
     }
 
@@ -299,7 +301,7 @@ export class ContractRuntime extends Logger {
             }
 
             this.events = [];
-            this.callStack = [this.address];
+            this.callStack = new AddressSet([this.address]);
 
             const params: ContractParameters = this.generateParams();
             this._contract = new RustContract(params);
@@ -407,12 +409,12 @@ export class ContractRuntime extends Logger {
         return response.getBuffer();
     }
 
-    private checkReentrancy(calls: Address[]): void {
+    private checkReentrancy(calls: AddressSet): void {
         if (DISABLE_REENTRANCY_GUARD) {
             return;
         }
 
-        if (calls.includes(this.address)) {
+        if (calls.contains(this.address)) {
             throw new Error('OPNET: REENTRANCY DETECTED');
         }
     }
@@ -452,7 +454,11 @@ export class ContractRuntime extends Logger {
         } catch {}
 
         this.events = [...this.events, ...callResponse.events];
-        this.callStack = [...this.callStack, ...callResponse.callStack];
+        this.callStack = this.callStack.combine(callResponse.callStack);
+
+        if (this.callStack.size() > MAX_CALL_STACK_DEPTH) {
+            throw new Error(`OPNET: CALL_STACK DEPTH EXCEEDED`);
+        }
 
         this.checkReentrancy(callResponse.callStack);
 

@@ -16,6 +16,9 @@ export const WBTC_ADDRESS: Address = rnd();
 export const MOTO_ADDRESS: Address = rnd();
 export const ROUTER_ADDRESS: Address = rnd();
 
+// Max call stack depth
+export const MAX_CALL_STACK_DEPTH: number = 20;
+
 //console.log(Uint8Array.from(Buffer.from(POOL_ADDRESS.toHex().replace('0x', ''), 'hex')));
 
 // Trace flags
