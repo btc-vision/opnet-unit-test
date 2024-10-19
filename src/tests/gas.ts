@@ -1,11 +1,11 @@
-import { Address } from '@btc-vision/bsi-binary';
+import { Address } from '@btc-vision/transaction';
 import { Blockchain } from '../blockchain/Blockchain.js';
 import { OP_20 } from '../contracts/OP_20.js';
 import { Assert } from '../opnet/unit/Assert.js';
 import { opnet, OPNetUnit } from '../opnet/unit/OPNetUnit.js';
 
-const rndAddress = Blockchain.generateRandomSegwitAddress();
-const receiver: Address = Blockchain.generateRandomTaprootAddress();
+const rndAddress = Blockchain.generateRandomAddress();
+const receiver: Address = Blockchain.generateRandomAddress();
 
 await opnet('Compare OP_20 gas usage', async (vm: OPNetUnit) => {
     Blockchain.msgSender = receiver;
@@ -67,12 +67,12 @@ await opnet('Compare OP_20 gas usage', async (vm: OPNetUnit) => {
         const time = Date.now();
         const transfer = await token.transfer(receiver, rndAddress, 100n);
         const elapsed = Date.now() - time;
-        const currentGasUsed = 673985327n; //console.log('Gas:', transfer);
+        const currentGasUsed = 673985327n;
 
         if (transfer.usedGas <= currentGasUsed) {
             const savedGas = currentGasUsed - transfer.usedGas;
             vm.success(
-                `Gas used is less than or equal to the expected gas (${savedGas} gas saved)`,
+                `Gas used is less than or equal to the expected gas (${savedGas} gas saved) (${transfer.usedGas} <= ${currentGasUsed})`,
             );
         } else {
             vm.error(

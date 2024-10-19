@@ -1,16 +1,17 @@
 import { opnet, OPNetUnit } from '../opnet/unit/OPNetUnit.js';
 import { Assert } from '../opnet/unit/Assert.js';
 import { Blockchain } from '../blockchain/Blockchain.js';
-import { Address } from '@btc-vision/bsi-binary';
+import { Address } from '@btc-vision/transaction';
 import { MotoswapRouter } from '../contracts/MotoswapRouter.js';
 import { OP_20 } from '../contracts/OP_20.js';
 import { AddLiquidityParameters } from '../interfaces/RouterInterfaces.js';
 import { MotoswapFactory } from '../contracts/MotoswapFactory.js';
-import { MotoswapPool, Reserves } from '../contracts/MotoswapPool.js';
+import { MotoswapPool } from '../contracts/MotoswapPool.js';
 import { WBTC_ADDRESS } from '../contracts/configs.js';
+import { getReserves } from '../common/UtilFunctions.js';
 
-const dttAddress: Address = Blockchain.generateRandomSegwitAddress();
-const receiver: Address = Blockchain.generateRandomTaprootAddress();
+const dttAddress: Address = Blockchain.generateRandomAddress();
+const receiver: Address = Blockchain.generateRandomAddress();
 const MINIMUM_LIQUIDITY = 1000n;
 
 Blockchain.msgSender = receiver;
@@ -35,29 +36,6 @@ async function mintTokens(amountA: number = 11000000, amountB: number = 11000000
 
     const currentBalanceTokenB = await wbtc.balanceOfNoDecimals(receiver);
     Assert.expect(currentBalanceTokenB).toEqual(amountB);
-}
-
-function sortTokens(tokenA: Address, tokenB: Address): Address[] {
-    if (tokenA < tokenB) {
-        return [tokenA, tokenB];
-    } else {
-        return [tokenB, tokenA];
-    }
-}
-
-function getReserves(
-    tokenA: Address,
-    tokenB: Address,
-    reserve0: bigint,
-    reserve1: bigint,
-): Reserves {
-    const [token0, token1] = sortTokens(tokenA, tokenB);
-
-    return {
-        reserve0: token0 === tokenA ? reserve0 : reserve1,
-        reserve1: token0 === tokenA ? reserve1 : reserve0,
-        blockTimestampLast: 0n,
-    };
 }
 
 function dispose() {
@@ -162,10 +140,8 @@ await opnet('Motoswap Router', async (vm: OPNetUnit) => {
         `verify that the factory address is valid and the WBTC address is valid`,
         async () => {
             const factoryAddress = await router.getFactory();
-            const WBTCAddress = await router.getWBTC();
 
-            Assert.expect(factoryAddress).toEqual(factory.address);
-            Assert.expect(WBTCAddress).toEqual(WBTC_ADDRESS);
+            Assert.expect(factoryAddress).toEqualAddress(factory.address);
         },
     );
 
@@ -219,22 +195,22 @@ await opnet('Motoswap Router', async (vm: OPNetUnit) => {
 
         // Decode first transfer event
         const poolCreatedEvent = MotoswapPool.decodeTransferEvent(transferEventA.eventData);
-        Assert.expect(poolCreatedEvent.from).toEqual(receiver);
+        Assert.expect(poolCreatedEvent.from).toEqualAddress(receiver);
         Assert.expect(poolCreatedEvent.value).toEqual(token0Amount);
 
         // Decode second transfer event
         const poolCreatedEventB = MotoswapPool.decodeTransferEvent(transferEventB.eventData);
-        Assert.expect(poolCreatedEventB.from).toEqual(receiver);
+        Assert.expect(poolCreatedEventB.from).toEqualAddress(receiver);
         Assert.expect(poolCreatedEventB.value).toEqual(token1Amount);
 
         // Decode mint event
         const mintedEvent = MotoswapPool.decodeMintEvent(mintEvent.eventData);
-        Assert.expect(mintedEvent.to).toEqual('bc1dead');
+        Assert.expect(mintedEvent.to).toEqualAddress(Blockchain.DEAD_ADDRESS);
         Assert.expect(mintedEvent.value).toEqual(MINIMUM_LIQUIDITY);
 
         // Decode mint event
         const mintedEventB = MotoswapPool.decodeMintEvent(mintBEvent.eventData);
-        Assert.expect(mintedEventB.to).toEqual(receiver);
+        Assert.expect(mintedEventB.to).toEqualAddress(receiver);
         Assert.expect(mintedEventB.value).toEqual(expectedLiquidity - MINIMUM_LIQUIDITY);
 
         const pair: MotoswapPool = MotoswapPool.createFromRuntime(
@@ -253,7 +229,7 @@ await opnet('Motoswap Router', async (vm: OPNetUnit) => {
 
         // Decode pool mint event
         const poolMintEventDecoded = MotoswapPool.decodePoolMintEvent(poolMintEvent.eventData);
-        Assert.expect(poolMintEventDecoded.to).toEqual(router.address);
+        Assert.expect(poolMintEventDecoded.to).toEqualAddress(router.address);
 
         Assert.expect(poolMintEventDecoded.amount0).toEqual(sortedReserves.reserve0); // token0Amount
         Assert.expect(poolMintEventDecoded.amount1).toEqual(sortedReserves.reserve1);

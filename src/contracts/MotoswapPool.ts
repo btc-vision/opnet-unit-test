@@ -1,5 +1,5 @@
 import { ContractRuntime } from '../opnet/modules/ContractRuntime.js';
-import { Address, BinaryReader, BinaryWriter } from '@btc-vision/bsi-binary';
+import { Address, BinaryReader, BinaryWriter } from '@btc-vision/transaction';
 import { OP_20 } from './OP_20.js';
 import { FACTORY_ADDRESS, POOL_ADDRESS } from './configs.js';
 import { CallResponse } from '../opnet/interfaces/CallResponse.js';
@@ -61,12 +61,13 @@ export class MotoswapPool extends OP_20 {
     constructor(
         private readonly token0: Address,
         private readonly token1: Address,
+        address: Address = POOL_ADDRESS,
         gasLimit: bigint = 100_000_000_000n,
     ) {
         super({
             fileName: 'pool',
             deployer: FACTORY_ADDRESS,
-            address: POOL_ADDRESS,
+            address: address,
             decimals: 18,
             gasLimit,
         });

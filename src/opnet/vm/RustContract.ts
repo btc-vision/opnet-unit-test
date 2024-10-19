@@ -1,5 +1,5 @@
 import { BitcoinNetworkRequest, CallResponse, ContractManager } from '@btc-vision/op-vm';
-import { Address } from '@btc-vision/bsi-binary';
+import { Address } from '@btc-vision/transaction';
 import { Blockchain } from '../../blockchain/Blockchain.js';
 import { RustContractBinding } from './RustContractBinding.js';
 
@@ -52,7 +52,7 @@ export class RustContract {
 
             this.contractManager.instantiate(
                 this._id,
-                this.params.address,
+                this.params.address.p2tr(Blockchain.network),
                 this.params.bytecode,
                 this.params.gasLimit,
                 this.params.network,

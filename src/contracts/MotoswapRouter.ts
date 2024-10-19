@@ -1,5 +1,5 @@
 import { ContractRuntime } from '../opnet/modules/ContractRuntime.js';
-import { Address, BinaryReader, BinaryWriter } from '@btc-vision/bsi-binary';
+import { Address, BinaryReader, BinaryWriter } from '@btc-vision/transaction';
 import { BytecodeManager } from '../opnet/modules/GetBytecode.js';
 import { AddLiquidityParameters } from '../interfaces/RouterInterfaces.js';
 import { ROUTER_ADDRESS } from './configs.js';
