@@ -384,7 +384,7 @@ await opnet('Motoswap Pool', async (vm: OPNetUnit) => {
             throw new Error('Response not found');
         }
 
-        console.log(burn);
+        console.log(burn.events);
 
         const burnAEvent = burn.events.shift();
         const transferAEvent = burn.events.shift();

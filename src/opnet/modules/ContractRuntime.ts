@@ -494,7 +494,7 @@ export class ContractRuntime extends Logger {
         const eventName = reader.readStringWithLength();
         const eventData = reader.readBytesWithLength();
 
-        const event = new NetEvent(eventName, 0n, eventData);
+        const event = new NetEvent(eventName, eventData);
         this.events.push(event);
     }
 
