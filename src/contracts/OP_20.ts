@@ -1,5 +1,5 @@
 import { ContractRuntime } from '../opnet/modules/ContractRuntime.js';
-import { Address, BinaryReader, BinaryWriter } from '@btc-vision/bsi-binary';
+import { Address, AddressMap, BinaryReader, BinaryWriter } from '@btc-vision/transaction';
 import { BytecodeManager } from '../opnet/modules/GetBytecode.js';
 import { Blockchain } from '../blockchain/Blockchain.js';
 import { CallResponse } from '../opnet/interfaces/CallResponse.js';
@@ -100,7 +100,7 @@ export class OP_20 extends ContractRuntime {
         calldata.writeSelector(this.mintSelector);
         calldata.writeAddress(to);
         calldata.writeU256(Blockchain.expandToDecimal(amount, this.decimals));
-        calldata.writeAddressValueTupleMap(new Map());
+        calldata.writeAddressValueTupleMap(new AddressMap());
         calldata.writeU256(0n);
 
         const buf = calldata.getBuffer();

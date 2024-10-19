@@ -1,5 +1,5 @@
 import { ContractRuntime } from '../opnet/modules/ContractRuntime.js';
-import { Address, BinaryReader, BinaryWriter } from '@btc-vision/bsi-binary';
+import { Address, BinaryReader, BinaryWriter } from '@btc-vision/transaction';
 import { BytecodeManager } from '../opnet/modules/GetBytecode.js';
 import { Blockchain } from '../blockchain/Blockchain.js';
 import { FACTORY_ADDRESS } from './configs.js';
@@ -20,8 +20,8 @@ export class MotoswapFactory extends ContractRuntime {
     }
 
     public async createPool(
-        a: Address = Blockchain.generateRandomSegwitAddress(),
-        b: Address = Blockchain.generateRandomSegwitAddress(),
+        a: Address = Blockchain.generateRandomAddress(),
+        b: Address = Blockchain.generateRandomAddress(),
     ): Promise<void> {
         const calldata = new BinaryWriter();
         calldata.writeSelector(this.createPoolSelector);

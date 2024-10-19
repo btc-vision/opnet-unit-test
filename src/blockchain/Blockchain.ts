@@ -1,7 +1,6 @@
-import { Address } from '@btc-vision/bsi-binary';
+import { Address, AddressMap, EcKeyPair, TapscriptVerificator } from '@btc-vision/transaction';
 import { Logger } from '@btc-vision/logger';
 import { ContractManager, ThreadSafeJsImportResponse } from '@btc-vision/op-vm';
-import { AddressGenerator, EcKeyPair, TapscriptVerificator } from '@btc-vision/transaction';
 import bitcoin, { Network } from 'bitcoinjs-lib';
 import crypto from 'crypto';
 import {
@@ -17,7 +16,7 @@ import { RustContractBinding } from '../opnet/vm/RustContractBinding.js';
 
 class BlockchainBase extends Logger {
     public readonly logColor: string = '#8332ff';
-    public readonly DEAD_ADDRESS: Address = 'bc1dead';
+    public readonly DEAD_ADDRESS: Address = Address.dead();
 
     public traceGas: boolean = TRACE_GAS;
     public tracePointers: boolean = TRACE_POINTERS;
@@ -25,7 +24,7 @@ class BlockchainBase extends Logger {
     public traceDeployments: boolean = TRACE_DEPLOYMENTS;
 
     private readonly enableDebug: boolean = false;
-    private readonly contracts: Map<string, ContractRuntime> = new Map<string, ContractRuntime>();
+    private readonly contracts: AddressMap<ContractRuntime> = new AddressMap<ContractRuntime>();
 
     private readonly bindings: Map<bigint, RustContractBinding> = new Map<
         bigint,
@@ -70,7 +69,7 @@ class BlockchainBase extends Logger {
         this._medianTimestamp = timestamp;
     }
 
-    private _msgSender: Address = '';
+    private _msgSender: Address = Address.dead();
 
     public get msgSender(): Address {
         return this._msgSender;
@@ -80,7 +79,7 @@ class BlockchainBase extends Logger {
         this._msgSender = sender;
     }
 
-    private _txOrigin: Address = '';
+    private _txOrigin: Address = Address.dead();
 
     public get txOrigin(): Address {
         return this._txOrigin;
@@ -112,18 +111,18 @@ class BlockchainBase extends Logger {
         this.bindings.set(binding.id, binding);
     }
 
-    public generateRandomSegwitAddress(): Address {
-        return AddressGenerator.generatePKSH(this.getRandomBytes(32), this.network);
-    }
-
-    public generateRandomTaprootAddress(): Address {
-        const keypair = EcKeyPair.generateRandomKeyPair(this.network);
-        return EcKeyPair.getTaprootAddress(keypair, this.network);
+    public generateRandomAddress(): Address {
+        const rndKeyPair = EcKeyPair.generateRandomKeyPair(this.network);
+        return new Address(rndKeyPair.publicKey);
     }
 
     public register(contract: ContractRuntime): void {
         if (this.contracts.has(contract.address)) {
-            throw new Error(`Contract already registered at address ${contract.address}`);
+            console.log(this.contracts);
+
+            throw new Error(
+                `Contract already registered at address ${contract.address.p2tr(this.network)}`,
+            );
         }
 
         this.contracts.set(contract.address, contract);
@@ -140,32 +139,18 @@ class BlockchainBase extends Logger {
     ): { contractAddress: Address; virtualAddress: Buffer } {
         const bytecode = BytecodeManager.getBytecode(from);
         const contractVirtualAddress = TapscriptVerificator.getContractSeed(
-            bitcoin.crypto.hash256(Buffer.from(deployer, 'utf-8')),
+            bitcoin.crypto.hash256(Buffer.from(deployer)),
             Buffer.from(bytecode),
             salt,
         );
 
         /** Generate contract segwit address */
-        const contractSegwitAddress = AddressGenerator.generatePKSH(
-            contractVirtualAddress,
-            this.network,
-        );
+        const contractSegwitAddress = new Address(contractVirtualAddress);
 
         return { contractAddress: contractSegwitAddress, virtualAddress: contractVirtualAddress };
     }
 
-    public convertToBech32(contractVirtualAddress: Address): Address {
-        return AddressGenerator.generatePKSH(
-            Buffer.from(contractVirtualAddress.slice(2), 'hex'),
-            this.network,
-        );
-    }
-
     public getContract(address: Address): ContractRuntime {
-        if (address.startsWith('0x')) {
-            address = this.convertToBech32(address);
-        }
-
         const contract = this.contracts.get(address);
         if (!contract) {
             throw new Error(`Contract not found at address ${address}`);

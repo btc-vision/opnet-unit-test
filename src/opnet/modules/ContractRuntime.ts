@@ -1,4 +1,11 @@
-import { ABICoder, Address, BinaryReader, BinaryWriter, NetEvent } from '@btc-vision/bsi-binary';
+import {
+    ABICoder,
+    Address,
+    AddressMap,
+    BinaryReader,
+    BinaryWriter,
+    NetEvent,
+} from '@btc-vision/transaction';
 import { Logger } from '@btc-vision/logger';
 import { BitcoinNetworkRequest } from '@btc-vision/op-vm';
 import bitcoin from 'bitcoinjs-lib';
@@ -24,7 +31,7 @@ export class ContractRuntime extends Logger {
     protected events: NetEvent[] = [];
 
     protected readonly gasLimit: bigint = 100_000_000_000n;
-    protected readonly deployedContracts: Map<string, Buffer> = new Map();
+    protected readonly deployedContracts: AddressMap<Buffer> = new AddressMap<Buffer>();
     protected readonly abiCoder = new ABICoder();
 
     private callStack: Address[] = [];
@@ -347,7 +354,7 @@ export class ContractRuntime extends Logger {
 
         if (Blockchain.traceDeployments) {
             this.info(
-                `Deploying contract at ${deployResult.contractAddress.toString()} - virtual address 0x${deployResult.virtualAddress.toString('hex')}`,
+                `Deploying contract at ${deployResult.contractAddress.p2tr(Blockchain.network)} - virtual address 0x${deployResult.virtualAddress.toString('hex')}`,
             );
         }
 

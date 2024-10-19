@@ -4,10 +4,10 @@ import { Assert } from '../opnet/unit/Assert.js';
 import { Blockchain } from '../blockchain/Blockchain.js';
 import { MotoswapPool } from '../contracts/MotoswapPool.js';
 import { MOTO_ADDRESS, WBTC_ADDRESS } from '../contracts/configs.js';
-import { Address } from '@btc-vision/bsi-binary';
+import { Address } from '@btc-vision/transaction';
 
 await opnet('Motoswap Factory', async (vm: OPNetUnit) => {
-    const receiver: Address = Blockchain.generateRandomTaprootAddress();
+    const receiver: Address = Blockchain.generateRandomAddress();
     Blockchain.msgSender = receiver;
     Blockchain.txOrigin = receiver; // "leftmost thing in the call chain"
 

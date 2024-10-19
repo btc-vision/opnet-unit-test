@@ -1,4 +1,4 @@
-import { Address, NetEvent } from '@btc-vision/bsi-binary';
+import { Address, NetEvent } from '@btc-vision/transaction';
 
 export interface CallResponse {
     response?: Uint8Array;

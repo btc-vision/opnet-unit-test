@@ -1,3 +1,5 @@
+import { Address } from '@btc-vision/transaction';
+
 declare global {
     interface BigInt {
         toJSON(): string;
@@ -14,6 +16,18 @@ export class Assertion {
     toEqual(expected: unknown) {
         if (this.actual !== expected) {
             throw new Error(`Expected "${String(expected)}", but got "${String(this.actual)}"`);
+        }
+    }
+
+    toEqualAddress(address: Address) {
+        if (this.actual instanceof Address) {
+            if (!this.actual.equals(address)) {
+                throw new Error(
+                    `Expected address "${address.toString()}", but got "${this.actual.toString()}"`,
+                );
+            }
+        } else {
+            throw new Error(`Expected address, but got "${this.actual}"`);
         }
     }
 

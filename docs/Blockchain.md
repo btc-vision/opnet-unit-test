@@ -18,22 +18,22 @@ usage.
 
 ## Public Methods
 
-### `generateRandomSegwitAddress(): Address`
+### `generateRandomAddress(): Address`
 
 - **Description**: Generates a random SegWit (P2SH) address using the Bitcoin network associated with
   the `BlockchainBase` instance.
 - **Usage**:
   ```typescript
-  const address = blockchain.generateRandomSegwitAddress();
+  const address = blockchain.generateRandomAddress();
   ```
 
-### `generateRandomTaprootAddress(): Address`
+### `generateRandomAddress(): Address`
 
 - **Description**: Generates a random Taproot address using the Bitcoin network associated with the `BlockchainBase`
   instance.
 - **Usage**:
   ```typescript
-  const address = blockchain.generateRandomTaprootAddress();
+  const address = blockchain.generateRandomAddress();
   ```
 
 ### `register(contract: ContractRuntime): void`
@@ -54,7 +54,9 @@ usage.
   blockchain.clearContracts();
   ```
 
-### `generateAddress(deployer: Address, salt: Buffer, from: Address): { contractAddress: Address; virtualAddress: Buffer }`
+###
+
+`generateAddress(deployer: Address, salt: Buffer, from: Address): { contractAddress: Address; virtualAddress: Buffer }`
 
 - **Description**: Generates a contract address and virtual address based on the deployer, salt, and the bytecode of the
   contract.

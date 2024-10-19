@@ -1,7 +1,7 @@
 import { opnet, OPNetUnit } from '../opnet/unit/OPNetUnit.js';
 import { Assert } from '../opnet/unit/Assert.js';
 import { Blockchain } from '../blockchain/Blockchain.js';
-import { Address } from '@btc-vision/bsi-binary';
+import { Address } from '@btc-vision/transaction';
 import { MotoswapRouter } from '../contracts/MotoswapRouter.js';
 import { OP_20 } from '../contracts/OP_20.js';
 import { AddLiquidityParameters } from '../interfaces/RouterInterfaces.js';
@@ -10,8 +10,8 @@ import { MotoswapPool, Reserves } from '../contracts/MotoswapPool.js';
 import { WBTC_ADDRESS } from '../contracts/configs.js';
 
 const MaxUint256: bigint = 2n ** 256n - 1n;
-const dttAddress: Address = Blockchain.generateRandomSegwitAddress();
-const receiver: Address = Blockchain.generateRandomTaprootAddress();
+const dttAddress: Address = Blockchain.generateRandomAddress();
+const receiver: Address = Blockchain.generateRandomAddress();
 const MINIMUM_LIQUIDITY = 1000n;
 
 Blockchain.msgSender = receiver;
@@ -517,7 +517,7 @@ await opnet(`Motoswap Router: liquidity`, async (vm: OPNetUnit) => {
 
             // Decode mint event
             const mintedEvent = MotoswapPool.decodeMintEvent(mintEvent.eventData);
-            Assert.expect(mintedEvent.to).toEqual(Blockchain.DEAD_ADDRESS);
+            Assert.expect(mintedEvent.to).toEqualAddress(Blockchain.DEAD_ADDRESS);
             Assert.expect(mintedEvent.value).toEqual(MINIMUM_LIQUIDITY);
 
             // Decode mint event

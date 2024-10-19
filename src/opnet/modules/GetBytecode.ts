@@ -1,8 +1,8 @@
-import { Address } from '@btc-vision/bsi-binary';
+import { Address, AddressMap } from '@btc-vision/transaction';
 import fs from 'fs';
 
 class BytecodeManagerBase {
-    private bytecodeMap: Map<Address, Buffer | Uint8Array> = new Map();
+    private bytecodeMap: AddressMap<Buffer | Uint8Array> = new AddressMap();
 
     public loadBytecode(path: string, address: Address): void {
         const bytecode = fs.readFileSync(path);

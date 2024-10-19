@@ -186,7 +186,7 @@ Here's an example of a basic contract that users must implement to interact with
 
 ```typescript
 import { CallResponse, ContractRuntime } from '../opnet/modules/ContractRuntime.js';
-import { Address, BinaryReader, BinaryWriter } from '@btc-vision/bsi-binary';
+import { Address, BinaryReader, BinaryWriter } from '@btc-vision/transaction';
 
 export class MyCustomContract extends ContractRuntime {
     // Implementation details...
@@ -202,7 +202,7 @@ allow minting, transferring, and checking the balance of tokens.
 
 ```typescript
 import { ContractRuntime, CallResponse } from '../opnet/modules/ContractRuntime.js';
-import { Address, BinaryReader, BinaryWriter } from '@btc-vision/bsi-binary';
+import { Address, BinaryReader, BinaryWriter } from '@btc-vision/transaction';
 import { Blockchain } from '../blockchain/Blockchain.js';
 
 export class SimpleToken extends ContractRuntime {
@@ -297,12 +297,12 @@ import { opnet, OPNetUnit } from '../opnet/unit/OPNetUnit.js';
 import { Assert } from '../opnet/unit/Assert.js';
 import { Blockchain } from '../blockchain/Blockchain.js';
 import { SimpleToken } from '../contracts/SimpleToken.js';
-import { Address } from '@btc-vision/bsi-binary';
+import { Address } from '@btc-vision/transaction';
 
 const decimals = 18;
 const totalSupply = 1000000n * (10n ** BigInt(decimals));
-const deployer: Address = Blockchain.generateRandomSegwitAddress();
-const receiver: Address = Blockchain.generateRandomSegwitAddress();
+const deployer: Address = Blockchain.generateRandomAddress();
+const receiver: Address = Blockchain.generateRandomAddress();
 
 await opnet('SimpleToken Contract', async (vm: OPNetUnit) => {
     let token: SimpleToken;
