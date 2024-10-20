@@ -303,7 +303,7 @@ await opnet(`Motoswap Router: fee-on-transfer tokens`, async (vm: OPNetUnit) => 
         /** Init template pool */
         pool = new MotoswapPool(dttAddress, WBTC_ADDRESS);
         Blockchain.register(pool);
-
+        
         /** Init OP_20 */
         DTT = new OP_20({
             fileName: 'MyToken',
