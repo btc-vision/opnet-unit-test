@@ -86,6 +86,10 @@ export class ContractRuntime extends Logger {
         return crypto.getRandomValues(new Uint8Array(32));
     }
 
+    private get p2trAddress(): string {
+        return this.address.p2tr(Blockchain.network);
+    }
+
     public preserveState(): void {
         this.shouldPreserveState = true;
     }
@@ -462,7 +466,7 @@ export class ContractRuntime extends Logger {
         this.events = [...this.events, ...callResponse.events];
         this.callStack = this.callStack.combine(callResponse.callStack);
 
-        if (this.callStack.size() > MAX_CALL_STACK_DEPTH) {
+        if (this.callStack.size > MAX_CALL_STACK_DEPTH) {
             throw new Error(`OPNET: CALL_STACK DEPTH EXCEEDED`);
         }
 
@@ -514,7 +518,7 @@ export class ContractRuntime extends Logger {
 
     private generateParams(): ContractParameters {
         return {
-            address: this.address,
+            address: this.p2trAddress,
             bytecode: this.bytecode,
             gasLimit: this.gasLimit,
             network: this.getNetwork(),
