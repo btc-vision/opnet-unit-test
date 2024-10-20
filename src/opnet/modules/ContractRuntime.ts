@@ -365,7 +365,9 @@ export class ContractRuntime extends Logger {
         await newContract.init();
 
         if (Blockchain.traceDeployments) {
-            this.log(`Deployed contract at ${deployResult.contractAddress.toString()}`);
+            this.log(
+                `Deployed contract at ${deployResult.contractAddress.p2tr(Blockchain.network)}`,
+            );
         }
 
         this.deployedContracts.set(deployResult.contractAddress, this.bytecode);
@@ -414,7 +416,7 @@ export class ContractRuntime extends Logger {
             return;
         }
 
-        if (calls.contains(this.address)) {
+        if (calls.has(this.address)) {
             throw new Error('OPNET: REENTRANCY DETECTED');
         }
     }
@@ -429,7 +431,7 @@ export class ContractRuntime extends Logger {
         }
 
         if (Blockchain.traceCalls) {
-            this.info(`Attempting to call contract ${contractAddress}`);
+            this.info(`Attempting to call contract ${contractAddress.p2tr(Blockchain.network)}`);
         }
 
         const contract: ContractRuntime = Blockchain.getContract(contractAddress);
@@ -446,7 +448,11 @@ export class ContractRuntime extends Logger {
 
         await ca.init();
 
-        const callResponse = await ca.onCall(calldata, this.address, Blockchain.txOrigin);
+        const callResponse: CallResponse = await ca.onCall(
+            calldata,
+            this.address,
+            Blockchain.txOrigin,
+        );
         contract.setStates(ca.getStates());
 
         try {

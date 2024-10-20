@@ -246,7 +246,7 @@ await opnet('Motoswap Router', async (vm: OPNetUnit) => {
         Assert.expect(amountsOuts).toDeepEqual([2n, 1n]);
     });
 
-    /*await vm.it(`should getAmountsOut - big values`, async () => {
+    await vm.it(`should getAmountsOut - big values`, async () => {
         await approveTokens(MaxUint256, MaxUint256);
 
         await router.addLiquidity({
@@ -262,9 +262,8 @@ await opnet('Motoswap Router', async (vm: OPNetUnit) => {
 
         const path: Address[] = [WBTC_ADDRESS, dttAddress];
         const amountsOuts = await router.getAmountsOut(10000n, path);
-        console.log(amountsOuts);
-        Assert.expect(amountsOuts).toDeepEqual([10000, 138]);
-    });*/
+        Assert.expect(amountsOuts).toDeepEqual([10000n, 138n]);
+    });
 
     await vm.it(`should getAmountsIn`, async () => {
         await approveTokens(MaxUint256, MaxUint256);
@@ -304,7 +303,7 @@ await opnet(`Motoswap Router: fee-on-transfer tokens`, async (vm: OPNetUnit) => 
         /** Init template pool */
         pool = new MotoswapPool(dttAddress, WBTC_ADDRESS);
         Blockchain.register(pool);
-
+        
         /** Init OP_20 */
         DTT = new OP_20({
             fileName: 'MyToken',
