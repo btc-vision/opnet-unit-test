@@ -13,13 +13,13 @@ BigInt.prototype.toJSON = function (): string {
 export class Assertion {
     public constructor(public actual: unknown) {}
 
-    toEqual(expected: unknown) {
+    public toEqual(expected: unknown): void {
         if (this.actual !== expected) {
             throw new Error(`Expected "${String(expected)}", but got "${String(this.actual)}"`);
         }
     }
 
-    toEqualAddress(address: Address) {
+    public toEqualAddress(address: Address): void {
         if (this.actual instanceof Address) {
             if (!this.actual.equals(address)) {
                 throw new Error(
@@ -31,7 +31,7 @@ export class Assertion {
         }
     }
 
-    toNotEqual(unexpected: unknown) {
+    public toNotEqual(unexpected: unknown): void {
         if (this.actual === unexpected) {
             throw new Error(
                 `Expected "${String(unexpected)}" to not be equal to "${String(this.actual)}"`,
@@ -39,7 +39,7 @@ export class Assertion {
         }
     }
 
-    toDeepEqual(expected: unknown) {
+    public toDeepEqual(expected: unknown): void {
         if (!this.deepStrictEqual(this.actual, expected)) {
             throw new Error(
                 `Expected deep equality. Expected ${JSON.stringify(expected)}, but got ${JSON.stringify(this.actual)}`,
@@ -47,13 +47,13 @@ export class Assertion {
         }
     }
 
-    toBeDefined() {
+    public toBeDefined(): void {
         if (this.actual === undefined || this.actual === null) {
             throw new Error(`Expected value to be defined`);
         }
     }
 
-    async toThrow(expectedError?: string | RegExp): Promise<void> {
+    public async toThrow(expectedError?: string | RegExp): Promise<void> {
         if (typeof this.actual !== 'function') {
             throw new Error('Expected actual to be a function');
         }
@@ -85,7 +85,28 @@ export class Assertion {
         }
     }
 
-    async toNotThrow() {
+    public toEqualAddressList(expected: Address[]): void {
+        if (!Array.isArray(this.actual)) {
+            throw new Error(`Expected actual to be an array`);
+        }
+
+        if (this.actual.length !== expected.length) {
+            throw new Error(
+                `Expected array length to be ${expected.length}, but got ${this.actual.length}`,
+            );
+        }
+
+        for (let i = 0; i < expected.length; i++) {
+            const actual = this.actual[i] as Address;
+            if (!actual.equals(expected[i])) {
+                throw new Error(
+                    `Expected address at index ${i} to be ${expected[i].toString()}, but got ${actual}`,
+                );
+            }
+        }
+    }
+
+    public async toNotThrow(): Promise<void> {
         if (typeof this.actual !== 'function') {
             throw new Error('Expected actual to be a function');
         }

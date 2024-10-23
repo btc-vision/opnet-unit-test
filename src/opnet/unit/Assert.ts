@@ -1,4 +1,5 @@
 import { Assertion } from './Assertion.js';
+import { Address } from '@btc-vision/transaction';
 
 export class Assert {
     public static toBeGreaterThan(actual: bigint, expected: bigint, message?: string) {
@@ -20,6 +21,23 @@ export class Assert {
             throw new Error(
                 message || `Expected ${actual} to be less than or equal to ${expected}`,
             );
+        }
+    }
+
+    public static addressArrayEqual(actual: Address[], expected: Address[], message?: string) {
+        if (actual.length !== expected.length) {
+            throw new Error(
+                message ||
+                    `Expected address array length to be ${expected.length}, but got ${actual.length}`,
+            );
+        }
+        for (let i = 0; i < actual.length; i++) {
+            if (!actual[i].equals(expected[i])) {
+                throw new Error(
+                    message ||
+                        `Expected address array index ${i} to be ${expected[i]}, but got ${actual[i]}`,
+                );
+            }
         }
     }
 
