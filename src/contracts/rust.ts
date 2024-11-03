@@ -184,6 +184,7 @@ export class RustContract extends ContractRuntime {
 
     public async balanceOfNoDecimals(owner: Address): Promise<number> {
         const balance = await this.balanceOf(owner);
+        console.log(balance);
 
         return Blockchain.decodeFromDecimal(balance, this.decimals);
     }
