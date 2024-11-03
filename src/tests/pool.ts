@@ -130,13 +130,13 @@ await opnet('Motoswap Pool', async (vm: OPNetUnit) => {
             throw new Error('Events not found');
         }
 
-        Assert.expect(transferAEvent.eventType).toEqual('Mint');
-        Assert.expect(transferBEvent.eventType).toEqual('Mint');
-        Assert.expect(syncEvent.eventType).toEqual('Sync');
-        Assert.expect(mintEvent.eventType).toEqual('PoolMint');
+        Assert.expect(transferAEvent.type).toEqual('Mint');
+        Assert.expect(transferBEvent.type).toEqual('Mint');
+        Assert.expect(syncEvent.type).toEqual('Sync');
+        Assert.expect(mintEvent.type).toEqual('PoolMint');
 
-        const decodedTransferAEvent = OP_20.decodeMintEvent(transferAEvent.eventData);
-        const decodedTransferBEvent = OP_20.decodeMintEvent(transferBEvent.eventData);
+        const decodedTransferAEvent = OP_20.decodeMintEvent(transferAEvent.data);
+        const decodedTransferBEvent = OP_20.decodeMintEvent(transferBEvent.data);
 
         Assert.expect(decodedTransferAEvent.to).toEqualAddress(Blockchain.DEAD_ADDRESS);
         Assert.expect(decodedTransferAEvent.value).toEqual(MINIMUM_LIQUIDITY);
@@ -144,11 +144,11 @@ await opnet('Motoswap Pool', async (vm: OPNetUnit) => {
         Assert.expect(decodedTransferBEvent.to).toEqualAddress(receiver);
         Assert.expect(decodedTransferBEvent.value).toEqual(expectedLiquidity - MINIMUM_LIQUIDITY);
 
-        const decodedSyncEvent = MotoswapPool.decodeSyncEvent(syncEvent.eventData);
+        const decodedSyncEvent = MotoswapPool.decodeSyncEvent(syncEvent.data);
         Assert.expect(decodedSyncEvent.reserve0).toEqual(amountTokenA);
         Assert.expect(decodedSyncEvent.reserve1).toEqual(amountTokenB);
 
-        const poolMintEvent = MotoswapPool.decodePoolMintEvent(mintEvent.eventData);
+        const poolMintEvent = MotoswapPool.decodePoolMintEvent(mintEvent.data);
         Assert.expect(poolMintEvent.to).toEqualAddress(Blockchain.msgSender);
         Assert.expect(poolMintEvent.amount0).toEqual(amountTokenA);
         Assert.expect(poolMintEvent.amount1).toEqual(amountTokenB);
@@ -247,23 +247,23 @@ await opnet('Motoswap Pool', async (vm: OPNetUnit) => {
         }
 
         // Event type check
-        Assert.expect(transferEvent.eventType).toEqual('Transfer');
-        Assert.expect(syncEvent.eventType).toEqual('Sync');
-        Assert.expect(swapEvent.eventType).toEqual('Swap');
+        Assert.expect(transferEvent.type).toEqual('Transfer');
+        Assert.expect(syncEvent.type).toEqual('Sync');
+        Assert.expect(swapEvent.type).toEqual('Swap');
 
         // Transfer event check
-        const decodedTransferEvent = OP_20.decodeTransferEvent(transferEvent.eventData);
+        const decodedTransferEvent = OP_20.decodeTransferEvent(transferEvent.data);
         Assert.expect(decodedTransferEvent.from).toEqualAddress(pool.address);
         Assert.expect(decodedTransferEvent.to).toEqualAddress(receiver);
         Assert.expect(decodedTransferEvent.value).toEqual(expectedOutputAmount);
 
         // Sync event check
-        const decodedSyncEvent = MotoswapPool.decodeSyncEvent(syncEvent.eventData);
+        const decodedSyncEvent = MotoswapPool.decodeSyncEvent(syncEvent.data);
         Assert.expect(decodedSyncEvent.reserve0).toEqual(token0Amount + swapAmount);
         Assert.expect(decodedSyncEvent.reserve1).toEqual(token1Amount - expectedOutputAmount);
 
         // Swap event check
-        const decodedSwapEvent = MotoswapPool.decodeSwapEvent(swapEvent.eventData);
+        const decodedSwapEvent = MotoswapPool.decodeSwapEvent(swapEvent.data);
         Assert.expect(decodedSwapEvent.sender).toEqualAddress(Blockchain.msgSender);
         Assert.expect(decodedSwapEvent.amount0In).toEqual(swapAmount);
         Assert.expect(decodedSwapEvent.amount1In).toEqual(0n);
@@ -323,23 +323,23 @@ await opnet('Motoswap Pool', async (vm: OPNetUnit) => {
         }
 
         // Event type check
-        Assert.expect(transferEvent.eventType).toEqual('Transfer');
-        Assert.expect(syncEvent.eventType).toEqual('Sync');
-        Assert.expect(swapEvent.eventType).toEqual('Swap');
+        Assert.expect(transferEvent.type).toEqual('Transfer');
+        Assert.expect(syncEvent.type).toEqual('Sync');
+        Assert.expect(swapEvent.type).toEqual('Swap');
 
         // Transfer event check
-        const decodedTransferEvent = OP_20.decodeTransferEvent(transferEvent.eventData);
+        const decodedTransferEvent = OP_20.decodeTransferEvent(transferEvent.data);
         Assert.expect(decodedTransferEvent.from).toEqualAddress(pool.address);
         Assert.expect(decodedTransferEvent.to).toEqualAddress(receiver);
         Assert.expect(decodedTransferEvent.value).toEqual(expectedOutputAmount);
 
         // Sync event check
-        const decodedSyncEvent = MotoswapPool.decodeSyncEvent(syncEvent.eventData);
+        const decodedSyncEvent = MotoswapPool.decodeSyncEvent(syncEvent.data);
         Assert.expect(decodedSyncEvent.reserve0).toEqual(token0Amount - expectedOutputAmount);
         Assert.expect(decodedSyncEvent.reserve1).toEqual(token1Amount + swapAmount);
 
         // Swap event check
-        const decodedSwapEvent = MotoswapPool.decodeSwapEvent(swapEvent.eventData);
+        const decodedSwapEvent = MotoswapPool.decodeSwapEvent(swapEvent.data);
         Assert.expect(decodedSwapEvent.sender).toEqualAddress(Blockchain.msgSender);
         Assert.expect(decodedSwapEvent.amount0In).toEqual(0n);
         Assert.expect(decodedSwapEvent.amount1In).toEqual(swapAmount);
@@ -401,33 +401,33 @@ await opnet('Motoswap Pool', async (vm: OPNetUnit) => {
         vm.log(`Amount0: ${amount0} - Amount1: ${amount1}`);
 
         // Event type check
-        Assert.expect(transferAEvent.eventType).toEqual('Transfer');
-        Assert.expect(transferBEvent.eventType).toEqual('Transfer');
-        Assert.expect(burnAEvent.eventType).toEqual('Burn');
-        Assert.expect(syncEvent.eventType).toEqual('Sync');
-        Assert.expect(burnEvent.eventType).toEqual('PoolBurn');
+        Assert.expect(transferAEvent.type).toEqual('Transfer');
+        Assert.expect(transferBEvent.type).toEqual('Transfer');
+        Assert.expect(burnAEvent.type).toEqual('Burn');
+        Assert.expect(syncEvent.type).toEqual('Sync');
+        Assert.expect(burnEvent.type).toEqual('PoolBurn');
 
         // Transfer event check
-        const decodedTransferAEvent = OP_20.decodeTransferEvent(transferAEvent.eventData);
+        const decodedTransferAEvent = OP_20.decodeTransferEvent(transferAEvent.data);
         Assert.expect(decodedTransferAEvent.from).toEqualAddress(pool.address);
         Assert.expect(decodedTransferAEvent.to).toEqualAddress(receiver);
         Assert.expect(decodedTransferAEvent.value).toEqual(token0Amount - 1000n);
 
-        const decodedTransferBEvent = OP_20.decodeTransferEvent(transferBEvent.eventData);
+        const decodedTransferBEvent = OP_20.decodeTransferEvent(transferBEvent.data);
         Assert.expect(decodedTransferBEvent.from).toEqualAddress(pool.address);
         Assert.expect(decodedTransferBEvent.to).toEqualAddress(receiver);
         Assert.expect(decodedTransferBEvent.value).toEqual(token1Amount - 1000n);
 
-        const decodedTransferCEvent = OP_20.decodeBurnEvent(burnAEvent.eventData);
+        const decodedTransferCEvent = OP_20.decodeBurnEvent(burnAEvent.data);
         Assert.expect(decodedTransferCEvent.value).toEqual(token0Amount - MINIMUM_LIQUIDITY);
 
         // Sync event check
-        const decodedSyncEvent = MotoswapPool.decodeSyncEvent(syncEvent.eventData);
+        const decodedSyncEvent = MotoswapPool.decodeSyncEvent(syncEvent.data);
         Assert.expect(decodedSyncEvent.reserve0).toEqual(1000n);
         Assert.expect(decodedSyncEvent.reserve1).toEqual(1000n);
 
         // Burn event check
-        const decodedBurnEvent = MotoswapPool.decodePoolBurnEvent(burnEvent.eventData);
+        const decodedBurnEvent = MotoswapPool.decodePoolBurnEvent(burnEvent.data);
         Assert.expect(decodedBurnEvent.sender).toEqualAddress(Blockchain.msgSender);
         Assert.expect(decodedBurnEvent.amount0).toEqual(token0Amount - 1000n);
         Assert.expect(decodedBurnEvent.amount1).toEqual(token1Amount - 1000n);

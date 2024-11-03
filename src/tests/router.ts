@@ -303,7 +303,7 @@ await opnet(`Motoswap Router: fee-on-transfer tokens`, async (vm: OPNetUnit) => 
         /** Init template pool */
         pool = new MotoswapPool(dttAddress, WBTC_ADDRESS);
         Blockchain.register(pool);
-        
+
         /** Init OP_20 */
         DTT = new OP_20({
             fileName: 'MyToken',
@@ -479,31 +479,31 @@ await opnet(`Motoswap Router: liquidity`, async (vm: OPNetUnit) => {
                 throw new Error('Invalid events');
             }
 
-            Assert.expect(poolCreationEvent.eventType).toEqual('PoolCreated');
-            Assert.expect(transferEventA.eventType).toEqual('Transfer');
-            Assert.expect(transferEventB.eventType).toEqual('Transfer');
-            Assert.expect(mintEvent.eventType).toEqual('Mint');
-            Assert.expect(mintBEvent.eventType).toEqual('Mint');
-            Assert.expect(syncEvent.eventType).toEqual('Sync');
-            Assert.expect(poolMintEvent.eventType).toEqual('PoolMint');
+            Assert.expect(poolCreationEvent.type).toEqual('PoolCreated');
+            Assert.expect(transferEventA.type).toEqual('Transfer');
+            Assert.expect(transferEventB.type).toEqual('Transfer');
+            Assert.expect(mintEvent.type).toEqual('Mint');
+            Assert.expect(mintBEvent.type).toEqual('Mint');
+            Assert.expect(syncEvent.type).toEqual('Sync');
+            Assert.expect(poolMintEvent.type).toEqual('PoolMint');
 
             // Decode first transfer event
-            const poolCreatedEvent = MotoswapPool.decodeTransferEvent(transferEventA.eventData);
+            const poolCreatedEvent = MotoswapPool.decodeTransferEvent(transferEventA.data);
             Assert.expect(poolCreatedEvent.from).toEqualAddress(receiver);
             Assert.expect(poolCreatedEvent.value).toEqual(token0Amount);
 
             // Decode second transfer event
-            const poolCreatedEventB = MotoswapPool.decodeTransferEvent(transferEventB.eventData);
+            const poolCreatedEventB = MotoswapPool.decodeTransferEvent(transferEventB.data);
             Assert.expect(poolCreatedEventB.from).toEqualAddress(receiver);
             Assert.expect(poolCreatedEventB.value).toEqual(token1Amount);
 
             // Decode mint event
-            const mintedEvent = MotoswapPool.decodeMintEvent(mintEvent.eventData);
+            const mintedEvent = MotoswapPool.decodeMintEvent(mintEvent.data);
             Assert.expect(mintedEvent.to).toEqualAddress(Blockchain.DEAD_ADDRESS);
             Assert.expect(mintedEvent.value).toEqual(MINIMUM_LIQUIDITY);
 
             // Decode mint event
-            const mintedEventB = MotoswapPool.decodeMintEvent(mintBEvent.eventData);
+            const mintedEventB = MotoswapPool.decodeMintEvent(mintBEvent.data);
             Assert.expect(mintedEventB.to).toEqualAddress(receiver);
             Assert.expect(mintedEventB.value).toEqual(expectedLiquidity - MINIMUM_LIQUIDITY);
 
@@ -516,7 +516,7 @@ await opnet(`Motoswap Router: liquidity`, async (vm: OPNetUnit) => {
             await pair.init();
 
             // Decode sync event
-            const syncEventDecoded = MotoswapPool.decodeSyncEvent(syncEvent.eventData);
+            const syncEventDecoded = MotoswapPool.decodeSyncEvent(syncEvent.data);
             const sortedReserves = getReserves(
                 WBTC_ADDRESS,
                 dttAddress,
@@ -528,7 +528,7 @@ await opnet(`Motoswap Router: liquidity`, async (vm: OPNetUnit) => {
             Assert.expect(syncEventDecoded.reserve1).toEqual(sortedReserves.reserve1);
 
             // Decode pool mint event
-            const poolMintEventDecoded = MotoswapPool.decodePoolMintEvent(poolMintEvent.eventData);
+            const poolMintEventDecoded = MotoswapPool.decodePoolMintEvent(poolMintEvent.data);
             Assert.expect(poolMintEventDecoded.to).toEqualAddress(router.address);
 
             Assert.expect(poolMintEventDecoded.amount0).toEqual(sortedReserves.reserve0);
