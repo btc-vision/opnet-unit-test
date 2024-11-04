@@ -1,7 +1,7 @@
 import { Address, AddressMap, EcKeyPair, TapscriptVerificator } from '@btc-vision/transaction';
 import { Logger } from '@btc-vision/logger';
 import { ContractManager, ThreadSafeJsImportResponse } from '@btc-vision/op-vm';
-import bitcoin, { Network } from 'bitcoinjs-lib';
+import bitcoin, { Network } from '@btc-vision/bitcoin';
 import crypto from 'crypto';
 import {
     NETWORK,

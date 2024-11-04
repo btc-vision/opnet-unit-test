@@ -1,5 +1,5 @@
 import fs from 'fs';
-import bitcoin from 'bitcoinjs-lib';
+import bitcoin from '@btc-vision/bitcoin';
 
 const pool = fs.readFileSync('./bytecode/pool.wasm');
 

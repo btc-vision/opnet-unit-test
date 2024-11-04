@@ -10,7 +10,7 @@ usage.
 
 - **Description**: Initializes the `BlockchainBase` class with the specified Bitcoin network.
 - **Parameters**:
-    - `network`: The Bitcoin network to be used (e.g., `bitcoinjs-lib` networks like `regtest`, `testnet`, etc.).
+    - `network`: The Bitcoin network to be used (e.g., `@btc-vision/bitcoin` networks like `regtest`, `testnet`, etc.).
 - **Usage**:
   ```typescript
   const blockchain = new BlockchainBase(networks.regtest);

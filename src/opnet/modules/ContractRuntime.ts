@@ -9,7 +9,7 @@ import {
 } from '@btc-vision/transaction';
 import { Logger } from '@btc-vision/logger';
 import { BitcoinNetworkRequest } from '@btc-vision/op-vm';
-import bitcoin from 'bitcoinjs-lib';
+import bitcoin from '@btc-vision/bitcoin';
 import crypto from 'crypto';
 import { Blockchain } from '../../blockchain/Blockchain.js';
 import { DISABLE_REENTRANCY_GUARD, MAX_CALL_STACK_DEPTH } from '../../contracts/configs.js';
