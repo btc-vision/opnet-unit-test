@@ -330,38 +330,46 @@ class BlockchainBase extends Logger {
         return c.deployContractAtAddress(buf);
     };
 
-    private logJSFunction: (_: never, result: ThreadSafeJsImportResponse) => void = (
+    private logJSFunction: (_: never, result: ThreadSafeJsImportResponse) => Promise<void> = (
         _: never,
         value: ThreadSafeJsImportResponse,
-    ): void => {
-        // temporary
-        const u = new Uint8Array(value.buffer);
-        const buf = Buffer.from(u.buffer, u.byteOffset, u.byteLength);
+    ): Promise<void> => {
+        return new Promise((resolve) => {
+            // temporary
+            const u = new Uint8Array(value.buffer);
+            const buf = Buffer.from(u.buffer, u.byteOffset, u.byteLength);
 
-        const c = this.bindings.get(BigInt(`${value.contractId}`)); // otherwise unsafe.
+            const c = this.bindings.get(BigInt(`${value.contractId}`)); // otherwise unsafe.
 
-        if (!c) {
-            throw new Error('Binding not found');
-        }
+            if (!c) {
+                throw new Error('Binding not found');
+            }
 
-        return c.log(buf);
+            c.log(buf);
+
+            resolve();
+        });
     };
 
-    private emitJSFunction: (_: never, result: ThreadSafeJsImportResponse) => void = (
+    private emitJSFunction: (_: never, result: ThreadSafeJsImportResponse) => Promise<void> = (
         _: never,
         value: ThreadSafeJsImportResponse,
-    ): void => {
-        // temporary
-        const u = new Uint8Array(value.buffer);
-        const buf = Buffer.from(u.buffer, u.byteOffset, u.byteLength);
+    ): Promise<void> => {
+        return new Promise<void>((resolve) => {
+            // temporary
+            const u = new Uint8Array(value.buffer);
+            const buf = Buffer.from(u.buffer, u.byteOffset, u.byteLength);
 
-        const c = this.bindings.get(BigInt(`${value.contractId}`)); // otherwise unsafe.
+            const c = this.bindings.get(BigInt(`${value.contractId}`)); // otherwise unsafe.
 
-        if (!c) {
-            throw new Error('Binding not found');
-        }
+            if (!c) {
+                throw new Error('Binding not found');
+            }
 
-        return c.emit(buf);
+            c.emit(buf);
+
+            resolve();
+        });
     };
 
     private inputsJSFunction: (
