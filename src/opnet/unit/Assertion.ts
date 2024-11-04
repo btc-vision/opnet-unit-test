@@ -57,10 +57,11 @@ export class Assertion {
         if (typeof this.actual !== 'function') {
             throw new Error('Expected actual to be a function');
         }
+
         let threw = false;
         let error: unknown = null;
         try {
-            await this.actual();
+            await (this.actual as () => Promise<void>)();
         } catch (err) {
             threw = true;
             error = err;
@@ -112,7 +113,7 @@ export class Assertion {
         }
         let threw: Error | undefined;
         try {
-            await this.actual();
+            await (this.actual as () => Promise<void>)();
         } catch (err) {
             threw = err as Error;
         }
