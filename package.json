@@ -28,7 +28,7 @@
         "@btc-vision/transaction": "^1.0.122",
         "gulp-logger-new": "^1.0.1",
         "npm-run-all": "^4.1.5",
-        "opnet": "^1.1.12"
+        "opnet": "^1.1.13"
     },
     "devDependencies": {
         "@eslint/js": "^9.14.0",
