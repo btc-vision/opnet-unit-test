@@ -143,6 +143,7 @@ export class OrderBook extends ContractRuntime {
     public async getQuote(
         token: Address,
         satoshisIn: bigint,
+        minimumLiquidityPerTick: bigint, // gas optimization
     ): Promise<{
         result: bigint;
         response: CallResponse;
@@ -151,6 +152,7 @@ export class OrderBook extends ContractRuntime {
         calldata.writeSelector(this.getQuoteSelector);
         calldata.writeAddress(token);
         calldata.writeU256(satoshisIn);
+        calldata.writeU256(minimumLiquidityPerTick);
 
         const result = await this.execute(calldata.getBuffer());
         if (result.error) throw this.handleError(result.error);

@@ -423,7 +423,11 @@ export class ContractRuntime extends Logger {
         return Number(a - b);
     }
 
-    private getBestNextPointerValueGreaterThan(pointer: bigint, lte: boolean): bigint {
+    private getBestNextPointerValueGreaterThan(
+        pointer: bigint,
+        lte: boolean,
+        valueAtLeast: bigint,
+    ): bigint {
         // Masks to separate the token (bits 80-239) and the word position (bits 0-79)
         const tokenMask = ((1n << 160n) - 1n) << 80n; // Bits 80 to 239
         const wordPosMask = (1n << 80n) - 1n; // Bits 0 to 79
@@ -469,7 +473,7 @@ export class ContractRuntime extends Logger {
             const value = this.states.get(key);
 
             // Check if the value is greater than zero
-            if (value !== undefined && value > 0n) {
+            if (value !== undefined && value > valueAtLeast) {
                 return key;
             }
         }
@@ -477,8 +481,12 @@ export class ContractRuntime extends Logger {
         return 0n;
     }
 
-    private nextPointerValueGreaterThan(pointer: bigint, lte: boolean): Buffer | Uint8Array {
-        const pointerReturn = this.getBestNextPointerValueGreaterThan(pointer, lte);
+    private nextPointerValueGreaterThan(
+        pointer: bigint,
+        lte: boolean,
+        valueAtLeast: bigint,
+    ): Buffer | Uint8Array {
+        const pointerReturn = this.getBestNextPointerValueGreaterThan(pointer, lte, valueAtLeast);
         const response: BinaryWriter = new BinaryWriter();
         response.writeU256(pointerReturn);
 
@@ -603,9 +611,11 @@ export class ContractRuntime extends Logger {
             nextPointerValueGreaterThan: (data: Buffer) => {
                 return new Promise((resolve) => {
                     const reader = new BinaryReader(data);
-                    const pointer = reader.readU256();
-                    const lte = reader.readBoolean();
-                    resolve(this.nextPointerValueGreaterThan(pointer, lte));
+                    const pointer: bigint = reader.readU256();
+                    const valueAtLeast: bigint = reader.readU256();
+                    const lte: boolean = reader.readBoolean();
+
+                    resolve(this.nextPointerValueGreaterThan(pointer, lte, valueAtLeast));
                 });
             },
             store: (data: Buffer) => {

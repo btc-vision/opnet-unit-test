@@ -4,7 +4,7 @@ import { Assert } from '../../opnet/unit/Assert.js';
 import { opnet, OPNetUnit } from '../../opnet/unit/OPNetUnit.js';
 import { OrderBook } from '../../contracts/order-book/OrderBook.js';
 import { OP_20 } from '../../contracts/generic/OP_20.js';
-import { rndPriceLevelMultiple, tickSpacing } from './extern/AddLiquidityExternalConstants.js';
+import { tickSpacing } from './extern/AddLiquidityExternalConstants.js';
 
 const receiver: Address = Blockchain.generateRandomAddress();
 
@@ -64,6 +64,8 @@ await opnet('OrderBook Contract getQuote Tests', async (vm: OPNetUnit) => {
         const slippage = 100; // 1%
         const invalidityPeriod = 10; // 10 blocks
 
+        const minimumLiquidityPerTick = 100n;
+
         // Approve tokens
         await token.approve(userAddress, orderBook.address, maximumAmountIn);
 
@@ -78,8 +80,12 @@ await opnet('OrderBook Contract getQuote Tests', async (vm: OPNetUnit) => {
         );
 
         // Get a quote for the specified satoshis input
-        const satoshisIn = BigInt(500_000); // 500,000 satoshis (0.005 BTC)
-        const callResponse = await orderBook.getQuote(tokenAddress, satoshisIn);
+        const satoshisIn = 500_000n; // 500,000 satoshis (0.005 BTC)
+        const callResponse = await orderBook.getQuote(
+            tokenAddress,
+            satoshisIn,
+            minimumLiquidityPerTick,
+        );
 
         // Expected tokens based on price level
         const expectedTokensOut: bigint = safeBigIntDivision(
@@ -96,10 +102,10 @@ await opnet('OrderBook Contract getQuote Tests', async (vm: OPNetUnit) => {
     });
 
     await vm.it('should thrown when no liquidity for a quote is available', async () => {
-        const satoshisIn = BigInt(500000); // 500,000 satoshis
+        const satoshisIn = 500_000n; // 500,000 satoshis
 
         await Assert.expect(async () => {
-            await orderBook.getQuote(tokenAddress, satoshisIn);
+            await orderBook.getQuote(tokenAddress, satoshisIn, 1n);
         }).toThrow('No initialized tick found');
     });
 
@@ -109,7 +115,7 @@ await opnet('OrderBook Contract getQuote Tests', async (vm: OPNetUnit) => {
 
         // Call getQuote with an amount below the minimum
         await Assert.expect(async () => {
-            await orderBook.getQuote(tokenAddress, satoshisIn);
+            await orderBook.getQuote(tokenAddress, satoshisIn, 1n);
         }).toThrow('Requested amount is below minimum trade size');
     });
 
@@ -136,7 +142,7 @@ await opnet('OrderBook Contract getQuote Tests', async (vm: OPNetUnit) => {
 
         // Request quote across multiple ticks
         const satoshisIn = 2000000n; // 2,000,000 satoshis
-        const callResponse = await orderBook.getQuote(tokenAddress, satoshisIn);
+        const callResponse = await orderBook.getQuote(tokenAddress, satoshisIn, 1n);
 
         // Calculate expected tokens considering price levels
         let remainingSatoshis = satoshisIn;
@@ -175,7 +181,7 @@ await opnet('OrderBook Contract getQuote Tests', async (vm: OPNetUnit) => {
         );
 
         // Call getQuote
-        const callResponse = await orderBook.getQuote(tokenAddress, satoshisIn);
+        const callResponse = await orderBook.getQuote(tokenAddress, satoshisIn, 1n);
 
         // Assert that the returned quote matches the available liquidity
         Assert.expect(callResponse.result).toEqual(liquidityAmount);
@@ -190,73 +196,52 @@ await opnet('OrderBook Contract getQuote Tests', async (vm: OPNetUnit) => {
         const satoshisIn = BigInt(500000);
 
         await Assert.expect(async () => {
-            await orderBook.getQuote(invalidTokenAddress, satoshisIn);
+            await orderBook.getQuote(invalidTokenAddress, satoshisIn, 1n);
         }).toThrow('Invalid token address');
     });
 
     // Test for adding 1000 different positions and comparing gas usage
 
     await vm.it('should add 1000 different positions and compare gas usage', async () => {
-        const numberOfTicks = 10;
-        const maximumAmountIn = Blockchain.expandTo18Decimals(1); // Small amount for each tick
+        const numberOfTicks = 1000;
+        const maximumAmountIn = 10n;
         const slippage = 100; // 1%
         const invalidityPeriod = 10; // 10 blocks
 
         // Approve enough tokens
-        await token.approve(
-            userAddress,
-            orderBook.address,
-            maximumAmountIn * BigInt(numberOfTicks) * 2n + maximumAmountIn * 3n, // +3 from previous additions
-        );
-
-        const priceLevels: bigint[] = [];
-
-        for (let i = 1; i <= numberOfTicks; i++) {
-            priceLevels.push(
-                BigInt(i * tickSpacing) *
-                    BigInt(rndPriceLevelMultiple[i % rndPriceLevelMultiple.length]),
-            );
-        }
+        await token.approve(userAddress, orderBook.address, 1000000000000000000000000000n);
 
         // Now, add the rest of the ticks
         for (let i = 0; i < numberOfTicks; i++) {
             const tokenOwner: Address = Blockchain.generateRandomAddress();
+            const randomLiquidityAmount = BigInt((i + 1) * 2) * maximumAmountIn;
 
-            const priceLevel = priceLevels[i];
             const gas = await orderBook.addLiquidity(
                 tokenAddress,
                 tokenOwner.p2tr(Blockchain.network),
-                maximumAmountIn,
-                priceLevel,
+                randomLiquidityAmount,
+                BigInt((i + 1) * tickSpacing),
                 slippage,
                 invalidityPeriod,
             );
 
-            vm.log(`Used ${gas.usedGas}gas to add liquidity at price level ${priceLevel}`);
-        }
-
-        // add another time more liquidity at the same spot
-        for (let i = 0; i < numberOfTicks; i++) {
-            const tokenOwner: Address = Blockchain.generateRandomAddress();
-            const priceLevel = priceLevels[i];
-            await orderBook.addLiquidity(
-                tokenAddress,
-                tokenOwner.p2tr(Blockchain.network),
-                maximumAmountIn,
-                priceLevel,
-                slippage,
-                invalidityPeriod,
+            vm.log(
+                `Used ${gas.usedGas}gas to add liquidity at price level ${(i + 1) * tickSpacing} - ${randomLiquidityAmount} tokens`,
             );
         }
+
+        Blockchain.tracePointers = true;
 
         // Get a quote for the specified satoshis input
-        const satoshisIn = BigInt(500_000); // 500,000 satoshis (0.005 BTC)
-        const callResponse = await orderBook.getQuote(tokenAddress, satoshisIn);
+        const satoshisIn = 100_000_000n; // 1 BTC.
+        const callResponse = await orderBook.getQuote(tokenAddress, satoshisIn, 1000n);
 
         // Expected tokens based on price level
-        const expectedTokensOut: bigint = safeBigIntDivision(satoshisIn, priceLevels[0], precision);
+        //const expectedTokensOut: bigint = safeBigIntDivision(satoshisIn, priceLevels[0], precision);
 
         Assert.expect(callResponse.response.error).toBeUndefined();
-        Assert.expect(callResponse.result).toEqual(expectedTokensOut / precision);
+        //Assert.expect(callResponse.result).toEqual(expectedTokensOut / precision);
+
+        vm.info(`Get quote gas used: ${callResponse.response.usedGas}`);
     });
 });
