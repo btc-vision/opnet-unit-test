@@ -13,7 +13,8 @@
         "test:pool": "tsx src/tests/motoswap/pool.ts",
         "test:router": "tsx src/tests/motoswap/router.ts",
         "test:router2": "tsx src/tests/motoswap/router2.ts",
-        "test:orderbook": "tsx src/tests/orderbook/OrderBookAddLiquidity.ts",
+        "test:orderbook:addliquidity": "tsx src/tests/orderbook/OrderBookAddLiquidity.ts",
+        "test:orderbook:quote": "tsx src/tests/orderbook/OrderBookGetQuote.ts",
         "test:vm": "tsx src/tests/vm.ts",
         "test": "npm run test:factory && npm run test:gas && npm run test:pool && npm run test:router && npm run test:router2 && npm run test:vm"
     },

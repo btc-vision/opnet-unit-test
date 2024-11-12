@@ -35,6 +35,9 @@ await opnet('VM', async (vm: OPNetUnit) => {
             function () {
                 throw new Error(`a`);
             },
+            function () {
+                throw new Error(`a`);
+            },
         );
 
         const rndAddress = Blockchain.generateRandomAddress();

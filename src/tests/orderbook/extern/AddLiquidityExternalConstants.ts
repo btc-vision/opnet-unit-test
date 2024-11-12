@@ -1,3 +1,5 @@
+export const tickSpacing = 10; // Assuming tickSpacing is 10000 as per contract
+
 export const rndPriceLevelMultiple = [
     5240, 5267, 8700, 9919, 1432, 4060, 4357, 4200, 9500, 6662, 1837, 3593, 8625, 1098, 4527, 1191,
     2207, 3226, 4544, 1986, 8004, 1630, 6039, 9472, 4993, 2515, 4400, 6803, 9929, 5571, 3639, 4996,

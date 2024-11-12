@@ -140,7 +140,13 @@ export class OrderBook extends ContractRuntime {
     }
 
     // Method to get a quote
-    public async getQuote(token: Address, satoshisIn: bigint): Promise<bigint> {
+    public async getQuote(
+        token: Address,
+        satoshisIn: bigint,
+    ): Promise<{
+        result: bigint;
+        response: CallResponse;
+    }> {
         const calldata = new BinaryWriter();
         calldata.writeSelector(this.getQuoteSelector);
         calldata.writeAddress(token);
@@ -155,7 +161,10 @@ export class OrderBook extends ContractRuntime {
         }
 
         const reader = new BinaryReader(response);
-        return reader.readU256();
+        return {
+            result: reader.readU256(),
+            response: result,
+        };
     }
 
     // Method to reserve ticks

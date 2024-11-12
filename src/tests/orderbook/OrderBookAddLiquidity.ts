@@ -5,7 +5,7 @@ import { opnet, OPNetUnit } from '../../opnet/unit/OPNetUnit.js';
 import { LiquidityAddedEvent, OrderBook } from '../../contracts/order-book/OrderBook.js';
 import { OP_20, TransferEvent } from '../../contracts/generic/OP_20.js';
 import { CallResponse } from '../../opnet/interfaces/CallResponse.js';
-import { rndPriceLevelMultiple } from './extern/AddLiquidityExternalConstants.js';
+import { rndPriceLevelMultiple, tickSpacing } from './extern/AddLiquidityExternalConstants.js';
 
 const receiver: Address = Blockchain.generateRandomAddress();
 
@@ -468,7 +468,6 @@ await opnet('OrderBook Contract addLiquidity Tests', async (vm: OPNetUnit) => {
         const maximumAmountIn = Blockchain.expandTo18Decimals(500);
         const slippage = 100; // 1%
         const invalidityPeriod = 10; // 10 blocks
-        const tickSpacing = BigInt(10000); // As per contract
 
         // Approve tokens
         await token.approve(userAddress, orderBook.address, maximumAmountIn * 3n);
@@ -499,7 +498,7 @@ await opnet('OrderBook Contract addLiquidity Tests', async (vm: OPNetUnit) => {
             const decodedEvent = OrderBook.decodeLiquidityAddedEvent(liquidityAddedEvent.data);
 
             // Expected level adjusted to tickSpacing
-            const expectedLevel = (unalignedPriceLevel / tickSpacing) * tickSpacing;
+            const expectedLevel = (unalignedPriceLevel / BigInt(tickSpacing)) * BigInt(tickSpacing);
 
             Assert.expect(decodedEvent.level).toEqual(expectedLevel);
 
@@ -513,7 +512,6 @@ await opnet('OrderBook Contract addLiquidity Tests', async (vm: OPNetUnit) => {
 
     await vm.it('should add 1000 different positions and compare gas usage', async () => {
         const numberOfTicks = 1000;
-        const tickSpacing = 10000; // Assuming tickSpacing is 10000 as per contract
         const maximumAmountIn = Blockchain.expandTo18Decimals(1); // Small amount for each tick
         const slippage = 100; // 1%
         const invalidityPeriod = 10; // 10 blocks
