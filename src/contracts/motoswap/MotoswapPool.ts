@@ -1,8 +1,8 @@
-import { ContractRuntime } from '../opnet/modules/ContractRuntime.js';
+import { ContractRuntime } from '../../opnet/modules/ContractRuntime.js';
 import { Address, BinaryReader, BinaryWriter } from '@btc-vision/transaction';
-import { OP_20 } from './OP_20.js';
-import { FACTORY_ADDRESS, POOL_ADDRESS } from './configs.js';
-import { CallResponse } from '../opnet/interfaces/CallResponse.js';
+import { OP_20 } from '../generic/OP_20.js';
+import { FACTORY_ADDRESS, POOL_ADDRESS } from '../configs.js';
+import { CallResponse } from '../../opnet/interfaces/CallResponse.js';
 
 export interface SyncEvent {
     readonly reserve0: bigint;

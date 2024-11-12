@@ -1,9 +1,9 @@
-import { ContractRuntime } from '../opnet/modules/ContractRuntime.js';
+import { ContractRuntime } from '../../opnet/modules/ContractRuntime.js';
 import { Address, AddressMap, BinaryReader, BinaryWriter } from '@btc-vision/transaction';
-import { BytecodeManager } from '../opnet/modules/GetBytecode.js';
-import { Blockchain } from '../blockchain/Blockchain.js';
-import { CallResponse } from '../opnet/interfaces/CallResponse.js';
-import { ContractDetails } from '../opnet/interfaces/ContractDetails.js';
+import { BytecodeManager } from '../../opnet/modules/GetBytecode.js';
+import { Blockchain } from '../../blockchain/Blockchain.js';
+import { CallResponse } from '../../opnet/interfaces/CallResponse.js';
+import { ContractDetails } from '../../opnet/interfaces/ContractDetails.js';
 
 export interface TransferEvent {
     readonly from: Address;
@@ -25,7 +25,7 @@ export interface OP_20Interface extends ContractDetails {
     readonly decimals: number;
 }
 
-export class OP_20 extends ContractRuntime {
+export class RustContract extends ContractRuntime {
     public readonly fileName: string;
     public readonly decimals: number;
 
@@ -184,6 +184,7 @@ export class OP_20 extends ContractRuntime {
 
     public async balanceOfNoDecimals(owner: Address): Promise<number> {
         const balance = await this.balanceOf(owner);
+        console.log(balance);
 
         return Blockchain.decodeFromDecimal(balance, this.decimals);
     }

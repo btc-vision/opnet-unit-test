@@ -1,8 +1,8 @@
 import { Address } from '@btc-vision/transaction';
-import { Blockchain } from '../blockchain/Blockchain.js';
-import { RustContract } from '../contracts/rust.js';
-import { Assert } from '../opnet/unit/Assert.js';
-import { opnet, OPNetUnit } from '../opnet/unit/OPNetUnit.js';
+import { Blockchain } from '../../blockchain/Blockchain.js';
+import { RustContract } from '../../contracts/generic/rust.js';
+import { Assert } from '../../opnet/unit/Assert.js';
+import { opnet, OPNetUnit } from '../../opnet/unit/OPNetUnit.js';
 
 const rndAddress = Blockchain.generateRandomAddress();
 const receiver: Address = Blockchain.generateRandomAddress();

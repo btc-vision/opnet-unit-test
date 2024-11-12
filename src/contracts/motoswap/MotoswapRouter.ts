@@ -1,9 +1,9 @@
-import { ContractRuntime } from '../opnet/modules/ContractRuntime.js';
+import { ContractRuntime } from '../../opnet/modules/ContractRuntime.js';
 import { Address, BinaryReader, BinaryWriter } from '@btc-vision/transaction';
-import { BytecodeManager } from '../opnet/modules/GetBytecode.js';
-import { AddLiquidityParameters } from '../interfaces/RouterInterfaces.js';
-import { ROUTER_ADDRESS } from './configs.js';
-import { CallResponse } from '../opnet/interfaces/CallResponse.js';
+import { BytecodeManager } from '../../opnet/modules/GetBytecode.js';
+import { AddLiquidityParameters } from '../../interfaces/RouterInterfaces.js';
+import { ROUTER_ADDRESS } from '../configs.js';
+import { CallResponse } from '../../opnet/interfaces/CallResponse.js';
 
 export class MotoswapRouter extends ContractRuntime {
     private readonly ADD_LIQUIDITY_SELECTOR: number = Number(

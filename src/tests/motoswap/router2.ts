@@ -1,14 +1,14 @@
-import { opnet, OPNetUnit } from '../opnet/unit/OPNetUnit.js';
-import { Assert } from '../opnet/unit/Assert.js';
-import { Blockchain } from '../blockchain/Blockchain.js';
+import { opnet, OPNetUnit } from '../../opnet/unit/OPNetUnit.js';
+import { Assert } from '../../opnet/unit/Assert.js';
+import { Blockchain } from '../../blockchain/Blockchain.js';
 import { Address } from '@btc-vision/transaction';
-import { MotoswapRouter } from '../contracts/MotoswapRouter.js';
-import { OP_20 } from '../contracts/OP_20.js';
-import { AddLiquidityParameters } from '../interfaces/RouterInterfaces.js';
-import { MotoswapFactory } from '../contracts/MotoswapFactory.js';
-import { MotoswapPool } from '../contracts/MotoswapPool.js';
-import { WBTC_ADDRESS } from '../contracts/configs.js';
-import { getReserves } from '../common/UtilFunctions.js';
+import { MotoswapRouter } from '../../contracts/motoswap/MotoswapRouter.js';
+import { OP_20 } from '../../contracts/generic/OP_20.js';
+import { AddLiquidityParameters } from '../../interfaces/RouterInterfaces.js';
+import { MotoswapFactory } from '../../contracts/motoswap/MotoswapFactory.js';
+import { MotoswapPool } from '../../contracts/motoswap/MotoswapPool.js';
+import { getReserves } from '../../common/UtilFunctions.js';
+import { WBTC_ADDRESS } from '../../contracts/configs.js';
 
 const dttAddress: Address = Blockchain.generateRandomAddress();
 const receiver: Address = Blockchain.generateRandomAddress();

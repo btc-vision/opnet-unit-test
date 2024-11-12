@@ -1,7 +1,7 @@
-import { opnet, OPNetUnit } from '../opnet/unit/OPNetUnit.js';
+import { opnet, OPNetUnit } from '../../opnet/unit/OPNetUnit.js';
 import fs from 'fs';
 import { BitcoinNetworkRequest, ContractManager } from '@btc-vision/op-vm';
-import { Blockchain } from '../blockchain/Blockchain.js';
+import { Blockchain } from '../../blockchain/Blockchain.js';
 
 await opnet('VM', async (vm: OPNetUnit) => {
     await vm.it('should clear every contracts without hanging.', () => {

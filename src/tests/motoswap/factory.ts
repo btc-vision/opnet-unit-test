@@ -1,9 +1,9 @@
-import { opnet, OPNetUnit } from '../opnet/unit/OPNetUnit.js';
-import { MotoswapFactory } from '../contracts/MotoswapFactory.js';
-import { Assert } from '../opnet/unit/Assert.js';
-import { Blockchain } from '../blockchain/Blockchain.js';
-import { MotoswapPool } from '../contracts/MotoswapPool.js';
-import { MOTO_ADDRESS, WBTC_ADDRESS } from '../contracts/configs.js';
+import { opnet, OPNetUnit } from '../../opnet/unit/OPNetUnit.js';
+import { MotoswapFactory } from '../../contracts/motoswap/MotoswapFactory.js';
+import { Assert } from '../../opnet/unit/Assert.js';
+import { Blockchain } from '../../blockchain/Blockchain.js';
+import { MotoswapPool } from '../../contracts/motoswap/MotoswapPool.js';
+import { MOTO_ADDRESS, WBTC_ADDRESS } from '../../contracts/configs.js';
 import { Address } from '@btc-vision/transaction';
 
 await opnet('Motoswap Factory', async (vm: OPNetUnit) => {
