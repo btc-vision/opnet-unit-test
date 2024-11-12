@@ -76,7 +76,7 @@ export class ContractRuntime extends Logger {
     protected _bytecode: Buffer | undefined;
 
     protected get bytecode(): Buffer {
-        if (!this._bytecode) throw new Error(`Bytecode not found`);
+        if (!this._bytecode) throw new Error(`Bytecode not found for ${this.address}`);
 
         return this._bytecode;
     }

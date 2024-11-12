@@ -4,7 +4,7 @@ import { Network, networks } from '@btc-vision/bitcoin';
 // Network
 export const NETWORK: Network = networks.regtest;
 
-function rnd(): Address {
+export function rnd(): Address {
     const rndKeyPair = EcKeyPair.generateRandomKeyPair(NETWORK);
     return new Address(rndKeyPair.publicKey);
 }

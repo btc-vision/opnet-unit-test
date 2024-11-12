@@ -19,6 +19,12 @@ export class Assertion {
         }
     }
 
+    public toBeUndefined(): void {
+        if (this.actual !== undefined) {
+            throw new Error(`Expected value to be undefined`);
+        }
+    }
+
     public toEqualAddress(address: Address): void {
         if (this.actual instanceof Address) {
             if (!this.actual.equals(address)) {
