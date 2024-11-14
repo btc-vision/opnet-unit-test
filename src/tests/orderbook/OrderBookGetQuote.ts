@@ -232,16 +232,16 @@ await opnet('OrderBook Contract getQuote Tests', async (vm: OPNetUnit) => {
 
         Blockchain.tracePointers = true;
 
+        const startedAt = Date.now();
         // Get a quote for the specified satoshis input
         const satoshisIn = 100_000_000n; // 1 BTC.
         const callResponse = await orderBook.getQuote(tokenAddress, satoshisIn, 1000n);
 
-        // Expected tokens based on price level
-        //const expectedTokensOut: bigint = safeBigIntDivision(satoshisIn, priceLevels[0], precision);
-
         Assert.expect(callResponse.response.error).toBeUndefined();
         //Assert.expect(callResponse.result).toEqual(expectedTokensOut / precision);
 
-        vm.info(`Get quote gas used: ${callResponse.response.usedGas}`);
+        vm.info(
+            `Get quote gas used: ${callResponse.response.usedGas} - Time taken: ${Date.now() - startedAt}ms`,
+        );
     });
 });
