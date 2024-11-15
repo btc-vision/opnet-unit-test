@@ -1,7 +1,5 @@
-import { ContractRuntime } from '../../opnet/modules/ContractRuntime.js';
 import { Address, BinaryReader, BinaryWriter } from '@btc-vision/transaction';
-import { BytecodeManager } from '../../opnet/modules/GetBytecode.js';
-import { CallResponse } from '../../opnet/interfaces/CallResponse.js';
+import { BytecodeManager, CallResponse, ContractRuntime } from '@btc-vision/unit-test-framework';
 
 // Define interfaces for events
 export interface LiquidityAddedEvent {

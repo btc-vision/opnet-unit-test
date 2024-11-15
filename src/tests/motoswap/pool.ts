@@ -1,11 +1,14 @@
-import { opnet, OPNetUnit } from '../../opnet/unit/OPNetUnit.js';
-import { Assert } from '../../opnet/unit/Assert.js';
-import { Blockchain } from '../../blockchain/Blockchain.js';
 import { MotoswapPool } from '../../contracts/motoswap/MotoswapPool.js';
 import { Address, BinaryReader } from '@btc-vision/transaction';
-import { OP_20 } from '../../contracts/generic/OP_20.js';
-import { ROUTER_ADDRESS } from '../../contracts/configs.js';
-import { CallResponse } from '../../opnet/interfaces/CallResponse.js';
+import {
+    Assert,
+    Blockchain,
+    CallResponse,
+    OP_20,
+    opnet,
+    OPNetUnit,
+} from '@btc-vision/unit-test-framework';
+import { ROUTER_ADDRESS } from '../../common.js';
 
 await opnet('Motoswap Pool', async (vm: OPNetUnit) => {
     const token0Address: Address = Blockchain.generateRandomAddress();

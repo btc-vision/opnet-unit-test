@@ -1,11 +1,15 @@
 import { Address } from '@btc-vision/transaction';
-import { Blockchain } from '../../blockchain/Blockchain.js';
-import { Assert } from '../../opnet/unit/Assert.js';
-import { opnet, OPNetUnit } from '../../opnet/unit/OPNetUnit.js';
 import { LiquidityAddedEvent, OrderBook } from '../../contracts/order-book/OrderBook.js';
-import { OP_20, TransferEvent } from '../../contracts/generic/OP_20.js';
-import { CallResponse } from '../../opnet/interfaces/CallResponse.js';
 import { rndPriceLevelMultiple, tickSpacing } from './extern/AddLiquidityExternalConstants.js';
+import {
+    Assert,
+    Blockchain,
+    CallResponse,
+    OP_20,
+    opnet,
+    OPNetUnit,
+    TransferEvent,
+} from '@btc-vision/unit-test-framework';
 
 const receiver: Address = Blockchain.generateRandomAddress();
 

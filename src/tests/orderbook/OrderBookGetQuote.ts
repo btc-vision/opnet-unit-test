@@ -1,10 +1,7 @@
 import { Address } from '@btc-vision/transaction';
-import { Blockchain } from '../../blockchain/Blockchain.js';
-import { Assert } from '../../opnet/unit/Assert.js';
-import { opnet, OPNetUnit } from '../../opnet/unit/OPNetUnit.js';
 import { OrderBook } from '../../contracts/order-book/OrderBook.js';
-import { OP_20 } from '../../contracts/generic/OP_20.js';
 import { tickSpacing } from './extern/AddLiquidityExternalConstants.js';
+import { Assert, Blockchain, OP_20, opnet, OPNetUnit } from '@btc-vision/unit-test-framework';
 
 const receiver: Address = Blockchain.generateRandomAddress();
 
@@ -37,6 +34,7 @@ await opnet('OrderBook Contract getQuote Tests', async (vm: OPNetUnit) => {
             address: tokenAddress,
             decimals: 18,
         });
+
         Blockchain.register(token);
         await token.init();
 
