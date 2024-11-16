@@ -17,15 +17,11 @@ framework includes essential tools and guidelines for ensuring your contracts ar
 ## Table of Contents
 
 - [Introduction](#introduction)
-- [Project Structure](#project-structure)
-- [Features](#features)
 - [Requirements](#requirements)
 - [Installation](#installation)
-- [Usage](#usage)
 - [Compiling Contracts and Tests](#compiling-contracts-and-tests)
 - [Running Unit Tests](#running-unit-tests)
-- [Adding Your Contract and Tests](#adding-your-contract-and-tests)
-- [Example Contracts](#example-contracts)
+- [How to Use](#how-to-use)
 - [Contributing](#contributing)
 - [License](#license)
 
@@ -34,45 +30,6 @@ framework includes essential tools and guidelines for ensuring your contracts ar
 The **OP_NET Smart Contract Testing Framework** is designed to facilitate the development and testing of smart
 contracts. It includes utilities, test cases, and a structured environment to ensure that your contracts
 work as intended under various conditions.
-
-## Project Structure
-
-The project is organized as follows:
-
-```
-src/
-├── blockchain/
-│   └── Blockchain.ts          # Blockchain-related utilities and helpers
-├── contracts/                 # Directory for smart contract implementations
-│   ├── configs.ts             # Configuration settings for contracts
-│   ├── MotoswapFactory.ts     # Example implementation of a contract
-│   ├── MotoswapPool.ts        # Example implementation of a contract
-│   ├── MotoswapRouter.ts      # Example implementation of a contract
-│   └── OP_20.ts               # Example implementation of a contract
-├── interfaces/
-│   └── RouterInterfaces.ts    # Example implementation of a contract interface
-├── opnet/
-│   ├── modules/
-│   │   ├── ContractRuntime.ts # Runtime environment for executing contracts
-│   │   └── GetBytecode.ts     # Utilities for managing contract bytecode
-│   ├── network/
-│   │   └── NetworkPrefix.ts   # Network prefix management
-│   └── unit/
-│       ├── Assert.ts          # Assertion utilities for unit tests
-│       ├── Assertion.ts       # Additional assertion helpers
-│       └── OPNetUnit.ts       # Unit test framework for OPNet
-├── tests/                     # Directory for unit tests
-├── utils/                     # Utility functions and helpers
-├── build/                     # Compiled outputs
-├── bytecode/                  # Directory for contract bytecode files (.wasm)
-```
-
-## Features
-
-- **Comprehensive Testing Tools**: Utilities for writing and executing unit tests in the OP_NET environment.
-- **Modular Design**: Easily extend the framework with new contracts and tests.
-- **Support for Complex Scenarios**: Test contracts against various scenarios, ensuring robustness.
-- **Detailed Reporting**: Receive detailed feedback on test execution, including pass/fail status.
 
 ## Requirements
 
@@ -88,21 +45,10 @@ Ensure the following are installed before using the framework:
 Clone the repository and install the dependencies:
 
 ```bash
-git clone https://github.com/your-username/opnet-unit-test.git
+git clone https://github.com/btc-vision/opnet-unit-test.git
 cd opnet-unit-test
 npm install
 ```
-
-Or, if you use Yarn:
-
-```bash
-yarn install
-```
-
-## Usage
-
-This framework provides a set of scripts to run unit tests for your contracts. The contracts are located in
-the `contracts` directory, and the corresponding tests are in the `tests` directory.
 
 ## Compiling Contracts and Tests
 
@@ -136,24 +82,18 @@ For example, to run tests for the `router.ts` file:
 node build/tests/router.js
 ```
 
-## Adding Your Contract and Tests
+### How to Use
 
-To add and test your own contract, follow these steps:
+1. **Add the Contract**: Place the `SimpleToken.ts` file in the `/src/contracts/` directory.
+2. **Add the Test**: Place the `simpleTokenTest.ts` file in the `/src/tests/` directory.
+3. **Compile the Project**: Run `npm run build` or `gulp` to compile the contracts and tests.
+4. **Run the Test**: Execute the test with `node build/tests/simpleTokenTest.js`.
 
-1. **Implement Your Contract**:
-    - Create a new TypeScript file in the `/src/contracts` directory with your contract implementation.
+5. **Add Bytecode**: Ensure that the compiled WebAssembly bytecode for the `SimpleToken` contract is added to
+   the `/src/bytecode/` directory.
 
-2. **Add the Contract's Bytecode**:
-    - Compile your contract to WebAssembly (`.wasm`) and place the resulting binary file in the `/src/bytecode/`
-      directory.
-
-3. **Create Unit Tests**:
-    - Create a new TypeScript file in the `/src/tests` directory for your unit tests.
-    - Write your unit tests using the provided utilities and frameworks (e.g., `OPNetUnit`, `Assert`).
-
-4. **Compile and Run Tests**:
-    - Compile the project using `npm run build` or `gulp`.
-    - Run your tests using `node build/tests/NAME_OF_TEST_FILE.js`.
+This example provides a foundation for implementing and testing smart contracts within your OP_NET environment. Adjust
+and extend the example as needed to fit your project's requirements.
 
 ### Example Test File Structure
 
@@ -350,39 +290,6 @@ await opnet('SimpleToken Contract', async (vm: OPNetUnit) => {
     });
 });
 ```
-
-### Explanation
-
-- **SimpleToken Contract**: This contract implements a simple token with minting, transferring, and balance checking
-  functions.
-    - **mint**: Mints tokens to a specified address.
-    - **transfer**: Transfers tokens from one address to another.
-    - **balanceOf**: Returns the balance of a specified address.
-
-- **simpleTokenTest.ts**: This test suite covers the main functionality of the `SimpleToken` contract.
-    - **beforeEach**: Initializes a new instance of the `SimpleToken` contract before each test case.
-    - **afterEach**: Disposes of the contract instance after each test case.
-    - **Test Cases**:
-        - **should mint tokens correctly**: Tests that tokens are correctly minted to a given address.
-        - **should transfer tokens correctly**: Tests that tokens are correctly transferred from one address to another.
-        - **should return correct balances**: Tests that the balance checking function returns the expected results.
-
-### How to Use
-
-1. **Add the Contract**: Place the `SimpleToken.ts` file in the `/src/contracts/` directory.
-2. **Add the Test**: Place the `simpleTokenTest.ts` file in the `/src/tests/` directory.
-3. **Compile the Project**: Run `npm run build` or `gulp` to compile the contracts and tests.
-4. **Run the Test**: Execute the test with `node build/tests/simpleTokenTest.js`.
-
-5. **Add Bytecode**: Ensure that the compiled WebAssembly bytecode for the `SimpleToken` contract is added to
-   the `/src/bytecode/` directory.
-
-This example provides a foundation for implementing and testing smart contracts within your OP_NET environment. Adjust
-and extend the example as needed to fit your project's requirements.
-
-### Learn more
-
-For more advanced documentation please click [here](docs/README.md).
 
 ## Contributing
 
