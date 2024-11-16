@@ -1,47 +1,52 @@
-import { ContractRuntime } from '../../opnet/modules/ContractRuntime.js';
 import { Address, BinaryReader, BinaryWriter } from '@btc-vision/transaction';
-import { BytecodeManager } from '../../opnet/modules/GetBytecode.js';
+import { BytecodeManager, CallResponse, ContractRuntime } from '@btc-vision/unit-test-framework';
 
 // Define interfaces for events
 export interface LiquidityAddedEvent {
-    tickId: bigint;
-    level: bigint;
-    liquidityAmount: bigint;
-    amountOut: bigint;
-    receiver: string;
+    readonly tickId: bigint;
+    readonly level: bigint;
+    readonly liquidityAmount: bigint;
+    readonly amountOut: bigint;
+    readonly receiver: string;
 }
 
 export interface ReservationCreatedEvent {
-    reservationId: bigint;
-    totalReserved: bigint;
-    expectedAmountOut: bigint;
-    buyer: Address;
+    readonly reservationId: bigint;
+    readonly totalReserved: bigint;
+    readonly expectedAmountOut: bigint;
+    readonly buyer: Address;
 }
 
 export interface LiquidityRemovedEvent {
-    token: Address;
-    amount: bigint;
-    tickId: bigint;
-    level: bigint;
-    liquidityAmount: bigint;
+    readonly token: Address;
+    readonly amount: bigint;
+    readonly tickId: bigint;
+    readonly level: bigint;
+    readonly liquidityAmount: bigint;
 }
 
 export interface LiquidityRemovalBlockedEvent {
-    tickId: bigint;
-    reservationsCount: bigint;
+    readonly tickId: bigint;
+    readonly reservationsCount: bigint;
 }
 
 export interface SwapExecutedEvent {
-    buyer: Address;
-    amountIn: bigint;
-    amountOut: bigint;
+    readonly buyer: Address;
+    readonly amountIn: bigint;
+    readonly amountOut: bigint;
 }
 
 export interface TickUpdatedEvent {
-    tickId: bigint;
-    level: bigint;
-    liquidityAmount: bigint;
-    acquiredAmount: bigint;
+    readonly tickId: bigint;
+    readonly level: bigint;
+    readonly liquidityAmount: bigint;
+    readonly acquiredAmount: bigint;
+}
+
+export interface TickReserve {
+    readonly totalLiquidity: bigint;
+    readonly totalReserved: bigint;
+    readonly availableLiquidity: bigint;
 }
 
 export class OrderBook extends ContractRuntime {
@@ -61,6 +66,10 @@ export class OrderBook extends ContractRuntime {
     private readonly swapSelector: number = Number(`0x${this.abiCoder.encodeSelector('swap')}`);
     private readonly getReserveSelector: number = Number(
         `0x${this.abiCoder.encodeSelector('getReserve')}`,
+    );
+
+    private readonly getReserveTickSelector: number = Number(
+        `0x${this.abiCoder.encodeSelector('getReserveForTick')}`,
     );
 
     public constructor(deployer: Address, address: Address, gasLimit: bigint = 100_000_000_000n) {
@@ -129,11 +138,19 @@ export class OrderBook extends ContractRuntime {
     }
 
     // Method to get a quote
-    public async getQuote(token: Address, satoshisIn: bigint): Promise<bigint> {
+    public async getQuote(
+        token: Address,
+        satoshisIn: bigint,
+        minimumLiquidityPerTick: bigint, // gas optimization
+    ): Promise<{
+        result: bigint;
+        response: CallResponse;
+    }> {
         const calldata = new BinaryWriter();
         calldata.writeSelector(this.getQuoteSelector);
         calldata.writeAddress(token);
         calldata.writeU256(satoshisIn);
+        calldata.writeU256(minimumLiquidityPerTick);
 
         const result = await this.execute(calldata.getBuffer());
         if (result.error) throw this.handleError(result.error);
@@ -144,7 +161,10 @@ export class OrderBook extends ContractRuntime {
         }
 
         const reader = new BinaryReader(response);
-        return reader.readU256();
+        return {
+            result: reader.readU256(),
+            response: result,
+        };
     }
 
     // Method to reserve ticks
@@ -176,16 +196,16 @@ export class OrderBook extends ContractRuntime {
     // Method to add liquidity
     public async addLiquidity(
         token: Address,
-        receiver: Address,
+        receiver: string,
         maximumAmountIn: bigint,
         maximumPriceLevel: bigint,
         slippage: number,
         invalidityPeriod: number,
-    ): Promise<boolean> {
+    ): Promise<CallResponse> {
         const calldata = new BinaryWriter();
         calldata.writeSelector(this.addLiquiditySelector);
         calldata.writeAddress(token);
-        calldata.writeStringWithLength(receiver.toString()); // Assuming receiver is converted to string
+        calldata.writeStringWithLength(receiver); // Assuming receiver is converted to string
         calldata.writeU256(maximumAmountIn);
         calldata.writeU256(maximumPriceLevel);
         calldata.writeU16(slippage);
@@ -200,7 +220,11 @@ export class OrderBook extends ContractRuntime {
         }
 
         const reader = new BinaryReader(response);
-        return reader.readBoolean();
+        if (!reader.readBoolean()) {
+            throw new Error(`Failed to add liquidity`);
+        }
+
+        return result;
     }
 
     // Method to remove liquidity
@@ -267,6 +291,29 @@ export class OrderBook extends ContractRuntime {
 
         const reader = new BinaryReader(response);
         return reader.readU256();
+    }
+
+    public async getReserveForTick(token: Address, level: bigint): Promise<TickReserve> {
+        const calldata = new BinaryWriter();
+        calldata.writeSelector(this.getReserveTickSelector);
+        calldata.writeAddress(token);
+        calldata.writeU256(level);
+
+        const result = await this.execute(calldata.getBuffer());
+        if (result.error) throw this.handleError(result.error);
+
+        const response = result.response;
+        if (!response) {
+            throw new Error('No response from getReserve');
+        }
+
+        const reader = new BinaryReader(response);
+
+        const totalLiquidity = reader.readU256();
+        const totalReserved = reader.readU256();
+        const availableLiquidity = reader.readU256();
+
+        return { totalLiquidity, totalReserved, availableLiquidity };
     }
 
     protected handleError(error: Error): Error {

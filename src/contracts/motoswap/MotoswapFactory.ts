@@ -1,8 +1,7 @@
-import { ContractRuntime } from '../../opnet/modules/ContractRuntime.js';
+import { Blockchain, BytecodeManager, ContractRuntime } from '@btc-vision/unit-test-framework';
+
 import { Address, BinaryReader, BinaryWriter } from '@btc-vision/transaction';
-import { BytecodeManager } from '../../opnet/modules/GetBytecode.js';
-import { Blockchain } from '../../blockchain/Blockchain.js';
-import { FACTORY_ADDRESS } from '../configs.js';
+import { FACTORY_ADDRESS } from '../../common.js';
 
 export class MotoswapFactory extends ContractRuntime {
     private readonly createPoolSelector: number = Number(
