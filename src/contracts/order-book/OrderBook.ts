@@ -12,7 +12,6 @@ export interface LiquidityAddedEvent {
 
 export interface ReservationCreatedEvent {
     readonly reservationId: bigint;
-    readonly totalReserved: bigint;
     readonly expectedAmountOut: bigint;
     readonly buyer: Address;
 }
@@ -27,7 +26,6 @@ export interface LiquidityRemovedEvent {
 
 export interface LiquidityRemovalBlockedEvent {
     readonly tickId: bigint;
-    readonly reservationsCount: bigint;
 }
 
 export interface SwapExecutedEvent {
@@ -49,7 +47,16 @@ export interface TickReserve {
     readonly availableLiquidity: bigint;
 }
 
+export interface LiquidityReserved {
+    readonly tickId: bigint;
+    readonly level: bigint;
+    readonly amount: bigint;
+}
+
 export class OrderBook extends ContractRuntime {
+    public readonly minimumSatForTickReservation: bigint = 10_000n;
+    public readonly minimumLiquidityForTickReservation: bigint = 1_000_000n;
+
     // Define selectors for contract methods
     private readonly getQuoteSelector: number = Number(
         `0x${this.abiCoder.encodeSelector('getQuote')}`,
@@ -81,6 +88,14 @@ export class OrderBook extends ContractRuntime {
         this.preserveState();
     }
 
+    public static decodeLiquidityReservedEvent(data: Uint8Array): LiquidityReserved {
+        const reader = new BinaryReader(data);
+        const tickId = reader.readU256();
+        const level = reader.readU256();
+        const amount = reader.readU256();
+        return { tickId, level, amount };
+    }
+
     // Event decoders
     public static decodeLiquidityAddedEvent(data: Uint8Array): LiquidityAddedEvent {
         const reader = new BinaryReader(data);
@@ -95,10 +110,9 @@ export class OrderBook extends ContractRuntime {
     public static decodeReservationCreatedEvent(data: Uint8Array): ReservationCreatedEvent {
         const reader = new BinaryReader(data);
         const reservationId = reader.readU256();
-        const totalReserved = reader.readU256();
         const expectedAmountOut = reader.readU256();
         const buyer = reader.readAddress();
-        return { reservationId, totalReserved, expectedAmountOut, buyer };
+        return { reservationId, expectedAmountOut, buyer };
     }
 
     public static decodeLiquidityRemovedEvent(data: Uint8Array): LiquidityRemovedEvent {
@@ -116,8 +130,7 @@ export class OrderBook extends ContractRuntime {
     ): LiquidityRemovalBlockedEvent {
         const reader = new BinaryReader(data);
         const tickId = reader.readU256();
-        const reservationsCount = reader.readU256();
-        return { tickId, reservationsCount };
+        return { tickId };
     }
 
     public static decodeSwapExecutedEvent(data: Uint8Array): SwapExecutedEvent {
@@ -178,13 +191,15 @@ export class OrderBook extends ContractRuntime {
         token: Address,
         maximumAmountIn: bigint,
         minimumAmountOut: bigint,
+        minimumLiquidityPerTick: bigint,
         slippage: number,
-    ): Promise<bigint> {
+    ): Promise<{ result: bigint; response: CallResponse }> {
         const calldata = new BinaryWriter();
         calldata.writeSelector(this.reserveTicksSelector);
         calldata.writeAddress(token);
         calldata.writeU256(maximumAmountIn);
         calldata.writeU256(minimumAmountOut);
+        calldata.writeU256(minimumLiquidityPerTick);
         calldata.writeU16(slippage);
 
         const result = await this.execute(calldata.getBuffer());
@@ -196,7 +211,10 @@ export class OrderBook extends ContractRuntime {
         }
 
         const reader = new BinaryReader(response);
-        return reader.readU256();
+        return {
+            result: reader.readU256(),
+            response: result,
+        };
     }
 
     // Method to add liquidity
