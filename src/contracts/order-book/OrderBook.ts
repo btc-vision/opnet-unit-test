@@ -143,7 +143,10 @@ export class OrderBook extends ContractRuntime {
         satoshisIn: bigint,
         minimumLiquidityPerTick: bigint, // gas optimization
     ): Promise<{
-        result: bigint;
+        result: {
+            expectedAmountOut: bigint;
+            expectedAmountIn: bigint;
+        };
         response: CallResponse;
     }> {
         const calldata = new BinaryWriter();
@@ -162,7 +165,10 @@ export class OrderBook extends ContractRuntime {
 
         const reader = new BinaryReader(response);
         return {
-            result: reader.readU256(),
+            result: {
+                expectedAmountOut: reader.readU256(),
+                expectedAmountIn: reader.readU256(),
+            },
             response: result,
         };
     }
@@ -199,8 +205,6 @@ export class OrderBook extends ContractRuntime {
         receiver: string,
         maximumAmountIn: bigint,
         maximumPriceLevel: bigint,
-        slippage: number,
-        invalidityPeriod: number,
     ): Promise<CallResponse> {
         const calldata = new BinaryWriter();
         calldata.writeSelector(this.addLiquiditySelector);
@@ -208,8 +212,6 @@ export class OrderBook extends ContractRuntime {
         calldata.writeStringWithLength(receiver); // Assuming receiver is converted to string
         calldata.writeU256(maximumAmountIn);
         calldata.writeU256(maximumPriceLevel);
-        calldata.writeU16(slippage);
-        calldata.writeU16(invalidityPeriod);
 
         const result = await this.execute(calldata.getBuffer());
         if (result.error) throw this.handleError(result.error);
