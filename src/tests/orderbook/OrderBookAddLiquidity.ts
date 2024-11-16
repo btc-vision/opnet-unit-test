@@ -82,8 +82,6 @@ await opnet('OrderBook Contract addLiquidity Tests', async (vm: OPNetUnit) => {
     await vm.it('should fail to add liquidity if tokens are not approved', async () => {
         const maximumAmountIn = Blockchain.expandTo18Decimals(500);
         const maximumPriceLevel = BigInt(50000);
-        const slippage = 100; // 1%
-        const invalidityPeriod = 10; // 10 blocks
 
         // Do not approve tokens
 
@@ -94,8 +92,6 @@ await opnet('OrderBook Contract addLiquidity Tests', async (vm: OPNetUnit) => {
                 userAddress.p2tr(Blockchain.network),
                 maximumAmountIn,
                 maximumPriceLevel,
-                slippage,
-                invalidityPeriod,
             );
         }).toThrow('Insufficient allowance');
     });
@@ -103,8 +99,6 @@ await opnet('OrderBook Contract addLiquidity Tests', async (vm: OPNetUnit) => {
     await vm.it('should fail to add liquidity with zero amount', async () => {
         const maximumAmountIn = BigInt(0);
         const maximumPriceLevel = BigInt(50000);
-        const slippage = 100; // 1%
-        const invalidityPeriod = 10; // 10 blocks
 
         // Approve tokens (although amount is zero)
         await token.approve(userAddress, orderBook.address, maximumAmountIn);
@@ -116,8 +110,6 @@ await opnet('OrderBook Contract addLiquidity Tests', async (vm: OPNetUnit) => {
                 userAddress.p2tr(Blockchain.network),
                 maximumAmountIn,
                 maximumPriceLevel,
-                slippage,
-                invalidityPeriod,
             );
         }).toThrow('Amount in cannot be zero');
     });
@@ -125,8 +117,6 @@ await opnet('OrderBook Contract addLiquidity Tests', async (vm: OPNetUnit) => {
     await vm.it('should fail to add liquidity with zero price level', async () => {
         const maximumAmountIn = Blockchain.expandTo18Decimals(500);
         const maximumPriceLevel = BigInt(0);
-        const slippage = 100; // 1%
-        const invalidityPeriod = 10; // 10 blocks
 
         // Approve tokens
         await token.approve(userAddress, orderBook.address, maximumAmountIn);
@@ -138,8 +128,6 @@ await opnet('OrderBook Contract addLiquidity Tests', async (vm: OPNetUnit) => {
                 userAddress.p2tr(Blockchain.network),
                 maximumAmountIn,
                 maximumPriceLevel,
-                slippage,
-                invalidityPeriod,
             );
         }).toThrow('Price level cannot be zero');
     });
@@ -147,8 +135,6 @@ await opnet('OrderBook Contract addLiquidity Tests', async (vm: OPNetUnit) => {
     await vm.it('should fail to add liquidity with invalid token address', async () => {
         const maximumAmountIn = Blockchain.expandTo18Decimals(500);
         const maximumPriceLevel = BigInt(50000);
-        const slippage = 100; // 1%
-        const invalidityPeriod = 10; // 10 blocks
 
         // Approve tokens
         await token.approve(userAddress, orderBook.address, maximumAmountIn);
@@ -162,59 +148,13 @@ await opnet('OrderBook Contract addLiquidity Tests', async (vm: OPNetUnit) => {
                 userAddress.p2tr(Blockchain.network),
                 maximumAmountIn,
                 maximumPriceLevel,
-                slippage,
-                invalidityPeriod,
             );
         }).toThrow('Invalid token address');
-    });
-
-    await vm.it('should fail to add liquidity with slippage over 100%', async () => {
-        const maximumAmountIn = Blockchain.expandTo18Decimals(500);
-        const maximumPriceLevel = BigInt(50000);
-        const slippage = 10001; // 100.01%
-        const invalidityPeriod = 10; // 10 blocks
-
-        // Approve tokens
-        await token.approve(userAddress, orderBook.address, maximumAmountIn);
-
-        await Assert.expect(async () => {
-            await orderBook.addLiquidity(
-                tokenAddress,
-                userAddress.p2tr(Blockchain.network),
-                maximumAmountIn,
-                maximumPriceLevel,
-                slippage,
-                invalidityPeriod,
-            );
-        }).toThrow('Slippage cannot exceed 100%');
-    });
-
-    await vm.it('should fail to add liquidity with invalidityPeriod zero', async () => {
-        const maximumAmountIn = Blockchain.expandTo18Decimals(500);
-        const maximumPriceLevel = BigInt(50000);
-        const slippage = 100; // 1%
-        const invalidityPeriod = 0; // Zero blocks
-
-        // Approve tokens
-        await token.approve(userAddress, orderBook.address, maximumAmountIn);
-
-        await Assert.expect(async () => {
-            await orderBook.addLiquidity(
-                tokenAddress,
-                userAddress.p2tr(Blockchain.network),
-                maximumAmountIn,
-                maximumPriceLevel,
-                slippage,
-                invalidityPeriod,
-            );
-        }).toThrow('Invalidity period cannot be zero');
     });
 
     await vm.it('should add liquidity successfully', async () => {
         const maximumAmountIn = Blockchain.expandTo18Decimals(500); // The amount of tokens to add as liquidity
         const targetPriceLevel = BigInt(50000); // Price level in satoshis per token
-        const slippage = 100; // 1%
-        const invalidityPeriod = 10; // 10 blocks
 
         // User approves the order book contract to spend tokens
         await token.approve(userAddress, orderBook.address, maximumAmountIn);
@@ -231,8 +171,6 @@ await opnet('OrderBook Contract addLiquidity Tests', async (vm: OPNetUnit) => {
             userAddress.p2tr(Blockchain.network),
             maximumAmountIn,
             targetPriceLevel,
-            slippage,
-            invalidityPeriod,
         );
 
         // Verify that tokens were transferred from user to contract
@@ -288,8 +226,6 @@ await opnet('OrderBook Contract addLiquidity Tests', async (vm: OPNetUnit) => {
     await vm.it('should add liquidity to existing tick', async () => {
         const maximumAmountIn = Blockchain.expandTo18Decimals(500);
         const maximumPriceLevel = BigInt(50000);
-        const slippage = 100; // 1%
-        const invalidityPeriod = 10; // 10 blocks
 
         // Approve tokens
         await token.approve(userAddress, orderBook.address, maximumAmountIn * 2n);
@@ -300,8 +236,6 @@ await opnet('OrderBook Contract addLiquidity Tests', async (vm: OPNetUnit) => {
             userAddress.p2tr(Blockchain.network),
             maximumAmountIn,
             maximumPriceLevel,
-            slippage,
-            invalidityPeriod,
         );
         Assert.expect(callResponse.error).toBeUndefined();
 
@@ -321,8 +255,6 @@ await opnet('OrderBook Contract addLiquidity Tests', async (vm: OPNetUnit) => {
             userAddress.p2tr(Blockchain.network),
             maximumAmountIn,
             maximumPriceLevel,
-            slippage,
-            invalidityPeriod,
         );
         Assert.expect(callResponse.error).toBeUndefined();
 
@@ -419,8 +351,6 @@ await opnet('OrderBook Contract addLiquidity Tests', async (vm: OPNetUnit) => {
     await vm.it('should prevent adding liquidity with invalid receiver address', async () => {
         const maximumAmountIn = Blockchain.expandTo18Decimals(500);
         const maximumPriceLevel = BigInt(50000);
-        const slippage = 100; // 1%
-        const invalidityPeriod = 10; // 10 blocks
         const invalidReceiver = Address.dead().toString();
 
         // Approve tokens
@@ -432,8 +362,6 @@ await opnet('OrderBook Contract addLiquidity Tests', async (vm: OPNetUnit) => {
                 invalidReceiver,
                 maximumAmountIn,
                 maximumPriceLevel,
-                slippage,
-                invalidityPeriod,
             );
         }).toThrow('Invalid address');
     });
@@ -470,8 +398,6 @@ await opnet('OrderBook Contract addLiquidity Tests', async (vm: OPNetUnit) => {
 
     await vm.it('should adjust tick prices according to tickSpacing', async () => {
         const maximumAmountIn = Blockchain.expandTo18Decimals(500);
-        const slippage = 100; // 1%
-        const invalidityPeriod = 10; // 10 blocks
 
         // Approve tokens
         await token.approve(userAddress, orderBook.address, maximumAmountIn * 3n);
@@ -485,8 +411,6 @@ await opnet('OrderBook Contract addLiquidity Tests', async (vm: OPNetUnit) => {
                 userAddress.p2tr(Blockchain.network),
                 maximumAmountIn,
                 unalignedPriceLevel,
-                slippage,
-                invalidityPeriod,
             );
 
             Assert.expect(callResponse.error).toBeUndefined();
@@ -517,8 +441,6 @@ await opnet('OrderBook Contract addLiquidity Tests', async (vm: OPNetUnit) => {
     await vm.it('should add 1000 different positions and compare gas usage', async () => {
         const numberOfTicks = 1000;
         const maximumAmountIn = Blockchain.expandTo18Decimals(1); // Small amount for each tick
-        const slippage = 100; // 1%
-        const invalidityPeriod = 10; // 10 blocks
 
         // Approve enough tokens
         await token.approve(
@@ -546,8 +468,6 @@ await opnet('OrderBook Contract addLiquidity Tests', async (vm: OPNetUnit) => {
                 tokenOwner.p2tr(Blockchain.network),
                 maximumAmountIn,
                 priceLevel,
-                slippage,
-                invalidityPeriod,
             );
 
             vm.log(`Used ${gas.usedGas}gas to add liquidity at price level ${priceLevel}`);
@@ -562,8 +482,6 @@ await opnet('OrderBook Contract addLiquidity Tests', async (vm: OPNetUnit) => {
                 tokenOwner.p2tr(Blockchain.network),
                 maximumAmountIn,
                 priceLevel,
-                slippage,
-                invalidityPeriod,
             );
         }
 
@@ -582,8 +500,6 @@ await opnet('OrderBook Contract addLiquidity Tests', async (vm: OPNetUnit) => {
                 depositAddress,
                 maximumAmountIn,
                 priceLevel,
-                slippage,
-                invalidityPeriod,
             );
 
             const gasUsed: bigint = callResponse.usedGas;
