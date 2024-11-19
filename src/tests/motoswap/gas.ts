@@ -11,7 +11,7 @@ await opnet('Compare OP_20 gas usage', async (vm: OPNetUnit) => {
     await vm.it('should instantiate an OP_20 token', async () => {
         await Assert.expect(async () => {
             const token = new OP_20({
-                fileName: 'MyToken',
+                file: 'MyToken',
                 deployer: Blockchain.txOrigin,
                 address: rndAddress,
                 decimals: 18,
@@ -26,7 +26,7 @@ await opnet('Compare OP_20 gas usage', async (vm: OPNetUnit) => {
 
     // Declare all the request contracts
     const token = new OP_20({
-        fileName: 'MyToken',
+        file: 'MyToken',
         deployer: Blockchain.txOrigin,
         address: rndAddress,
         decimals: 18,

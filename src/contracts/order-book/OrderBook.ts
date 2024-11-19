@@ -54,9 +54,13 @@ export interface LiquidityReserved {
 }
 
 export class OrderBook extends ContractRuntime {
+    // Random address
+    public static feeRecipient: string =
+        'bcrt1plz0svv3wl05qrrv0dx8hvh5mgqc7jf3mhqgtw8jnj3l3d3cs6lzsfc3mxh';
+    
+    public static fixedFeeRatePerTickConsumed: bigint = 4_000n; // The fixed fee rate per tick consumed.
     public readonly minimumSatForTickReservation: bigint = 10_000n;
     public readonly minimumLiquidityForTickReservation: bigint = 1_000_000n;
-
     // Define selectors for contract methods
     private readonly getQuoteSelector: number = Number(
         `0x${this.abiCoder.encodeSelector('getQuote')}`,
@@ -78,6 +82,8 @@ export class OrderBook extends ContractRuntime {
     private readonly getReserveTickSelector: number = Number(
         `0x${this.abiCoder.encodeSelector('getReserveForTick')}`,
     );
+
+    private readonly limiterSelector: number = Number(`0x${this.abiCoder.encodeSelector('limit')}`);
 
     public constructor(deployer: Address, address: Address, gasLimit: bigint = 100_000_000_000n) {
         super({
@@ -334,6 +340,20 @@ export class OrderBook extends ContractRuntime {
         const availableLiquidity = reader.readU256();
 
         return { totalLiquidity, totalReserved, availableLiquidity };
+    }
+
+    public async toggleLimiter(value: boolean): Promise<void> {
+        const calldata = new BinaryWriter();
+        calldata.writeSelector(this.limiterSelector);
+        calldata.writeBoolean(value);
+
+        const result = await this.execute(calldata.getBuffer());
+        if (result.error) throw this.handleError(result.error);
+
+        const response = result.response;
+        if (!response) {
+            throw new Error('No response from getReserve');
+        }
     }
 
     protected handleError(error: Error): Error {

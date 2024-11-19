@@ -28,7 +28,7 @@ await opnet('Motoswap Pool', async (vm: OPNetUnit) => {
 
     /** Init OP_20 */
     const token0: OP_20 = new OP_20({
-        fileName: 'MyToken',
+        file: 'MyToken',
         deployer: Blockchain.txOrigin,
         address: token0Address,
         decimals: 18,
@@ -37,7 +37,7 @@ await opnet('Motoswap Pool', async (vm: OPNetUnit) => {
     Blockchain.register(token0);
 
     const token1: OP_20 = new OP_20({
-        fileName: 'MyToken',
+        file: 'MyToken',
         deployer: Blockchain.txOrigin,
         address: token1Address,
         decimals: 18,

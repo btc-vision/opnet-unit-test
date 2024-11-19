@@ -64,7 +64,7 @@ export class MotoswapPool extends OP_20 {
         gasLimit: bigint = 100_000_000_000n,
     ) {
         super({
-            fileName: 'pool',
+            file: 'pool',
             deployer: FACTORY_ADDRESS,
             address: address,
             decimals: 18,
