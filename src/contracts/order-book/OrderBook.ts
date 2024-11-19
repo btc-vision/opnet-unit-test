@@ -57,10 +57,12 @@ export class OrderBook extends ContractRuntime {
     // Random address
     public static feeRecipient: string =
         'bcrt1plz0svv3wl05qrrv0dx8hvh5mgqc7jf3mhqgtw8jnj3l3d3cs6lzsfc3mxh';
-    
+
     public static fixedFeeRatePerTickConsumed: bigint = 4_000n; // The fixed fee rate per tick consumed.
     public readonly minimumSatForTickReservation: bigint = 10_000n;
     public readonly minimumLiquidityForTickReservation: bigint = 1_000_000n;
+    public readonly invalidAfter: bigint = 5n;
+
     // Define selectors for contract methods
     private readonly getQuoteSelector: number = Number(
         `0x${this.abiCoder.encodeSelector('getQuote')}`,
@@ -276,18 +278,13 @@ export class OrderBook extends ContractRuntime {
     public async swap(
         token: Address,
         isSimulation: boolean,
-        reservations: { reservationId: bigint; tickIds: bigint[] }[],
-    ): Promise<boolean> {
+        levels: bigint[],
+    ): Promise<{ result: boolean; response: CallResponse }> {
         const calldata = new BinaryWriter();
         calldata.writeSelector(this.swapSelector);
         calldata.writeAddress(token);
         calldata.writeBoolean(isSimulation);
-        calldata.writeU16(reservations.length);
-
-        for (const reservation of reservations) {
-            calldata.writeU256(reservation.reservationId);
-            calldata.writeTuple(reservation.tickIds);
-        }
+        calldata.writeTuple(levels);
 
         const result = await this.execute(calldata.getBuffer());
         if (result.error) throw this.handleError(result.error);
@@ -298,7 +295,10 @@ export class OrderBook extends ContractRuntime {
         }
 
         const reader = new BinaryReader(response);
-        return reader.readBoolean();
+        return {
+            result: reader.readBoolean(),
+            response: result,
+        };
     }
 
     // Method to get reserve
