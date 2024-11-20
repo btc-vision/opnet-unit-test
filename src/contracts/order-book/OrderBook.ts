@@ -12,7 +12,6 @@ export interface LiquidityAddedEvent {
 
 export interface ReservationCreatedEvent {
     readonly reservationId: bigint;
-    readonly totalReserved: bigint;
     readonly expectedAmountOut: bigint;
     readonly buyer: Address;
 }
@@ -27,7 +26,6 @@ export interface LiquidityRemovedEvent {
 
 export interface LiquidityRemovalBlockedEvent {
     readonly tickId: bigint;
-    readonly reservationsCount: bigint;
 }
 
 export interface SwapExecutedEvent {
@@ -49,7 +47,22 @@ export interface TickReserve {
     readonly availableLiquidity: bigint;
 }
 
+export interface LiquidityReserved {
+    readonly tickId: bigint;
+    readonly level: bigint;
+    readonly amount: bigint;
+}
+
 export class OrderBook extends ContractRuntime {
+    // Random address
+    public static feeRecipient: string =
+        'bcrt1plz0svv3wl05qrrv0dx8hvh5mgqc7jf3mhqgtw8jnj3l3d3cs6lzsfc3mxh';
+
+    public static fixedFeeRatePerTickConsumed: bigint = 4_000n; // The fixed fee rate per tick consumed.
+    public readonly minimumSatForTickReservation: bigint = 10_000n;
+    public readonly minimumLiquidityForTickReservation: bigint = 1_000_000n;
+    public readonly invalidAfter: bigint = 5n;
+
     // Define selectors for contract methods
     private readonly getQuoteSelector: number = Number(
         `0x${this.abiCoder.encodeSelector('getQuote')}`,
@@ -72,6 +85,8 @@ export class OrderBook extends ContractRuntime {
         `0x${this.abiCoder.encodeSelector('getReserveForTick')}`,
     );
 
+    private readonly limiterSelector: number = Number(`0x${this.abiCoder.encodeSelector('limit')}`);
+
     public constructor(deployer: Address, address: Address, gasLimit: bigint = 100_000_000_000n) {
         super({
             address: address,
@@ -79,6 +94,14 @@ export class OrderBook extends ContractRuntime {
             gasLimit,
         });
         this.preserveState();
+    }
+
+    public static decodeLiquidityReservedEvent(data: Uint8Array): LiquidityReserved {
+        const reader = new BinaryReader(data);
+        const tickId = reader.readU256();
+        const level = reader.readU256();
+        const amount = reader.readU256();
+        return { tickId, level, amount };
     }
 
     // Event decoders
@@ -95,10 +118,9 @@ export class OrderBook extends ContractRuntime {
     public static decodeReservationCreatedEvent(data: Uint8Array): ReservationCreatedEvent {
         const reader = new BinaryReader(data);
         const reservationId = reader.readU256();
-        const totalReserved = reader.readU256();
         const expectedAmountOut = reader.readU256();
         const buyer = reader.readAddress();
-        return { reservationId, totalReserved, expectedAmountOut, buyer };
+        return { reservationId, expectedAmountOut, buyer };
     }
 
     public static decodeLiquidityRemovedEvent(data: Uint8Array): LiquidityRemovedEvent {
@@ -116,8 +138,7 @@ export class OrderBook extends ContractRuntime {
     ): LiquidityRemovalBlockedEvent {
         const reader = new BinaryReader(data);
         const tickId = reader.readU256();
-        const reservationsCount = reader.readU256();
-        return { tickId, reservationsCount };
+        return { tickId };
     }
 
     public static decodeSwapExecutedEvent(data: Uint8Array): SwapExecutedEvent {
@@ -178,13 +199,15 @@ export class OrderBook extends ContractRuntime {
         token: Address,
         maximumAmountIn: bigint,
         minimumAmountOut: bigint,
+        minimumLiquidityPerTick: bigint,
         slippage: number,
-    ): Promise<bigint> {
+    ): Promise<{ result: bigint; response: CallResponse }> {
         const calldata = new BinaryWriter();
         calldata.writeSelector(this.reserveTicksSelector);
         calldata.writeAddress(token);
         calldata.writeU256(maximumAmountIn);
         calldata.writeU256(minimumAmountOut);
+        calldata.writeU256(minimumLiquidityPerTick);
         calldata.writeU16(slippage);
 
         const result = await this.execute(calldata.getBuffer());
@@ -196,7 +219,10 @@ export class OrderBook extends ContractRuntime {
         }
 
         const reader = new BinaryReader(response);
-        return reader.readU256();
+        return {
+            result: reader.readU256(),
+            response: result,
+        };
     }
 
     // Method to add liquidity
@@ -252,18 +278,13 @@ export class OrderBook extends ContractRuntime {
     public async swap(
         token: Address,
         isSimulation: boolean,
-        reservations: { reservationId: bigint; tickIds: bigint[] }[],
-    ): Promise<boolean> {
+        levels: bigint[],
+    ): Promise<{ result: boolean; response: CallResponse }> {
         const calldata = new BinaryWriter();
         calldata.writeSelector(this.swapSelector);
         calldata.writeAddress(token);
         calldata.writeBoolean(isSimulation);
-        calldata.writeU16(reservations.length);
-
-        for (const reservation of reservations) {
-            calldata.writeU256(reservation.reservationId);
-            calldata.writeTuple(reservation.tickIds);
-        }
+        calldata.writeTuple(levels);
 
         const result = await this.execute(calldata.getBuffer());
         if (result.error) throw this.handleError(result.error);
@@ -274,7 +295,10 @@ export class OrderBook extends ContractRuntime {
         }
 
         const reader = new BinaryReader(response);
-        return reader.readBoolean();
+        return {
+            result: reader.readBoolean(),
+            response: result,
+        };
     }
 
     // Method to get reserve
@@ -316,6 +340,20 @@ export class OrderBook extends ContractRuntime {
         const availableLiquidity = reader.readU256();
 
         return { totalLiquidity, totalReserved, availableLiquidity };
+    }
+
+    public async toggleLimiter(value: boolean): Promise<void> {
+        const calldata = new BinaryWriter();
+        calldata.writeSelector(this.limiterSelector);
+        calldata.writeBoolean(value);
+
+        const result = await this.execute(calldata.getBuffer());
+        if (result.error) throw this.handleError(result.error);
+
+        const response = result.response;
+        if (!response) {
+            throw new Error('No response from getReserve');
+        }
     }
 
     protected handleError(error: Error): Error {

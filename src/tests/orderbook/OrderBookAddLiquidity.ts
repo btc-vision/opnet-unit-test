@@ -51,7 +51,7 @@ await opnet('OrderBook Contract addLiquidity Tests', async (vm: OPNetUnit) => {
 
         // Instantiate and register the OP_20 token
         token = new OP_20({
-            fileName: 'MyToken',
+            file: 'MyToken',
             deployer: userAddress,
             address: tokenAddress,
             decimals: 18,
@@ -320,7 +320,7 @@ await opnet('OrderBook Contract addLiquidity Tests', async (vm: OPNetUnit) => {
 
         // Instantiate and register the OP_20 token
         token = new OP_20({
-            fileName: 'MyToken',
+            file: 'MyToken',
             deployer: userAddress,
             address: tokenAddress,
             decimals: 18,
@@ -366,7 +366,7 @@ await opnet('OrderBook Contract addLiquidity Tests', async (vm: OPNetUnit) => {
         }).toThrow('Invalid address');
     });
 
-    // TODO: Max this work.
+    // TODO: Make this work.
     /*await vm.it('should prevent integer overflow when adding large liquidity amounts', async () => {
         const maximumAmountIn = BigInt(
             '0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff',

@@ -98,14 +98,14 @@ await opnet('Motoswap Router', async (vm: OPNetUnit) => {
 
         /** Init OP_20 */
         DTT = new OP_20({
-            fileName: 'MyToken',
+            file: 'MyToken',
             deployer: Blockchain.txOrigin,
             address: dttAddress,
             decimals: 18,
         });
 
         wbtc = new OP_20({
-            fileName: 'MyToken',
+            file: 'MyToken',
             deployer: Blockchain.txOrigin,
             address: WBTC_ADDRESS,
             decimals: 18,
