@@ -12,7 +12,7 @@
         "test:pool": "tsx src/tests/motoswap/pool.ts",
         "test:router": "tsx src/tests/motoswap/router.ts",
         "test:router2": "tsx src/tests/motoswap/router2.ts",
-        "test:orderbook": "npm run test:orderbook:addliquidity && npm run test:orderbook:quote && npm run test:orderbook:reserve && npm run test:orderbook:reserve:utxo && npm run test:orderbook:swap",
+        "test:orderbook": "npm run test:orderbook:addliquidity && npm run test:orderbook:quote && npm run test:orderbook:expire && npm run test:orderbook:reserve && npm run test:orderbook:reserve:utxo && npm run test:orderbook:swap",
         "test:orderbook:addliquidity": "tsx src/tests/orderbook/OrderBookAddLiquidity.ts",
         "test:orderbook:quote": "tsx src/tests/orderbook/OrderBookGetQuote.ts",
         "test:orderbook:reserve": "tsx src/tests/orderbook/OrderBookReserve.ts",
