@@ -16,9 +16,9 @@
         "test:orderbook:addliquidity": "tsx src/tests/orderbook/OrderBookAddLiquidity.ts",
         "test:orderbook:quote": "tsx src/tests/orderbook/OrderBookGetQuote.ts",
         "test:orderbook:reserve": "tsx src/tests/orderbook/OrderBookReserve.ts",
-        "test:orderbook:swap": "tsx src/tests/orderbook/OrderBookSwap.ts",
-        "test:orderbook:expire": "tsx src/tests/orderbook/OrderBookExpirationTests.ts",
         "test:orderbook:reserve:utxo": "tsx src/tests/orderbook/OrderBookReserveUTXO.ts",
+        "test:orderbook:expire": "tsx src/tests/orderbook/OrderBookExpirationTests.ts",
+        "test:orderbook:swap": "tsx src/tests/orderbook/OrderBookSwap.ts",
         "test:vm": "tsx src/tests/vm.ts",
         "test": "npm run test:factory && npm run test:gas && npm run test:pool && npm run test:router && npm run test:router2 && npm run test:vm"
     },
@@ -28,7 +28,7 @@
         "@btc-vision/bitcoin": "^6.3.0",
         "@btc-vision/logger": "^1.0.6",
         "@btc-vision/transaction": "^1.1.5",
-        "@btc-vision/unit-test-framework": "^0.0.8",
+        "@btc-vision/unit-test-framework": "file:../unit-test-framework",
         "gulp-logger-new": "^1.0.1",
         "npm-run-all": "^4.1.5",
         "opnet": "^1.1.21"

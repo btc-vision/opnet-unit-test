@@ -58,10 +58,11 @@ export class OrderBook extends ContractRuntime {
     public static feeRecipient: string =
         'bcrt1plz0svv3wl05qrrv0dx8hvh5mgqc7jf3mhqgtw8jnj3l3d3cs6lzsfc3mxh';
 
+    public static readonly invalidAfter: bigint = 5n;
+
     public static fixedFeeRatePerTickConsumed: bigint = 4_000n; // The fixed fee rate per tick consumed.
     public readonly minimumSatForTickReservation: bigint = 10_000n;
     public readonly minimumLiquidityForTickReservation: bigint = 1_000_000n;
-    public readonly invalidAfter: bigint = 5n;
 
     // Define selectors for contract methods
     private readonly getQuoteSelector: number = Number(
@@ -256,7 +257,13 @@ export class OrderBook extends ContractRuntime {
     }
 
     // Method to remove liquidity
-    public async removeLiquidity(token: Address, tickPositions: bigint[]): Promise<bigint> {
+    public async removeLiquidity(
+        token: Address,
+        tickPositions: bigint[],
+    ): Promise<{
+        result: bigint;
+        response: CallResponse;
+    }> {
         const calldata = new BinaryWriter();
         calldata.writeSelector(this.removeLiquiditySelector);
         calldata.writeAddress(token);
@@ -271,7 +278,10 @@ export class OrderBook extends ContractRuntime {
         }
 
         const reader = new BinaryReader(response);
-        return reader.readU256();
+        return {
+            result: reader.readU256(),
+            response: result,
+        };
     }
 
     // Method to execute a swap
