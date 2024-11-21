@@ -249,7 +249,7 @@ await opnet('OrderBook Contract purgeExpiredReservations Tests', async (vm: OPNe
         vm.success('Expired reservations purged and state updated correctly');
     });
 
-    /*await vm.it('should allow swap before reservation expires', async () => {
+    await vm.it('should allow swap before reservation expires', async () => {
         const satoshisIn = 1_000_000n; // 0.01 BTC
         const minimumAmountOut = Blockchain.expandToDecimal(1, tokenDecimals); // Minimum 1 token
         const minimumLiquidityPerTick = 1n;
@@ -265,13 +265,14 @@ await opnet('OrderBook Contract purgeExpiredReservations Tests', async (vm: OPNe
         );
 
         const levels = reservation.levels;
+        Blockchain.blockNumber += 1n;
 
         // Attempt to execute the swap before reservation expires
         const swapResponse = await orderBook.swap(tokenAddress, false, levels);
 
         Assert.expect(swapResponse.response.error).toBeUndefined();
         vm.success('Swap executed successfully before reservation expires');
-    });*/
+    });
 
     await vm.it('should not allow swap after reservation expires', async () => {
         const satoshisIn = 1_000_000n; // 0.01 BTC
@@ -329,51 +330,54 @@ await opnet('OrderBook Contract purgeExpiredReservations Tests', async (vm: OPNe
         },
     );
 
-    /*await vm.it('should handle multiple reservations from different users correctly', async () => {
-        const satoshisIn = 500_000n; // 0.005 BTC
-        const minimumAmountOut = Blockchain.expandToDecimal(1, tokenDecimals); // Minimum 1 token
-        const minimumLiquidityPerTick = 1n;
-        const slippage = 100; // 1%
+    await vm.it(
+        'should handle multiple reservations from different users correctly and swap accordingly',
+        async () => {
+            const satoshisIn = 500_000n; // 0.005 BTC
+            const minimumAmountOut = Blockchain.expandToDecimal(1, tokenDecimals); // Minimum 1 token
+            const minimumLiquidityPerTick = 1n;
+            const slippage = 100; // 1%
 
-        // Create reservations from multiple users
-        const user1 = Blockchain.generateRandomAddress();
-        const user2 = Blockchain.generateRandomAddress();
+            // Create reservations from multiple users
+            const user1 = Blockchain.generateRandomAddress();
+            const user2 = Blockchain.generateRandomAddress();
 
-        Blockchain.msgSender = user1;
-        const reservation1 = await createReservation(
-            satoshisIn,
-            minimumAmountOut,
-            minimumLiquidityPerTick,
-            slippage,
-        );
+            Blockchain.msgSender = user1;
+            const reservation1 = await createReservation(
+                satoshisIn,
+                minimumAmountOut,
+                minimumLiquidityPerTick,
+                slippage,
+            );
 
-        Blockchain.msgSender = user2;
-        const reservation2 = await createReservation(
-            satoshisIn,
-            minimumAmountOut,
-            minimumLiquidityPerTick,
-            slippage,
-        );
+            Blockchain.msgSender = user2;
+            const reservation2 = await createReservation(
+                satoshisIn,
+                minimumAmountOut,
+                minimumLiquidityPerTick,
+                slippage,
+            );
 
-        // Advance the block number to just before expiration
-        Blockchain.blockNumber = 1004n;
+            // Advance the block number to just before expiration
+            Blockchain.blockNumber = 1004n;
 
-        // User1 executes swap
-        Blockchain.msgSender = user1;
-        const levels1 = reservation1.levels;
+            // User1 executes swap
+            Blockchain.msgSender = user1;
+            const levels1 = reservation1.levels;
 
-        const swapResponse1 = await orderBook.swap(tokenAddress, false, levels1);
-        Assert.expect(swapResponse1.response.error).toBeUndefined();
+            const swapResponse1 = await orderBook.swap(tokenAddress, false, levels1);
+            Assert.expect(swapResponse1.response.error).toBeUndefined();
 
-        // User2 executes swap
-        Blockchain.msgSender = user2;
-        const levels2 = reservation2.levels;
+            // User2 executes swap
+            Blockchain.msgSender = user2;
+            const levels2 = reservation2.levels;
 
-        const swapResponse2 = await orderBook.swap(tokenAddress, false, levels2);
-        Assert.expect(swapResponse2.response.error).toBeUndefined();
+            const swapResponse2 = await orderBook.swap(tokenAddress, false, levels2);
+            Assert.expect(swapResponse2.response.error).toBeUndefined();
 
-        vm.success('Multiple reservations from different users handled correctly');
-    });*/
+            vm.success('Multiple reservations from different users handled correctly');
+        },
+    );
 
     await vm.it(
         'should prevent making a new reservation if one already exists for the user',
