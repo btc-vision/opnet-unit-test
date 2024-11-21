@@ -132,6 +132,7 @@ await opnet('OrderBook Contract swap Method Tests', async (vm: OPNetUnit) => {
         const levels: bigint[] = getReservedLevels(events);
 
         // Execute the swap
+        Blockchain.tracePointers = true;
         const swapResponse = await orderBook.swap(tokenAddress, false, levels);
 
         Assert.expect(swapResponse.response.error).toBeUndefined();
