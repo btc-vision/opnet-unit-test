@@ -88,3 +88,19 @@ export function updateReserves(
         levels[index][1] -= event.amount;
     }
 }
+
+export function gas2Sat(gas: bigint): bigint {
+    return gas / 1_000_000n;
+}
+
+export function sat2BTC(satoshis: bigint): number {
+    return Number(satoshis) / 100_000_000;
+}
+
+export function gas2BTC(gas: bigint): number {
+    return sat2BTC(gas2Sat(gas));
+}
+
+export function gas2USD(gas: bigint, btcPrice: number = 98_000): number {
+    return gas2BTC(gas) * btcPrice;
+}

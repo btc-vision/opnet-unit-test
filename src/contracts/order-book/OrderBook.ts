@@ -5,8 +5,7 @@ import { BytecodeManager, CallResponse, ContractRuntime } from '@btc-vision/unit
 export interface LiquidityAddedEvent {
     readonly tickId: bigint;
     readonly level: bigint;
-    readonly liquidityAmount: bigint;
-    readonly amountOut: bigint;
+    readonly amountIn: bigint;
     readonly receiver: string;
 }
 
@@ -100,7 +99,7 @@ export class OrderBook extends ContractRuntime {
     public static decodeLiquidityReservedEvent(data: Uint8Array): LiquidityReserved {
         const reader = new BinaryReader(data);
         const tickId = reader.readU256();
-        const level = reader.readU256();
+        const level = reader.readU128();
         const amount = reader.readU256();
         return { tickId, level, amount };
     }
@@ -109,11 +108,11 @@ export class OrderBook extends ContractRuntime {
     public static decodeLiquidityAddedEvent(data: Uint8Array): LiquidityAddedEvent {
         const reader = new BinaryReader(data);
         const tickId = reader.readU256();
-        const level = reader.readU256();
-        const liquidityAmount = reader.readU256();
-        const amountOut = reader.readU256();
+        const level = reader.readU128();
+        //const liquidityAmount = reader.readU256();
+        const amountIn = reader.readU256();
         const receiver = reader.readStringWithLength();
-        return { tickId, level, liquidityAmount, amountOut, receiver };
+        return { tickId, level, amountIn, receiver };
     }
 
     public static decodeReservationCreatedEvent(data: Uint8Array): ReservationCreatedEvent {
@@ -129,7 +128,7 @@ export class OrderBook extends ContractRuntime {
         const token = reader.readAddress();
         const amount = reader.readU256();
         const tickId = reader.readU256();
-        const level = reader.readU256();
+        const level = reader.readU128();
         const liquidityAmount = reader.readU256();
         return { token, amount, tickId, level, liquidityAmount };
     }
@@ -153,7 +152,7 @@ export class OrderBook extends ContractRuntime {
     public static decodeTickUpdatedEvent(data: Uint8Array): TickUpdatedEvent {
         const reader = new BinaryReader(data);
         const tickId = reader.readU256();
-        const level = reader.readU256();
+        const level = reader.readU128();
         const liquidityAmount = reader.readU256();
         const acquiredAmount = reader.readU256();
         return { tickId, level, liquidityAmount, acquiredAmount };
@@ -237,8 +236,8 @@ export class OrderBook extends ContractRuntime {
         calldata.writeSelector(this.addLiquiditySelector);
         calldata.writeAddress(token);
         calldata.writeStringWithLength(receiver); // Assuming receiver is converted to string
-        calldata.writeU256(maximumAmountIn);
-        calldata.writeU256(maximumPriceLevel);
+        calldata.writeU128(maximumAmountIn);
+        calldata.writeU128(maximumPriceLevel);
 
         const result = await this.execute(calldata.getBuffer());
         if (result.error) throw this.handleError(result.error);
@@ -267,7 +266,7 @@ export class OrderBook extends ContractRuntime {
         const calldata = new BinaryWriter();
         calldata.writeSelector(this.removeLiquiditySelector);
         calldata.writeAddress(token);
-        calldata.writeTuple(tickPositions);
+        calldata.writeU128Array(tickPositions);
 
         const result = await this.execute(calldata.getBuffer());
         if (result.error) throw this.handleError(result.error);
@@ -294,7 +293,7 @@ export class OrderBook extends ContractRuntime {
         calldata.writeSelector(this.swapSelector);
         calldata.writeAddress(token);
         calldata.writeBoolean(isSimulation);
-        calldata.writeTuple(levels);
+        calldata.writeU128Array(levels);
 
         const result = await this.execute(calldata.getBuffer());
         if (result.error) throw this.handleError(result.error);
@@ -333,7 +332,7 @@ export class OrderBook extends ContractRuntime {
         const calldata = new BinaryWriter();
         calldata.writeSelector(this.getReserveTickSelector);
         calldata.writeAddress(token);
-        calldata.writeU256(level);
+        calldata.writeU128(level);
 
         const result = await this.execute(calldata.getBuffer());
         if (result.error) throw this.handleError(result.error);

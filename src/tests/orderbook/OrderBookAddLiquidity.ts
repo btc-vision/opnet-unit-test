@@ -208,8 +208,7 @@ await opnet('OrderBook Contract addLiquidity Tests', async (vm: OPNetUnit) => {
 
         Assert.expect(decodedAddedLiquidityEvent.tickId).toBeDefined();
         Assert.expect(decodedAddedLiquidityEvent.level).toEqual(targetPriceLevel);
-        Assert.expect(decodedAddedLiquidityEvent.liquidityAmount).toEqual(maximumAmountIn);
-        Assert.expect(decodedAddedLiquidityEvent.amountOut).toEqual(maximumAmountIn); // As per code, amountOut is same as amountIn
+        Assert.expect(decodedAddedLiquidityEvent.amountIn).toEqual(maximumAmountIn);
         Assert.expect(decodedAddedLiquidityEvent.receiver).toEqual(userAddress.toString());
 
         // Verify that the total reserves have been updated
@@ -287,13 +286,12 @@ await opnet('OrderBook Contract addLiquidity Tests', async (vm: OPNetUnit) => {
         );
 
         // Verify that the liquidityAmount is cumulative
-        Assert.expect(firstDecodedLiquidityAddEvent.liquidityAmount).toEqual(maximumAmountIn);
-        Assert.expect(secondDecodedLiquidityAddEvent.liquidityAmount).toEqual(maximumAmountIn);
+        Assert.expect(firstDecodedLiquidityAddEvent.amountIn).toEqual(maximumAmountIn);
+        Assert.expect(secondDecodedLiquidityAddEvent.amountIn).toEqual(maximumAmountIn);
 
         // Total liquidity should be maximumAmountIn * 2
         const totalLiquidity =
-            firstDecodedLiquidityAddEvent.liquidityAmount +
-            secondDecodedLiquidityAddEvent.liquidityAmount;
+            firstDecodedLiquidityAddEvent.amountIn + secondDecodedLiquidityAddEvent.amountIn;
 
         Assert.expect(totalLiquidity).toEqual(maximumAmountIn * 2n);
     });
