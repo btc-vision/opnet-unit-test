@@ -1,31 +1,25 @@
 import { Address, NetEvent } from '@btc-vision/transaction';
-import { OrderBook } from '../../contracts/order-book/OrderBook.js';
 import { Assert, Blockchain, OP_20, opnet, OPNetUnit } from '@btc-vision/unit-test-framework';
-import { createFeeOutput, gas2BTC, gas2Sat, gas2USD } from './utils/OrderBookUtils.js';
+import { EWMA } from '../../contracts/ewma/EWMA.js';
 
-await opnet('OrderBook Contract swap Method Tests', async (vm: OPNetUnit) => {
-    let orderBook: OrderBook;
+await opnet('ewma Contract swap Method Tests', async (vm: OPNetUnit) => {
+    let ewma: EWMA;
     let token: OP_20;
 
     const tokenDecimals = 18;
     const userAddress: Address = Blockchain.generateRandomAddress();
     const tokenAddress: Address = Blockchain.generateRandomAddress();
-    const orderBookAddress: Address = Blockchain.generateRandomAddress();
+    const ewmaAddress: Address = Blockchain.generateRandomAddress();
 
     const liquidityAmount: bigint = Blockchain.expandToDecimal(1000, tokenDecimals);
-    const priceLevels: bigint[] = [];
-
-    for (let i = 0; i < 1; i++) {
-        priceLevels.push(100n + BigInt(i) * 10n);
-    }
-
     const satoshisIn: bigint = 1_000_000_000_000n; //100_000n  BTC 1_000_000_000_000n
-    const fee: bigint = OrderBook.fixedFeeRatePerTickConsumed * BigInt(priceLevels.length);
+
+    const providerCount: bigint = 10n;
+    const fee: bigint = EWMA.reservationFeePerProvider * providerCount;
+
     const minimumAmountOut: bigint = Blockchain.expandToDecimal(10, tokenDecimals); // Minimum 10 tokens
     const minimumLiquidityPerTick: bigint = 10n;
     const slippage: number = 100; // 1%
-
-    const usersPerTicks: number = 95;
 
     vm.beforeEach(async () => {
         // Reset blockchain state
@@ -47,13 +41,13 @@ await opnet('OrderBook Contract swap Method Tests', async (vm: OPNetUnit) => {
         // Mint tokens to the user
         await token.mint(userAddress, 10_000_000);
 
-        // Instantiate and register the OrderBook contract
-        orderBook = new OrderBook(userAddress, orderBookAddress);
-        Blockchain.register(orderBook);
-        await orderBook.init();
+        // Instantiate and register the ewma contract
+        ewma = new EWMA(userAddress, ewmaAddress);
+        Blockchain.register(ewma);
+        await ewma.init();
 
         // Add liquidity at specified price levels
-        for (let i = 0; i < priceLevels.length; i++) {
+        /*for (let i = 0; i < priceLevels.length; i++) {
             const priceLevel = priceLevels[i];
 
             for (let y = 0; y < usersPerTicks; y++) {
@@ -64,9 +58,9 @@ await opnet('OrderBook Contract swap Method Tests', async (vm: OPNetUnit) => {
                 Blockchain.msgSender = user;
 
                 const tokensAdded = liquidityAmount / BigInt(usersPerTicks - y + 1);
-                await token.approve(user, orderBook.address, tokensAdded);
+                await token.approve(user, ewma.address, tokensAdded);
 
-                await orderBook.addLiquidity(
+                await ewma.addLiquidity(
                     tokenAddress,
                     userAddress.p2tr(Blockchain.network),
                     tokensAdded,
@@ -75,16 +69,16 @@ await opnet('OrderBook Contract swap Method Tests', async (vm: OPNetUnit) => {
 
                 vm.log(`Added ${tokensAdded} tokens at price level ${priceLevel} by user ${user}`);
             }
-        }
+        }*/
 
         Blockchain.txOrigin = userAddress;
         Blockchain.msgSender = userAddress;
 
-        createFeeOutput(fee);
+        //createFeeOutput(fee);
     });
 
     vm.afterEach(() => {
-        orderBook.dispose();
+        ewma.dispose();
         token.dispose();
         Blockchain.dispose();
     });
@@ -95,7 +89,7 @@ await opnet('OrderBook Contract swap Method Tests', async (vm: OPNetUnit) => {
     async function createReservation() {
         Blockchain.blockNumber = 1000n;
 
-        const reservationResponse = await orderBook.reserveTicks(
+        const reservationResponse = await ewma.reserveTicks(
             tokenAddress,
             satoshisIn,
             minimumAmountOut,
@@ -113,9 +107,7 @@ await opnet('OrderBook Contract swap Method Tests', async (vm: OPNetUnit) => {
             throw new Error('ReservationCreated event not found');
         }
 
-        const decodedReservationEvent = OrderBook.decodeReservationCreatedEvent(
-            reservationEvent.data,
-        );
+        const decodedReservationEvent = EWMA.decodeReservationCreatedEvent(reservationEvent.data);
 
         Blockchain.blockNumber = 1001n;
 
@@ -134,12 +126,30 @@ await opnet('OrderBook Contract swap Method Tests', async (vm: OPNetUnit) => {
         return events
             .filter((event) => event.type === 'LiquidityReserved')
             .map((event) => {
-                const decodedEvent = OrderBook.decodeLiquidityReservedEvent(event.data);
+                const decodedEvent = EWMA.decodeLiquidityReservedEvent(event.data);
                 return decodedEvent.level;
             });
     }
 
-    await vm.it('should successfully execute a swap with valid reservation', async () => {
+    await vm.it('should successfully add liquidity', async () => {
+        vm.log(`Reserving levels for ${satoshisIn} satoshis`);
+
+        // Create a reservation
+        Blockchain.tracePointers = true;
+
+        await token.approve(userAddress, ewma.address, liquidityAmount);
+
+        const addLiquidity = await ewma.addLiquidity(
+            tokenAddress,
+            userAddress.p2tr(Blockchain.network),
+            satoshisIn,
+        );
+        console.log(addLiquidity);
+
+        Blockchain.tracePointers = false;
+    });
+
+    /*await vm.it('should successfully execute a swap with valid reservation', async () => {
         vm.log(`Reserving levels for ${satoshisIn} satoshis`);
 
         // Create a reservation
@@ -158,35 +168,17 @@ await opnet('OrderBook Contract swap Method Tests', async (vm: OPNetUnit) => {
         Blockchain.simulateRealEnvironment = true;
 
         const swappedAt = Date.now();
-        const swapResponse = await orderBook.swap(tokenAddress, false, levels);
+        const swapResponse = await ewma.swap(tokenAddress, false, levels);
         vm.debug(
             `(${Date.now() - swappedAt}ms) Swap executed! Gas cost: ${gas2Sat(swapResponse.response.usedGas)}sat (${gas2BTC(swapResponse.response.usedGas)} BTC, $${gas2USD(swapResponse.response.usedGas)})`,
         );
 
         console.log(
             swapResponse,
-            `pointers loaded: ${orderBook.loadedPointers}, pointers saved: ${orderBook.storedPointers}`,
+            `pointers loaded: ${ewma.loadedPointers}, pointers saved: ${ewma.storedPointers}`,
         );
 
         Blockchain.simulateRealEnvironment = false;
         Blockchain.tracePointers = false;
-
-        /*const swapResponse = await orderBook.swap(tokenAddress, false, levels);
-
-        Assert.expect(swapResponse.response.error).toBeUndefined();
-
-        // Check the SwapExecutedEvent
-        const swapEvent = swapResponse.response.events.find(
-            (event) => event.type === 'SwapExecuted',
-        );
-
-        if (!swapEvent) {
-            throw new Error('SwapExecuted event not found');
-        }
-
-        Assert.expect(swapEvent).toBeDefined();
-
-        const decodedSwapEvent = OrderBook.decodeSwapExecutedEvent(swapEvent.data);
-        console.log(decodedSwapEvent);*/
-    });
+    });*/
 });
