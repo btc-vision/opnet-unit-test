@@ -3,9 +3,7 @@ import { BytecodeManager, CallResponse, ContractRuntime } from '@btc-vision/unit
 
 // Define interfaces for events
 export interface LiquidityAddedEvent {
-    readonly tickId: bigint;
-    readonly level: bigint;
-    readonly amountIn: bigint;
+    readonly totalLiquidity: bigint;
     readonly receiver: string;
 }
 
@@ -18,8 +16,6 @@ export interface ReservationCreatedEvent {
 export interface LiquidityRemovedEvent {
     readonly token: Address;
     readonly amount: bigint;
-    readonly tickId: bigint;
-    readonly level: bigint;
     readonly liquidityAmount: bigint;
 }
 
@@ -34,8 +30,6 @@ export interface SwapExecutedEvent {
 }
 
 export interface TickUpdatedEvent {
-    readonly tickId: bigint;
-    readonly level: bigint;
     readonly liquidityAmount: bigint;
     readonly acquiredAmount: bigint;
 }
@@ -47,9 +41,13 @@ export interface TickReserve {
 }
 
 export interface LiquidityReserved {
-    readonly tickId: bigint;
-    readonly level: bigint;
     readonly amount: bigint;
+    readonly index: bigint;
+}
+
+export interface Reserve {
+    readonly liquidity: bigint;
+    readonly reserved: bigint;
 }
 
 export class EWMA extends ContractRuntime {
@@ -63,12 +61,16 @@ export class EWMA extends ContractRuntime {
     public readonly minimumSatForTickReservation: bigint = 10_000n;
     public readonly minimumLiquidityForTickReservation: bigint = 1_000_000n;
 
+    public readonly alpha: bigint = 10_000n;
+    public readonly k: bigint = 10_000n;
+    public readonly p0ScalingFactor: bigint = 10_000n;
+
     // Define selectors for contract methods
     private readonly getQuoteSelector: number = Number(
         `0x${this.abiCoder.encodeSelector('getQuote')}`,
     );
     private readonly reserveTicksSelector: number = Number(
-        `0x${this.abiCoder.encodeSelector('reserveTicks')}`,
+        `0x${this.abiCoder.encodeSelector('reserve')}`,
     );
     private readonly addLiquiditySelector: number = Number(
         `0x${this.abiCoder.encodeSelector('addLiquidity')}`,
@@ -81,11 +83,9 @@ export class EWMA extends ContractRuntime {
         `0x${this.abiCoder.encodeSelector('getReserve')}`,
     );
 
-    private readonly getReserveTickSelector: number = Number(
-        `0x${this.abiCoder.encodeSelector('getReserveForTick')}`,
+    private readonly setQuoteSelector: number = Number(
+        `0x${this.abiCoder.encodeSelector('setQuote')}`,
     );
-
-    private readonly limiterSelector: number = Number(`0x${this.abiCoder.encodeSelector('limit')}`);
 
     public constructor(deployer: Address, address: Address, gasLimit: bigint = 100_000_000_000n) {
         super({
@@ -98,21 +98,17 @@ export class EWMA extends ContractRuntime {
 
     public static decodeLiquidityReservedEvent(data: Uint8Array): LiquidityReserved {
         const reader = new BinaryReader(data);
-        const tickId = reader.readU256();
-        const level = reader.readU128();
         const amount = reader.readU256();
-        return { tickId, level, amount };
+        const index = reader.readU64();
+        return { amount, index };
     }
 
     // Event decoders
     public static decodeLiquidityAddedEvent(data: Uint8Array): LiquidityAddedEvent {
         const reader = new BinaryReader(data);
-        const tickId = reader.readU256();
-        const level = reader.readU128();
-        //const liquidityAmount = reader.readU256();
-        const amountIn = reader.readU256();
+        const totalLiquidity = reader.readU128();
         const receiver = reader.readStringWithLength();
-        return { tickId, level, amountIn, receiver };
+        return { totalLiquidity, receiver };
     }
 
     public static decodeReservationCreatedEvent(data: Uint8Array): ReservationCreatedEvent {
@@ -127,10 +123,8 @@ export class EWMA extends ContractRuntime {
         const reader = new BinaryReader(data);
         const token = reader.readAddress();
         const amount = reader.readU256();
-        const tickId = reader.readU256();
-        const level = reader.readU128();
         const liquidityAmount = reader.readU256();
-        return { token, amount, tickId, level, liquidityAmount };
+        return { token, amount, liquidityAmount };
     }
 
     public static decodeLiquidityRemovalBlockedEvent(
@@ -151,18 +145,15 @@ export class EWMA extends ContractRuntime {
 
     public static decodeTickUpdatedEvent(data: Uint8Array): TickUpdatedEvent {
         const reader = new BinaryReader(data);
-        const tickId = reader.readU256();
-        const level = reader.readU128();
         const liquidityAmount = reader.readU256();
         const acquiredAmount = reader.readU256();
-        return { tickId, level, liquidityAmount, acquiredAmount };
+        return { liquidityAmount, acquiredAmount };
     }
 
     // Method to get a quote
     public async getQuote(
         token: Address,
         satoshisIn: bigint,
-        minimumLiquidityPerTick: bigint, // gas optimization
     ): Promise<{
         result: {
             expectedAmountOut: bigint;
@@ -174,7 +165,6 @@ export class EWMA extends ContractRuntime {
         calldata.writeSelector(this.getQuoteSelector);
         calldata.writeAddress(token);
         calldata.writeU256(satoshisIn);
-        calldata.writeU256(minimumLiquidityPerTick);
 
         const result = await this.execute(calldata.getBuffer());
         if (result.error) throw this.handleError(result.error);
@@ -254,17 +244,13 @@ export class EWMA extends ContractRuntime {
     }
 
     // Method to remove liquidity
-    public async removeLiquidity(
-        token: Address,
-        tickPositions: bigint[],
-    ): Promise<{
+    public async removeLiquidity(token: Address): Promise<{
         result: bigint;
         response: CallResponse;
     }> {
         const calldata = new BinaryWriter();
         calldata.writeSelector(this.removeLiquiditySelector);
         calldata.writeAddress(token);
-        calldata.writeU128Array(tickPositions);
 
         const result = await this.execute(calldata.getBuffer());
         if (result.error) throw this.handleError(result.error);
@@ -308,8 +294,7 @@ export class EWMA extends ContractRuntime {
         };
     }
 
-    // Method to get reserve
-    public async getReserve(token: Address): Promise<bigint> {
+    public async getReserve(token: Address): Promise<Reserve> {
         const calldata = new BinaryWriter();
         calldata.writeSelector(this.getReserveSelector);
         calldata.writeAddress(token);
@@ -323,14 +308,17 @@ export class EWMA extends ContractRuntime {
         }
 
         const reader = new BinaryReader(response);
-        return reader.readU256();
+        return {
+            liquidity: reader.readU256(),
+            reserved: reader.readU256(),
+        };
     }
 
-    public async getReserveForTick(token: Address, level: bigint): Promise<TickReserve> {
+    public async setQuote(token: Address, p0: bigint): Promise<CallResponse> {
         const calldata = new BinaryWriter();
-        calldata.writeSelector(this.getReserveTickSelector);
+        calldata.writeSelector(this.setQuoteSelector);
         calldata.writeAddress(token);
-        calldata.writeU128(level);
+        calldata.writeU256(p0);
 
         const result = await this.execute(calldata.getBuffer());
         if (result.error) throw this.handleError(result.error);
@@ -340,27 +328,7 @@ export class EWMA extends ContractRuntime {
             throw new Error('No response from getReserve');
         }
 
-        const reader = new BinaryReader(response);
-
-        const totalLiquidity = reader.readU256();
-        const totalReserved = reader.readU256();
-        const availableLiquidity = reader.readU256();
-
-        return { totalLiquidity, totalReserved, availableLiquidity };
-    }
-
-    public async toggleLimiter(value: boolean): Promise<void> {
-        const calldata = new BinaryWriter();
-        calldata.writeSelector(this.limiterSelector);
-        calldata.writeBoolean(value);
-
-        const result = await this.execute(calldata.getBuffer());
-        if (result.error) throw this.handleError(result.error);
-
-        const response = result.response;
-        if (!response) {
-            throw new Error('No response from getReserve');
-        }
+        return result;
     }
 
     protected handleError(error: Error): Error {

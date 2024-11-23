@@ -20,7 +20,9 @@
         "test:orderbook:expire": "tsx src/tests/orderbook/OrderBookExpirationTests.ts",
         "test:orderbook:swap": "tsx src/tests/orderbook/OrderBookSwap.ts",
         "test:orderbook:optimize": "tsx src/tests/orderbook/OrderBookOptimize.ts",
+        "test:ewma:test": "tsx src/tests/ewma/EWMATest.ts",
         "test:ewma:liquidity": "tsx src/tests/ewma/EWMAAddLiquidity.ts",
+        "test:ewma:setQuote": "tsx src/tests/ewma/EWMASetQuote.ts",
         "test:vm": "tsx src/tests/vm.ts",
         "test": "npm run test:factory && npm run test:gas && npm run test:pool && npm run test:router && npm run test:router2 && npm run test:vm"
     },
