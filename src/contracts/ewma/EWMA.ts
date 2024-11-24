@@ -191,7 +191,6 @@ export class EWMA extends ContractRuntime {
         token: Address,
         maximumAmountIn: bigint,
         minimumAmountOut: bigint,
-        minimumLiquidityPerTick: bigint,
         slippage: number,
     ): Promise<{ result: bigint; response: CallResponse }> {
         const calldata = new BinaryWriter();
@@ -199,7 +198,6 @@ export class EWMA extends ContractRuntime {
         calldata.writeAddress(token);
         calldata.writeU256(maximumAmountIn);
         calldata.writeU256(minimumAmountOut);
-        calldata.writeU256(minimumLiquidityPerTick);
         calldata.writeU16(slippage);
 
         const result = await this.execute(calldata.getBuffer());

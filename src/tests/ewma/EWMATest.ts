@@ -15,11 +15,11 @@ await opnet('EWMA Contract - getQuote Method Tests', async (vm: OPNetUnit) => {
     const tokenAddress: Address = Blockchain.generateRandomAddress();
     const ewmaAddress: Address = Blockchain.generateRandomAddress();
 
-    const liquidityAmount: bigint = Blockchain.expandToDecimal(50_000, tokenDecimals);
-    const pLiquidityAmount: bigint = Blockchain.expandToDecimal(50_000_000, tokenDecimals);
-    const satoshisPrice: bigint = 100n; // 100,000 satoshis
+    const liquidityAmount: bigint = Blockchain.expandToDecimal(5_000, tokenDecimals);
+    const pLiquidityAmount: bigint = Blockchain.expandToDecimal(100_000, tokenDecimals);
+    const satoshisPrice: bigint = 400_000n; // 0.001 BTC
 
-    const satoshisIn: bigint = 100_000n; // 100,000 satoshis
+    const satoshisIn: bigint = 1_000_000n; // 0.001 BTC
 
     const providerCount: bigint = 10n;
     const fee: bigint = EWMA.reservationFeePerProvider * providerCount;
@@ -68,10 +68,8 @@ await opnet('EWMA Contract - getQuote Method Tests', async (vm: OPNetUnit) => {
     /**
      * Helper function to add liquidity from a random provider.
      */
-    async function addLiquidityRandom(): Promise<void> {
+    async function addLiquidityRandom(l: bigint = liquidityAmount): Promise<void> {
         const provider = Blockchain.generateRandomAddress();
-
-        const l = liquidityAmount; //* BigInt(Math.floor(Math.random() * 2) + 1);
 
         // Transfer tokens to the provider
         await token.transfer(userAddress, provider, l);
@@ -120,7 +118,7 @@ await opnet('EWMA Contract - getQuote Method Tests', async (vm: OPNetUnit) => {
     async function logPrice(): Promise<void> {
         const zeroQuote = await ewma.getQuote(tokenAddress, satoshisIn);
         vm.debug(
-            `(Block ${Blockchain.blockNumber}) New price: ${zeroQuote.result.currentPrice} per sat, ${BitcoinUtils.formatUnits(zeroQuote.result.expectedAmountOut, tokenDecimals)} tokens.`,
+            `(Block ${Blockchain.blockNumber}) New price: ${BitcoinUtils.formatUnits(zeroQuote.result.currentPrice, tokenDecimals)} token per sat, ${BitcoinUtils.formatUnits(zeroQuote.result.expectedAmountOut, tokenDecimals)} tokens, sat spent: ${zeroQuote.result.expectedAmountIn}`,
         );
     }
 
@@ -164,13 +162,7 @@ await opnet('EWMA Contract - getQuote Method Tests', async (vm: OPNetUnit) => {
         await logPrice();
 
         // Simulate a buy operation that affects EWMA_V
-        await ewma.reserveTicks(
-            tokenAddress,
-            satoshisIn,
-            minimumAmountOut,
-            minimumLiquidityPerTick,
-            slippage,
-        );
+        await ewma.reserveTicks(tokenAddress, satoshisIn, minimumAmountOut, slippage);
 
         // Simulate block progression to apply EWMA updates
         for (let s = 0; s < 10; s++) {
@@ -184,13 +176,7 @@ await opnet('EWMA Contract - getQuote Method Tests', async (vm: OPNetUnit) => {
         await simulateBlocks(10n);
         vm.debugBright(`Simulating 10 blocks and reserving liquidity`);
 
-        const c = await ewma.reserveTicks(
-            tokenAddress,
-            satoshisIn,
-            minimumAmountOut,
-            minimumLiquidityPerTick,
-            slippage,
-        );
+        const c = await ewma.reserveTicks(tokenAddress, satoshisIn, minimumAmountOut, slippage);
 
         // new quote
         const quote = await ewma.getQuote(tokenAddress, satoshisIn);
@@ -202,32 +188,26 @@ await opnet('EWMA Contract - getQuote Method Tests', async (vm: OPNetUnit) => {
         vm.debugBright(`Simulating 100 blocks and reserving liquidity`);
 
         const quoteBefore = await ewma.getQuote(tokenAddress, satoshisIn);
+
         for (let s = 0; s < 150; s++) {
-            await addLiquidityRandom();
+            await addLiquidityRandom(liquidityAmount / 2n);
         }
+
+        await addLiquidityRandom(liquidityAmount * 30n);
+        vm.debugBright(`Added 150 providers.`);
 
         Blockchain.blockNumber++;
 
-        vm.debugBright(`Added 150 providers.`);
-
-        const quoteResponse2 = await ewma.getQuote(tokenAddress, satoshisIn);
         vm.debug(
             `Quote before sell pressure simulation ${quoteBefore.result.currentPrice} uToken per sat: ${quoteBefore.result.expectedAmountOut.toString()} tokens (scaled), ${quoteBefore.result.expectedAmountIn.toString()} satoshis`,
         );
-        vm.debug(
-            `Quote after sell pressure simulation ${quoteResponse2.result.currentPrice} uToken per sat: ${quoteResponse2.result.expectedAmountOut.toString()} tokens (scaled), ${quoteResponse2.result.expectedAmountIn.toString()} satoshis`,
-        );
+
+        await logPrice();
 
         //Blockchain.tracePointers = true;
-        const c2 = await ewma.reserveTicks(
-            tokenAddress,
-            satoshisIn,
-            minimumAmountOut,
-            minimumLiquidityPerTick,
-            slippage,
-        );
+        const c2 = await ewma.reserveTicks(tokenAddress, satoshisIn, minimumAmountOut, slippage);
         vm.debug(
-            `Reserved ${c2.result} tokens for ${satoshisIn * 100n} satoshis. Cost $${gas2USD(c2.response.usedGas)} USD to reserve.`,
+            `Reserved ${BitcoinUtils.formatUnits(c2.result, tokenDecimals)} tokens for ${satoshisIn} satoshis. Cost $${gas2USD(c2.response.usedGas)} USD to reserve.`,
         );
 
         await logPrice();
