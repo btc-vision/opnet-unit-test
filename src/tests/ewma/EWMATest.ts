@@ -15,9 +15,11 @@ await opnet('EWMA Contract - getQuote Method Tests', async (vm: OPNetUnit) => {
     const tokenAddress: Address = Blockchain.generateRandomAddress();
     const ewmaAddress: Address = Blockchain.generateRandomAddress();
 
-    const liquidityAmount: bigint = Blockchain.expandToDecimal(5_000_000, tokenDecimals);
-    const satoshisPrice: bigint = 1000n; // 100,000 satoshis
-    const satoshisIn: bigint = 1_000_000_000n; // 100,000 satoshis
+    const liquidityAmount: bigint = Blockchain.expandToDecimal(50_000, tokenDecimals);
+    const pLiquidityAmount: bigint = Blockchain.expandToDecimal(50_000_000, tokenDecimals);
+    const satoshisPrice: bigint = 100n; // 100,000 satoshis
+
+    const satoshisIn: bigint = 100_000n; // 100,000 satoshis
 
     const providerCount: bigint = 10n;
     const fee: bigint = EWMA.reservationFeePerProvider * providerCount;
@@ -150,13 +152,13 @@ await opnet('EWMA Contract - getQuote Method Tests', async (vm: OPNetUnit) => {
 
     await vm.it('should return correct estimatedQuantity based on EWMA_V and EWMA_L', async () => {
         // Set base price p0 = 1,000 satoshis (scaled by ewma.p0ScalingFactor = 10,000)
-        const p0: bigint = liquidityAmount / satoshisPrice;
+        const p0: bigint = pLiquidityAmount / satoshisPrice;
         Blockchain.log(`P0 is ${p0}`);
         await setQuote(p0);
 
         const initialQuote = await ewma.getQuote(tokenAddress, satoshisIn);
         vm.debug(
-            `Initial Quote: ${initialQuote.result.expectedAmountOut.toString()} tokens, ${initialQuote.result.expectedAmountIn.toString()} satoshis`,
+            `Initial Price: ${initialQuote.result.currentPrice}, Quote: ${initialQuote.result.expectedAmountOut.toString()} tokens, ${initialQuote.result.expectedAmountIn.toString()} satoshis`,
         );
 
         await logPrice();
@@ -210,10 +212,10 @@ await opnet('EWMA Contract - getQuote Method Tests', async (vm: OPNetUnit) => {
 
         const quoteResponse2 = await ewma.getQuote(tokenAddress, satoshisIn);
         vm.debug(
-            `Quote before sell pressure simulation: ${quoteBefore.result.expectedAmountOut.toString()} tokens (scaled), ${quoteBefore.result.expectedAmountIn.toString()} satoshis`,
+            `Quote before sell pressure simulation ${quoteBefore.result.currentPrice} uToken per sat: ${quoteBefore.result.expectedAmountOut.toString()} tokens (scaled), ${quoteBefore.result.expectedAmountIn.toString()} satoshis`,
         );
         vm.debug(
-            `Quote after sell pressure simulation: ${quoteResponse2.result.expectedAmountOut.toString()} tokens (scaled), ${quoteResponse2.result.expectedAmountIn.toString()} satoshis`,
+            `Quote after sell pressure simulation ${quoteResponse2.result.currentPrice} uToken per sat: ${quoteResponse2.result.expectedAmountOut.toString()} tokens (scaled), ${quoteResponse2.result.expectedAmountIn.toString()} satoshis`,
         );
 
         //Blockchain.tracePointers = true;
