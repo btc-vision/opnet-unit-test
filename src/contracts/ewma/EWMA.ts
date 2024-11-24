@@ -158,6 +158,7 @@ export class EWMA extends ContractRuntime {
         result: {
             expectedAmountOut: bigint;
             expectedAmountIn: bigint;
+            currentPrice: bigint;
         };
         response: CallResponse;
     }> {
@@ -179,6 +180,7 @@ export class EWMA extends ContractRuntime {
             result: {
                 expectedAmountOut: reader.readU256(),
                 expectedAmountIn: reader.readU256(),
+                currentPrice: reader.readU256(),
             },
             response: result,
         };
