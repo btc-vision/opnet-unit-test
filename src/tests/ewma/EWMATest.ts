@@ -122,33 +122,7 @@ await opnet('EWMA Contract - getQuote Method Tests', async (vm: OPNetUnit) => {
         );
     }
 
-    /*await vm.it('should return correct estimatedQuantity based on EWMA_V and EWMA_L', async () => {
-        // Set base price p0 = 1,000 satoshis (scaled by ewma.p0ScalingFactor = 10,000)
-        const p0: bigint = liquidityAmount / satoshisIn;
-        await setQuote(p0);
-
-        const initialQuote = await ewma.getQuote(tokenAddress, satoshisIn);
-        vm.debug(
-            `Initial Quote: ${initialQuote.result.expectedAmountOut.toString()} tokens, ${initialQuote.result.expectedAmountIn.toString()} satoshis`,
-        );
-
-        Blockchain.tracePointers = true;
-        const c = await ewma.reserveTicks(
-            tokenAddress,
-            satoshisIn - 100n,
-            minimumAmountOut,
-            minimumLiquidityPerTick,
-            slippage,
-        );
-
-        vm.debugBright(
-            `Reserved ${c.result} tokens for ${satoshisIn} satoshis. Cost $${gas2USD(c.response.usedGas)} USD to reserve.`,
-        );
-
-        Blockchain.tracePointers = false;
-    });*/
-
-    await vm.it('should return correct estimatedQuantity based on EWMA_V and EWMA_L', async () => {
+    await vm.it('should be able to quote and reserve and affect the price', async () => {
         // Set base price p0 = 1,000 satoshis (scaled by ewma.p0ScalingFactor = 10,000)
         const p0: bigint = pLiquidityAmount / satoshisPrice;
         Blockchain.log(`P0 is ${p0}`);
@@ -188,7 +162,6 @@ await opnet('EWMA Contract - getQuote Method Tests', async (vm: OPNetUnit) => {
         vm.debugBright(`Simulating 100 blocks and reserving liquidity`);
 
         const quoteBefore = await ewma.getQuote(tokenAddress, satoshisIn);
-
         for (let s = 0; s < 150; s++) {
             await addLiquidityRandom(liquidityAmount / 2n);
         }
@@ -202,6 +175,8 @@ await opnet('EWMA Contract - getQuote Method Tests', async (vm: OPNetUnit) => {
             `Quote before sell pressure simulation ${quoteBefore.result.currentPrice} uToken per sat: ${quoteBefore.result.expectedAmountOut.toString()} tokens (scaled), ${quoteBefore.result.expectedAmountIn.toString()} satoshis`,
         );
 
+        console.log('whale purchase');
+
         await logPrice();
 
         //Blockchain.tracePointers = true;
@@ -212,10 +187,27 @@ await opnet('EWMA Contract - getQuote Method Tests', async (vm: OPNetUnit) => {
 
         await logPrice();
 
+        console.log('after whale purchase');
+
+        // log blocks with no updates
         await simulateBlocks(1n);
         await logPrice();
+        for (let s = 0; s < 50; s++) {
+            await addLiquidityRandom(liquidityAmount / 2n);
+        }
+        await logPrice();
+        console.log('before block change');
         await simulateBlocks(1n);
         await logPrice();
+        console.log('after block change');
+        //await ewma.reserveTicks(tokenAddress, satoshisIn, minimumAmountOut, slippage);
+        //await logPrice();
+
+        /*console.log('before purchase');
+        await simulateBlocks(1n);
+        await logPrice();
+        console.log('after purchase');*/
+
         await simulateBlocks(1n);
         await logPrice();
         await simulateBlocks(1n);

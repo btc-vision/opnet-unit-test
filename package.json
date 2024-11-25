@@ -23,6 +23,7 @@
         "test:ewma:test": "tsx src/tests/ewma/EWMATest.ts",
         "test:ewma:liquidity": "tsx src/tests/ewma/EWMAAddLiquidity.ts",
         "test:ewma:setQuote": "tsx src/tests/ewma/EWMASetQuote.ts",
+        "test:ewma:simulate": "tsx src/tests/ewma/EWMARealWorldSimulations.ts",
         "test:vm": "tsx src/tests/vm.ts",
         "test": "npm run test:factory && npm run test:gas && npm run test:pool && npm run test:router && npm run test:router2 && npm run test:vm"
     },

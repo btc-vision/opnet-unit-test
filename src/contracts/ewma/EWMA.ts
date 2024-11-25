@@ -167,8 +167,12 @@ export class EWMA extends ContractRuntime {
         calldata.writeAddress(token);
         calldata.writeU256(satoshisIn);
 
+        this.backupStates();
+
         const result = await this.execute(calldata.getBuffer());
         if (result.error) throw this.handleError(result.error);
+
+        this.restoreStates();
 
         const response = result.response;
         if (!response) {
