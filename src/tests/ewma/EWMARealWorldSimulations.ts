@@ -1,5 +1,3 @@
-// realWorldScenariosTests.ts
-
 import { Address } from '@btc-vision/transaction';
 import { Blockchain, OP_20, opnet, OPNetUnit } from '@btc-vision/unit-test-framework';
 import { EWMA } from '../../contracts/ewma/EWMA.js';
@@ -115,9 +113,39 @@ await opnet('EWMA Contract - Real World Scenario Tests', async (vm: OPNetUnit) =
 
         // Add initial liquidity from multiple providers
         const provider = Blockchain.generateRandomAddress();
-        await addLiquidity(provider, pLiquidityAmount);
+        await addLiquidity(provider, BitcoinUtils.expandToDecimals(10, tokenDecimals));
+        await addLiquidity(provider, BitcoinUtils.expandToDecimals(10, tokenDecimals));
 
-        //await simulateBlocks(100n);
+        await simulateBlocks(1n);
+        await logPrice();
+
+        const r2 = await ewma.reserveTicks(tokenAddress, satoshisIn, minimumAmountOut, slippage);
+        await simulateBlocks(1n);
+        await logPrice(minimumAmountOut, BitcoinUtils.formatUnits(r2.result, tokenDecimals));
+
+        await addLiquidity(provider, BitcoinUtils.expandToDecimals(10, tokenDecimals));
+        await logPrice();
+        await simulateBlocks(1n);
+
+        await addLiquidity(provider, BitcoinUtils.expandToDecimals(100000, tokenDecimals));
+        await addLiquidity(provider, BitcoinUtils.expandToDecimals(100000, tokenDecimals));
+        await addLiquidity(provider, BitcoinUtils.expandToDecimals(100000, tokenDecimals));
+        await addLiquidity(provider, BitcoinUtils.expandToDecimals(100000, tokenDecimals));
+        await simulateBlocks(1n);
+
+        await logPrice();
+
+        await ewma.reserveTicks(tokenAddress, satoshisIn, minimumAmountOut, slippage);
+        await logPrice();
+        await simulateBlocks(1n);
+
+        await addLiquidity(provider, BitcoinUtils.expandToDecimals(100000, tokenDecimals));
+        await logPrice();
+
+        await simulateBlocks(1n);
+
+        await ewma.reserveTicks(tokenAddress, satoshisIn, minimumAmountOut, slippage);
+        await logPrice();
 
         //let r = await ewma.reserveTicks(tokenAddress, satoshisIn, minimumAmountOut, slippage);
         //await logPrice(BitcoinUtils.formatUnits(r.result, tokenDecimals));
