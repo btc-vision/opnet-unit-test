@@ -1,5 +1,3 @@
-// getQuoteTests.ts
-
 import { Address } from '@btc-vision/transaction';
 import { Blockchain, OP_20, opnet, OPNetUnit } from '@btc-vision/unit-test-framework';
 import { EWMA } from '../../contracts/ewma/EWMA.js';

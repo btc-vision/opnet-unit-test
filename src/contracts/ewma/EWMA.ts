@@ -81,6 +81,10 @@ export class EWMA extends ContractRuntime {
         `0x${this.abiCoder.encodeSelector('setQuote')}`,
     );
 
+    private readonly verifySignatureSelector: number = Number(
+        `0x${this.abiCoder.encodeSelector('verifySignature')}`,
+    );
+
     public constructor(deployer: Address, address: Address, gasLimit: bigint = 100_000_000_000n) {
         super({
             address: address,
@@ -327,6 +331,23 @@ export class EWMA extends ContractRuntime {
         }
 
         return result;
+    }
+
+    public async verifySignature(signature: Uint8Array, message: Uint8Array): Promise<boolean> {
+        const calldata = new BinaryWriter();
+        calldata.writeSelector(this.verifySignatureSelector);
+        calldata.writeBytesWithLength(signature);
+        calldata.writeBytesWithLength(message);
+
+        const result = await this.execute(calldata.getBuffer());
+        if (result.error) throw this.handleError(result.error);
+
+        const response = result.response;
+        if (!response) {
+            throw new Error('No response from getReserve');
+        }
+
+        return new BinaryReader(response).readBoolean();
     }
 
     protected handleError(error: Error): Error {
