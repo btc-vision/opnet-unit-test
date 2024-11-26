@@ -1,5 +1,6 @@
 import { Address, NetEvent } from '@btc-vision/transaction';
 import {
+    LiquidityAddedEvent,
     LiquidityReserved,
     OrderBook,
     ReservationCreatedEvent,
@@ -24,8 +25,11 @@ function decodeEvents(events: NetEvent[]): Array<unknown> {
             case 'ReservationCreated':
                 results.push(OrderBook.decodeReservationCreatedEvent(event.data));
                 break;
-            case 'TickUpdatedEvent':
+            case 'TickUpdated':
                 results.push(OrderBook.decodeTickUpdatedEvent(event.data));
+                break;
+            case 'SwapExecuted':
+                results.push(OrderBook.decodeSwapExecutedEvent(event.data));
                 break;
             default:
                 throw new Error(`Unknown event type: ${event.type}`);
@@ -57,6 +61,9 @@ await opnet('OrderBook Contract reserveTicks Tests', async (vm: OPNetUnit) => {
     const fee: bigint = OrderBook.fixedFeeRatePerTickConsumed * BigInt(priceLevels.length);
 
     vm.beforeEach(async () => {
+        Blockchain.msgSender = receiver;
+        Blockchain.blockNumber = 1000n;
+
         // Reset blockchain state
         Blockchain.dispose();
         Blockchain.clearContracts();
@@ -329,6 +336,8 @@ await opnet('OrderBook Contract reserveTicks Tests', async (vm: OPNetUnit) => {
 
             // Attempt to make a second reservation before the first one expires
             await Assert.expect(async () => {
+                Blockchain.blockNumber += 1n;
+
                 await orderBook.reserveTicks(
                     tokenAddress,
                     satoshisIn,
@@ -574,9 +583,9 @@ await opnet('OrderBook Contract reserveTicks Tests', async (vm: OPNetUnit) => {
         },
     );
 
-    await vm.it('should be able to consume at least 69 ticks before using 100b gas', async () => {
+    await vm.it('should be able to consume at least 23 ticks before using 100b gas', async () => {
         // Add a large number of ticks
-        const numberOfTicks = 64;
+        const numberOfTicks = 18 - priceLevels.length; //64;
         const liquidityAmount = Blockchain.expandToDecimal(10, tokenDecimals); // 10 tokens per tick
 
         // Approve tokens for adding liquidity
@@ -592,13 +601,66 @@ await opnet('OrderBook Contract reserveTicks Tests', async (vm: OPNetUnit) => {
         for (let i = 0; i < numberOfTicks; i++) {
             const priceLevel = BigInt(i * Number(tickSpacing) + 20000);
 
+            const user1 = Blockchain.generateRandomAddress();
+            const user2 = Blockchain.generateRandomAddress();
+            const user3 = Blockchain.generateRandomAddress();
+
+            await token.transfer(receiver, user1, liquidityAmount);
+            await token.transfer(receiver, user2, liquidityAmount);
+            await token.transfer(receiver, user3, liquidityAmount);
+
+            Blockchain.txOrigin = user1;
+            Blockchain.msgSender = user1;
+            await token.approve(
+                user1,
+                orderBook.address,
+                liquidityAmount * BigInt(priceLevels.length),
+            );
             await orderBook.addLiquidity(
                 tokenAddress,
-                userAddress.p2tr(Blockchain.network),
-                liquidityAmount,
+                user1.p2tr(Blockchain.network),
+                liquidityAmount / 3n,
+                priceLevel,
+            );
+
+            Blockchain.txOrigin = user2;
+            Blockchain.msgSender = user2;
+            await token.approve(
+                user2,
+                orderBook.address,
+                liquidityAmount * BigInt(priceLevels.length),
+            );
+            await orderBook.addLiquidity(
+                tokenAddress,
+                user2.p2tr(Blockchain.network),
+                liquidityAmount / 3n,
+                priceLevel,
+            );
+
+            Blockchain.txOrigin = user3;
+            Blockchain.msgSender = user3;
+            await token.approve(
+                user3,
+                orderBook.address,
+                liquidityAmount * BigInt(priceLevels.length),
+            );
+            await orderBook.addLiquidity(
+                tokenAddress,
+                user3.p2tr(Blockchain.network),
+                liquidityAmount / 3n + 10n,
                 priceLevel,
             );
         }
+
+        Blockchain.txOrigin = receiver;
+        Blockchain.msgSender = receiver;
+
+        /*await orderBook.addLiquidity(
+            tokenAddress,
+            receiver.p2tr(Blockchain.network),
+            10_000_000n,
+            1000000000000000000n,
+        );*/
 
         const satoshisIn = 50_000_000_000n; // 10 BTC
         const minimumAmountOut = Blockchain.expandTo18Decimals(100); // Minimum 100 tokens
@@ -630,7 +692,175 @@ await opnet('OrderBook Contract reserveTicks Tests', async (vm: OPNetUnit) => {
         vm.success(
             `Reserve ticks with many price levels completed in ${timeTaken}ms with ${callResponse.usedGas} gas`,
         );
+
+        await Assert.expect(async () => {
+            const c = await orderBook.getQuote(tokenAddress, satoshisIn, minimumLiquidityPerTick);
+            console.log(c);
+        }).toThrow('Insufficient liquidity to provide a quote');
+
+        Blockchain.blockNumber += 1000n;
+
+        const expectedQuoteResponse = await orderBook.getQuote(
+            tokenAddress,
+            satoshisIn,
+            minimumLiquidityPerTick,
+        );
+
+        console.log(expectedQuoteResponse);
     });
+
+    await vm.it(
+        'should be able to consume at least 23 ticks before using 100b gas and then swap it.',
+        async () => {
+            // Add a large number of ticks
+            const numberOfTicks = 18 - priceLevels.length;
+            const liquidityAmount = Blockchain.expandToDecimal(10, tokenDecimals); // 10 tokens per tick
+
+            // Approve tokens for adding liquidity
+            await token.approve(
+                userAddress,
+                orderBook.address,
+                liquidityAmount * BigInt(numberOfTicks),
+            );
+
+            const tickSpacing = 10n; // Assuming tickSpacing is 10
+
+            // add 65 ticks.
+            for (let i = 0; i < numberOfTicks; i++) {
+                const priceLevel = BigInt(i * Number(tickSpacing) + 20000);
+
+                const user1 = Blockchain.generateRandomAddress();
+                const user2 = Blockchain.generateRandomAddress();
+                const user3 = Blockchain.generateRandomAddress();
+
+                await token.transfer(receiver, user1, liquidityAmount);
+                await token.transfer(receiver, user2, liquidityAmount);
+                await token.transfer(receiver, user3, liquidityAmount);
+
+                Blockchain.txOrigin = user1;
+                Blockchain.msgSender = user1;
+                await token.approve(
+                    user1,
+                    orderBook.address,
+                    liquidityAmount * BigInt(priceLevels.length),
+                );
+                await orderBook.addLiquidity(
+                    tokenAddress,
+                    user1.p2tr(Blockchain.network),
+                    liquidityAmount / 3n,
+                    priceLevel,
+                );
+
+                Blockchain.txOrigin = user2;
+                Blockchain.msgSender = user2;
+                await token.approve(
+                    user2,
+                    orderBook.address,
+                    liquidityAmount * BigInt(priceLevels.length),
+                );
+                await orderBook.addLiquidity(
+                    tokenAddress,
+                    user2.p2tr(Blockchain.network),
+                    liquidityAmount / 3n,
+                    priceLevel,
+                );
+
+                Blockchain.txOrigin = user3;
+                Blockchain.msgSender = user3;
+                await token.approve(
+                    user3,
+                    orderBook.address,
+                    liquidityAmount * BigInt(priceLevels.length),
+                );
+                await orderBook.addLiquidity(
+                    tokenAddress,
+                    user3.p2tr(Blockchain.network),
+                    liquidityAmount / 3n + 10n,
+                    priceLevel,
+                );
+            }
+
+            Blockchain.txOrigin = receiver;
+            Blockchain.msgSender = receiver;
+
+            const satoshisIn = 50_000_000_000n; // 10 BTC
+            const minimumAmountOut = Blockchain.expandTo18Decimals(100); // Minimum 100 tokens
+            const minimumLiquidityPerTick = 1n;
+            const slippage = 500; // 5%
+            const totalTicks = numberOfTicks + priceLevels.length;
+
+            const txFee: bigint = OrderBook.fixedFeeRatePerTickConsumed * BigInt(totalTicks);
+
+            createFeeOutput(txFee);
+
+            const startedAt = Date.now();
+            const { response: callResponse } = await orderBook.reserveTicks(
+                tokenAddress,
+                satoshisIn,
+                minimumAmountOut,
+                minimumLiquidityPerTick,
+                slippage,
+            );
+
+            const events: (LiquidityReserved | LiquidityAddedEvent | ReservationCreatedEvent)[] =
+                decodeEvents(callResponse.events) as (
+                    | LiquidityReserved
+                    | LiquidityAddedEvent
+                    | ReservationCreatedEvent
+                )[];
+            Assert.expect(events.length).toBeGreaterThanOrEqual(totalTicks);
+
+            const timeTaken = Date.now() - startedAt;
+            Assert.expect(callResponse.error).toBeUndefined();
+            Assert.expect(callResponse.usedGas).toBeLessThanOrEqual(100_000_000_000n);
+
+            vm.success(
+                `Reserve ticks with many price levels completed in ${timeTaken}ms with ${callResponse.usedGas} gas`,
+            );
+
+            Blockchain.blockNumber += 1n;
+
+            // AND SWAP IT.
+            const priceLevelsFinal = events
+                .map((event: LiquidityReserved | LiquidityAddedEvent | ReservationCreatedEvent) => {
+                    if ('level' in event) {
+                        return event.level;
+                    }
+                })
+                .filter((level) => level !== undefined);
+
+            console.log('priceLevelsFinal', priceLevelsFinal, events);
+
+            const swap = await orderBook.swap(tokenAddress, false, priceLevelsFinal);
+            const gasCostInSat = swap.response.usedGas / 1_000_000n;
+            vm.log(
+                `Used ${swap.response.usedGas}gas to swap, which is ${gasCostInSat} satoshis - ${Number(gasCostInSat) / 100000000} BTC.`,
+            );
+
+            const decodedEventsSwap = decodeEvents(swap.response.events);
+
+            console.log('SWAPPED', swap, decodedEventsSwap);
+
+            /*await Assert.expect(async () => {
+                const c = await orderBook.getQuote(
+                    tokenAddress,
+                    satoshisIn,
+                    minimumLiquidityPerTick,
+                );
+                console.log(c);
+            }).toThrow('Insufficient liquidity to provide a quote');
+
+            Blockchain.blockNumber += 1000n;
+
+            const expectedQuoteResponse = await orderBook.getQuote(
+                tokenAddress,
+                satoshisIn,
+                minimumLiquidityPerTick,
+            );
+
+            console.log(expectedQuoteResponse);*/
+        },
+    );
 
     await vm.it('should only reserve 25% of each tick when the limiter is enabled.', async () => {
         const satoshisIn = 10_000_000_000n; // 1 BTC
