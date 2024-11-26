@@ -34,12 +34,6 @@ export interface TickUpdatedEvent {
     readonly acquiredAmount: bigint;
 }
 
-export interface TickReserve {
-    readonly totalLiquidity: bigint;
-    readonly totalReserved: bigint;
-    readonly availableLiquidity: bigint;
-}
-
 export interface LiquidityReserved {
     readonly amount: bigint;
     readonly index: bigint;
@@ -122,7 +116,7 @@ export class EWMA extends ContractRuntime {
     public static decodeLiquidityRemovedEvent(data: Uint8Array): LiquidityRemovedEvent {
         const reader = new BinaryReader(data);
         const token = reader.readAddress();
-        const amount = reader.readU256();
+        const amount = reader.readU128();
         const liquidityAmount = reader.readU256();
         return { token, amount, liquidityAmount };
     }
