@@ -171,7 +171,9 @@ await opnet('EWMA Contract addLiquidity Tests', async (vm: OPNetUnit) => {
         console.log(decodedAddedLiquidityEvent);
 
         Assert.expect(decodedAddedLiquidityEvent.totalLiquidity).toEqual(amountIn);
-        Assert.expect(decodedAddedLiquidityEvent.receiver).toEqual(userAddress.toString());
+        Assert.expect(decodedAddedLiquidityEvent.receiver).toEqual(
+            userAddress.p2tr(Blockchain.network),
+        );
 
         // Verify that the total reserves have been updated
         const reserve = await ewma.getReserve(tokenAddress);
