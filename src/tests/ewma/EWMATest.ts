@@ -53,6 +53,11 @@ await opnet('EWMA Contract - getQuote Method Tests', async (vm: OPNetUnit) => {
         Blockchain.register(ewma);
         await ewma.init();
 
+        // Set base price p0 = 1,000 satoshis (scaled by ewma.p0ScalingFactor = 10,000)
+        const p0: bigint = pLiquidityAmount / satoshisPrice;
+        Blockchain.log(`P0 is ${p0}`);
+        await setQuote(p0);
+
         // Add liquidity
         await addLiquidityRandom();
     });
@@ -121,11 +126,6 @@ await opnet('EWMA Contract - getQuote Method Tests', async (vm: OPNetUnit) => {
     }
 
     await vm.it('should be able to quote and reserve and affect the price', async () => {
-        // Set base price p0 = 1,000 satoshis (scaled by ewma.p0ScalingFactor = 10,000)
-        const p0: bigint = pLiquidityAmount / satoshisPrice;
-        Blockchain.log(`P0 is ${p0}`);
-        await setQuote(p0);
-
         const initialQuote = await ewma.getQuote(tokenAddress, satoshisIn);
         vm.debug(
             `Initial Price: ${initialQuote.result.currentPrice}, Quote: ${initialQuote.result.expectedAmountOut.toString()} tokens, ${initialQuote.result.expectedAmountIn.toString()} satoshis`,
