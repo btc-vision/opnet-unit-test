@@ -167,7 +167,7 @@ await opnet('EWMA Contract - getQuote Method Tests', async (vm: OPNetUnit) => {
             console.log(r.result, t, Date.now() - took);
         }
         await simulateBlocks(1n);
-        for (let i = 0; i < 2; i++) {
+        for (let i = 0; i < 4; i++) {
             const r = await randomReserve(5_000_000n);
             t += r.result;
             totalSpent += r.response.usedGas;

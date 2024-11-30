@@ -218,7 +218,7 @@ export class EWMA extends ContractRuntime {
         token: Address,
         receiver: string,
         maximumAmountIn: bigint,
-        priorityQueue: boolean = true, // lose 3% in fees
+        priorityQueue: boolean = false, // lose 3% in fees
     ): Promise<CallResponse> {
         const calldata = new BinaryWriter();
         calldata.writeSelector(this.addLiquiditySelector);
