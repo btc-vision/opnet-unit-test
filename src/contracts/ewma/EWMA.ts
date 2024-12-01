@@ -1,4 +1,4 @@
-import { Address, BinaryReader, BinaryWriter } from '@btc-vision/transaction';
+import { Address, BinaryReader, BinaryWriter, NetEvent } from '@btc-vision/transaction';
 import { BytecodeManager, CallResponse, ContractRuntime } from '@btc-vision/unit-test-framework';
 
 // Define interfaces for events
@@ -41,6 +41,17 @@ export interface LiquidityReserved {
 export interface Reserve {
     readonly liquidity: bigint;
     readonly reserved: bigint;
+}
+
+export interface Recipient {
+    readonly address: string;
+    readonly amount: bigint;
+}
+
+export interface DecodedReservation {
+    readonly recipients: Recipient[];
+    reservation?: ReservationCreatedEvent;
+    totalSatoshis: bigint;
 }
 
 export class EWMA extends ContractRuntime {
@@ -93,11 +104,11 @@ export class EWMA extends ContractRuntime {
         this.preserveState();
     }
 
-    public static decodeLiquidityReservedEvent(data: Uint8Array): LiquidityReserved {
+    public static decodeLiquidityReservedEvent(data: Uint8Array): Recipient {
         const reader = new BinaryReader(data);
         const depositAddress = reader.readStringWithLength();
         const amount = reader.readU128();
-        return { depositAddress, amount };
+        return { address: depositAddress, amount };
     }
 
     // Event decoders
@@ -187,7 +198,7 @@ export class EWMA extends ContractRuntime {
     }
 
     // Method to reserve ticks
-    public async reserveTicks(
+    public async reserve(
         token: Address,
         maximumAmountIn: bigint,
         minimumAmountOut: bigint,
@@ -267,17 +278,44 @@ export class EWMA extends ContractRuntime {
         };
     }
 
+    public decodeReservationEvents(events: NetEvent[]): DecodedReservation {
+        const e: DecodedReservation = {
+            recipients: [],
+            totalSatoshis: 0n,
+        };
+
+        for (let i = 0; i < events.length; i++) {
+            const event = events[i];
+            switch (event.type) {
+                case 'LiquidityReserved': {
+                    const recipient = EWMA.decodeLiquidityReservedEvent(event.data);
+                    e.totalSatoshis += recipient.amount;
+
+                    e.recipients.push(recipient);
+                    break;
+                }
+                case 'ReservationCreated': {
+                    e.reservation = EWMA.decodeReservationCreatedEvent(event.data);
+                    break;
+                }
+                default: {
+                    throw new Error(`Unknown event type: ${event.type}`);
+                }
+            }
+        }
+
+        return e;
+    }
+
     // Method to execute a swap
     public async swap(
         token: Address,
-        isSimulation: boolean,
-        levels: bigint[],
+        isSimulation: boolean = false,
     ): Promise<{ result: boolean; response: CallResponse }> {
         const calldata = new BinaryWriter();
         calldata.writeSelector(this.swapSelector);
         calldata.writeAddress(token);
         calldata.writeBoolean(isSimulation);
-        calldata.writeU128Array(levels);
 
         const result = await this.execute(calldata.getBuffer());
         if (result.error) throw this.handleError(result.error);

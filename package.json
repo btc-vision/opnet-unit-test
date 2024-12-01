@@ -25,6 +25,7 @@
         "test:ewma:setQuote": "tsx src/tests/ewma/EWMASetQuote.ts",
         "test:ewma:simulate": "tsx src/tests/ewma/EWMARealWorldSimulations.ts",
         "test:ewma:purge": "tsx src/tests/ewma/EWMAPurge.ts",
+        "test:ewma:swap": "tsx src/tests/ewma/EWMASwap.ts",
         "test:schnorr": "tsx src/tests/common/schnorr.ts",
         "test": "npm run test:factory && npm run test:gas && npm run test:pool && npm run test:router && npm run test:router2 && npm run test:vm"
     },

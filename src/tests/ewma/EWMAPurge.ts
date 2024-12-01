@@ -128,7 +128,7 @@ await opnet('EWMA Contract - getQuote Method Tests', async (vm: OPNetUnit) => {
         Blockchain.txOrigin = provider;
         Blockchain.msgSender = provider;
 
-        const r = await ewma.reserveTicks(tokenAddress, amount, minimumAmountOut);
+        const r = await ewma.reserve(tokenAddress, amount, minimumAmountOut);
 
         Blockchain.txOrigin = userAddress;
         Blockchain.msgSender = userAddress;
@@ -180,7 +180,7 @@ await opnet('EWMA Contract - getQuote Method Tests', async (vm: OPNetUnit) => {
         );
 
         await logPrice();
-        const r = await ewma.reserveTicks(tokenAddress, satoshisIn, minimumAmountOut);
+        const r = await ewma.reserve(tokenAddress, satoshisIn, minimumAmountOut);
         //t += r.result;
         console.log(
             `Cost in gas: ${gas2BTC(r.response.usedGas)} BTC - ${gas2USD(r.response.usedGas)} USD`,
