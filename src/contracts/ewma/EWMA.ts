@@ -61,6 +61,7 @@ export class EWMA extends ContractRuntime {
 
     public static readonly invalidAfter: bigint = 5n;
 
+    public static fixedFeeRatePerTickConsumed: bigint = 10_000n; // The fixed fee rate per tick consumed.
     public static reservationFeePerProvider: bigint = 4_000n; // The fixed fee rate per tick consumed.
     public readonly minimumSatForTickReservation: bigint = 10_000n;
     public readonly minimumLiquidityForTickReservation: bigint = 1_000_000n;

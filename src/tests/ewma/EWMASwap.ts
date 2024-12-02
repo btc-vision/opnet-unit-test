@@ -1,7 +1,7 @@
 import { Address } from '@btc-vision/transaction';
 import { Blockchain, CallResponse, OP_20, opnet, OPNetUnit } from '@btc-vision/unit-test-framework';
 import { EWMA } from '../../contracts/ewma/EWMA.js';
-import { gas2BTC, gas2Sat, gas2USD } from '../orderbook/utils/OrderBookUtils.js';
+import { createFeeOutput, gas2BTC, gas2Sat, gas2USD } from '../orderbook/utils/OrderBookUtils.js';
 import { BitcoinUtils } from 'opnet';
 import { createRecipientUTXOs } from './utils/UTXOSimulator.js';
 
@@ -76,6 +76,7 @@ await opnet('EWMA Contract - getQuote Method Tests', async (vm: OPNetUnit) => {
         // Provider adds liquidity
         Blockchain.txOrigin = provider;
         Blockchain.msgSender = provider;
+
         await ewma.addLiquidity(
             tokenAddress,
             provider.p2tr(Blockchain.network),
@@ -92,7 +93,6 @@ await opnet('EWMA Contract - getQuote Method Tests', async (vm: OPNetUnit) => {
         Blockchain.msgSender = userAddress;
 
         const quote = await ewma.setQuote(tokenAddress, p0);
-
         vm.debug(
             `Quote set! Gas cost: ${gas2Sat(quote.usedGas)} sat (${gas2BTC(quote.usedGas)} BTC, $${gas2USD(quote.usedGas)})`,
         );
@@ -125,8 +125,9 @@ await opnet('EWMA Contract - getQuote Method Tests', async (vm: OPNetUnit) => {
         Blockchain.txOrigin = provider;
         Blockchain.msgSender = provider;
 
-        const r = await ewma.reserve(tokenAddress, amount, minimumAmountOut);
+        createFeeOutput(EWMA.fixedFeeRatePerTickConsumed);
 
+        const r = await ewma.reserve(tokenAddress, amount, minimumAmountOut);
         Blockchain.txOrigin = userAddress;
         Blockchain.msgSender = userAddress;
 
@@ -166,6 +167,8 @@ await opnet('EWMA Contract - getQuote Method Tests', async (vm: OPNetUnit) => {
         await simulateBlocks(1n);
         await logPrice();
 
+        createFeeOutput(EWMA.fixedFeeRatePerTickConsumed);
+
         const reserve2 = await ewma.reserve(tokenAddress, 10_000_000n, 30000000000000000000n);
         vm.debug(
             `Reserve: ${reserve2.result.toString()} tokens, ${reserve2.response.usedGas.toString()} gas, cost $${gas2USD(reserve2.response.usedGas)} USD`,
@@ -178,10 +181,10 @@ await opnet('EWMA Contract - getQuote Method Tests', async (vm: OPNetUnit) => {
         const decodedReservation2 = ewma.decodeReservationEvents(reserve2.response.events);
         createRecipientUTXOs(decodedReservation2.recipients);
 
-        Blockchain.tracePointers = true;
+        // Blockchain.tracePointers = true;
         const swap = await ewma.swap(tokenAddress);
-        Blockchain.tracePointers = false;
-        
+        // Blockchain.tracePointers = false;
+
         const events = swap.response.events;
         console.log('events', events);
 
