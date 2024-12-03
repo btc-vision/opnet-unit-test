@@ -119,7 +119,7 @@ await opnet('EWMA Contract - Real World Scenario Tests', async (vm: OPNetUnit) =
         await simulateBlocks(1n);
         await logPrice();
 
-        const r2 = await ewma.reserve(tokenAddress, satoshisIn, minimumAmountOut, slippage);
+        const r2 = await ewma.reserve(tokenAddress, satoshisIn, minimumAmountOut);
         await simulateBlocks(1n);
         await logPrice(minimumAmountOut, BitcoinUtils.formatUnits(r2.result, tokenDecimals));
 
@@ -135,7 +135,7 @@ await opnet('EWMA Contract - Real World Scenario Tests', async (vm: OPNetUnit) =
 
         await logPrice();
 
-        await ewma.reserve(tokenAddress, satoshisIn, minimumAmountOut, slippage);
+        await ewma.reserve(tokenAddress, satoshisIn, minimumAmountOut);
         await logPrice();
         await simulateBlocks(1n);
 
@@ -144,7 +144,7 @@ await opnet('EWMA Contract - Real World Scenario Tests', async (vm: OPNetUnit) =
 
         await simulateBlocks(1n);
 
-        await ewma.reserve(tokenAddress, satoshisIn, minimumAmountOut, slippage);
+        await ewma.reserve(tokenAddress, satoshisIn, minimumAmountOut);
         await logPrice();
 
         //let r = await ewma.reserveTicks(tokenAddress, satoshisIn, minimumAmountOut, slippage);
@@ -164,12 +164,7 @@ await opnet('EWMA Contract - Real World Scenario Tests', async (vm: OPNetUnit) =
 
             const satoshisToSpend = satoshisIn / BigInt(30 - i + 1);
             const nSatoshisToSpend = satoshisIn / BigInt(29 - i + 1);
-            const r = await ewma.reserve(
-                tokenAddress,
-                satoshisToSpend,
-                pLiquidityAmount,
-                slippage,
-            );
+            const r = await ewma.reserve(tokenAddress, satoshisToSpend, pLiquidityAmount);
             await logPrice(nSatoshisToSpend, BitcoinUtils.formatUnits(r.result, tokenDecimals));
             await simulateBlocks(1n); // Advance one block
 
