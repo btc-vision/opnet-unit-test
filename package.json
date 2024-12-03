@@ -24,6 +24,8 @@
         "test:ewma:liquidity": "tsx src/tests/ewma/EWMAAddLiquidity.ts",
         "test:ewma:setQuote": "tsx src/tests/ewma/EWMASetQuote.ts",
         "test:ewma:simulate": "tsx src/tests/ewma/EWMARealWorldSimulations.ts",
+        "test:ewma:purge": "tsx src/tests/ewma/EWMAPurge.ts",
+        "test:ewma:swap": "tsx src/tests/ewma/EWMASwap.ts",
         "test:schnorr": "tsx src/tests/common/schnorr.ts",
         "test": "npm run test:factory && npm run test:gas && npm run test:pool && npm run test:router && npm run test:router2 && npm run test:vm"
     },
@@ -32,8 +34,7 @@
     "dependencies": {
         "@btc-vision/bitcoin": "^6.3.0",
         "@btc-vision/logger": "^1.0.6",
-        "@btc-vision/transaction": "file:../transaction",
-        "@btc-vision/unit-test-framework": "^0.0.9",
+        "@btc-vision/unit-test-framework": "^0.0.10",
         "gulp-logger-new": "^1.0.1",
         "npm-run-all": "^4.1.5",
         "opnet": "^1.1.24"

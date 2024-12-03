@@ -1,4 +1,4 @@
-import { Address, BinaryReader, BinaryWriter } from '@btc-vision/transaction';
+import { Address, BinaryReader, BinaryWriter, NetEvent } from '@btc-vision/transaction';
 import { BytecodeManager, CallResponse, ContractRuntime } from '@btc-vision/unit-test-framework';
 
 // Define interfaces for events
@@ -8,9 +8,8 @@ export interface LiquidityAddedEvent {
 }
 
 export interface ReservationCreatedEvent {
-    readonly reservationId: bigint;
     readonly expectedAmountOut: bigint;
-    readonly buyer: Address;
+    readonly totalSatoshis: bigint;
 }
 
 export interface LiquidityRemovedEvent {
@@ -35,13 +34,24 @@ export interface TickUpdatedEvent {
 }
 
 export interface LiquidityReserved {
+    readonly depositAddress: string;
     readonly amount: bigint;
-    readonly index: bigint;
 }
 
 export interface Reserve {
     readonly liquidity: bigint;
     readonly reserved: bigint;
+}
+
+export interface Recipient {
+    readonly address: string;
+    readonly amount: bigint;
+}
+
+export interface DecodedReservation {
+    readonly recipients: Recipient[];
+    reservation?: ReservationCreatedEvent;
+    totalSatoshis: bigint;
 }
 
 export class EWMA extends ContractRuntime {
@@ -51,6 +61,7 @@ export class EWMA extends ContractRuntime {
 
     public static readonly invalidAfter: bigint = 5n;
 
+    public static fixedFeeRatePerTickConsumed: bigint = 10_000n; // The fixed fee rate per tick consumed.
     public static reservationFeePerProvider: bigint = 4_000n; // The fixed fee rate per tick consumed.
     public readonly minimumSatForTickReservation: bigint = 10_000n;
     public readonly minimumLiquidityForTickReservation: bigint = 1_000_000n;
@@ -94,11 +105,11 @@ export class EWMA extends ContractRuntime {
         this.preserveState();
     }
 
-    public static decodeLiquidityReservedEvent(data: Uint8Array): LiquidityReserved {
+    public static decodeLiquidityReservedEvent(data: Uint8Array): Recipient {
         const reader = new BinaryReader(data);
-        const amount = reader.readU256();
-        const index = reader.readU64();
-        return { amount, index };
+        const depositAddress = reader.readStringWithLength();
+        const amount = reader.readU128();
+        return { address: depositAddress, amount };
     }
 
     // Event decoders
@@ -111,10 +122,9 @@ export class EWMA extends ContractRuntime {
 
     public static decodeReservationCreatedEvent(data: Uint8Array): ReservationCreatedEvent {
         const reader = new BinaryReader(data);
-        const reservationId = reader.readU256();
         const expectedAmountOut = reader.readU256();
-        const buyer = reader.readAddress();
-        return { reservationId, expectedAmountOut, buyer };
+        const totalSatoshis = reader.readU256();
+        return { expectedAmountOut, totalSatoshis };
     }
 
     public static decodeLiquidityRemovedEvent(data: Uint8Array): LiquidityRemovedEvent {
@@ -189,18 +199,16 @@ export class EWMA extends ContractRuntime {
     }
 
     // Method to reserve ticks
-    public async reserveTicks(
+    public async reserve(
         token: Address,
         maximumAmountIn: bigint,
         minimumAmountOut: bigint,
-        slippage: number,
     ): Promise<{ result: bigint; response: CallResponse }> {
         const calldata = new BinaryWriter();
         calldata.writeSelector(this.reserveTicksSelector);
         calldata.writeAddress(token);
         calldata.writeU256(maximumAmountIn);
         calldata.writeU256(minimumAmountOut);
-        calldata.writeU16(slippage);
 
         const result = await this.execute(calldata.getBuffer());
         if (result.error) throw this.handleError(result.error);
@@ -222,12 +230,14 @@ export class EWMA extends ContractRuntime {
         token: Address,
         receiver: string,
         maximumAmountIn: bigint,
+        priorityQueue: boolean = false, // lose 3% in fees
     ): Promise<CallResponse> {
         const calldata = new BinaryWriter();
         calldata.writeSelector(this.addLiquiditySelector);
         calldata.writeAddress(token);
         calldata.writeStringWithLength(receiver); // Assuming receiver is converted to string
         calldata.writeU128(maximumAmountIn);
+        calldata.writeBoolean(priorityQueue);
 
         const result = await this.execute(calldata.getBuffer());
         if (result.error) throw this.handleError(result.error);
@@ -269,17 +279,44 @@ export class EWMA extends ContractRuntime {
         };
     }
 
+    public decodeReservationEvents(events: NetEvent[]): DecodedReservation {
+        const e: DecodedReservation = {
+            recipients: [],
+            totalSatoshis: 0n,
+        };
+
+        for (let i = 0; i < events.length; i++) {
+            const event = events[i];
+            switch (event.type) {
+                case 'LiquidityReserved': {
+                    const recipient = EWMA.decodeLiquidityReservedEvent(event.data);
+                    e.totalSatoshis += recipient.amount;
+
+                    e.recipients.push(recipient);
+                    break;
+                }
+                case 'ReservationCreated': {
+                    e.reservation = EWMA.decodeReservationCreatedEvent(event.data);
+                    break;
+                }
+                default: {
+                    throw new Error(`Unknown event type: ${event.type}`);
+                }
+            }
+        }
+
+        return e;
+    }
+
     // Method to execute a swap
     public async swap(
         token: Address,
-        isSimulation: boolean,
-        levels: bigint[],
+        isSimulation: boolean = false,
     ): Promise<{ result: boolean; response: CallResponse }> {
         const calldata = new BinaryWriter();
         calldata.writeSelector(this.swapSelector);
         calldata.writeAddress(token);
         calldata.writeBoolean(isSimulation);
-        calldata.writeU128Array(levels);
 
         const result = await this.execute(calldata.getBuffer());
         if (result.error) throw this.handleError(result.error);

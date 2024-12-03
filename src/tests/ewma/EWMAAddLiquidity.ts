@@ -9,6 +9,7 @@ import {
     TransferEvent,
 } from '@btc-vision/unit-test-framework';
 import { EWMA, LiquidityAddedEvent } from '../../contracts/ewma/EWMA.js';
+import { gas2BTC, gas2Sat, gas2USD } from '../orderbook/utils/OrderBookUtils.js';
 
 const receiver: Address = Blockchain.generateRandomAddress();
 
@@ -41,6 +42,21 @@ await opnet('EWMA Contract addLiquidity Tests', async (vm: OPNetUnit) => {
     const tokenAddress: Address = Blockchain.generateRandomAddress();
     const ewmaAddress: Address = Blockchain.generateRandomAddress();
 
+    /**
+     * Helper function to set the base price (p0) in the EWMA contract.
+     * @param p0 - Base price in satoshis, scaled by ewma.p0ScalingFactor.
+     */
+    async function setQuote(p0: bigint): Promise<void> {
+        Blockchain.txOrigin = userAddress;
+        Blockchain.msgSender = userAddress;
+
+        const quote = await ewma.setQuote(tokenAddress, p0);
+
+        vm.debug(
+            `Quote set! Gas cost: ${gas2Sat(quote.usedGas)} sat (${gas2BTC(quote.usedGas)} BTC, $${gas2USD(quote.usedGas)})`,
+        );
+    }
+
     vm.beforeEach(async () => {
         // Reset blockchain state
         Blockchain.dispose();
@@ -70,6 +86,8 @@ await opnet('EWMA Contract addLiquidity Tests', async (vm: OPNetUnit) => {
 
         // Set msgSender to the user
         Blockchain.msgSender = userAddress;
+
+        await setQuote(Blockchain.expandToDecimal(1, 8));
     });
 
     vm.afterEach(() => {
@@ -171,7 +189,9 @@ await opnet('EWMA Contract addLiquidity Tests', async (vm: OPNetUnit) => {
         console.log(decodedAddedLiquidityEvent);
 
         Assert.expect(decodedAddedLiquidityEvent.totalLiquidity).toEqual(amountIn);
-        Assert.expect(decodedAddedLiquidityEvent.receiver).toEqual(userAddress.toString());
+        Assert.expect(decodedAddedLiquidityEvent.receiver).toEqual(
+            userAddress.p2tr(Blockchain.network),
+        );
 
         // Verify that the total reserves have been updated
         const reserve = await ewma.getReserve(tokenAddress);
@@ -258,6 +278,17 @@ await opnet('EWMA Contract addLiquidity Tests', async (vm: OPNetUnit) => {
     const tokenAddress: Address = Blockchain.generateRandomAddress();
     const ewmaAddress: Address = Blockchain.generateRandomAddress();
 
+    async function setQuote(p0: bigint): Promise<void> {
+        Blockchain.txOrigin = userAddress;
+        Blockchain.msgSender = userAddress;
+
+        const quote = await ewma.setQuote(tokenAddress, p0);
+
+        vm.debug(
+            `Quote set! Gas cost: ${gas2Sat(quote.usedGas)} sat (${gas2BTC(quote.usedGas)} BTC, $${gas2USD(quote.usedGas)})`,
+        );
+    }
+
     vm.beforeEach(async () => {
         // Reset blockchain state
         Blockchain.dispose();
@@ -287,6 +318,8 @@ await opnet('EWMA Contract addLiquidity Tests', async (vm: OPNetUnit) => {
 
         // Set msgSender to the user
         Blockchain.msgSender = userAddress;
+
+        await setQuote(1n);
     });
 
     vm.afterEach(() => {
