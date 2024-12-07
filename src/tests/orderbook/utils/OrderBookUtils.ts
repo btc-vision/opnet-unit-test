@@ -6,6 +6,7 @@ import {
     TransactionOutput,
 } from '@btc-vision/unit-test-framework';
 import { LiquidityReserved, OrderBook } from '../../../contracts/order-book/OrderBook.js';
+import { Recipient } from '../../../contracts/ewma/EWMA.js';
 
 export function generateEmptyTransaction(): Transaction {
     const txId = generateTransactionId();
@@ -20,6 +21,16 @@ export function createFeeOutput(value: bigint): void {
     // Create a new transaction.
     const tx: Transaction = generateEmptyTransaction();
     tx.addOutput(value, OrderBook.feeRecipient);
+
+    Blockchain.transaction = tx;
+}
+
+export function createRecipientsOutput(recipients: Recipient[]): void {
+    // Create a new transaction.
+    const tx: Transaction = generateEmptyTransaction();
+    for (const recipient of recipients) {
+        tx.addOutput(recipient.amount, recipient.address);
+    }
 
     Blockchain.transaction = tx;
 }

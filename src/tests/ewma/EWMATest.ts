@@ -1,7 +1,12 @@
 import { Address } from '@btc-vision/transaction';
-import { Blockchain, OP_20, opnet, OPNetUnit } from '@btc-vision/unit-test-framework';
-import { EWMA } from '../../contracts/ewma/EWMA.js';
-import { gas2BTC, gas2Sat, gas2USD } from '../orderbook/utils/OrderBookUtils.js';
+import { Blockchain, CallResponse, OP_20, opnet, OPNetUnit } from '@btc-vision/unit-test-framework';
+import { EWMA, Recipient } from '../../contracts/ewma/EWMA.js';
+import {
+    createRecipientsOutput,
+    gas2BTC,
+    gas2Sat,
+    gas2USD,
+} from '../orderbook/utils/OrderBookUtils.js';
 import { BitcoinUtils } from 'opnet';
 
 await opnet('EWMA Contract - getQuote Method Tests', async (vm: OPNetUnit) => {
@@ -18,15 +23,7 @@ await opnet('EWMA Contract - getQuote Method Tests', async (vm: OPNetUnit) => {
     const satoshisPrice: bigint = 400_000n; // 0.001 BTC
 
     const satoshisIn: bigint = 1_000_000n; // 0.001 BTC
-
-    const providerCount: bigint = 10n;
-    const fee: bigint = EWMA.reservationFeePerProvider * providerCount;
-
     const minimumAmountOut: bigint = Blockchain.expandToDecimal(10, tokenDecimals); // Minimum 10 tokens
-    const minimumLiquidityPerTick: bigint = 10n;
-    const slippage: number = 100; // 1%
-
-    const DECIMALS: bigint = 10_000n; // Define the scaling factor
 
     vm.beforeEach(async () => {
         // Reset blockchain state
@@ -125,6 +122,53 @@ await opnet('EWMA Contract - getQuote Method Tests', async (vm: OPNetUnit) => {
         );
     }
 
+    let toSwap: { a: Address; r: Recipient[] }[] = [];
+
+    async function randomReserve(
+        amount: bigint,
+    ): Promise<{ result: bigint; response: CallResponse }> {
+        const provider = Blockchain.generateRandomAddress();
+        Blockchain.txOrigin = provider;
+        Blockchain.msgSender = provider;
+
+        const r = await ewma.reserve(tokenAddress, amount, minimumAmountOut);
+        const decoded = ewma.decodeReservationEvents(r.response.events);
+        toSwap.push({
+            a: provider,
+            r: decoded.recipients,
+        });
+
+        Blockchain.txOrigin = userAddress;
+        Blockchain.msgSender = userAddress;
+
+        return r;
+    }
+
+    async function swapAll(): Promise<void> {
+        for (let i = 0; i < toSwap.length; i++) {
+            const reservation = toSwap[i];
+            const provider = reservation.a;
+            const r = reservation.r;
+
+            Blockchain.txOrigin = provider;
+            Blockchain.msgSender = provider;
+
+            createRecipientsOutput(r);
+
+            const s = await ewma.swap(tokenAddress, false);
+            const decoded = EWMA.decodeSwapExecutedEvent(
+                s.response.events[s.response.events.length - 1].data,
+            );
+            console.log(decoded);
+            vm.log(`Swapped`);
+        }
+
+        Blockchain.txOrigin = userAddress;
+        Blockchain.msgSender = userAddress;
+
+        toSwap = [];
+    }
+
     await vm.it('should be able to quote and reserve and affect the price', async () => {
         const initialQuote = await ewma.getQuote(tokenAddress, satoshisIn);
         vm.debug(
@@ -134,21 +178,22 @@ await opnet('EWMA Contract - getQuote Method Tests', async (vm: OPNetUnit) => {
         await logPrice();
 
         // Simulate a buy operation that affects EWMA_V
-        await ewma.reserve(tokenAddress, satoshisIn, minimumAmountOut);
+        await randomReserve(satoshisIn);
+
+        await simulateBlocks(1n);
+        await swapAll();
 
         // Simulate block progression to apply EWMA updates
         for (let s = 0; s < 10; s++) {
             await simulateBlocks(1n);
-
             await addLiquidityRandom();
-
             await logPrice();
         }
 
         await simulateBlocks(10n);
         vm.debugBright(`Simulating 10 blocks and reserving liquidity`);
 
-        const c = await ewma.reserve(tokenAddress, satoshisIn, minimumAmountOut);
+        const c = await randomReserve(satoshisIn);
 
         // new quote
         const quote = await ewma.getQuote(tokenAddress, satoshisIn);
@@ -178,7 +223,7 @@ await opnet('EWMA Contract - getQuote Method Tests', async (vm: OPNetUnit) => {
         await logPrice();
 
         //Blockchain.tracePointers = true;
-        const c2 = await ewma.reserve(tokenAddress, satoshisIn, minimumAmountOut);
+        const c2 = await randomReserve(satoshisIn);
         vm.debug(
             `Reserved ${BitcoinUtils.formatUnits(c2.result, tokenDecimals)} tokens for ${satoshisIn} satoshis. Cost $${gas2USD(c2.response.usedGas)} USD to reserve.`,
         );

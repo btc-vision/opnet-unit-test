@@ -1,7 +1,7 @@
 import { Address } from '@btc-vision/transaction';
-import { Blockchain, OP_20, opnet, OPNetUnit } from '@btc-vision/unit-test-framework';
+import { Blockchain, CallResponse, OP_20, opnet, OPNetUnit } from '@btc-vision/unit-test-framework';
 import { EWMA } from '../../contracts/ewma/EWMA.js';
-import { gas2BTC, gas2Sat, gas2USD } from '../orderbook/utils/OrderBookUtils.js';
+import { createFeeOutput, gas2BTC, gas2Sat, gas2USD } from '../orderbook/utils/OrderBookUtils.js';
 import { BitcoinUtils } from 'opnet';
 
 await opnet('EWMA Contract - Real World Scenario Tests', async (vm: OPNetUnit) => {
@@ -16,10 +16,9 @@ await opnet('EWMA Contract - Real World Scenario Tests', async (vm: OPNetUnit) =
     const pLiquidityAmount: bigint = Blockchain.expandToDecimal(1_001_231, tokenDecimals);
 
     const satoshisIn: bigint = 1_000_000n; // 1 BTC
-    const expectedTokenPerSat: bigint = Blockchain.expandToDecimal(2, tokenDecimals) / 10n; // 10 tokens per sat.
+    const expectedTokenPerSat: bigint = Blockchain.expandToDecimal(2, tokenDecimals) / 10000n; // 10 tokens per sat.
 
     const minimumAmountOut: bigint = Blockchain.expandToDecimal(10, tokenDecimals); // Minimum 10 tokens
-    const slippage: number = 100;
 
     vm.beforeEach(async () => {
         // Reset blockchain state
@@ -45,6 +44,10 @@ await opnet('EWMA Contract - Real World Scenario Tests', async (vm: OPNetUnit) =
         ewma = new EWMA(userAddress, ewmaAddress, 350_000_000_000n);
         Blockchain.register(ewma);
         await ewma.init();
+
+        // Set base price p0
+        const p0: bigint = expectedTokenPerSat;
+        await setQuote(p0);
     });
 
     vm.afterEach(() => {
@@ -52,6 +55,22 @@ await opnet('EWMA Contract - Real World Scenario Tests', async (vm: OPNetUnit) =
         token.dispose();
         Blockchain.dispose();
     });
+
+    async function randomReserve(
+        amount: bigint,
+    ): Promise<{ result: bigint; response: CallResponse }> {
+        const provider = Blockchain.generateRandomAddress();
+        Blockchain.txOrigin = provider;
+        Blockchain.msgSender = provider;
+
+        createFeeOutput(EWMA.fixedFeeRatePerTickConsumed);
+
+        const r = await ewma.reserve(tokenAddress, amount, minimumAmountOut);
+        Blockchain.txOrigin = userAddress;
+        Blockchain.msgSender = userAddress;
+
+        return r;
+    }
 
     /**
      * Helper function to add liquidity from a provider.
@@ -107,10 +126,6 @@ await opnet('EWMA Contract - Real World Scenario Tests', async (vm: OPNetUnit) =
     // Now, define test cases for different real-world scenarios.
 
     await vm.it('Token launch with high demand - multiple buyers swapping tokens', async () => {
-        // Set base price p0
-        const p0: bigint = expectedTokenPerSat;
-        await setQuote(p0);
-
         // Add initial liquidity from multiple providers
         const provider = Blockchain.generateRandomAddress();
         await addLiquidity(provider, BitcoinUtils.expandToDecimals(10, tokenDecimals));
@@ -119,7 +134,7 @@ await opnet('EWMA Contract - Real World Scenario Tests', async (vm: OPNetUnit) =
         await simulateBlocks(1n);
         await logPrice();
 
-        const r2 = await ewma.reserve(tokenAddress, satoshisIn, minimumAmountOut);
+        const r2 = await randomReserve(satoshisIn);
         await simulateBlocks(1n);
         await logPrice(minimumAmountOut, BitcoinUtils.formatUnits(r2.result, tokenDecimals));
 
@@ -135,7 +150,7 @@ await opnet('EWMA Contract - Real World Scenario Tests', async (vm: OPNetUnit) =
 
         await logPrice();
 
-        await ewma.reserve(tokenAddress, satoshisIn, minimumAmountOut);
+        await randomReserve(satoshisIn);
         await logPrice();
         await simulateBlocks(1n);
 
@@ -144,7 +159,7 @@ await opnet('EWMA Contract - Real World Scenario Tests', async (vm: OPNetUnit) =
 
         await simulateBlocks(1n);
 
-        await ewma.reserve(tokenAddress, satoshisIn, minimumAmountOut);
+        await randomReserve(satoshisIn);
         await logPrice();
 
         //let r = await ewma.reserveTicks(tokenAddress, satoshisIn, minimumAmountOut, slippage);
@@ -164,7 +179,7 @@ await opnet('EWMA Contract - Real World Scenario Tests', async (vm: OPNetUnit) =
 
             const satoshisToSpend = satoshisIn / BigInt(30 - i + 1);
             const nSatoshisToSpend = satoshisIn / BigInt(29 - i + 1);
-            const r = await ewma.reserve(tokenAddress, satoshisToSpend, pLiquidityAmount);
+            const r = await randomReserve(satoshisToSpend);
             await logPrice(nSatoshisToSpend, BitcoinUtils.formatUnits(r.result, tokenDecimals));
             await simulateBlocks(1n); // Advance one block
 

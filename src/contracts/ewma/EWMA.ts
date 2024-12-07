@@ -1,5 +1,6 @@
 import { Address, BinaryReader, BinaryWriter, NetEvent } from '@btc-vision/transaction';
 import { BytecodeManager, CallResponse, ContractRuntime } from '@btc-vision/unit-test-framework';
+import { createFeeOutput } from '../../tests/orderbook/utils/OrderBookUtils.js';
 
 // Define interfaces for events
 export interface LiquidityAddedEvent {
@@ -204,6 +205,8 @@ export class EWMA extends ContractRuntime {
         maximumAmountIn: bigint,
         minimumAmountOut: bigint,
     ): Promise<{ result: bigint; response: CallResponse }> {
+        createFeeOutput(EWMA.fixedFeeRatePerTickConsumed);
+
         const calldata = new BinaryWriter();
         calldata.writeSelector(this.reserveTicksSelector);
         calldata.writeAddress(token);
