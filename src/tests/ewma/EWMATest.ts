@@ -26,6 +26,8 @@ await opnet('EWMA Contract - getQuote Method Tests', async (vm: OPNetUnit) => {
     const minimumAmountOut: bigint = Blockchain.expandToDecimal(10, tokenDecimals); // Minimum 10 tokens
 
     vm.beforeEach(async () => {
+        Blockchain.blockNumber = 2500n;
+
         // Reset blockchain state
         Blockchain.dispose();
         Blockchain.clearContracts();
