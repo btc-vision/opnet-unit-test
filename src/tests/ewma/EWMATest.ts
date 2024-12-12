@@ -24,6 +24,7 @@ await opnet('EWMA Contract - getQuote Method Tests', async (vm: OPNetUnit) => {
 
     const satoshisIn: bigint = 1_000_000n; // 0.001 BTC
     const minimumAmountOut: bigint = Blockchain.expandToDecimal(10, tokenDecimals); // Minimum 10 tokens
+    let data: { x: number; y: number[] }[] = [];
 
     vm.beforeEach(async () => {
         Blockchain.blockNumber = 2500n;
@@ -57,7 +58,10 @@ await opnet('EWMA Contract - getQuote Method Tests', async (vm: OPNetUnit) => {
         Blockchain.log(`P0 is ${p0}`);
         await setQuote(p0);
 
-        // Add liquidity
+        data = [];
+        toSwap = [];
+
+        // Add initial liquidity
         await addLiquidityRandom();
     });
 
@@ -117,11 +121,26 @@ await opnet('EWMA Contract - getQuote Method Tests', async (vm: OPNetUnit) => {
         await Promise.resolve();
     }
 
+    let open: number = 0;
+
     async function logPrice(): Promise<void> {
         const zeroQuote = await ewma.getQuote(tokenAddress, satoshisIn);
         vm.debug(
             `(Block ${Blockchain.blockNumber}) New price: ${BitcoinUtils.formatUnits(zeroQuote.result.currentPrice, tokenDecimals)} token per sat, ${BitcoinUtils.formatUnits(zeroQuote.result.expectedAmountOut, tokenDecimals)} tokens, sat spent: ${zeroQuote.result.expectedAmountIn}`,
         );
+
+        const close = parseFloat(
+            BitcoinUtils.formatUnits(zeroQuote.result.currentPrice, tokenDecimals),
+        );
+        if (!open) open = 0.25;
+
+        data.push({
+            x: Number(Blockchain.blockNumber.toString()),
+            y: [-open, -close, -close, -close],
+            //inverted: false,
+        });
+
+        open = close;
     }
 
     let toSwap: { a: Address; r: Recipient[] }[] = [];
@@ -135,10 +154,14 @@ await opnet('EWMA Contract - getQuote Method Tests', async (vm: OPNetUnit) => {
 
         const r = await ewma.reserve(tokenAddress, amount, minimumAmountOut);
         const decoded = ewma.decodeReservationEvents(r.response.events);
-        toSwap.push({
-            a: provider,
-            r: decoded.recipients,
-        });
+        if (decoded.recipients.length) {
+            toSwap.push({
+                a: provider,
+                r: decoded.recipients,
+            });
+        } else {
+            vm.fail('No recipients');
+        }
 
         Blockchain.txOrigin = userAddress;
         Blockchain.msgSender = userAddress;
@@ -154,6 +177,10 @@ await opnet('EWMA Contract - getQuote Method Tests', async (vm: OPNetUnit) => {
 
             Blockchain.txOrigin = provider;
             Blockchain.msgSender = provider;
+
+            vm.log(
+                `Swapping for ${provider.toString()}, ${r.length} recipients, ${r[0].amount.toString()} tokens`,
+            );
 
             createRecipientsOutput(r);
 
@@ -171,107 +198,68 @@ await opnet('EWMA Contract - getQuote Method Tests', async (vm: OPNetUnit) => {
         toSwap = [];
     }
 
-    await vm.it('should be able to quote and reserve and affect the price', async () => {
-        const initialQuote = await ewma.getQuote(tokenAddress, satoshisIn);
-        vm.debug(
-            `Initial Price: ${initialQuote.result.currentPrice}, Quote: ${initialQuote.result.expectedAmountOut.toString()} tokens, ${initialQuote.result.expectedAmountIn.toString()} satoshis`,
-        );
+    /**
+     * New Unit Test: Simulate Real-World Trading Dynamics Through Random Interactions
+     */
+    await vm.it('should simulate market dynamics through random interactions', async () => {
+        // Step 1: Add a substantial initial liquidity to stabilize the pool
+        await addLiquidityRandom(liquidityAmount * 10n);
+        vm.debug('Initial liquidity added.');
 
-        await logPrice();
+        // Step 2: Simulate trading over multiple iterations
+        for (let x = 1; x < 3; x++) {
+            // Simulate two major phases
+            vm.debug(`\n--- Starting Phase ${x} ---`);
 
-        // Simulate a buy operation that affects EWMA_V
-        await randomReserve(satoshisIn);
+            for (let i = 0; i < 32; i++) {
+                // 32 iterations per phase
+                vm.debug(`\n--- Phase ${x}, Iteration ${i + 1} ---`);
 
-        await simulateBlocks(1n);
-        await swapAll();
+                // Randomly add liquidity multiple times within this iteration
+                const addLiquidityRounds = Math.floor(Math.random() * 10) + x;
+                for (let y = 0; y < addLiquidityRounds; y++) {
+                    const liquidityRounds = Math.floor(Math.random() * 5);
+                    for (let yy = 0; yy < liquidityRounds; yy++) {
+                        const multiplier = BigInt(Math.ceil(yy + 1 + Math.random()) * x);
+                        const liquidityToAdd = liquidityAmount * multiplier;
+                        await addLiquidityRandom(liquidityToAdd);
+                        vm.debug(`Added liquidity: ${liquidityToAdd} tokens.`);
+                    }
+                }
 
-        // Simulate block progression to apply EWMA updates
-        for (let s = 0; s < 10; s++) {
+                // Execute all pending swaps
+                await swapAll();
+                vm.debug('Executed all pending swaps.');
+
+                // Randomly adjust reserves to simulate market volatility
+                const reserveAdjustRounds = Math.floor(Math.random() * 10);
+                for (let y = 0; y < reserveAdjustRounds; y++) {
+                    const reserveAdjustments = Math.floor(Math.random() * 5);
+                    for (let yy = 0; yy < reserveAdjustments; yy++) {
+                        const reserveChange =
+                            120_000n * BigInt(Math.ceil(yy + 1 + Math.random() * 2 * x));
+                        await randomReserve(reserveChange);
+                        vm.debug(`Adjusted reserve by: ${reserveChange} tokens.`);
+                    }
+                }
+
+                // Simulate the passage of one block and log the current price
+                await simulateBlocks(1n);
+                await logPrice();
+            }
+
+            // After completing 32 iterations in this phase, perform a final swap and log
+            await swapAll();
+            vm.debug(`Phase ${x} final swaps executed.`);
             await simulateBlocks(1n);
-            await addLiquidityRandom();
             await logPrice();
         }
 
-        await simulateBlocks(10n);
-        vm.debugBright(`Simulating 10 blocks and reserving liquidity`);
-
-        const c = await randomReserve(satoshisIn);
-
-        // new quote
-        const quote = await ewma.getQuote(tokenAddress, satoshisIn);
-        vm.debugBright(
-            `Reserved ${c.result} tokens for ${satoshisIn} satoshis. New quote is ${quote.result.expectedAmountOut} tokens for ${quote.result.expectedAmountIn} satoshis`,
-        );
-
-        await simulateBlocks(100n);
-        vm.debugBright(`Simulating 100 blocks and reserving liquidity`);
-
-        const quoteBefore = await ewma.getQuote(tokenAddress, satoshisIn);
-        for (let s = 0; s < 150; s++) {
-            await addLiquidityRandom(liquidityAmount / 2n);
-        }
-
-        await addLiquidityRandom(liquidityAmount * 30n);
-        vm.debugBright(`Added 150 providers.`);
-
-        Blockchain.blockNumber++;
-
-        vm.debug(
-            `Quote before sell pressure simulation ${quoteBefore.result.currentPrice} uToken per sat: ${quoteBefore.result.expectedAmountOut.toString()} tokens (scaled), ${quoteBefore.result.expectedAmountIn.toString()} satoshis`,
-        );
-
-        console.log('whale purchase');
-
+        // Final price logging after all interactions
         await logPrice();
+        vm.debug('Final price logged.');
 
-        //Blockchain.tracePointers = true;
-        const c2 = await randomReserve(satoshisIn);
-        vm.debug(
-            `Reserved ${BitcoinUtils.formatUnits(c2.result, tokenDecimals)} tokens for ${satoshisIn} satoshis. Cost $${gas2USD(c2.response.usedGas)} USD to reserve.`,
-        );
-
-        await logPrice();
-
-        console.log('after whale purchase');
-
-        // log blocks with no updates
-        await simulateBlocks(1n);
-        await logPrice();
-        for (let s = 0; s < 50; s++) {
-            await addLiquidityRandom(liquidityAmount / 2n);
-        }
-        await logPrice();
-        console.log('before block change');
-        await simulateBlocks(1n);
-        await logPrice();
-        console.log('after block change');
-        //await ewma.reserveTicks(tokenAddress, satoshisIn, minimumAmountOut, slippage);
-        //await logPrice();
-
-        /*console.log('before purchase');
-        await simulateBlocks(1n);
-        await logPrice();
-        console.log('after purchase');*/
-
-        await simulateBlocks(1n);
-        await logPrice();
-        await simulateBlocks(1n);
-        await logPrice();
-        await simulateBlocks(1n);
-        await logPrice();
-        await simulateBlocks(1n);
-        await logPrice();
-        await simulateBlocks(1n);
-        await logPrice();
-        await simulateBlocks(1n);
-        await logPrice();
-        await simulateBlocks(1n);
-        await logPrice();
-
-        await simulateBlocks(10n);
-        await addLiquidityRandom();
-
-        // Fetch the quote
-        await logPrice();
+        // Log the collected data for further analysis if needed
+        console.log(JSON.stringify(data));
     });
 });
