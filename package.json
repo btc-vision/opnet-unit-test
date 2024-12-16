@@ -5,6 +5,7 @@
     "description": "OP_NET unit test harness and associated mocks",
     "scripts": {
         "build": "gulp",
+        "prepublish": "npm-run-all build",
         "build:pool": "tsx src/utils/motoswap/pool.ts",
         "test:factory": "tsx src/tests/motoswap/factory.ts",
         "test:gas": "tsx src/tests/motoswap/gas.ts",
