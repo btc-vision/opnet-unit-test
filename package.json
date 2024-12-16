@@ -5,14 +5,13 @@
     "description": "OP_NET unit test harness and associated mocks",
     "scripts": {
         "build": "gulp",
-        "prepublish": "npm-run-all build",
         "build:pool": "tsx src/utils/motoswap/pool.ts",
         "test:factory": "tsx src/tests/motoswap/factory.ts",
         "test:gas": "tsx src/tests/motoswap/gas.ts",
         "test:pool": "tsx src/tests/motoswap/pool.ts",
         "test:router": "tsx src/tests/motoswap/router.ts",
         "test:router2": "tsx src/tests/motoswap/router2.ts",
-        "test:orderbook": "npm run test:orderbook:addliquidity && npm run test:orderbook:quote && npm run test:orderbook:expire && npm run test:orderbook:reserve && npm run test:orderbook:reserve:utxo && npm run test:orderbook:swap",
+        "test:orderbook": "npm-run-all test:orderbook:*",
         "test:orderbook:addliquidity": "tsx src/tests/orderbook/OrderBookAddLiquidity.ts",
         "test:orderbook:quote": "tsx src/tests/orderbook/OrderBookGetQuote.ts",
         "test:orderbook:reserve": "tsx src/tests/orderbook/OrderBookReserve.ts",
@@ -27,7 +26,7 @@
         "test:ewma:purge": "tsx src/tests/ewma/EWMAPurge.ts",
         "test:ewma:swap": "tsx src/tests/ewma/EWMASwap.ts",
         "test:schnorr": "tsx src/tests/common/schnorr.ts",
-        "test": "npm run test:factory && npm run test:gas && npm run test:pool && npm run test:router && npm run test:router2 && npm run test:vm"
+        "test": "npm-run-all test:*"
     },
     "author": "OP_NET",
     "license": "MIT",
