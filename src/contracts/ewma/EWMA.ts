@@ -46,7 +46,7 @@ export interface Reserve {
 
 export interface Recipient {
     readonly address: string;
-    readonly amount: bigint;
+    amount: bigint;
 }
 
 export interface DecodedReservation {

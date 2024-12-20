@@ -3,7 +3,7 @@ import { Blockchain, CallResponse, OP_20, opnet, OPNetUnit } from '@btc-vision/u
 import { EWMA } from '../../contracts/ewma/EWMA.js';
 import { createFeeOutput, gas2BTC, gas2Sat, gas2USD } from '../orderbook/utils/OrderBookUtils.js';
 import { BitcoinUtils } from 'opnet';
-import { createRecipientUTXOs } from './utils/UTXOSimulator.js';
+import { createRecipientUTXOs } from '../utils/UTXOSimulator.js';
 
 await opnet('EWMA Contract - getQuote Method Tests', async (vm: OPNetUnit) => {
     let ewma: EWMA;
