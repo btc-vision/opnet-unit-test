@@ -611,7 +611,7 @@ await opnet(
 
         // Test 17: Partial swap after reservation from priority provider
         await vm.it(
-            'should correctly handle partial swap from priority provider after reservation',
+            'should correctly handle partial swap from provider after reservation',
             async () => {
                 await ewma.resetStates();
                 const p0 = Blockchain.expandToDecimal(100_000, 8);
@@ -651,7 +651,7 @@ await opnet(
                 Blockchain.msgSender = buyer;
                 Blockchain.txOrigin = buyer;
 
-                const satIn = 500_000_000_000n; // enough satoshis
+                const satIn = 500_000_000_000n;
                 const minOut = 1n;
                 const reservationResponse = await ewma.reserve(tokenAddress, satIn, minOut);
                 Assert.expect(reservationResponse.response.error).toBeUndefined();
@@ -689,6 +689,10 @@ await opnet(
                 const l = BigInt(decodedReservation.recipients.length);
                 Assert.expect(swapEvent.amountIn).toEqual(satSent * l);
                 Assert.expect(swapEvent.amountOut).toEqual(p0 * l * satSent);
+
+                await Assert.expect(async () => {
+                    await ewma.swap(tokenAddress, false);
+                }).toThrow('No active reservation found for this address');
             },
         );
     },
