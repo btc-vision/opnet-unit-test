@@ -207,8 +207,7 @@ await opnet('EWMA Purging Reservations Extensive Tests', async (vm: OPNetUnit) =
             //Assert.expect(reserveBefore.reserved).toEqual(0n);
 
             // Purge
-            const reserved = await makeReservation(Blockchain.generateRandomAddress(), 10_000n, 1n);
-            console.log(reserved);
+            await makeReservation(Blockchain.generateRandomAddress(), 10_000n, 1n);
 
             const reserve = await ewma.getReserve(tokenAddress);
             Assert.expect(reserve.reserved).toBeGreaterThan(0n);
