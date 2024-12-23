@@ -1,7 +1,6 @@
 import { Address } from '@btc-vision/transaction';
 import { Assert, Blockchain, OP_20, opnet, OPNetUnit } from '@btc-vision/unit-test-framework';
 import { EWMA } from '../../contracts/ewma/EWMA.js';
-import { gas2USD } from '../orderbook/utils/OrderBookUtils.js';
 
 // This suite focuses extensively on purging reservation scenarios.
 
@@ -47,9 +46,9 @@ await opnet('EWMA Purging Reservations Extensive Tests', async (vm: OPNetUnit) =
         const resp = await ewma.reserve(tokenAddress, satIn, minOut);
         Assert.expect(resp.response.error).toBeUndefined();
 
-        vm.log(
-            `Spent ${gas2USD(resp.response.usedGas)} USD$ in gas to reserve ${satIn} satoshis for ${minOut} tokens`,
-        );
+        //vm.log(
+        //    `Spent ${gas2USD(resp.response.usedGas)} USD$ in gas to reserve ${satIn} satoshis for ${minOut} tokens`,
+        //);
     }
 
     vm.beforeEach(async () => {
