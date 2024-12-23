@@ -92,7 +92,7 @@ await opnet('EWMA Contract - getQuote Method Tests', async (vm: OPNetUnit) => {
         Blockchain.txOrigin = userAddress;
         Blockchain.msgSender = userAddress;
 
-        const quote = await ewma.setQuote(tokenAddress, p0);
+        const quote = await ewma.createPool(tokenAddress, p0);
         vm.debug(
             `Quote set! Gas cost: ${gas2Sat(quote.usedGas)} sat (${gas2BTC(quote.usedGas)} BTC, $${gas2USD(quote.usedGas)})`,
         );

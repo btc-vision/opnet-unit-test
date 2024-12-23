@@ -58,7 +58,7 @@ await opnet('ewma Contract setQuote Method Tests', async (vm: OPNetUnit) => {
         Blockchain.tracePointers = false;
 
         const p0: bigint = 1000n;
-        const quote = await ewma.setQuote(tokenAddress, p0);
+        const quote = await ewma.createPool(tokenAddress, p0);
 
         console.log(quote);
 
@@ -73,10 +73,10 @@ await opnet('ewma Contract setQuote Method Tests', async (vm: OPNetUnit) => {
         Blockchain.tracePointers = true;
 
         const p0: bigint = 1000n;
-        const quote = await ewma.setQuote(tokenAddress, p0);
+        const quote = await ewma.createPool(tokenAddress, p0);
 
         await Assert.expect(async () => {
-            await ewma.setQuote(tokenAddress, p0);
+            await ewma.createPool(tokenAddress, p0);
         }).toThrow(`Base quote already set`);
 
         vm.debug(

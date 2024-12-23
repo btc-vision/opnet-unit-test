@@ -8,16 +8,33 @@ await opnet('EWMA Purging Reservations Extensive Tests', async (vm: OPNetUnit) =
     let ewma: EWMA;
     let token: OP_20;
 
+    const initialLiquidityProvider: Address = Blockchain.generateRandomAddress();
+
     const userAddress: Address = Blockchain.generateRandomAddress();
     const tokenAddress: Address = Blockchain.generateRandomAddress();
     const ewmaAddress: Address = Blockchain.generateRandomAddress();
     const tokenDecimals = 18;
 
-    async function setQuote(p0: bigint): Promise<void> {
+    async function setQuote(
+        floorPrice: bigint,
+        initialLiquidity: bigint,
+        antiBotEnabledFor: number = 0,
+        antiBotMaximumTokensPerReservation: bigint = 0n,
+    ): Promise<void> {
         Blockchain.txOrigin = userAddress;
         Blockchain.msgSender = userAddress;
 
-        await ewma.setQuote(tokenAddress, p0);
+        await token.mintRaw(userAddress, initialLiquidity);
+        await token.approve(userAddress, ewma.address, initialLiquidity);
+
+        await ewma.createPool(
+            tokenAddress,
+            floorPrice,
+            initialLiquidity,
+            initialLiquidityProvider.p2tr(Blockchain.network),
+            antiBotEnabledFor,
+            antiBotMaximumTokensPerReservation,
+        );
     }
 
     async function addProviderLiquidity(
@@ -74,7 +91,10 @@ await opnet('EWMA Purging Reservations Extensive Tests', async (vm: OPNetUnit) =
         Blockchain.msgSender = userAddress;
 
         // Set a base quote
-        await setQuote(Blockchain.expandToDecimal(1, 8)); // 1 sat per token
+        await setQuote(
+            Blockchain.expandToDecimal(1, 8),
+            Blockchain.expandToDecimal(1, 8) * 10_000n,
+        );
     });
 
     vm.afterEach(() => {
@@ -85,13 +105,13 @@ await opnet('EWMA Purging Reservations Extensive Tests', async (vm: OPNetUnit) =
 
     await vm.it('should not purge if there are no expired reservations', async () => {
         const buyer = Blockchain.generateRandomAddress();
-        await token.mintRaw(buyer, 100_000n);
+        //await token.mintRaw(buyer, 100_000n);
 
         // Make a reservation in current block
         await makeReservation(buyer, 100_000n, 1n);
 
         // Make another reservation to trigger purge attempt
-        await makeReservation(buyer, 50_000n, 1n);
+        await makeReservation(Blockchain.generateRandomAddress(), 50_000n, 1n);
 
         // No exceptions and no expired reservations means onNoPurge was executed successfully
         Assert.expect(true);
@@ -114,6 +134,26 @@ await opnet('EWMA Purging Reservations Extensive Tests', async (vm: OPNetUnit) =
         const reserve = await ewma.getReserve(tokenAddress);
         Assert.expect(reserve.liquidity).toBeGreaterThan(0n);
     });
+
+    await vm.it(
+        'should purge a single expired reservation, (error, not enough liquidity)',
+        async () => {
+            const buyer = Blockchain.generateRandomAddress();
+            await token.mintRaw(buyer, 1_000_000n);
+
+            // Make a reservation at current block
+            await makeReservation(buyer, 100_000n, 1n);
+
+            // Advance beyond expiration
+            Blockchain.blockNumber = Blockchain.blockNumber + 10n;
+
+            // Trigger purge with a new reservation
+            await makeReservation(buyer, 100_000n, 1n);
+
+            const reserve = await ewma.getReserve(tokenAddress);
+            Assert.expect(reserve.liquidity).toBeGreaterThan(0n);
+        },
+    );
 
     await vm.it(
         'should purge expired reservations and not be able to reserve if not expired',

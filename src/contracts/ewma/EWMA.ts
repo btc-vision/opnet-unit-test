@@ -90,7 +90,7 @@ export class EWMA extends ContractRuntime {
     );
 
     private readonly setQuoteSelector: number = Number(
-        `0x${this.abiCoder.encodeSelector('setQuote')}`,
+        `0x${this.abiCoder.encodeSelector('createPool')}`,
     );
 
     private readonly verifySignatureSelector: number = Number(
@@ -356,11 +356,22 @@ export class EWMA extends ContractRuntime {
         };
     }
 
-    public async setQuote(token: Address, p0: bigint): Promise<CallResponse> {
+    public async createPool(
+        token: Address,
+        floorPrice: bigint,
+        initialLiquidity: bigint,
+        receiver: string,
+        antiBotEnabledFor: number,
+        antiBotMaximumTokensPerReservation: bigint,
+    ): Promise<CallResponse> {
         const calldata = new BinaryWriter();
         calldata.writeSelector(this.setQuoteSelector);
         calldata.writeAddress(token);
-        calldata.writeU256(p0);
+        calldata.writeU256(floorPrice);
+        calldata.writeU128(initialLiquidity);
+        calldata.writeStringWithLength(receiver);
+        calldata.writeU16(antiBotEnabledFor);
+        calldata.writeU256(antiBotMaximumTokensPerReservation);
 
         const result = await this.execute(calldata.getBuffer());
         if (result.error) throw this.handleError(result.error);
@@ -395,6 +406,6 @@ export class EWMA extends ContractRuntime {
     }
 
     protected defineRequiredBytecodes(): void {
-        BytecodeManager.loadBytecode('./bytecode/orderbook.wasm', this.address);
+        BytecodeManager.loadBytecode('./bytecode/nativeswap.wasm', this.address);
     }
 }
