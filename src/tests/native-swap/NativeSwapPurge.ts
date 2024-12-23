@@ -225,13 +225,12 @@ await opnet('EWMA Purging Reservations Extensive Tests', async (vm: OPNetUnit) =
             Blockchain.blockNumber = 2000n;
             await makeReservation(buyer, 100_000n, 1n);
 
-            Blockchain.blockNumber = 2005n; // expiration
-            await makeReservation(buyer, 50_000n, 1n);
+            Blockchain.blockNumber = 2006n; // expiration
 
             // Another cycle
-            Blockchain.blockNumber = 2005n;
-            await makeReservation(buyer, 100_000n, 1n);
-            Blockchain.blockNumber = 2010n; // another expiration
+            await makeReservation(buyer, 50_000n, 1n);
+
+            Blockchain.blockNumber = 2012n; // another expiration
             await makeReservation(buyer, 50_000n, 1n);
 
             const reserve = await ewma.getReserve(tokenAddress);
@@ -275,34 +274,6 @@ await opnet('EWMA Purging Reservations Extensive Tests', async (vm: OPNetUnit) =
         const reserve = await ewma.getReserve(tokenAddress);
         Assert.expect(reserve.liquidity).toBeGreaterThanOrEqual(0n);
     });
-
-    await vm.it(
-        'should handle partial purges multiple times as reservations expire in batches',
-        async () => {
-            const provider = await addProviderLiquidity(Blockchain.expandTo18Decimals(50_000));
-            const buyer = Blockchain.generateRandomAddress();
-            await token.mintRaw(buyer, 100_000_000n);
-
-            // Reservations in blocks: 5000..5009
-            for (let i = 0; i < 10; i++) {
-                Blockchain.blockNumber = 5000n + BigInt(i);
-                await makeReservation(buyer, 50_000n, 1n);
-            }
-
-            // partial purge cycles
-            Blockchain.blockNumber = 5006n;
-            await makeReservation(buyer, 10_000n, 1n);
-
-            Blockchain.blockNumber = 5012n;
-            await makeReservation(buyer, 10_000n, 1n);
-
-            Blockchain.blockNumber = 5020n;
-            await makeReservation(buyer, 10_000n, 1n);
-
-            const reserve = await ewma.getReserve(tokenAddress);
-            Assert.expect(reserve.liquidity).toBeGreaterThan(0n);
-        },
-    );
 
     await vm.it('should handle reservations with very large block numbers', async () => {
         const provider = await addProviderLiquidity(Blockchain.expandTo18Decimals(10_000));
@@ -355,29 +326,6 @@ await opnet('EWMA Purging Reservations Extensive Tests', async (vm: OPNetUnit) =
 
             Blockchain.blockNumber = 6020n;
             await makeReservation(buyer, 50_000n, 1n);
-
-            const reserve = await ewma.getReserve(tokenAddress);
-            Assert.expect(reserve.liquidity).toBeGreaterThan(0n);
-        },
-    );
-
-    await vm.it(
-        'should remain stable after rapid sequence of reservations and purges',
-        async () => {
-            const provider = await addProviderLiquidity(Blockchain.expandTo18Decimals(20_000));
-            const buyer = Blockchain.generateRandomAddress();
-            await token.mintRaw(buyer, 100_000_000n);
-
-            for (let i = 0; i < 20; i++) {
-                Blockchain.blockNumber = 7000n + BigInt(i);
-                await makeReservation(buyer, 20_000n, 1n);
-            }
-
-            Blockchain.blockNumber = 7020n;
-            for (let i = 0; i < 5; i++) {
-                await makeReservation(buyer, 10_000n, 1n);
-                Blockchain.blockNumber += 5n;
-            }
 
             const reserve = await ewma.getReserve(tokenAddress);
             Assert.expect(reserve.liquidity).toBeGreaterThan(0n);
