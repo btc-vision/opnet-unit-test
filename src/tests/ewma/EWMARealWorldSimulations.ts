@@ -1,11 +1,11 @@
 import { Address } from '@btc-vision/transaction';
 import { Blockchain, CallResponse, OP_20, opnet, OPNetUnit } from '@btc-vision/unit-test-framework';
-import { EWMA } from '../../contracts/ewma/EWMA.js';
+import { NativeSwap } from '../../contracts/ewma/NativeSwap.js';
 import { createFeeOutput, gas2BTC, gas2Sat, gas2USD } from '../orderbook/utils/OrderBookUtils.js';
 import { BitcoinUtils } from 'opnet';
 
 await opnet('EWMA Contract - Real World Scenario Tests', async (vm: OPNetUnit) => {
-    let ewma: EWMA;
+    let ewma: NativeSwap;
     let token: OP_20;
 
     const tokenDecimals = 18;
@@ -41,7 +41,7 @@ await opnet('EWMA Contract - Real World Scenario Tests', async (vm: OPNetUnit) =
         await token.mint(userAddress, 100_000_000);
 
         // Instantiate and register the EWMA contract
-        ewma = new EWMA(userAddress, ewmaAddress, 350_000_000_000n);
+        ewma = new NativeSwap(userAddress, ewmaAddress, 350_000_000_000n);
         Blockchain.register(ewma);
         await ewma.init();
 
@@ -63,7 +63,7 @@ await opnet('EWMA Contract - Real World Scenario Tests', async (vm: OPNetUnit) =
         Blockchain.txOrigin = provider;
         Blockchain.msgSender = provider;
 
-        createFeeOutput(EWMA.fixedFeeRatePerTickConsumed);
+        createFeeOutput(NativeSwap.reservationFees);
 
         const r = await ewma.reserve(tokenAddress, amount, minimumAmountOut);
         Blockchain.txOrigin = userAddress;

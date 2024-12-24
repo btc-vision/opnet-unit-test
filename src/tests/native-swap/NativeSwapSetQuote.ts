@@ -1,10 +1,10 @@
 import { Address } from '@btc-vision/transaction';
 import { Assert, Blockchain, OP_20, opnet, OPNetUnit } from '@btc-vision/unit-test-framework';
-import { EWMA } from '../../contracts/ewma/EWMA.js';
+import { NativeSwap } from '../../contracts/ewma/NativeSwap.js';
 import { gas2BTC, gas2Sat, gas2USD } from '../orderbook/utils/OrderBookUtils.js';
 
 await opnet('ewma Contract setQuote Method Tests', async (vm: OPNetUnit) => {
-    let ewma: EWMA;
+    let ewma: NativeSwap;
     let token: OP_20;
 
     const tokenDecimals = 18;
@@ -36,7 +36,7 @@ await opnet('ewma Contract setQuote Method Tests', async (vm: OPNetUnit) => {
         await token.mint(userAddress, 10_000_000);
 
         // Instantiate and register the ewma contract
-        ewma = new EWMA(userAddress, ewmaAddress);
+        ewma = new NativeSwap(userAddress, ewmaAddress);
         Blockchain.register(ewma);
         await ewma.init();
 

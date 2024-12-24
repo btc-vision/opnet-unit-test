@@ -1,10 +1,10 @@
 import { Address, EcKeyPair, MessageSigner, Wallet } from '@btc-vision/transaction';
 import { Assert, Blockchain, opnet, OPNetUnit } from '@btc-vision/unit-test-framework';
-import { EWMA } from '../../contracts/ewma/EWMA.js';
+import { NativeSwap } from '../../contracts/ewma/NativeSwap.js';
 import bitcoin from '@btc-vision/bitcoin';
 
 await opnet('EWMA Contract - Signature Verification Tests', async (vm: OPNetUnit) => {
-    let ewma: EWMA;
+    let ewma: NativeSwap;
 
     const wallet = Wallet.fromWif(
         EcKeyPair.generateRandomKeyPair(Blockchain.network).toWIF(),
@@ -24,7 +24,7 @@ await opnet('EWMA Contract - Signature Verification Tests', async (vm: OPNetUnit
         await Blockchain.init();
 
         // Instantiate and register the EWMA contract
-        ewma = new EWMA(userAddress, ewmaAddress, 350_000_000_000n);
+        ewma = new NativeSwap(userAddress, ewmaAddress, 350_000_000_000n);
         Blockchain.register(ewma);
 
         await ewma.init();

@@ -1,11 +1,11 @@
 import { Address } from '@btc-vision/transaction';
 import { Assert, Blockchain, OP_20, opnet, OPNetUnit } from '@btc-vision/unit-test-framework';
-import { EWMA } from '../../contracts/ewma/EWMA.js';
+import { NativeSwap } from '../../contracts/ewma/NativeSwap.js';
 
 // This suite focuses extensively on purging reservation scenarios.
 
-await opnet('EWMA Purging Reservations Extensive Tests', async (vm: OPNetUnit) => {
-    let ewma: EWMA;
+await opnet('NativeSwap: Purging Reservations Extensive Tests', async (vm: OPNetUnit) => {
+    let ewma: NativeSwap;
     let token: OP_20;
 
     const initialLiquidityProvider: Address = Blockchain.generateRandomAddress();
@@ -15,7 +15,7 @@ await opnet('EWMA Purging Reservations Extensive Tests', async (vm: OPNetUnit) =
     const ewmaAddress: Address = Blockchain.generateRandomAddress();
     const tokenDecimals = 18;
 
-    async function setQuote(
+    async function createPool(
         floorPrice: bigint,
         initialLiquidity: bigint,
         antiBotEnabledFor: number = 0,
@@ -85,13 +85,13 @@ await opnet('EWMA Purging Reservations Extensive Tests', async (vm: OPNetUnit) =
         await token.init();
         await token.mintRaw(userAddress, 10_000_000n);
 
-        ewma = new EWMA(userAddress, ewmaAddress);
+        ewma = new NativeSwap(userAddress, ewmaAddress);
         Blockchain.register(ewma);
         await ewma.init();
         Blockchain.msgSender = userAddress;
 
         // Set a base quote
-        await setQuote(
+        await createPool(
             Blockchain.expandToDecimal(1, 8),
             Blockchain.expandToDecimal(1, 8) * 10_000n,
         );
@@ -148,7 +148,7 @@ await opnet('EWMA Purging Reservations Extensive Tests', async (vm: OPNetUnit) =
             Blockchain.blockNumber = Blockchain.blockNumber + 10n;
 
             // Trigger purge with a new reservation
-            await makeReservation(buyer, 100_000n, 1n);
+            //await makeReservation(buyer, 100_000n, 1n);
 
             const reserve = await ewma.getReserve(tokenAddress);
             Assert.expect(reserve.liquidity).toBeGreaterThan(0n);

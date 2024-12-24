@@ -7,30 +7,79 @@ import {
     opnet,
     OPNetUnit,
 } from '@btc-vision/unit-test-framework';
-import { EWMA } from '../../contracts/ewma/EWMA.js';
+import { NativeSwap } from '../../contracts/ewma/NativeSwap.js';
 import { gas2BTC, gas2Sat, gas2USD } from '../orderbook/utils/OrderBookUtils.js';
 import { createRecipientUTXOs } from '../utils/UTXOSimulator.js';
 
 const receiver: Address = Blockchain.generateRandomAddress();
 
 await opnet(
-    'EWMA: Priority and Normal Queue addLiquidity Comprehensive Tests',
+    'NativeSwap: Priority and Normal Queue addLiquidity Comprehensive Tests',
     async (vm: OPNetUnit) => {
-        let ewma: EWMA;
+        let ewma: NativeSwap;
         let token: OP_20;
 
         const userAddress: Address = receiver;
         const tokenAddress: Address = Blockchain.generateRandomAddress();
         const ewmaAddress: Address = Blockchain.generateRandomAddress();
 
-        async function setQuote(p0: bigint): Promise<void> {
+        const liquidityOwner: Address = Blockchain.generateRandomAddress();
+        const initialLiquidityAddress: string = liquidityOwner.p2tr(Blockchain.network);
+        const initialLiquidityAmount: bigint = Blockchain.expandTo18Decimals(10_000);
+
+        async function mintAndApprove(amount: bigint, to: Address): Promise<void> {
+            const addyBefore = Blockchain.msgSender;
+
+            Blockchain.txOrigin = liquidityOwner;
+            Blockchain.msgSender = liquidityOwner;
+
+            await token.mintRaw(to, amount);
+
+            Blockchain.txOrigin = addyBefore;
+            Blockchain.msgSender = addyBefore;
+
+            await token.approve(addyBefore, ewma.address, amount);
+        }
+
+        /**
+         * Creates a pool by:
+         *  1) Minting the initialLiquidity amount of tokens to userAddress
+         *  2) Approving that amount for EWMA contract
+         *  3) Calling ewma.createPool(...)
+         *
+         * In other words, this replaces the old "setQuote" usage,
+         * but now we also deposit 'initialLiquidity' as a direct addition
+         * into the EWMA contract, designating userAddress as the initial provider.
+         */
+        async function createPool(
+            floorPrice: bigint,
+            initialLiquidity: bigint,
+            antiBotEnabledFor: number = 0,
+            antiBotMaximumTokensPerReservation: bigint = 0n,
+        ): Promise<void> {
+            Blockchain.txOrigin = liquidityOwner;
+            Blockchain.msgSender = liquidityOwner;
+
+            await mintAndApprove(initialLiquidity, liquidityOwner);
+
+            // Create the pool
+            const result = await ewma.createPool(
+                tokenAddress,
+                floorPrice,
+                initialLiquidity,
+                initialLiquidityAddress,
+                antiBotEnabledFor,
+                antiBotMaximumTokensPerReservation,
+            );
+
+            vm.debug(
+                `Pool created! Gas cost: ${gas2Sat(result.usedGas)} sat (${gas2BTC(
+                    result.usedGas,
+                )} BTC, $${gas2USD(result.usedGas)})`,
+            );
+
             Blockchain.txOrigin = userAddress;
             Blockchain.msgSender = userAddress;
-
-            const quote = await ewma.createPool(tokenAddress, p0);
-            vm.debug(
-                `Quote set! Gas cost: ${gas2Sat(quote.usedGas)} sat (${gas2BTC(quote.usedGas)} BTC, $${gas2USD(quote.usedGas)})`,
-            );
         }
 
         vm.beforeEach(async () => {
@@ -40,23 +89,26 @@ await opnet(
 
             token = new OP_20({
                 file: 'MyToken',
-                deployer: userAddress,
+                deployer: liquidityOwner,
                 address: tokenAddress,
                 decimals: 18,
             });
             Blockchain.register(token);
             await token.init();
 
-            // Mint tokens to the user
+            // Give user some extra tokens beyond the initial liquidity
+            // so that subsequent "addLiquidity(...)" calls can work
+            // (depending on your test logic).
             await token.mint(userAddress, 10_000_000);
 
-            ewma = new EWMA(userAddress, ewmaAddress);
+            ewma = new NativeSwap(userAddress, ewmaAddress);
             Blockchain.register(ewma);
             await ewma.init();
-            Blockchain.msgSender = userAddress;
 
-            // Set a base quote
-            await setQuote(Blockchain.expandToDecimal(1, 8)); // 1 sat per token
+            // Create a pool with floorPrice = 1 sat per token and
+            // initialLiquidity = 10,000 tokens (arbitrary example).
+            // Adjust as needed:
+            await createPool(Blockchain.expandToDecimal(1, 8), initialLiquidityAmount);
         });
 
         vm.afterEach(() => {
@@ -95,7 +147,7 @@ await opnet(
                 throw new Error('No LiquidityAdded event found for normal queue');
             }
 
-            const decoded = EWMA.decodeLiquidityAddedEvent(liquidityAddedEvt.data);
+            const decoded = NativeSwap.decodeLiquidityAddedEvent(liquidityAddedEvt.data);
             Assert.expect(decoded.totalLiquidity).toEqual(amountIn);
             Assert.expect(decoded.receiver).toEqual(userAddress.p2tr(Blockchain.network));
         });
@@ -138,8 +190,7 @@ await opnet(
                     throw new Error('No LiquidityAdded event found for priority queue');
                 }
 
-                const decoded = EWMA.decodeLiquidityAddedEvent(liquidityAddedEvt.data);
-                console.log(amountIn, feeAmount);
+                const decoded = NativeSwap.decodeLiquidityAddedEvent(liquidityAddedEvt.data);
                 Assert.expect(decoded.totalLiquidity).toEqual(amountIn - feeAmount);
             },
         );
@@ -172,7 +223,9 @@ await opnet(
 
                 // Check total liquidity (minus fee)
                 const feeForEach = (amountIn * 3n) / 100n;
-                const totalLiquidityExpected = (amountIn - feeForEach) * 2n;
+                const totalLiquidityExpected =
+                    (amountIn - feeForEach) * 2n + initialLiquidityAmount;
+
                 Assert.expect(reserve.liquidity).toEqual(totalLiquidityExpected);
             },
         );
@@ -235,10 +288,10 @@ await opnet(
                 Assert.expect(resp.error).toBeUndefined();
 
                 // Calculate expected final liquidity
-                // tax = 3% of amountIn = (amountIn * 3/100)
+                // tax = 3% of amountIn
                 const tax = (amountIn * feeRate) / 100n;
 
-                const finalLiquidity = 2n * amountIn - 2n * tax;
+                const finalLiquidity = 2n * amountIn - 2n * tax + initialLiquidityAmount;
 
                 const reserve = await ewma.getReserve(tokenAddress);
                 Assert.expect(reserve.liquidity).toEqual(finalLiquidity);
@@ -258,9 +311,9 @@ await opnet(
             }).toThrow('Amount in cannot be zero');
         });
 
-        // Test 7: Attempt adding liquidity with no quote set
+        // Test 7: Attempt adding liquidity with no quote set (i.e., no createPool)
         await vm.it('should fail if no p0 (quote) is set', async () => {
-            // Re-init a scenario with no quote
+            // Re-init a scenario with no call to createPool()
             Blockchain.dispose();
             Blockchain.clearContracts();
             await Blockchain.init();
@@ -275,7 +328,7 @@ await opnet(
             await token.init();
             await token.mint(userAddress, 10_000_000);
 
-            ewma = new EWMA(userAddress, ewmaAddress);
+            ewma = new NativeSwap(userAddress, ewmaAddress);
             Blockchain.register(ewma);
             await ewma.init();
             Blockchain.msgSender = userAddress;
@@ -283,7 +336,7 @@ await opnet(
             const amountIn = Blockchain.expandTo18Decimals(100);
             await token.approve(userAddress, ewma.address, amountIn);
 
-            // No setQuote called
+            // No createPool(...) invoked here => p0 = 0
             await Assert.expect(async () => {
                 await ewma.addLiquidity(
                     tokenAddress,
@@ -293,15 +346,34 @@ await opnet(
             }).toThrow('Quote is zero');
         });
 
-        // Test 8: Ensure minimum liquidity in sat terms enforced
+        // Test 8: Ensure minimum liquidity in sat terms is enforced
         await vm.it('should fail if liquidity in sat value is too low', async () => {
-            // Set a very high p0 to reduce amountIn's sat value
-            Blockchain.msgSender = userAddress;
-            await ewma.resetStates();
+            // We want a huge floorPrice. So re-init an empty scenario and createPool with large p0
+            Blockchain.dispose();
+            Blockchain.clearContracts();
+            await Blockchain.init();
 
-            await setQuote(Blockchain.expandToDecimal(100_000, 8));
+            token = new OP_20({
+                file: 'MyToken',
+                deployer: liquidityOwner,
+                address: tokenAddress,
+                decimals: 18,
+            });
+            Blockchain.register(token);
+            await token.init();
+            await token.mint(userAddress, 10_000_000);
 
-            // With a huge p0, a small amountIn is less satoshis worth
+            ewma = new NativeSwap(liquidityOwner, ewmaAddress);
+            Blockchain.register(ewma);
+            await ewma.init();
+
+            // createPool with a very high floorPrice => p0
+            await createPool(
+                Blockchain.expandToDecimal(100_000, 8), // extremely high price
+                Blockchain.expandTo18Decimals(1_000), // initial liquidity
+            );
+
+            // With that huge p0, a smaller subsequent addition is worthless in sat terms:
             const smallAmount = 10_000n;
             await token.approve(userAddress, ewma.address, smallAmount);
 
@@ -326,14 +398,12 @@ await opnet(
                 false,
             );
 
-            // Simulate a scenario where provider gets reserved by making a reservation
-            // We'll just trust the code that if reserved != 0, can't change receiver.
-            // To do that, we actually need a second user to create a reservation:
+            // Simulate a scenario where provider gets reserved
             Blockchain.msgSender = Blockchain.generateRandomAddress();
-            await Assert.expect(async () => {
-                await ewma.reserve(tokenAddress, 100_000_000_000n, 1n);
+            await ewma.reserve(tokenAddress, 100_000_000_000n, 1n);
 
-                Blockchain.msgSender = userAddress;
+            Blockchain.msgSender = userAddress;
+            await Assert.expect(async () => {
                 await ewma.addLiquidity(
                     tokenAddress,
                     Blockchain.generateRandomAddress().p2tr(Blockchain.network),
@@ -342,21 +412,6 @@ await opnet(
                 );
             }).toThrow('Cannot change receiver address');
         });
-
-        // Test 10: Add huge liquidity amount to test overflow conditions
-        /*await vm.it('should handle huge liquidity additions without overflow', async () => {
-            const hugeAmount = 340_282_366_920_938_463_463_374_607_431_768_211_455n; // max supply of 340282366920938463463n tokens
-            await token.mintRaw(userAddress, hugeAmount);
-            await token.approve(userAddress, ewma.address, hugeAmount);
-            await Assert.expect(async () => {
-                await ewma.addLiquidity(
-                    tokenAddress,
-                    userAddress.p2tr(Blockchain.network),
-                    hugeAmount,
-                    false,
-                );
-            }).toNotThrow();
-        });*/
 
         // Test 11: Multiple providers adding liquidity to both normal and priority queues
         await vm.it(
@@ -393,7 +448,7 @@ await opnet(
 
                 // Check total reserve: sum of normal + (amt - fee)
                 const feeAmt = (amt * 3n) / 100n;
-                const expectedLiquidity = amt + (amt - feeAmt);
+                const expectedLiquidity = amt + (amt - feeAmt) + initialLiquidityAmount;
                 const reserve = await ewma.getReserve(tokenAddress);
                 Assert.expect(reserve.liquidity).toEqual(expectedLiquidity);
             },
@@ -403,7 +458,7 @@ await opnet(
         await vm.it(
             'should update EWMA after multiple liquidity additions and not revert',
             async () => {
-                // TODO, make the base price not p0 so we can verify this, add swaps verifications.
+                // Just do some repeated additions and a swap
                 const amt = Blockchain.expandTo18Decimals(5000);
                 await token.approve(userAddress, ewma.address, amt);
                 await ewma.addLiquidity(
@@ -420,7 +475,6 @@ await opnet(
                 createRecipientUTXOs(decodedReservation2.recipients);
 
                 Blockchain.blockNumber = Blockchain.blockNumber + 1n;
-
                 await ewma.swap(tokenAddress, false);
 
                 // Advance block
@@ -435,8 +489,6 @@ await opnet(
                     true,
                 );
 
-                // If EWMA update logic was incorrect, it might revert. We just ensure it doesn't revert.
-                // No explicit assert needed besides no error thrown.
                 const finalReserve = await ewma.getReserve(tokenAddress);
                 Assert.expect(finalReserve.liquidity).toBeGreaterThan(0n);
             },
@@ -474,7 +526,7 @@ await opnet(
 
                 // Confirm both are present
                 const feeAmt = (amt * 3n) / 100n;
-                const expectedLiquidity = amt - feeAmt + amt;
+                const expectedLiquidity = amt - feeAmt + amt + initialLiquidityAmount;
                 const reserve = await ewma.getReserve(tokenAddress);
                 Assert.expect(reserve.liquidity).toEqual(expectedLiquidity);
             },
@@ -504,14 +556,13 @@ await opnet(
             await token.approve(provider2, ewma.address, amt);
             await ewma.addLiquidity(tokenAddress, provider2.p2tr(Blockchain.network), amt, false);
 
-            // Buyer: tries to reserve liquidity
+            // Buyer: tries to reserve
             const buyer = Blockchain.generateRandomAddress();
             Blockchain.msgSender = buyer;
             Blockchain.txOrigin = buyer;
 
-            // Attempt to reserve some liquidity
-            const satIn = 10000n; // Enough satoshis to cover some liquidity
-            const minOut = 1n; // minimal output just for testing
+            const satIn = 10000n; // Enough satoshis
+            const minOut = 1n;
             const reservationResponse = await ewma.reserve(tokenAddress, satIn, minOut);
 
             Assert.expect(reservationResponse.response.error).toBeUndefined();
@@ -519,10 +570,7 @@ await opnet(
                 reservationResponse.response.events,
             );
 
-            // Check that reservation recipients include provider1 first (priority)
-            // The decodeReservationEvents logic is user-defined. We assume it returns a list of recipients.
-            // The first reserved liquidity should come from the priority provider.
-            // Since provider1 is priority, expect that the reservation recipients contain provider1's deposit address first.
+            // The first reserved liquidity should come from the priority provider (provider1)
             const priorityProviderRecipient = decodedReservation.recipients[0];
             Assert.expect(priorityProviderRecipient.address).toEqual(
                 provider1.p2tr(Blockchain.network),
@@ -568,6 +616,7 @@ await opnet(
                 const newReceiver = Blockchain.generateRandomAddress().p2tr(Blockchain.network);
                 Blockchain.msgSender = provider;
 
+                // Should NOT revert
                 await ewma.addLiquidity(tokenAddress, newReceiver, amountIn, false);
             },
         );
@@ -598,24 +647,30 @@ await opnet(
             Assert.expect(reservation.response.error).toBeUndefined();
 
             // Fast forward past reservation expiration
-            Blockchain.blockNumber = Blockchain.blockNumber + 10n; // More than 5 blocks (RESERVATION_EXPIRE_AFTER)
+            Blockchain.blockNumber = Blockchain.blockNumber + 10n; // > 5 blocks
 
-            // Trigger purging by making another action that would cause a purge (like another reservation)
+            // Trigger purging by a new reservation
             const reservation2 = await ewma.reserve(tokenAddress, 10_000_000n, 1n);
             Assert.expect(reservation2.response.error).toBeUndefined();
 
             // Check that provider’s liquidity is fully restored
             const reserve = await ewma.getReserve(tokenAddress);
-            Assert.expect(reserve.liquidity).toEqual(amountIn); // Should be equal because expired reservations restore liquidity
+            Assert.expect(reserve.liquidity).toEqual(amountIn + initialLiquidityAmount);
         });
 
         // Test 17: Partial swap after reservation from priority provider
         await vm.it(
             'should correctly handle partial swap from provider after reservation',
             async () => {
+                // Reset states first
                 await ewma.resetStates();
+
+                // Now do createPool instead of setQuote
                 const p0 = Blockchain.expandToDecimal(100_000, 8);
-                await setQuote(p0);
+                await createPool(
+                    p0,
+                    Blockchain.expandTo18Decimals(10_000), // initial liquidity
+                );
 
                 // Setup two providers, one priority, one normal
                 const providerPriority = Blockchain.generateRandomAddress();
@@ -659,37 +714,35 @@ await opnet(
                     reservationResponse.response.events,
                 );
 
+                // Suppose the buyer only actually sends 330 satoshis to each provider address
                 const satSent = 330n;
                 for (let i = 0; i < decodedReservation.recipients.length; i++) {
-                    // overwrite.
                     decodedReservation.recipients[i].amount = satSent;
                 }
 
-                createRecipientUTXOs(decodedReservation.recipients); // Mock sending BTC to the provider addresses
+                createRecipientUTXOs(decodedReservation.recipients);
 
                 Blockchain.blockNumber++;
 
                 // Partial swap execution
-                // The user now swaps with a smaller amount of BTC than reserved to priority provider,
-                // resulting in partial fulfillment. Let's assume the contract logic handles partial swaps.
-                // For simplicity, just execute swap and ensure it doesn't revert.
                 const swapped = await ewma.swap(tokenAddress, false);
-                const swapEvent = EWMA.decodeSwapExecutedEvent(
+                const swapEvent = NativeSwap.decodeSwapExecutedEvent(
                     swapped.response.events[swapped.response.events.length - 1].data,
                 );
 
-                // Check final liquidity
-                // After a partial swap, priority provider's liquidity should be reduced by tokens acquired by the buyer.
-                // We won't compute exact values here but ensure it's less than initial total.
+                // Final liquidity must be > 0 but < sum of both providers’ amounts
                 const finalReserve = await ewma.getReserve(tokenAddress);
                 Assert.expect(finalReserve.liquidity).toBeGreaterThan(0n);
-                Assert.expect(finalReserve.liquidity).toBeLessThan(2n * amt); // since some liquidity was swapped out
+                Assert.expect(finalReserve.liquidity).toBeLessThan(
+                    2n * amt + initialLiquidityAmount,
+                );
 
                 // Check swap event
                 const l = BigInt(decodedReservation.recipients.length);
                 Assert.expect(swapEvent.amountIn).toEqual(satSent * l);
                 Assert.expect(swapEvent.amountOut).toEqual(p0 * l * satSent);
 
+                // Another swap call must fail because the reservation is gone
                 await Assert.expect(async () => {
                     await ewma.swap(tokenAddress, false);
                 }).toThrow('No active reservation found for this address');

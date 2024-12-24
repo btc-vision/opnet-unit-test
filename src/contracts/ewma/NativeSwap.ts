@@ -55,21 +55,15 @@ export interface DecodedReservation {
     totalSatoshis: bigint;
 }
 
-export class EWMA extends ContractRuntime {
+export class NativeSwap extends ContractRuntime {
     // Random address
     public static feeRecipient: string =
         'bcrt1plz0svv3wl05qrrv0dx8hvh5mgqc7jf3mhqgtw8jnj3l3d3cs6lzsfc3mxh';
 
     public static readonly invalidAfter: bigint = 5n;
 
-    public static fixedFeeRatePerTickConsumed: bigint = 10_000n; // The fixed fee rate per tick consumed.
-    public static reservationFeePerProvider: bigint = 4_000n; // The fixed fee rate per tick consumed.
-    public readonly minimumSatForTickReservation: bigint = 10_000n;
-    public readonly minimumLiquidityForTickReservation: bigint = 1_000_000n;
-
-    public readonly alpha: bigint = 10_000n;
-    public readonly k: bigint = 10_000n;
-    public readonly p0ScalingFactor: bigint = 10_000n;
+    public static reservationFees: bigint = 10_000n; // The fixed fee rate per tick consumed.
+    public static priorityQueueFees: bigint = 50_000n; // The fixed fee rate per tick consumed.
 
     // Define selectors for contract methods
     private readonly getQuoteSelector: number = Number(
@@ -103,6 +97,7 @@ export class EWMA extends ContractRuntime {
             deployer: deployer,
             gasLimit,
         });
+
         this.preserveState();
     }
 
@@ -205,7 +200,7 @@ export class EWMA extends ContractRuntime {
         maximumAmountIn: bigint,
         minimumAmountOut: bigint,
     ): Promise<{ result: bigint; response: CallResponse }> {
-        createFeeOutput(EWMA.fixedFeeRatePerTickConsumed);
+        createFeeOutput(NativeSwap.reservationFees);
 
         const calldata = new BinaryWriter();
         calldata.writeSelector(this.reserveTicksSelector);
@@ -234,7 +229,12 @@ export class EWMA extends ContractRuntime {
         receiver: string,
         maximumAmountIn: bigint,
         priorityQueue: boolean = false, // lose 3% in fees
+        disablePriorityQueueFees: boolean = false,
     ): Promise<CallResponse> {
+        if (priorityQueue && !disablePriorityQueueFees) {
+            createFeeOutput(NativeSwap.priorityQueueFees);
+        }
+
         const calldata = new BinaryWriter();
         calldata.writeSelector(this.addLiquiditySelector);
         calldata.writeAddress(token);
@@ -292,14 +292,14 @@ export class EWMA extends ContractRuntime {
             const event = events[i];
             switch (event.type) {
                 case 'LiquidityReserved': {
-                    const recipient = EWMA.decodeLiquidityReservedEvent(event.data);
+                    const recipient = NativeSwap.decodeLiquidityReservedEvent(event.data);
                     e.totalSatoshis += recipient.amount;
 
                     e.recipients.push(recipient);
                     break;
                 }
                 case 'ReservationCreated': {
-                    e.reservation = EWMA.decodeReservationCreatedEvent(event.data);
+                    e.reservation = NativeSwap.decodeReservationCreatedEvent(event.data);
                     break;
                 }
                 default: {

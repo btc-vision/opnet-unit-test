@@ -5,7 +5,7 @@ import {
     TransactionInput,
     TransactionOutput,
 } from '@btc-vision/unit-test-framework';
-import { Recipient } from '../../contracts/ewma/EWMA.js';
+import { Recipient } from '../../contracts/ewma/NativeSwap.js';
 
 export function generateEmptyTransaction(): Transaction {
     const txId = generateTransactionId();

@@ -8,7 +8,7 @@ import {
     OPNetUnit,
     TransferEvent,
 } from '@btc-vision/unit-test-framework';
-import { EWMA, LiquidityAddedEvent } from '../../contracts/ewma/EWMA.js';
+import { NativeSwap, LiquidityAddedEvent } from '../../contracts/ewma/NativeSwap.js';
 import { gas2BTC, gas2Sat, gas2USD } from '../orderbook/utils/OrderBookUtils.js';
 
 const receiver: Address = Blockchain.generateRandomAddress();
@@ -20,7 +20,7 @@ await opnet('Most Basic EWMA Unit Tests', async (vm: OPNetUnit) => {
     await vm.it('should instantiate the order book without crashing', async () => {
         await Assert.expect(async () => {
             const ewmaAddress = Blockchain.generateRandomAddress();
-            const ewma = new EWMA(Blockchain.txOrigin, ewmaAddress);
+            const ewma = new NativeSwap(Blockchain.txOrigin, ewmaAddress);
             Blockchain.register(ewma);
 
             await ewma.init();
@@ -32,7 +32,7 @@ await opnet('Most Basic EWMA Unit Tests', async (vm: OPNetUnit) => {
 });
 
 await opnet('EWMA Contract addLiquidity Tests', async (vm: OPNetUnit) => {
-    let ewma: EWMA;
+    let ewma: NativeSwap;
     let token: OP_20;
 
     Blockchain.msgSender = receiver;
@@ -80,7 +80,7 @@ await opnet('EWMA Contract addLiquidity Tests', async (vm: OPNetUnit) => {
         await token.mint(userAddress, mintAmount);
 
         // Instantiate and register the EWMA contract
-        ewma = new EWMA(userAddress, ewmaAddress);
+        ewma = new NativeSwap(userAddress, ewmaAddress);
         Blockchain.register(ewma);
         await ewma.init();
 
@@ -185,7 +185,7 @@ await opnet('EWMA Contract addLiquidity Tests', async (vm: OPNetUnit) => {
         }
 
         // Assertions on the decoded event
-        const decodedAddedLiquidityEvent = EWMA.decodeLiquidityAddedEvent(liquidityAddedEvent.data);
+        const decodedAddedLiquidityEvent = NativeSwap.decodeLiquidityAddedEvent(liquidityAddedEvent.data);
         console.log(decodedAddedLiquidityEvent);
 
         Assert.expect(decodedAddedLiquidityEvent.totalLiquidity).toEqual(amountIn);
@@ -220,7 +220,7 @@ await opnet('EWMA Contract addLiquidity Tests', async (vm: OPNetUnit) => {
 
         Assert.expect(events[1].type).toEqual('LiquidityAdded');
 
-        const firstDecodedLiquidityAddEvent: LiquidityAddedEvent = EWMA.decodeLiquidityAddedEvent(
+        const firstDecodedLiquidityAddEvent: LiquidityAddedEvent = NativeSwap.decodeLiquidityAddedEvent(
             events[1].data,
         );
 
@@ -249,7 +249,7 @@ await opnet('EWMA Contract addLiquidity Tests', async (vm: OPNetUnit) => {
             return;
         }
 
-        const secondDecodedLiquidityAddEvent: LiquidityAddedEvent = EWMA.decodeLiquidityAddedEvent(
+        const secondDecodedLiquidityAddEvent: LiquidityAddedEvent = NativeSwap.decodeLiquidityAddedEvent(
             events[1].data,
         );
 
@@ -268,7 +268,7 @@ await opnet('EWMA Contract addLiquidity Tests', async (vm: OPNetUnit) => {
 
 /** Performance tests */
 await opnet('EWMA Contract addLiquidity Tests', async (vm: OPNetUnit) => {
-    let ewma: EWMA;
+    let ewma: NativeSwap;
     let token: OP_20;
 
     Blockchain.msgSender = receiver;
@@ -312,7 +312,7 @@ await opnet('EWMA Contract addLiquidity Tests', async (vm: OPNetUnit) => {
         await token.mint(userAddress, mintAmount);
 
         // Instantiate and register the EWMA contract
-        ewma = new EWMA(userAddress, ewmaAddress);
+        ewma = new NativeSwap(userAddress, ewmaAddress);
         Blockchain.register(ewma);
         await ewma.init();
 

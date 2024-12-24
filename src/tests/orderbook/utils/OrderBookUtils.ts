@@ -6,7 +6,7 @@ import {
     TransactionOutput,
 } from '@btc-vision/unit-test-framework';
 import { LiquidityReserved, OrderBook } from '../../../contracts/order-book/OrderBook.js';
-import { Recipient } from '../../../contracts/ewma/EWMA.js';
+import { Recipient } from '../../../contracts/ewma/NativeSwap.js';
 
 export function generateEmptyTransaction(): Transaction {
     const txId = generateTransactionId();
