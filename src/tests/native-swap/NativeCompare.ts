@@ -269,6 +269,14 @@ await opnet('Compare NativeSwap vs Normal OP20 Swap', async (vm: OPNetUnit) => {
      * AND also record a candle point in `data`.
      */
     async function runNativeSwapScenario(count: number) {
+        for (let y = 0; y < 5; y++) {
+            await randomReserve(satoshisIn);
+        }
+
+        toSwap = [];
+
+        Blockchain.blockNumber += 10n;
+
         for (let i = 0; i < count; i++) {
             const randomProvider = Blockchain.generateRandomAddress();
             Blockchain.txOrigin = randomProvider;
