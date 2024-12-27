@@ -346,6 +346,39 @@ await opnet('Compare NativeSwap vs Normal OP20 Swap', async (vm: OPNetUnit) => {
             );
         }
 
+        // Big pump
+        for (let i = 0; i < 1; i++) {
+            const randomProvider = Blockchain.generateRandomAddress();
+            Blockchain.txOrigin = randomProvider;
+            Blockchain.msgSender = randomProvider;
+
+            for (let y = 0; y < 25; y++) {
+                await randomReserve(satoshisIn * 10n);
+            }
+
+            // Advance the chain
+            Blockchain.blockNumber += 1n;
+
+            await swapAll();
+
+            const quote = await nativeSwap.getQuote(myToken.address, satoshisIn);
+            const price = quote.result.currentPrice;
+
+            // Log data in the old array
+            nativeSwapPriceData.push({
+                block: Number(Blockchain.blockNumber.toString()),
+                currentPrice: price,
+            });
+
+            // Also record a candle in `data`
+            // We'll do the same logic as your snippet: parse the price to float, etc.
+            recordCandle(
+                Blockchain.blockNumber,
+                price, // raw bigint
+                dataNative,
+            );
+        }
+
         // Reset
         Blockchain.txOrigin = userAddress;
         Blockchain.msgSender = userAddress;
@@ -531,6 +564,67 @@ await opnet('Compare NativeSwap vs Normal OP20 Swap', async (vm: OPNetUnit) => {
 
             // record a candle
             recordCandle(Blockchain.blockNumber, tokenPerSat, data);
+        }
+
+        // big pump
+        for (let i = 0; i < count; i++) {
+            Blockchain.txOrigin = receiver;
+            Blockchain.msgSender = receiver;
+
+            for (let x = 0; x < 5; x++) {
+                // do the swap
+                const swap =
+                    await motoswapRouter.swapExactTokensForTokensSupportingFeeOnTransferTokens(
+                        wbtcIn * 10n,
+                        0n,
+                        path,
+                        receiver,
+                        9999999999n,
+                    );
+
+                const swapped = MotoswapPool.decodeSwapEvent(
+                    swap.events[swap.events.length - 1].data,
+                );
+
+                const usedGasInUSD = gas2USD(swap.usedGas);
+                vm.debug(
+                    `Motoswap swapped, spent approx. ${usedGasInUSD} USD in gas. Swapped: ${swapped.amount1Out || swapped.amount0Out}`,
+                );
+            }
+
+            // Advance block
+            Blockchain.blockNumber += 1n;
+
+            const pairContract = MotoswapPool.createFromRuntime(
+                Blockchain.getContract(poolAddy),
+                WBTC_ADDRESS,
+                tokenAddress,
+            );
+
+            await pairContract.init();
+
+            // read new reserves
+            const [reserve0, reserve1] = [
+                await pairContract.reserve0(),
+                await pairContract.reserve1(),
+            ];
+
+            // sort them so we interpret them correctly
+            const r = getReserves(WBTC_ADDRESS, tokenAddress, reserve0, reserve1);
+
+            // currentPrice = how many myToken we get for `satoshisIn` WBTC
+            const currentPrice = await motoswapRouter.quote(wbtcIn, r.reserve0, r.reserve1);
+            const tokenPerSat = currentPrice / satoshisIn;
+
+            motoswapPriceData.push({
+                block: Number(Blockchain.blockNumber.toString()),
+                currentPrice: tokenPerSat,
+            });
+
+            // record a candle
+            recordCandle(Blockchain.blockNumber, tokenPerSat, data);
+
+            pairContract.dispose();
         }
 
         // reset
