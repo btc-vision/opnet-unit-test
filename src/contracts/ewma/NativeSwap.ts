@@ -42,6 +42,8 @@ export interface LiquidityReserved {
 export interface Reserve {
     readonly liquidity: bigint;
     readonly reserved: bigint;
+    readonly virtualBTCReserve: bigint;
+    readonly virtualTokenReserve: bigint;
 }
 
 export interface Recipient {
@@ -356,6 +358,8 @@ export class NativeSwap extends ContractRuntime {
         return {
             liquidity: reader.readU256(),
             reserved: reader.readU256(),
+            virtualBTCReserve: reader.readU256(),
+            virtualTokenReserve: reader.readU256(),
         };
     }
 
@@ -366,7 +370,12 @@ export class NativeSwap extends ContractRuntime {
         receiver: string,
         antiBotEnabledFor: number,
         antiBotMaximumTokensPerReservation: bigint,
+        maxReservesIn5BlocksPercent: number = 4000,
     ): Promise<CallResponse> {
+        if (maxReservesIn5BlocksPercent < 500 || maxReservesIn5BlocksPercent > 10000) {
+            throw new Error('maxReservesIn5BlocksPercent should be between 500 and 10000');
+        }
+
         const calldata = new BinaryWriter();
         calldata.writeSelector(this.setQuoteSelector);
         calldata.writeAddress(token);
@@ -375,6 +384,7 @@ export class NativeSwap extends ContractRuntime {
         calldata.writeStringWithLength(receiver);
         calldata.writeU16(antiBotEnabledFor);
         calldata.writeU256(antiBotMaximumTokensPerReservation);
+        calldata.writeU16(maxReservesIn5BlocksPercent);
 
         const result = await this.execute(calldata.getBuffer());
         if (result.error) throw this.handleError(result.error);
