@@ -461,7 +461,7 @@ await opnet('Compare NativeSwap vs Normal OP20 Swap', async (vm: OPNetUnit) => {
             pairContract.dispose();
         }
 
-        const p = path.reverse();
+        let p = path.reverse();
 
         // Sell side
         for (let i = 0; i < count; i++) {
@@ -566,18 +566,22 @@ await opnet('Compare NativeSwap vs Normal OP20 Swap', async (vm: OPNetUnit) => {
             recordCandle(Blockchain.blockNumber, tokenPerSat, data);
         }
 
+        p = path.reverse();
+
         // big pump
-        for (let i = 0; i < count; i++) {
+        for (let i = 0; i < 1; i++) {
             Blockchain.txOrigin = receiver;
             Blockchain.msgSender = receiver;
 
-            for (let x = 0; x < 5; x++) {
+            for (let x = 0; x < 25; x++) {
+                await wbtc.mintRaw(receiver, wbtcIn * 10n);
+
                 // do the swap
                 const swap =
                     await motoswapRouter.swapExactTokensForTokensSupportingFeeOnTransferTokens(
                         wbtcIn * 10n,
                         0n,
-                        path,
+                        p,
                         receiver,
                         9999999999n,
                     );
