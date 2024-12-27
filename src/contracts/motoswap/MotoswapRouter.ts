@@ -42,6 +42,15 @@ export class MotoswapRouter extends ContractRuntime {
         this.preserveState();
     }
 
+    public static decodeSwapEvent(data: Uint8Array): [Address, bigint, bigint] {
+        const reader = new BinaryReader(data);
+        const buyer = reader.readAddress();
+        const amountIn = reader.readU256();
+        const amountOut = reader.readU256();
+
+        return [buyer, amountIn, amountOut];
+    }
+
     public async getFactory(): Promise<Address> {
         const binaryWriter = new BinaryWriter();
         binaryWriter.writeSelector(this.FACTORY_SELECTOR);

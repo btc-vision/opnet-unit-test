@@ -23,6 +23,8 @@
         "test:native:addliquidity": "tsx src/tests/native-swap/NativeSwapAddLiquidity.ts",
         "test:native:setquote": "tsx src/tests/native-swap/NativeSwapSetQuote.ts",
         "test:native:purge": "tsx src/tests/native-swap/NativeSwapPurge.ts",
+        "test:native:test": "tsx src/tests/native-swap/EWMATest.ts",
+        "test:native:compare": "tsx src/tests/native-swap/NativeCompare.ts",
         "test": "npm-run-all test:*"
     },
     "author": "OP_NET",

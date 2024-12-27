@@ -301,6 +301,39 @@ export class MotoswapPool extends OP_20 {
         return result;
     }
 
+    public async reserve0(): Promise<bigint> {
+        const calldata = new BinaryWriter();
+        calldata.writeSelector(this.reservesSelector);
+
+        const result = await this.execute(Buffer.from(calldata.getBuffer()));
+
+        const response = result.response;
+        if (!response) {
+            this.dispose();
+            throw result.error;
+        }
+
+        const reader: BinaryReader = new BinaryReader(response);
+        return reader.readU256();
+    }
+
+    public async reserve1(): Promise<bigint> {
+        const calldata = new BinaryWriter();
+        calldata.writeSelector(this.reservesSelector);
+
+        const result = await this.execute(Buffer.from(calldata.getBuffer()));
+
+        const response = result.response;
+        if (!response) {
+            this.dispose();
+            throw result.error;
+        }
+
+        const reader: BinaryReader = new BinaryReader(response);
+        reader.readU256(); // skip reserve0
+        return reader.readU256();
+    }
+
     public async getReserves(): Promise<Reserves> {
         const calldata = new BinaryWriter();
         calldata.writeSelector(this.reservesSelector);

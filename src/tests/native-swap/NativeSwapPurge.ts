@@ -91,10 +91,9 @@ await opnet('NativeSwap: Purging Reservations Extensive Tests', async (vm: OPNet
         Blockchain.msgSender = userAddress;
 
         // Set a base quote
-        await createPool(
-            Blockchain.expandToDecimal(1, 8),
-            Blockchain.expandToDecimal(1, 8) * 10_000n,
-        );
+        await createPool(1_000_000n, Blockchain.expandToDecimal(1, 8) * 1_000_000n);
+
+        Blockchain.blockNumber += 1n;
     });
 
     vm.afterEach(() => {
@@ -108,10 +107,10 @@ await opnet('NativeSwap: Purging Reservations Extensive Tests', async (vm: OPNet
         //await token.mintRaw(buyer, 100_000n);
 
         // Make a reservation in current block
-        await makeReservation(buyer, 100_000n, 1n);
+        await makeReservation(buyer, 1_000_000n, 1n);
 
         // Make another reservation to trigger purge attempt
-        await makeReservation(Blockchain.generateRandomAddress(), 50_000n, 1n);
+        await makeReservation(Blockchain.generateRandomAddress(), 50_000_000n, 1n);
 
         // No exceptions and no expired reservations means onNoPurge was executed successfully
         Assert.expect(true);
@@ -139,10 +138,9 @@ await opnet('NativeSwap: Purging Reservations Extensive Tests', async (vm: OPNet
         'should purge a single expired reservation, (error, not enough liquidity)',
         async () => {
             const buyer = Blockchain.generateRandomAddress();
-            await token.mintRaw(buyer, 1_000_000n);
 
             // Make a reservation at current block
-            await makeReservation(buyer, 100_000n, 1n);
+            await makeReservation(buyer, 100_000_000_000_000n, 1n);
 
             // Advance beyond expiration
             Blockchain.blockNumber = Blockchain.blockNumber + 10n;
@@ -158,9 +156,8 @@ await opnet('NativeSwap: Purging Reservations Extensive Tests', async (vm: OPNet
     await vm.it(
         'should purge expired reservations and not be able to reserve if not expired',
         async () => {
-            const provider = await addProviderLiquidity(Blockchain.expandTo18Decimals(1000));
+            await addProviderLiquidity(Blockchain.expandTo18Decimals(100_000));
             const buyer = Blockchain.generateRandomAddress();
-            await token.mintRaw(buyer, 1_000_000n);
 
             // Create reservations at blocks 1000,1001,1002
             Blockchain.blockNumber = 1000n;
@@ -169,26 +166,31 @@ await opnet('NativeSwap: Purging Reservations Extensive Tests', async (vm: OPNet
             await Assert.expect(async () => {
                 Blockchain.blockNumber = 1001n;
                 await makeReservation(buyer, 100_000n, 1n);
+                console.log('wat 1');
             }).toThrow('Reservation already active');
 
             await Assert.expect(async () => {
                 Blockchain.blockNumber = 1002n;
                 await makeReservation(buyer, 100_000n, 1n);
+                console.log('wat 2');
             }).toThrow('Reservation already active');
 
             await Assert.expect(async () => {
                 Blockchain.blockNumber = 1003n;
                 await makeReservation(buyer, 100_000n, 1n);
+                console.log('wat 3');
             }).toThrow('Reservation already active');
 
             await Assert.expect(async () => {
                 Blockchain.blockNumber = 1004n;
                 await makeReservation(buyer, 100_000n, 1n);
+                console.log('wat 4');
             }).toThrow('Reservation already active');
 
             await Assert.expect(async () => {
                 Blockchain.blockNumber = 1005n;
                 await makeReservation(buyer, 100_000n, 1n);
+                console.log('wat 5');
             }).toThrow('Reservation already active');
 
             // Advance beyond expiration for first two reservations
@@ -227,7 +229,7 @@ await opnet('NativeSwap: Purging Reservations Extensive Tests', async (vm: OPNet
     await vm.it(
         'should handle a large number of reservations spread across many blocks and purge them efficiently',
         async () => {
-            const provider = await addProviderLiquidity(Blockchain.expandTo18Decimals(21_000_000));
+            await addProviderLiquidity(Blockchain.expandTo18Decimals(21_000_000));
             Blockchain.blockNumber = 1000n;
 
             // Create 50 reservations over 10 different blocks
@@ -277,22 +279,25 @@ await opnet('NativeSwap: Purging Reservations Extensive Tests', async (vm: OPNet
         },
     );
 
-    /*await vm.it('should handle consecutive purges gracefully', async () => {
-        const provider = await addProviderLiquidity(Blockchain.expandTo18Decimals(5000));
+    await vm.it('should handle consecutive purges gracefully', async () => {
+        await addProviderLiquidity(Blockchain.expandTo18Decimals(5000));
         const buyer = Blockchain.generateRandomAddress();
-        await token.mintRaw(buyer, 10_000_000n);
 
         // Reservations at blocks 3000..3004
         for (let i = 0; i < 5; i++) {
+            const buyer = Blockchain.generateRandomAddress();
             Blockchain.blockNumber = 3000n + BigInt(i);
+            Blockchain.msgSender = buyer;
+            Blockchain.txOrigin = buyer;
             await makeReservation(buyer, 200_000n, 1n);
         }
 
+        Blockchain.msgSender = buyer;
+        Blockchain.txOrigin = buyer;
+        await makeReservation(buyer, 200_000n, 1n);
+
         // Advance and purge
         Blockchain.blockNumber = 3010n;
-        await makeReservation(buyer, 10_000n, 1n);
-
-        // Another purge attempt without new expirations
         await makeReservation(buyer, 10_000n, 1n);
 
         const reserve = await ewma.getReserve(tokenAddress);
@@ -305,10 +310,10 @@ await opnet('NativeSwap: Purging Reservations Extensive Tests', async (vm: OPNet
         await token.mintRaw(buyer, 10_000_000n);
 
         Blockchain.blockNumber = 4000n;
-        await makeReservation(buyer, 10_000_000n, 1n);
+        await makeReservation(buyer, 100_000_000n, 1n);
 
         Blockchain.blockNumber = 4010n;
-        await makeReservation(buyer, 1_000n, 1n);
+        await makeReservation(buyer, 10_000n, 1n);
 
         const reserve = await ewma.getReserve(tokenAddress);
         Assert.expect(reserve.liquidity).toBeGreaterThanOrEqual(0n);
@@ -319,7 +324,7 @@ await opnet('NativeSwap: Purging Reservations Extensive Tests', async (vm: OPNet
         const buyer = Blockchain.generateRandomAddress();
         await token.mintRaw(buyer, 10_000_000n);
 
-        const nearMaxBlock = 2n ** 32n - 10n;
+        const nearMaxBlock = 2n ** 32n - 11n;
         Blockchain.blockNumber = nearMaxBlock;
 
         await makeReservation(buyer, 100_000n, 1n);
@@ -353,9 +358,8 @@ await opnet('NativeSwap: Purging Reservations Extensive Tests', async (vm: OPNet
             );
 
             const buyer = Blockchain.generateRandomAddress();
-            await token.mintRaw(buyer, 100_000_000n);
-
             for (let i = 0; i < 8; i++) {
+                const buyer = Blockchain.generateRandomAddress();
                 Blockchain.blockNumber = 6000n + BigInt(i);
                 await makeReservation(buyer, 50_000n, 1n);
             }
@@ -369,5 +373,5 @@ await opnet('NativeSwap: Purging Reservations Extensive Tests', async (vm: OPNet
             const reserve = await ewma.getReserve(tokenAddress);
             Assert.expect(reserve.liquidity).toBeGreaterThan(0n);
         },
-    );*/
+    );
 });

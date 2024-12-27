@@ -302,6 +302,9 @@ export class NativeSwap extends ContractRuntime {
                     e.reservation = NativeSwap.decodeReservationCreatedEvent(event.data);
                     break;
                 }
+                case 'Transfer': {
+                    break;
+                }
                 default: {
                     throw new Error(`Unknown event type: ${event.type}`);
                 }
