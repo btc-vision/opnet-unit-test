@@ -125,7 +125,7 @@ await opnet('Compare NativeSwap vs Normal OP20 Swap', async (vm: OPNetUnit) => {
         await createNativeSwapPool(floorPrice, point25InitialLiquidity);
 
         // 1) Make 3 consecutive swaps with the same parameters on NativeSwap
-        await runNativeSwapScenario(1);
+        await runNativeSwapScenario(25);
     });
 
     await vm.it('compare with Motoswap', async () => {
@@ -136,7 +136,7 @@ await opnet('Compare NativeSwap vs Normal OP20 Swap', async (vm: OPNetUnit) => {
         // and initialLiquidity for myToken, we effectively produce that ratio.
         await addMotoswapLiquidity(point25InitialLiquidity / floorPrice, point25InitialLiquidity);
 
-        await runMotoswapScenario(1);
+        await runMotoswapScenario(25);
 
         vm.debug('\n===== Candle Data Motoswap Native =====');
         console.log(JSON.stringify(dataNative));
@@ -293,17 +293,19 @@ await opnet('Compare NativeSwap vs Normal OP20 Swap', async (vm: OPNetUnit) => {
      * AND also record a candle point in `data`.
      */
     async function runNativeSwapScenario(count: number) {
-        for (let i = 0; i < count; i++) {
+        for (let i = 0; i < 10; i++) {
             const randomProvider = Blockchain.generateRandomAddress();
             Blockchain.txOrigin = randomProvider;
             Blockchain.msgSender = randomProvider;
 
-            //const quote = await nativeSwap.getQuote(myToken.address, satoshisIn);
-            //const price = quote.result.currentPrice;
+            for (let x = 0; x < 5; x++) {
+                const quote = await nativeSwap.getQuote(myToken.address, satoshisIn);
+                const price = quote.result.currentPrice;
 
-            //await addLiquidityRandom(satoshisIn * price);
+                await addLiquidityRandom(satoshisIn * price);
+            }
 
-            if (i + 1 === count) {
+            if (i + 1 === 10) {
                 await addLiquidityRandom(initialLiquidity);
             }
 
@@ -327,6 +329,40 @@ await opnet('Compare NativeSwap vs Normal OP20 Swap', async (vm: OPNetUnit) => {
             );
         }
 
+        for (let i = 0; i < count; i++) {
+            const randomProvider = Blockchain.generateRandomAddress();
+            Blockchain.txOrigin = randomProvider;
+            Blockchain.msgSender = randomProvider;
+
+            for (let y = 0; y < 5; y++) {
+                try {
+                    await randomReserve(satoshisIn);
+                } catch (e) {}
+            }
+
+            // Advance the chain
+            Blockchain.blockNumber += 1n;
+
+            await swapAll();
+
+            const quote = await nativeSwap.getQuote(myToken.address, satoshisIn);
+            const price = quote.result.currentPrice;
+
+            // Log data in the old array
+            nativeSwapPriceData.push({
+                block: Number(Blockchain.blockNumber.toString()),
+                currentPrice: price,
+            });
+
+            // Also record a candle in `data`
+            // We'll do the same logic as your snippet: parse the price to float, etc.
+            recordCandle(
+                Blockchain.blockNumber,
+                price, // raw bigint
+                dataNative,
+            );
+        }
+
         // Reset
         Blockchain.txOrigin = userAddress;
         Blockchain.msgSender = userAddress;
@@ -342,14 +378,14 @@ await opnet('Compare NativeSwap vs Normal OP20 Swap', async (vm: OPNetUnit) => {
         await myToken.approve(receiver, motoswapRouter.address, MaxUint256);
 
         const path = [WBTC_ADDRESS, tokenAddress];
-        const p = path.reverse();
+        let p = path.reverse();
 
         // Sell side
-        for (let i = 0; i < count; i++) {
+        for (let i = 0; i < 10; i++) {
             Blockchain.txOrigin = receiver;
             Blockchain.msgSender = receiver;
 
-            /*for (let x = 0; x < 5; x++) {
+            for (let x = 0; x < 5; x++) {
                 const pairContract = MotoswapPool.createFromRuntime(
                     Blockchain.getContract(poolAddy),
                     WBTC_ADDRESS,
@@ -388,9 +424,9 @@ await opnet('Compare NativeSwap vs Normal OP20 Swap', async (vm: OPNetUnit) => {
                 );
 
                 pairContract.dispose();
-            }*/
+            }
 
-            if (i + 1 === count) {
+            if (i + 1 === 10) {
                 await myToken.mintRaw(receiver, initialLiquidity);
 
                 const swap =
@@ -448,6 +484,69 @@ await opnet('Compare NativeSwap vs Normal OP20 Swap', async (vm: OPNetUnit) => {
 
             // record a candle
             recordCandle(Blockchain.blockNumber, tokenPerSat, data);
+        }
+
+        p = path.reverse();
+
+        // Buy Side
+        for (let i = 0; i < count; i++) {
+            Blockchain.txOrigin = receiver;
+            Blockchain.msgSender = receiver;
+
+            for (let x = 0; x < 5; x++) {
+                // do the swap
+                const swap =
+                    await motoswapRouter.swapExactTokensForTokensSupportingFeeOnTransferTokens(
+                        wbtcIn,
+                        0n,
+                        p,
+                        receiver,
+                        9999999999n,
+                    );
+
+                const swapped = MotoswapPool.decodeSwapEvent(
+                    swap.events[swap.events.length - 1].data,
+                );
+
+                const usedGasInUSD = gas2USD(swap.usedGas);
+                vm.debug(
+                    `Motoswap swapped, spent approx. ${usedGasInUSD} USD in gas. Swapped: ${swapped.amount1Out || swapped.amount0Out}`,
+                );
+            }
+
+            // Advance block
+            Blockchain.blockNumber += 1n;
+
+            const pairContract = MotoswapPool.createFromRuntime(
+                Blockchain.getContract(poolAddy),
+                WBTC_ADDRESS,
+                tokenAddress,
+            );
+
+            await pairContract.init();
+
+            // read new reserves
+            const [reserve0, reserve1] = [
+                await pairContract.reserve0(),
+                await pairContract.reserve1(),
+            ];
+
+            // sort them so we interpret them correctly
+            const r = getReserves(WBTC_ADDRESS, tokenAddress, reserve0, reserve1);
+
+            // currentPrice = how many myToken we get for `satoshisIn` WBTC
+            const currentPrice = await motoswapRouter.quote(wbtcIn, r.reserve0, r.reserve1);
+            const tokenPerSat = currentPrice / satoshisIn;
+
+            motoswapPriceData.push({
+                block: Number(Blockchain.blockNumber.toString()),
+                currentPrice: tokenPerSat,
+            });
+
+            // record a candle
+            recordCandle(Blockchain.blockNumber, tokenPerSat, data);
+
+            pairContract.dispose();
         }
     }
 
