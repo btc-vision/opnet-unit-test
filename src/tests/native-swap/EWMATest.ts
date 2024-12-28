@@ -96,7 +96,7 @@ await opnet('EWMA Contract - Big Listing and Big Pump Scenario', async (vm: OPNe
         // Add liquidity
         Blockchain.txOrigin = provider;
         Blockchain.msgSender = provider;
-        await ewma.addLiquidity(tokenAddress, provider.p2tr(Blockchain.network), l);
+        await ewma.listLiquidity(tokenAddress, provider.p2tr(Blockchain.network), l);
 
         // Update total liquidity used
         totalLiquidityUsed += l;

@@ -219,7 +219,7 @@ await opnet('Compare NativeSwap vs Normal OP20 Swap', async (vm: OPNetUnit) => {
         // Add liquidity
         Blockchain.txOrigin = provider;
         Blockchain.msgSender = provider;
-        await nativeSwap.addLiquidity(tokenAddress, provider.p2tr(Blockchain.network), l);
+        await nativeSwap.listLiquidity(tokenAddress, provider.p2tr(Blockchain.network), l);
 
         vm.info(`Added liquidity for ${l} tokens`);
     }

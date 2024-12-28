@@ -46,7 +46,7 @@ await opnet('NativeSwap: Purging Reservations Extensive Tests', async (vm: OPNet
         Blockchain.msgSender = provider;
         Blockchain.txOrigin = provider;
         await token.approve(provider, ewma.address, amountIn);
-        const resp = await ewma.addLiquidity(
+        const resp = await ewma.listLiquidity(
             tokenAddress,
             provider.p2tr(Blockchain.network),
             amountIn,

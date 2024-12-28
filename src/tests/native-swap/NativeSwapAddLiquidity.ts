@@ -125,7 +125,7 @@ await opnet(
             const initialUserBalance = await token.balanceOf(userAddress);
             const initialContractBalance = await token.balanceOf(ewma.address);
 
-            const resp: CallResponse = await ewma.addLiquidity(
+            const resp: CallResponse = await ewma.listLiquidity(
                 tokenAddress,
                 userAddress.p2tr(Blockchain.network),
                 amountIn,
@@ -164,7 +164,7 @@ await opnet(
                 const initialDeadBalance = await token.balanceOf(Address.dead());
 
                 // Priority mode: 3% fee to dead address by default logic
-                const resp = await ewma.addLiquidity(
+                const resp = await ewma.listLiquidity(
                     tokenAddress,
                     userAddress.p2tr(Blockchain.network),
                     amountIn,
@@ -203,7 +203,7 @@ await opnet(
                 await token.approve(userAddress, ewma.address, amountIn * 2n);
 
                 // First addition
-                await ewma.addLiquidity(
+                await ewma.listLiquidity(
                     tokenAddress,
                     userAddress.p2tr(Blockchain.network),
                     amountIn,
@@ -211,7 +211,7 @@ await opnet(
                 );
 
                 // Second addition
-                const resp = await ewma.addLiquidity(
+                const resp = await ewma.listLiquidity(
                     tokenAddress,
                     userAddress.p2tr(Blockchain.network),
                     amountIn,
@@ -238,7 +238,7 @@ await opnet(
                 await token.approve(userAddress, ewma.address, amountIn * 2n);
 
                 // Add to priority first
-                await ewma.addLiquidity(
+                await ewma.listLiquidity(
                     tokenAddress,
                     userAddress.p2tr(Blockchain.network),
                     amountIn,
@@ -247,7 +247,7 @@ await opnet(
 
                 // Try adding to normal queue
                 await Assert.expect(async () => {
-                    await ewma.addLiquidity(
+                    await ewma.listLiquidity(
                         tokenAddress,
                         userAddress.p2tr(Blockchain.network),
                         amountIn,
@@ -268,7 +268,7 @@ await opnet(
                 await token.approve(userAddress, ewma.address, amountIn * 2n);
 
                 // Step 1: Add liquidity normally (no tax)
-                await ewma.addLiquidity(
+                await ewma.listLiquidity(
                     tokenAddress,
                     userAddress.p2tr(Blockchain.network),
                     amountIn,
@@ -279,7 +279,7 @@ await opnet(
                 // Provider liquidity = amountIn
 
                 // Step 2: Add liquidity in priority mode
-                const resp = await ewma.addLiquidity(
+                const resp = await ewma.listLiquidity(
                     tokenAddress,
                     userAddress.p2tr(Blockchain.network),
                     amountIn,
@@ -302,7 +302,7 @@ await opnet(
         await vm.it('should fail adding liquidity with zero amount', async () => {
             await token.approve(userAddress, ewma.address, 0n);
             await Assert.expect(async () => {
-                await ewma.addLiquidity(
+                await ewma.listLiquidity(
                     tokenAddress,
                     userAddress.p2tr(Blockchain.network),
                     0n,
@@ -338,7 +338,7 @@ await opnet(
 
             // No createPool(...) invoked here => p0 = 0
             await Assert.expect(async () => {
-                await ewma.addLiquidity(
+                await ewma.listLiquidity(
                     tokenAddress,
                     userAddress.p2tr(Blockchain.network),
                     amountIn,
@@ -378,7 +378,7 @@ await opnet(
             await token.approve(userAddress, ewma.address, smallAmount);
 
             await Assert.expect(async () => {
-                await ewma.addLiquidity(
+                await ewma.listLiquidity(
                     tokenAddress,
                     userAddress.p2tr(Blockchain.network),
                     smallAmount,
@@ -391,7 +391,7 @@ await opnet(
             // Add liquidity once normally
             const amountIn = Blockchain.expandTo18Decimals(1000);
             await token.approve(userAddress, ewma.address, amountIn * 2n);
-            await ewma.addLiquidity(
+            await ewma.listLiquidity(
                 tokenAddress,
                 userAddress.p2tr(Blockchain.network),
                 amountIn,
@@ -404,7 +404,7 @@ await opnet(
 
             Blockchain.msgSender = userAddress;
             await Assert.expect(async () => {
-                await ewma.addLiquidity(
+                await ewma.listLiquidity(
                     tokenAddress,
                     Blockchain.generateRandomAddress().p2tr(Blockchain.network),
                     amountIn,
@@ -428,7 +428,7 @@ await opnet(
                 Blockchain.msgSender = provider1;
                 Blockchain.txOrigin = provider1;
                 await token.approve(provider1, ewma.address, amt);
-                await ewma.addLiquidity(
+                await ewma.listLiquidity(
                     tokenAddress,
                     provider1.p2tr(Blockchain.network),
                     amt,
@@ -439,7 +439,7 @@ await opnet(
                 Blockchain.msgSender = provider2;
                 Blockchain.txOrigin = provider2;
                 await token.approve(provider2, ewma.address, amt);
-                await ewma.addLiquidity(
+                await ewma.listLiquidity(
                     tokenAddress,
                     provider2.p2tr(Blockchain.network),
                     amt,
@@ -461,7 +461,7 @@ await opnet(
                 // Just do some repeated additions and a swap
                 const amt = Blockchain.expandTo18Decimals(5000);
                 await token.approve(userAddress, ewma.address, amt);
-                await ewma.addLiquidity(
+                await ewma.listLiquidity(
                     tokenAddress,
                     userAddress.p2tr(Blockchain.network),
                     amt,
@@ -482,7 +482,7 @@ await opnet(
 
                 // Add more liquidity
                 await token.approve(userAddress, ewma.address, amt);
-                await ewma.addLiquidity(
+                await ewma.listLiquidity(
                     tokenAddress,
                     userAddress.p2tr(Blockchain.network),
                     amt,
@@ -506,7 +506,7 @@ await opnet(
                 await token.approve(user2, ewma.address, amt);
 
                 // userAddress: add priority
-                await ewma.addLiquidity(
+                await ewma.listLiquidity(
                     tokenAddress,
                     userAddress.p2tr(Blockchain.network),
                     amt,
@@ -516,7 +516,7 @@ await opnet(
                 // user2: add normal
                 Blockchain.msgSender = user2;
                 Blockchain.txOrigin = user2;
-                const resp = await ewma.addLiquidity(
+                const resp = await ewma.listLiquidity(
                     tokenAddress,
                     user2.p2tr(Blockchain.network),
                     amt,
@@ -548,13 +548,13 @@ await opnet(
             Blockchain.msgSender = provider1;
             Blockchain.txOrigin = provider1;
             await token.approve(provider1, ewma.address, amt);
-            await ewma.addLiquidity(tokenAddress, provider1.p2tr(Blockchain.network), amt, true);
+            await ewma.listLiquidity(tokenAddress, provider1.p2tr(Blockchain.network), amt, true);
 
             // Provider2: normal queue
             Blockchain.msgSender = provider2;
             Blockchain.txOrigin = provider2;
             await token.approve(provider2, ewma.address, amt);
-            await ewma.addLiquidity(tokenAddress, provider2.p2tr(Blockchain.network), amt, false);
+            await ewma.listLiquidity(tokenAddress, provider2.p2tr(Blockchain.network), amt, false);
 
             // Buyer: tries to reserve
             const buyer = Blockchain.generateRandomAddress();
@@ -589,7 +589,7 @@ await opnet(
                 Blockchain.msgSender = provider;
                 Blockchain.txOrigin = provider;
                 await token.approve(provider, ewma.address, amountIn * 2n);
-                await ewma.addLiquidity(
+                await ewma.listLiquidity(
                     tokenAddress,
                     provider.p2tr(Blockchain.network),
                     amountIn,
@@ -618,7 +618,7 @@ await opnet(
                 Blockchain.msgSender = provider;
 
                 // Should NOT revert
-                await ewma.addLiquidity(tokenAddress, newReceiver, amountIn, false);
+                await ewma.listLiquidity(tokenAddress, newReceiver, amountIn, false);
             },
         );
 
@@ -631,7 +631,7 @@ await opnet(
             Blockchain.msgSender = provider;
             Blockchain.txOrigin = provider;
             await token.approve(provider, ewma.address, amountIn);
-            await ewma.addLiquidity(
+            await ewma.listLiquidity(
                 tokenAddress,
                 provider.p2tr(Blockchain.network),
                 amountIn,
@@ -683,7 +683,7 @@ await opnet(
                 Blockchain.txOrigin = providerPriority;
                 await token.mintRaw(providerPriority, amt);
                 await token.approve(providerPriority, ewma.address, amt);
-                await ewma.addLiquidity(
+                await ewma.listLiquidity(
                     tokenAddress,
                     providerPriority.p2tr(Blockchain.network),
                     amt,
@@ -695,7 +695,7 @@ await opnet(
                 Blockchain.txOrigin = providerNormal;
                 await token.mintRaw(providerNormal, amt);
                 await token.approve(providerNormal, ewma.address, amt);
-                await ewma.addLiquidity(
+                await ewma.listLiquidity(
                     tokenAddress,
                     providerNormal.p2tr(Blockchain.network),
                     amt,

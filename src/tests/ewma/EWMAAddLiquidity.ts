@@ -103,7 +103,7 @@ await opnet('EWMA Contract addLiquidity Tests', async (vm: OPNetUnit) => {
 
         // Call addLiquidity and expect it to throw an error
         await Assert.expect(async () => {
-            await ewma.addLiquidity(tokenAddress, userAddress.p2tr(Blockchain.network), amountIn);
+            await ewma.listLiquidity(tokenAddress, userAddress.p2tr(Blockchain.network), amountIn);
         }).toThrow('Insufficient allowance');
     });
 
@@ -115,7 +115,7 @@ await opnet('EWMA Contract addLiquidity Tests', async (vm: OPNetUnit) => {
 
         // Call addLiquidity and expect it to throw an error
         await Assert.expect(async () => {
-            await ewma.addLiquidity(tokenAddress, userAddress.p2tr(Blockchain.network), amountIn);
+            await ewma.listLiquidity(tokenAddress, userAddress.p2tr(Blockchain.network), amountIn);
         }).toThrow('Amount in cannot be zero');
     });
 
@@ -129,7 +129,7 @@ await opnet('EWMA Contract addLiquidity Tests', async (vm: OPNetUnit) => {
         const invalidTokenAddress = Address.dead();
 
         await Assert.expect(async () => {
-            await ewma.addLiquidity(
+            await ewma.listLiquidity(
                 invalidTokenAddress,
                 userAddress.p2tr(Blockchain.network),
                 amountIn,
@@ -150,7 +150,7 @@ await opnet('EWMA Contract addLiquidity Tests', async (vm: OPNetUnit) => {
         const initialContractBalance = await token.balanceOf(ewma.address);
 
         // Call addLiquidity
-        const addLiquidity: CallResponse = await ewma.addLiquidity(
+        const addLiquidity: CallResponse = await ewma.listLiquidity(
             tokenAddress,
             userAddress.p2tr(Blockchain.network),
             amountIn,
@@ -185,7 +185,9 @@ await opnet('EWMA Contract addLiquidity Tests', async (vm: OPNetUnit) => {
         }
 
         // Assertions on the decoded event
-        const decodedAddedLiquidityEvent = NativeSwap.decodeLiquidityAddedEvent(liquidityAddedEvent.data);
+        const decodedAddedLiquidityEvent = NativeSwap.decodeLiquidityAddedEvent(
+            liquidityAddedEvent.data,
+        );
         console.log(decodedAddedLiquidityEvent);
 
         Assert.expect(decodedAddedLiquidityEvent.totalLiquidity).toEqual(amountIn);
@@ -206,7 +208,7 @@ await opnet('EWMA Contract addLiquidity Tests', async (vm: OPNetUnit) => {
         await token.approve(userAddress, ewma.address, amountIn * 2n);
 
         // First addLiquidity
-        let callResponse: CallResponse = await ewma.addLiquidity(
+        let callResponse: CallResponse = await ewma.listLiquidity(
             tokenAddress,
             userAddress.p2tr(Blockchain.network),
             amountIn,
@@ -220,12 +222,11 @@ await opnet('EWMA Contract addLiquidity Tests', async (vm: OPNetUnit) => {
 
         Assert.expect(events[1].type).toEqual('LiquidityAdded');
 
-        const firstDecodedLiquidityAddEvent: LiquidityAddedEvent = NativeSwap.decodeLiquidityAddedEvent(
-            events[1].data,
-        );
+        const firstDecodedLiquidityAddEvent: LiquidityAddedEvent =
+            NativeSwap.decodeLiquidityAddedEvent(events[1].data);
 
         // Second addLiquidity at the same price level
-        callResponse = await ewma.addLiquidity(
+        callResponse = await ewma.listLiquidity(
             tokenAddress,
             userAddress.p2tr(Blockchain.network),
             amountIn,
@@ -249,9 +250,8 @@ await opnet('EWMA Contract addLiquidity Tests', async (vm: OPNetUnit) => {
             return;
         }
 
-        const secondDecodedLiquidityAddEvent: LiquidityAddedEvent = NativeSwap.decodeLiquidityAddedEvent(
-            events[1].data,
-        );
+        const secondDecodedLiquidityAddEvent: LiquidityAddedEvent =
+            NativeSwap.decodeLiquidityAddedEvent(events[1].data);
 
         // Verify that the liquidityAmount is cumulative
         Assert.expect(firstDecodedLiquidityAddEvent.totalLiquidity).toEqual(amountIn);
@@ -337,7 +337,7 @@ await opnet('EWMA Contract addLiquidity Tests', async (vm: OPNetUnit) => {
         await token.approve(userAddress, ewma.address, amountIn);
 
         await Assert.expect(async () => {
-            await ewma.addLiquidity(tokenAddress, invalidReceiver, amountIn);
+            await ewma.listLiquidity(tokenAddress, invalidReceiver, amountIn);
         }).toThrow('Invalid address');
     });
 
@@ -358,7 +358,7 @@ await opnet('EWMA Contract addLiquidity Tests', async (vm: OPNetUnit) => {
         for (let i = 0; i < numberDeposits; i++) {
             const tokenOwner: Address = Blockchain.generateRandomAddress();
 
-            const gas = await ewma.addLiquidity(
+            const gas = await ewma.listLiquidity(
                 tokenAddress,
                 tokenOwner.p2tr(Blockchain.network),
                 amountIn,

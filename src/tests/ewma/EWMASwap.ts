@@ -77,7 +77,7 @@ await opnet('EWMA Contract - getQuote Method Tests', async (vm: OPNetUnit) => {
         Blockchain.txOrigin = provider;
         Blockchain.msgSender = provider;
 
-        await ewma.addLiquidity(
+        await ewma.listLiquidity(
             tokenAddress,
             provider.p2tr(Blockchain.network),
             l, // Assuming maximumAmountIn is liquidityAmount
@@ -146,7 +146,7 @@ await opnet('EWMA Contract - getQuote Method Tests', async (vm: OPNetUnit) => {
         // Provider approves the EWMA contract to spend tokens
         await token.approve(userAddress, ewma.address, amountLiquidity);
 
-        await ewma.addLiquidity(
+        await ewma.listLiquidity(
             tokenAddress,
             userAddress.p2tr(Blockchain.network),
             amountLiquidity,

@@ -74,11 +74,11 @@ export class NativeSwap extends ContractRuntime {
     private readonly reserveTicksSelector: number = Number(
         `0x${this.abiCoder.encodeSelector('reserve')}`,
     );
-    private readonly addLiquiditySelector: number = Number(
-        `0x${this.abiCoder.encodeSelector('addLiquidity')}`,
+    private readonly listLiquiditySelector: number = Number(
+        `0x${this.abiCoder.encodeSelector('listLiquidity')}`,
     );
-    private readonly removeLiquiditySelector: number = Number(
-        `0x${this.abiCoder.encodeSelector('removeLiquidity')}`,
+    private readonly unlistLiquiditySelector: number = Number(
+        `0x${this.abiCoder.encodeSelector('unlistLiquidity')}`,
     );
     private readonly swapSelector: number = Number(`0x${this.abiCoder.encodeSelector('swap')}`);
     private readonly getReserveSelector: number = Number(
@@ -225,8 +225,7 @@ export class NativeSwap extends ContractRuntime {
         };
     }
 
-    // Method to add liquidity
-    public async addLiquidity(
+    public async listLiquidity(
         token: Address,
         receiver: string,
         maximumAmountIn: bigint,
@@ -238,7 +237,7 @@ export class NativeSwap extends ContractRuntime {
         }
 
         const calldata = new BinaryWriter();
-        calldata.writeSelector(this.addLiquiditySelector);
+        calldata.writeSelector(this.listLiquiditySelector);
         calldata.writeAddress(token);
         calldata.writeStringWithLength(receiver); // Assuming receiver is converted to string
         calldata.writeU128(maximumAmountIn);
@@ -260,13 +259,12 @@ export class NativeSwap extends ContractRuntime {
         return result;
     }
 
-    // Method to remove liquidity
-    public async removeLiquidity(token: Address): Promise<{
+    public async unlistLiquidity(token: Address): Promise<{
         result: bigint;
         response: CallResponse;
     }> {
         const calldata = new BinaryWriter();
-        calldata.writeSelector(this.removeLiquiditySelector);
+        calldata.writeSelector(this.unlistLiquiditySelector);
         calldata.writeAddress(token);
 
         const result = await this.execute(calldata.getBuffer());
@@ -370,7 +368,7 @@ export class NativeSwap extends ContractRuntime {
         receiver: string,
         antiBotEnabledFor: number,
         antiBotMaximumTokensPerReservation: bigint,
-        maxReservesIn5BlocksPercent: number = 4000,
+        maxReservesIn5BlocksPercent: number = 7000,
     ): Promise<CallResponse> {
         if (maxReservesIn5BlocksPercent < 500 || maxReservesIn5BlocksPercent > 10000) {
             throw new Error('maxReservesIn5BlocksPercent should be between 500 and 10000');

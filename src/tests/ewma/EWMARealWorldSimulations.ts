@@ -85,7 +85,7 @@ await opnet('EWMA Contract - Real World Scenario Tests', async (vm: OPNetUnit) =
         // Provider adds liquidity
         Blockchain.txOrigin = provider;
         Blockchain.msgSender = provider;
-        await ewma.addLiquidity(tokenAddress, provider.p2tr(Blockchain.network), amount);
+        await ewma.listLiquidity(tokenAddress, provider.p2tr(Blockchain.network), amount);
     }
 
     /**

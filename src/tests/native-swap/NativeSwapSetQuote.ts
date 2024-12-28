@@ -45,7 +45,7 @@ await opnet('ewma Contract setQuote Method Tests', async (vm: OPNetUnit) => {
         Blockchain.msgSender = userAddress;
 
         await token.approve(userAddress, ewma.address, liquidityAmount);
-        await ewma.addLiquidity(tokenAddress, userAddress.p2tr(Blockchain.network), satoshisIn);
+        await ewma.listLiquidity(tokenAddress, userAddress.p2tr(Blockchain.network), satoshisIn);
     });
 
     vm.afterEach(() => {
