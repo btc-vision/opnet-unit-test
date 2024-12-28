@@ -33,7 +33,7 @@
         "@btc-vision/bitcoin": "^6.3.0",
         "@btc-vision/logger": "^1.0.6",
         "@btc-vision/transaction": "^1.1.17",
-        "@btc-vision/unit-test-framework": "file:../unit-test-framework",
+        "@btc-vision/unit-test-framework": "^0.0.11",
         "gulp-logger-new": "^1.0.1",
         "npm-run-all": "^4.1.5",
         "opnet": "^1.1.24"
