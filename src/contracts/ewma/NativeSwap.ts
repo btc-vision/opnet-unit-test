@@ -368,7 +368,7 @@ export class NativeSwap extends ContractRuntime {
         receiver: string,
         antiBotEnabledFor: number,
         antiBotMaximumTokensPerReservation: bigint,
-        maxReservesIn5BlocksPercent: number = 7000,
+        maxReservesIn5BlocksPercent: number = 10000,
     ): Promise<CallResponse> {
         if (maxReservesIn5BlocksPercent < 500 || maxReservesIn5BlocksPercent > 10000) {
             throw new Error('maxReservesIn5BlocksPercent should be between 500 and 10000');

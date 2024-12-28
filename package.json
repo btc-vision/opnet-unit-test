@@ -25,6 +25,7 @@
         "test:native:purge": "tsx src/tests/native-swap/NativeSwapPurge.ts",
         "test:native:test": "tsx src/tests/native-swap/EWMATest.ts",
         "test:native:compare": "tsx src/tests/native-swap/NativeCompare.ts",
+        "test:native:moto": "tsx src/tests/native-swap/NativeCompareMoto.ts",
         "test": "npm-run-all test:*"
     },
     "author": "OP_NET",
