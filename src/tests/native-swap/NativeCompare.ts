@@ -432,13 +432,13 @@ await opnet('Compare NativeSwap vs Normal OP20 Swap', async (vm: OPNetUnit) => {
         }
 
         // Big pump
-        for (let i = 0; i < 10; i++) {
+        for (let i = 0; i < 50; i++) {
             try {
                 const randomProvider = Blockchain.generateRandomAddress();
                 Blockchain.txOrigin = randomProvider;
                 Blockchain.msgSender = randomProvider;
 
-                for (let y = 0; y < 25; y++) {
+                for (let y = 0; y < 70; y++) {
                     vm.info(`Minting ${satoshisIn * 5n} tokens for swap, y: ${y}, i: ${i}`);
                     await randomReserve(satoshisIn * 5n);
                 }
@@ -834,11 +834,11 @@ await opnet('Compare NativeSwap vs Normal OP20 Swap', async (vm: OPNetUnit) => {
         p = path.reverse();
 
         // big pump
-        for (let i = 0; i < 10; i++) {
+        for (let i = 0; i < 50; i++) {
             Blockchain.txOrigin = receiver;
             Blockchain.msgSender = receiver;
 
-            for (let x = 0; x < 25; x++) {
+            for (let x = 0; x < 70; x++) {
                 await wbtc.mintRaw(receiver, wbtcIn * 5n);
 
                 // do the swap

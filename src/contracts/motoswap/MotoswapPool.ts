@@ -1,6 +1,11 @@
 import { Address, BinaryReader, BinaryWriter } from '@btc-vision/transaction';
 
-import { CallResponse, ContractRuntime, OP_20 } from '@btc-vision/unit-test-framework';
+import {
+    CallResponse,
+    ContractRuntime,
+    FastBigIntMap,
+    OP_20,
+} from '@btc-vision/unit-test-framework';
 import { FACTORY_ADDRESS, POOL_ADDRESS } from '../../common.js';
 
 export interface SyncEvent {
@@ -131,7 +136,7 @@ export class MotoswapPool extends OP_20 {
         this.address = address;
     }
 
-    public setStates(states: Map<bigint, bigint>) {
+    public setStates(states: FastBigIntMap) {
         this.states = states;
     }
 
