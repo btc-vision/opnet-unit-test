@@ -395,23 +395,6 @@ export class NativeSwap extends ContractRuntime {
         return result;
     }
 
-    public async verifySignature(signature: Uint8Array, message: Uint8Array): Promise<boolean> {
-        const calldata = new BinaryWriter();
-        calldata.writeSelector(this.verifySignatureSelector);
-        calldata.writeBytesWithLength(signature);
-        calldata.writeBytesWithLength(message);
-
-        const result = await this.execute(calldata.getBuffer());
-        if (result.error) throw this.handleError(result.error);
-
-        const response = result.response;
-        if (!response) {
-            throw new Error('No response from getReserve');
-        }
-
-        return new BinaryReader(response).readBoolean();
-    }
-
     protected handleError(error: Error): Error {
         return new Error(`(in order book: ${this.address}) OPNET: ${error.message}`);
     }
