@@ -8,7 +8,7 @@ import {
     OPNetUnit,
     TransferEvent,
 } from '@btc-vision/unit-test-framework';
-import { NativeSwap, LiquidityAddedEvent } from '../../contracts/ewma/NativeSwap.js';
+import { LiquidityListedEvent, NativeSwap } from '../../contracts/ewma/NativeSwap.js';
 import { gas2BTC, gas2Sat, gas2USD } from '../orderbook/utils/OrderBookUtils.js';
 
 const receiver: Address = Blockchain.generateRandomAddress();
@@ -185,7 +185,7 @@ await opnet('EWMA Contract addLiquidity Tests', async (vm: OPNetUnit) => {
         }
 
         // Assertions on the decoded event
-        const decodedAddedLiquidityEvent = NativeSwap.decodeLiquidityAddedEvent(
+        const decodedAddedLiquidityEvent = NativeSwap.decodeLiquidityListedEvent(
             liquidityAddedEvent.data,
         );
         console.log(decodedAddedLiquidityEvent);
@@ -222,8 +222,8 @@ await opnet('EWMA Contract addLiquidity Tests', async (vm: OPNetUnit) => {
 
         Assert.expect(events[1].type).toEqual('LiquidityAdded');
 
-        const firstDecodedLiquidityAddEvent: LiquidityAddedEvent =
-            NativeSwap.decodeLiquidityAddedEvent(events[1].data);
+        const firstDecodedLiquidityAddEvent: LiquidityListedEvent =
+            NativeSwap.decodeLiquidityListedEvent(events[1].data);
 
         // Second addLiquidity at the same price level
         callResponse = await ewma.listLiquidity(
@@ -250,8 +250,8 @@ await opnet('EWMA Contract addLiquidity Tests', async (vm: OPNetUnit) => {
             return;
         }
 
-        const secondDecodedLiquidityAddEvent: LiquidityAddedEvent =
-            NativeSwap.decodeLiquidityAddedEvent(events[1].data);
+        const secondDecodedLiquidityAddEvent: LiquidityListedEvent =
+            NativeSwap.decodeLiquidityListedEvent(events[1].data);
 
         // Verify that the liquidityAmount is cumulative
         Assert.expect(firstDecodedLiquidityAddEvent.totalLiquidity).toEqual(amountIn);

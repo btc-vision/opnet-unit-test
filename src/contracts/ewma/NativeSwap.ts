@@ -3,7 +3,7 @@ import { BytecodeManager, CallResponse, ContractRuntime } from '@btc-vision/unit
 import { createFeeOutput } from '../../tests/orderbook/utils/OrderBookUtils.js';
 
 // Define interfaces for events
-export interface LiquidityAddedEvent {
+export interface LiquidityListedEvent {
     readonly totalLiquidity: bigint;
     readonly receiver: string;
 }
@@ -111,7 +111,7 @@ export class NativeSwap extends ContractRuntime {
     }
 
     // Event decoders
-    public static decodeLiquidityAddedEvent(data: Uint8Array): LiquidityAddedEvent {
+    public static decodeLiquidityListedEvent(data: Uint8Array): LiquidityListedEvent {
         const reader = new BinaryReader(data);
         const totalLiquidity = reader.readU128();
         const receiver = reader.readStringWithLength();

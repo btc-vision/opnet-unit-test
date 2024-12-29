@@ -142,12 +142,12 @@ await opnet(
 
             // Check events
             const events = resp.events;
-            const liquidityAddedEvt = events.find((e) => e.type === 'LiquidityAdded');
-            if (!liquidityAddedEvt) {
-                throw new Error('No LiquidityAdded event found for normal queue');
+            const LiquidityListedEvt = events.find((e) => e.type === 'LiquidityListed');
+            if (!LiquidityListedEvt) {
+                throw new Error('No LiquidityListed event found for normal queue');
             }
 
-            const decoded = NativeSwap.decodeLiquidityAddedEvent(liquidityAddedEvt.data);
+            const decoded = NativeSwap.decodeLiquidityListedEvent(LiquidityListedEvt.data);
             Assert.expect(decoded.totalLiquidity).toEqual(amountIn);
             Assert.expect(decoded.receiver).toEqual(userAddress.p2tr(Blockchain.network));
         });
@@ -185,12 +185,12 @@ await opnet(
                 Assert.expect(initialUserBalance - finalUserBalance).toEqual(amountIn);
 
                 const events = resp.events;
-                const liquidityAddedEvt = events.find((e) => e.type === 'LiquidityAdded');
-                if (!liquidityAddedEvt) {
-                    throw new Error('No LiquidityAdded event found for priority queue');
+                const LiquidityListedEvt = events.find((e) => e.type === 'LiquidityListed');
+                if (!LiquidityListedEvt) {
+                    throw new Error('No LiquidityListed event found for priority queue');
                 }
 
-                const decoded = NativeSwap.decodeLiquidityAddedEvent(liquidityAddedEvt.data);
+                const decoded = NativeSwap.decodeLiquidityListedEvent(LiquidityListedEvt.data);
                 Assert.expect(decoded.totalLiquidity).toEqual(amountIn - feeAmount);
             },
         );
