@@ -2,7 +2,7 @@ import { Address } from '@btc-vision/transaction';
 import { OrderBook } from '../../contracts/order-book/OrderBook.js';
 import { tickSpacing } from './extern/AddLiquidityExternalConstants.js';
 import { Assert, Blockchain, OP_20, opnet, OPNetUnit } from '@btc-vision/unit-test-framework';
-import { calculateExpectedAmountOut } from './utils/OrderBookUtils.js';
+import { calculateExpectedAmountOut } from '../../tests/utils/TransactionUtils.js';
 
 const receiver: Address = Blockchain.generateRandomAddress();
 

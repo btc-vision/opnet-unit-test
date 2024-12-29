@@ -5,7 +5,7 @@ import { NativeSwap, Recipient } from '../../contracts/ewma/NativeSwap.js';
 import { MotoswapRouter } from '../../contracts/motoswap/MotoswapRouter.js';
 import { MotoswapFactory } from '../../contracts/motoswap/MotoswapFactory.js';
 import { MotoswapPool } from '../../contracts/motoswap/MotoswapPool.js';
-import { createRecipientsOutput, gas2USD } from '../orderbook/utils/OrderBookUtils.js';
+import { createRecipientsOutput, gas2USD } from '../../tests/utils/TransactionUtils.js';
 import { WBTC_ADDRESS } from '../../common.js';
 import { getReserves } from '../../common/UtilFunctions.js';
 import { BitcoinUtils } from 'opnet';

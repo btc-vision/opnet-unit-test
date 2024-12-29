@@ -1,9 +1,9 @@
 import { Address } from '@btc-vision/transaction';
 import { Assert, Blockchain, OP_20, opnet, OPNetUnit } from '@btc-vision/unit-test-framework';
 import { NativeSwap } from '../../contracts/ewma/NativeSwap.js';
-import { gas2BTC, gas2Sat, gas2USD } from '../orderbook/utils/OrderBookUtils.js';
+import { gas2BTC, gas2Sat, gas2USD } from '../utils/TransactionUtils.js';
 
-await opnet('ewma Contract setQuote Method Tests', async (vm: OPNetUnit) => {
+await opnet('Native Swap - Create Pool', async (vm: OPNetUnit) => {
     let ewma: NativeSwap;
     let token: OP_20;
 
@@ -14,6 +14,12 @@ await opnet('ewma Contract setQuote Method Tests', async (vm: OPNetUnit) => {
 
     const liquidityAmount: bigint = Blockchain.expandToDecimal(1000, tokenDecimals);
     const satoshisIn: bigint = 1_000_000_000_000n; //100_000n  BTC 1_000_000_000_000n
+
+    const floorPrice: bigint = 1000n;
+    const initialLiquidity: bigint = 1000n;
+    const initialLiquidityProvider: Address = Blockchain.generateRandomAddress();
+    const antiBotEnabledFor = 0;
+    const antiBotMaximumTokensPerReservation = 0n;
 
     vm.beforeEach(async () => {
         // Reset blockchain state
@@ -57,8 +63,14 @@ await opnet('ewma Contract setQuote Method Tests', async (vm: OPNetUnit) => {
     await vm.it('should successfully set quote', async () => {
         Blockchain.tracePointers = false;
 
-        const p0: bigint = 1000n;
-        const quote = await ewma.createPool(tokenAddress, p0);
+        const quote = await ewma.createPool(
+            tokenAddress,
+            floorPrice,
+            initialLiquidity,
+            initialLiquidityProvider.p2tr(Blockchain.network),
+            antiBotEnabledFor,
+            antiBotMaximumTokensPerReservation,
+        );
 
         console.log(quote);
 
@@ -72,11 +84,24 @@ await opnet('ewma Contract setQuote Method Tests', async (vm: OPNetUnit) => {
     await vm.it('should not set quote if already set', async () => {
         Blockchain.tracePointers = true;
 
-        const p0: bigint = 1000n;
-        const quote = await ewma.createPool(tokenAddress, p0);
+        const quote = await ewma.createPool(
+            tokenAddress,
+            floorPrice,
+            initialLiquidity,
+            initialLiquidityProvider.p2tr(Blockchain.network),
+            antiBotEnabledFor,
+            antiBotMaximumTokensPerReservation,
+        );
 
         await Assert.expect(async () => {
-            await ewma.createPool(tokenAddress, p0);
+            await ewma.createPool(
+                tokenAddress,
+                floorPrice,
+                initialLiquidity,
+                initialLiquidityProvider.p2tr(Blockchain.network),
+                antiBotEnabledFor,
+                antiBotMaximumTokensPerReservation,
+            );
         }).toThrow(`Base quote already set`);
 
         vm.debug(

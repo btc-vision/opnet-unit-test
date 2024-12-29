@@ -1,7 +1,7 @@
 import { Address } from '@btc-vision/transaction';
 import { Blockchain, CallResponse, OP_20, opnet, OPNetUnit } from '@btc-vision/unit-test-framework';
 import { NativeSwap, Recipient } from '../../contracts/ewma/NativeSwap.js';
-import { createRecipientsOutput, gas2USD } from '../orderbook/utils/OrderBookUtils.js';
+import { createRecipientsOutput, gas2USD } from '../../tests/utils/TransactionUtils.js';
 import { BitcoinUtils } from 'opnet';
 
 await opnet('EWMA Contract - Big Listing and Big Pump Scenario', async (vm: OPNetUnit) => {

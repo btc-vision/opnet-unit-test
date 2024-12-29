@@ -2,10 +2,8 @@ import { Address } from '@btc-vision/transaction';
 import { Assert, Blockchain, OP_20, opnet, OPNetUnit } from '@btc-vision/unit-test-framework';
 import { NativeSwap } from '../../contracts/ewma/NativeSwap.js';
 
-// This suite focuses extensively on purging reservation scenarios.
-
-await opnet('NativeSwap: Purging Reservations Extensive Tests', async (vm: OPNetUnit) => {
-    let ewma: NativeSwap;
+await opnet('NativeSwap: Purging Reservations', async (vm: OPNetUnit) => {
+    let nativeSwap: NativeSwap;
     let token: OP_20;
 
     const initialLiquidityProvider: Address = Blockchain.generateRandomAddress();
@@ -25,9 +23,9 @@ await opnet('NativeSwap: Purging Reservations Extensive Tests', async (vm: OPNet
         Blockchain.msgSender = userAddress;
 
         await token.mintRaw(userAddress, initialLiquidity);
-        await token.approve(userAddress, ewma.address, initialLiquidity);
+        await token.approve(userAddress, nativeSwap.address, initialLiquidity);
 
-        await ewma.createPool(
+        await nativeSwap.createPool(
             tokenAddress,
             floorPrice,
             initialLiquidity,
@@ -45,8 +43,8 @@ await opnet('NativeSwap: Purging Reservations Extensive Tests', async (vm: OPNet
         await token.mintRaw(provider, amountIn);
         Blockchain.msgSender = provider;
         Blockchain.txOrigin = provider;
-        await token.approve(provider, ewma.address, amountIn);
-        const resp = await ewma.listLiquidity(
+        await token.approve(provider, nativeSwap.address, amountIn);
+        const resp = await nativeSwap.listLiquidity(
             tokenAddress,
             provider.p2tr(Blockchain.network),
             amountIn,
@@ -60,7 +58,7 @@ await opnet('NativeSwap: Purging Reservations Extensive Tests', async (vm: OPNet
         Blockchain.msgSender = buyer;
         Blockchain.txOrigin = buyer;
 
-        const resp = await ewma.reserve(tokenAddress, satIn, minOut);
+        const resp = await nativeSwap.reserve(tokenAddress, satIn, minOut);
         Assert.expect(resp.response.error).toBeUndefined();
 
         //vm.log(
@@ -85,9 +83,9 @@ await opnet('NativeSwap: Purging Reservations Extensive Tests', async (vm: OPNet
         await token.init();
         await token.mintRaw(userAddress, 10_000_000n);
 
-        ewma = new NativeSwap(userAddress, ewmaAddress);
-        Blockchain.register(ewma);
-        await ewma.init();
+        nativeSwap = new NativeSwap(userAddress, ewmaAddress);
+        Blockchain.register(nativeSwap);
+        await nativeSwap.init();
         Blockchain.msgSender = userAddress;
 
         // Set a base quote
@@ -97,7 +95,7 @@ await opnet('NativeSwap: Purging Reservations Extensive Tests', async (vm: OPNet
     });
 
     vm.afterEach(() => {
-        ewma.dispose();
+        nativeSwap.dispose();
         token.dispose();
         Blockchain.dispose();
     });
@@ -130,7 +128,7 @@ await opnet('NativeSwap: Purging Reservations Extensive Tests', async (vm: OPNet
         // Trigger purge with a new reservation
         await makeReservation(buyer, 100_000n, 1n);
 
-        const reserve = await ewma.getReserve(tokenAddress);
+        const reserve = await nativeSwap.getReserve(tokenAddress);
         Assert.expect(reserve.liquidity).toBeGreaterThan(0n);
     });
 
@@ -148,7 +146,7 @@ await opnet('NativeSwap: Purging Reservations Extensive Tests', async (vm: OPNet
             // Trigger purge with a new reservation
             //await makeReservation(buyer, 100_000n, 1n);
 
-            const reserve = await ewma.getReserve(tokenAddress);
+            const reserve = await nativeSwap.getReserve(tokenAddress);
             Assert.expect(reserve.liquidity).toBeGreaterThan(0n);
         },
     );
@@ -202,7 +200,7 @@ await opnet('NativeSwap: Purging Reservations Extensive Tests', async (vm: OPNet
             Blockchain.blockNumber = 1012n;
             await makeReservation(buyer, 50_000n, 1n);
 
-            const reserve = await ewma.getReserve(tokenAddress);
+            const reserve = await nativeSwap.getReserve(tokenAddress);
             Assert.expect(reserve.liquidity).toBeGreaterThan(0n);
         },
     );
@@ -222,7 +220,7 @@ await opnet('NativeSwap: Purging Reservations Extensive Tests', async (vm: OPNet
         // Purge
         await makeReservation(buyer, 10_000n, 1n);
 
-        const reserve = await ewma.getReserve(tokenAddress);
+        const reserve = await nativeSwap.getReserve(tokenAddress);
         Assert.expect(reserve.liquidity).toBeGreaterThan(0n);
     });
 
@@ -244,13 +242,13 @@ await opnet('NativeSwap: Purging Reservations Extensive Tests', async (vm: OPNet
             // Advance beyond expiration
             Blockchain.blockNumber = 20000n;
 
-            //const reserveBefore = await ewma.getReserve(tokenAddress);
+            //const reserveBefore = await nativeSwap.getReserve(tokenAddress);
             //Assert.expect(reserveBefore.reserved).toEqual(0n);
 
             // Purge
             await makeReservation(Blockchain.generateRandomAddress(), 10_000n, 1n);
 
-            const reserve = await ewma.getReserve(tokenAddress);
+            const reserve = await nativeSwap.getReserve(tokenAddress);
             Assert.expect(reserve.reserved).toBeGreaterThan(0n);
         },
     );
@@ -274,7 +272,7 @@ await opnet('NativeSwap: Purging Reservations Extensive Tests', async (vm: OPNet
             Blockchain.blockNumber = 2012n; // another expiration
             await makeReservation(buyer, 50_000n, 1n);
 
-            const reserve = await ewma.getReserve(tokenAddress);
+            const reserve = await nativeSwap.getReserve(tokenAddress);
             Assert.expect(reserve.liquidity).toBeGreaterThan(0n);
         },
     );
@@ -300,7 +298,7 @@ await opnet('NativeSwap: Purging Reservations Extensive Tests', async (vm: OPNet
         Blockchain.blockNumber = 3010n;
         await makeReservation(buyer, 10_000n, 1n);
 
-        const reserve = await ewma.getReserve(tokenAddress);
+        const reserve = await nativeSwap.getReserve(tokenAddress);
         Assert.expect(reserve.liquidity).toBeGreaterThan(0n);
     });
 
@@ -315,7 +313,7 @@ await opnet('NativeSwap: Purging Reservations Extensive Tests', async (vm: OPNet
         Blockchain.blockNumber = 4010n;
         await makeReservation(buyer, 10_000n, 1n);
 
-        const reserve = await ewma.getReserve(tokenAddress);
+        const reserve = await nativeSwap.getReserve(tokenAddress);
         Assert.expect(reserve.liquidity).toBeGreaterThanOrEqual(0n);
     });
 
@@ -333,7 +331,7 @@ await opnet('NativeSwap: Purging Reservations Extensive Tests', async (vm: OPNet
 
         await makeReservation(buyer, 10_000n, 1n);
 
-        const reserve = await ewma.getReserve(tokenAddress);
+        const reserve = await nativeSwap.getReserve(tokenAddress);
         Assert.expect(reserve.liquidity).toBeGreaterThan(0n);
     });
 
@@ -370,7 +368,7 @@ await opnet('NativeSwap: Purging Reservations Extensive Tests', async (vm: OPNet
             Blockchain.blockNumber = 6020n;
             await makeReservation(buyer, 50_000n, 1n);
 
-            const reserve = await ewma.getReserve(tokenAddress);
+            const reserve = await nativeSwap.getReserve(tokenAddress);
             Assert.expect(reserve.liquidity).toBeGreaterThan(0n);
         },
     );

@@ -10,7 +10,7 @@ import {
     calculateExpectedAmountOut,
     createFeeOutput,
     updateReserves,
-} from './utils/OrderBookUtils.js';
+} from '../../tests/utils/TransactionUtils.js';
 
 const receiver: Address = Blockchain.generateRandomAddress();
 

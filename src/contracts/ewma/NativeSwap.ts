@@ -1,8 +1,7 @@
 import { Address, BinaryReader, BinaryWriter, NetEvent } from '@btc-vision/transaction';
 import { BytecodeManager, CallResponse, ContractRuntime } from '@btc-vision/unit-test-framework';
-import { createFeeOutput } from '../../tests/orderbook/utils/OrderBookUtils.js';
+import { createFeeOutput } from '../../tests/utils/TransactionUtils.js';
 
-// Define interfaces for events
 export interface LiquidityListedEvent {
     readonly totalLiquidity: bigint;
     readonly receiver: string;
@@ -13,25 +12,16 @@ export interface ReservationCreatedEvent {
     readonly totalSatoshis: bigint;
 }
 
-export interface LiquidityRemovedEvent {
+export interface UnlistEvent {
     readonly token: Address;
     readonly amount: bigint;
     readonly liquidityAmount: bigint;
-}
-
-export interface LiquidityRemovalBlockedEvent {
-    readonly tickId: bigint;
 }
 
 export interface SwapExecutedEvent {
     readonly buyer: Address;
     readonly amountIn: bigint;
     readonly amountOut: bigint;
-}
-
-export interface TickUpdatedEvent {
-    readonly liquidityAmount: bigint;
-    readonly acquiredAmount: bigint;
 }
 
 export interface LiquidityReserved {
@@ -58,11 +48,8 @@ export interface DecodedReservation {
 }
 
 export class NativeSwap extends ContractRuntime {
-    // Random address
     public static feeRecipient: string =
         'bcrt1plz0svv3wl05qrrv0dx8hvh5mgqc7jf3mhqgtw8jnj3l3d3cs6lzsfc3mxh';
-
-    public static readonly invalidAfter: bigint = 5n;
 
     public static reservationFees: bigint = 10_000n; // The fixed fee rate per tick consumed.
     public static priorityQueueFees: bigint = 50_000n; // The fixed fee rate per tick consumed.
@@ -71,15 +58,19 @@ export class NativeSwap extends ContractRuntime {
     private readonly getQuoteSelector: number = Number(
         `0x${this.abiCoder.encodeSelector('getQuote')}`,
     );
+
     private readonly reserveTicksSelector: number = Number(
         `0x${this.abiCoder.encodeSelector('reserve')}`,
     );
+
     private readonly listLiquiditySelector: number = Number(
         `0x${this.abiCoder.encodeSelector('listLiquidity')}`,
     );
+
     private readonly unlistLiquiditySelector: number = Number(
         `0x${this.abiCoder.encodeSelector('unlistLiquidity')}`,
     );
+
     private readonly swapSelector: number = Number(`0x${this.abiCoder.encodeSelector('swap')}`);
     private readonly getReserveSelector: number = Number(
         `0x${this.abiCoder.encodeSelector('getReserve')}`,
@@ -87,10 +78,6 @@ export class NativeSwap extends ContractRuntime {
 
     private readonly setQuoteSelector: number = Number(
         `0x${this.abiCoder.encodeSelector('createPool')}`,
-    );
-
-    private readonly verifySignatureSelector: number = Number(
-        `0x${this.abiCoder.encodeSelector('verifySignature')}`,
     );
 
     public constructor(deployer: Address, address: Address, gasLimit: bigint = 100_000_000_000n) {
@@ -110,7 +97,6 @@ export class NativeSwap extends ContractRuntime {
         return { address: depositAddress, amount };
     }
 
-    // Event decoders
     public static decodeLiquidityListedEvent(data: Uint8Array): LiquidityListedEvent {
         const reader = new BinaryReader(data);
         const totalLiquidity = reader.readU128();
@@ -125,20 +111,12 @@ export class NativeSwap extends ContractRuntime {
         return { expectedAmountOut, totalSatoshis };
     }
 
-    public static decodeLiquidityRemovedEvent(data: Uint8Array): LiquidityRemovedEvent {
+    public static decodeUnlistEvent(data: Uint8Array): UnlistEvent {
         const reader = new BinaryReader(data);
         const token = reader.readAddress();
         const amount = reader.readU128();
         const liquidityAmount = reader.readU256();
         return { token, amount, liquidityAmount };
-    }
-
-    public static decodeLiquidityRemovalBlockedEvent(
-        data: Uint8Array,
-    ): LiquidityRemovalBlockedEvent {
-        const reader = new BinaryReader(data);
-        const tickId = reader.readU256();
-        return { tickId };
     }
 
     public static decodeSwapExecutedEvent(data: Uint8Array): SwapExecutedEvent {
@@ -149,14 +127,6 @@ export class NativeSwap extends ContractRuntime {
         return { buyer, amountIn, amountOut };
     }
 
-    public static decodeTickUpdatedEvent(data: Uint8Array): TickUpdatedEvent {
-        const reader = new BinaryReader(data);
-        const liquidityAmount = reader.readU256();
-        const acquiredAmount = reader.readU256();
-        return { liquidityAmount, acquiredAmount };
-    }
-
-    // Method to get a quote
     public async getQuote(
         token: Address,
         satoshisIn: bigint,
@@ -196,7 +166,6 @@ export class NativeSwap extends ContractRuntime {
         };
     }
 
-    // Method to reserve ticks
     public async reserve(
         token: Address,
         maximumAmountIn: bigint,
@@ -314,7 +283,6 @@ export class NativeSwap extends ContractRuntime {
         return e;
     }
 
-    // Method to execute a swap
     public async swap(
         token: Address,
         isSimulation: boolean = false,

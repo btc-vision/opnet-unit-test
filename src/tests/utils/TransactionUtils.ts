@@ -5,8 +5,8 @@ import {
     TransactionInput,
     TransactionOutput,
 } from '@btc-vision/unit-test-framework';
-import { LiquidityReserved, OrderBook } from '../../../contracts/order-book/OrderBook.js';
-import { Recipient } from '../../../contracts/ewma/NativeSwap.js';
+import { LiquidityReserved } from '../../contracts/order-book/OrderBook.js';
+import { NativeSwap, Recipient } from '../../contracts/ewma/NativeSwap.js';
 
 export function generateEmptyTransaction(): Transaction {
     const txId = generateTransactionId();
@@ -17,10 +17,9 @@ export function generateEmptyTransaction(): Transaction {
     return new Transaction(txId, inputs, outputs);
 }
 
-export function createFeeOutput(value: bigint): void {
-    // Create a new transaction.
+export function createFeeOutput(value: bigint, recipient: string = NativeSwap.feeRecipient): void {
     const tx: Transaction = generateEmptyTransaction();
-    tx.addOutput(value, OrderBook.feeRecipient);
+    tx.addOutput(value, recipient);
 
     Blockchain.transaction = tx;
 }

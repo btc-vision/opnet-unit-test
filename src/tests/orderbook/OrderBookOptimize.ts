@@ -1,7 +1,7 @@
 import { Address, NetEvent } from '@btc-vision/transaction';
 import { OrderBook } from '../../contracts/order-book/OrderBook.js';
 import { Assert, Blockchain, OP_20, opnet, OPNetUnit } from '@btc-vision/unit-test-framework';
-import { createFeeOutput, gas2BTC, gas2Sat, gas2USD } from './utils/OrderBookUtils.js';
+import { createFeeOutput, gas2BTC, gas2Sat, gas2USD } from '../../tests/utils/TransactionUtils.js';
 
 await opnet('OrderBook Contract swap Method Tests', async (vm: OPNetUnit) => {
     let orderBook: OrderBook;
