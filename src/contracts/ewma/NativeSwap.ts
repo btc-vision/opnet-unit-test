@@ -53,6 +53,12 @@ export interface DecodedReservation {
     totalSatoshis: bigint;
 }
 
+export interface LiquidityRemovedEvent {
+    readonly providerId: bigint;
+    readonly btcOwed: bigint;
+    readonly tokenAmount: bigint;
+}
+
 export class NativeSwap extends ContractRuntime {
     public static feeRecipient: string =
         'bcrt1plz0svv3wl05qrrv0dx8hvh5mgqc7jf3mhqgtw8jnj3l3d3cs6lzsfc3mxh';
@@ -124,6 +130,15 @@ export class NativeSwap extends ContractRuntime {
         const virtualTokenExchanged = reader.readU256();
         const totalSatoshisSpent = reader.readU256();
         return { totalTokensContributed, virtualTokenExchanged, totalSatoshisSpent };
+    }
+
+    public static decodeRemoveLiquidityEvent(data: Uint8Array): LiquidityRemovedEvent {
+        const reader = new BinaryReader(data);
+        const providerId = reader.readU256();
+        const btcOwed = reader.readU256();
+        const tokenAmount = reader.readU256();
+        
+        return { providerId, btcOwed, tokenAmount };
     }
 
     public static decodeReservationCreatedEvent(data: Uint8Array): ReservationCreatedEvent {
@@ -238,6 +253,29 @@ export class NativeSwap extends ContractRuntime {
         }
 
         return result;
+    }
+
+    public async removeLiquidity(token: Address): Promise<{
+        result: boolean;
+        response: CallResponse;
+    }> {
+        const calldata = new BinaryWriter();
+        calldata.writeSelector(this.removeLiquiditySelector);
+        calldata.writeAddress(token);
+
+        const result = await this.execute(calldata.getBuffer());
+        if (result.error) throw this.handleError(result.error);
+
+        const response = result.response;
+        if (!response) {
+            throw new Error('No response from removeLiquidity');
+        }
+
+        const reader = new BinaryReader(response);
+        return {
+            result: reader.readBoolean(),
+            response: result,
+        };
     }
 
     public async listLiquidity(
