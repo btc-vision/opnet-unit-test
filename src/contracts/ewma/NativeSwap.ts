@@ -192,6 +192,7 @@ export class NativeSwap extends ContractRuntime {
         token: Address,
         maximumAmountIn: bigint,
         minimumAmountOut: bigint,
+        forLP: boolean = false,
     ): Promise<{ result: bigint; response: CallResponse }> {
         createFeeOutput(NativeSwap.reservationFees);
 
@@ -200,6 +201,7 @@ export class NativeSwap extends ContractRuntime {
         calldata.writeAddress(token);
         calldata.writeU256(maximumAmountIn);
         calldata.writeU256(minimumAmountOut);
+        calldata.writeBoolean(forLP);
 
         const result = await this.execute(calldata.getBuffer());
         if (result.error) throw this.handleError(result.error);

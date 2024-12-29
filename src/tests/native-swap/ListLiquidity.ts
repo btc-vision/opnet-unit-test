@@ -340,7 +340,7 @@ await opnet('NativeSwap: Priority and Normal Queue listLiquidity', async (vm: OP
                 userAddress.p2tr(Blockchain.network),
                 amountIn,
             );
-        }).toThrow('Quote is zero');
+        }).toThrow('NOT_ENOUGH_LIQUIDITY');
     });
 
     // Test 8: Ensure minimum liquidity in sat terms is enforced

@@ -89,7 +89,7 @@ await opnet('NativeSwap: Purging Reservations', async (vm: OPNetUnit) => {
         Blockchain.msgSender = userAddress;
 
         // Set a base quote
-        await createPool(1_000_000n, Blockchain.expandToDecimal(1, 8) * 1_000_000n);
+        await createPool(1_000_000n, Blockchain.expandToDecimal(1, 18) * 1_000_000n);
 
         Blockchain.blockNumber += 1n;
     });
@@ -322,7 +322,7 @@ await opnet('NativeSwap: Purging Reservations', async (vm: OPNetUnit) => {
         const buyer = Blockchain.generateRandomAddress();
         await token.mintRaw(buyer, 10_000_000n);
 
-        const nearMaxBlock = 2n ** 32n - 11n;
+        const nearMaxBlock = 2n ** 32n - 12n;
         Blockchain.blockNumber = nearMaxBlock;
 
         await makeReservation(buyer, 100_000n, 1n);
@@ -361,7 +361,6 @@ await opnet('NativeSwap: Purging Reservations', async (vm: OPNetUnit) => {
                 Blockchain.blockNumber = 6000n + BigInt(i);
                 await makeReservation(buyer, 50_000n, 1n);
             }
-
             Blockchain.blockNumber = 6010n;
             await makeReservation(buyer, 50_000n, 1n);
 

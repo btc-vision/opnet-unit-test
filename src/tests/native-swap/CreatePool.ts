@@ -4,7 +4,7 @@ import { NativeSwap } from '../../contracts/ewma/NativeSwap.js';
 import { gas2BTC, gas2Sat, gas2USD } from '../utils/TransactionUtils.js';
 
 await opnet('Native Swap - Create Pool', async (vm: OPNetUnit) => {
-    let ewma: NativeSwap;
+    let nativeSwap: NativeSwap;
     let token: OP_20;
 
     const tokenDecimals = 18;
@@ -41,21 +41,20 @@ await opnet('Native Swap - Create Pool', async (vm: OPNetUnit) => {
         // Mint tokens to the user
         await token.mint(userAddress, 10_000_000);
 
-        // Instantiate and register the ewma contract
-        ewma = new NativeSwap(userAddress, ewmaAddress);
-        Blockchain.register(ewma);
-        await ewma.init();
+        // Instantiate and register the nativeSwap contract
+        nativeSwap = new NativeSwap(userAddress, ewmaAddress);
+        Blockchain.register(nativeSwap);
+        await nativeSwap.init();
 
         // Add liquidity
         Blockchain.txOrigin = userAddress;
         Blockchain.msgSender = userAddress;
 
-        await token.approve(userAddress, ewma.address, liquidityAmount);
-        await ewma.listLiquidity(tokenAddress, userAddress.p2tr(Blockchain.network), satoshisIn);
+        await token.approve(userAddress, nativeSwap.address, liquidityAmount);
     });
 
     vm.afterEach(() => {
-        ewma.dispose();
+        nativeSwap.dispose();
         token.dispose();
         Blockchain.dispose();
     });
@@ -63,7 +62,7 @@ await opnet('Native Swap - Create Pool', async (vm: OPNetUnit) => {
     await vm.it('should successfully set quote', async () => {
         Blockchain.tracePointers = false;
 
-        const quote = await ewma.createPool(
+        const quote = await nativeSwap.createPool(
             tokenAddress,
             floorPrice,
             initialLiquidity,
@@ -84,7 +83,7 @@ await opnet('Native Swap - Create Pool', async (vm: OPNetUnit) => {
     await vm.it('should not set quote if already set', async () => {
         Blockchain.tracePointers = true;
 
-        const quote = await ewma.createPool(
+        const quote = await nativeSwap.createPool(
             tokenAddress,
             floorPrice,
             initialLiquidity,
@@ -94,7 +93,7 @@ await opnet('Native Swap - Create Pool', async (vm: OPNetUnit) => {
         );
 
         await Assert.expect(async () => {
-            await ewma.createPool(
+            await nativeSwap.createPool(
                 tokenAddress,
                 floorPrice,
                 initialLiquidity,
