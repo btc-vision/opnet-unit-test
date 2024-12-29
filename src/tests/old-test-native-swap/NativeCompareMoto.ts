@@ -237,6 +237,27 @@ await opnet('Compare NativeSwap vs Normal OP20 Swap', async (vm: OPNetUnit) => {
         // Add liquidity
         Blockchain.txOrigin = provider;
         Blockchain.msgSender = provider;
+
+        const r = await randomReserve(l, true);
+        console.log(r);
+
+        await nativeSwap.addLiquidity(tokenAddress, provider.p2tr(Blockchain.network));
+
+        vm.info(`Added liquidity for ${l} tokens`);
+    }
+
+    async function listTokenRandom(l: bigint): Promise<void> {
+        const provider = Blockchain.generateRandomAddress();
+
+        // Transfer tokens from userAddress to provider
+        await myToken.transfer(userAddress, provider, l);
+
+        // Approve EWMA contract to spend tokens
+        await myToken.approve(provider, nativeSwap.address, l);
+
+        // Add liquidity
+        Blockchain.txOrigin = provider;
+        Blockchain.msgSender = provider;
         await nativeSwap.listLiquidity(tokenAddress, provider.p2tr(Blockchain.network), l);
 
         vm.info(`Added liquidity for ${l} tokens`);
@@ -244,12 +265,13 @@ await opnet('Compare NativeSwap vs Normal OP20 Swap', async (vm: OPNetUnit) => {
 
     async function randomReserve(
         amount: bigint,
+        forLP: boolean = false,
     ): Promise<{ result: bigint; response: CallResponse }> {
         const provider = Blockchain.generateRandomAddress();
         Blockchain.txOrigin = provider;
         Blockchain.msgSender = provider;
 
-        const r = await nativeSwap.reserve(tokenAddress, amount, 1n);
+        const r = await nativeSwap.reserve(tokenAddress, amount, 1n, forLP);
         const decoded = nativeSwap.decodeReservationEvents(r.response.events);
         if (decoded.recipients.length) {
             toSwap.push({
@@ -302,11 +324,11 @@ await opnet('Compare NativeSwap vs Normal OP20 Swap', async (vm: OPNetUnit) => {
                 const quote = await nativeSwap.getQuote(myToken.address, satoshisIn);
                 const price = quote.result.currentPrice;
 
-                await addLiquidityRandom(satoshisIn * price);
+                await listTokenRandom(satoshisIn * price);
             }
 
             if (i + 1 === 10) {
-                await addLiquidityRandom(initialLiquidity);
+                await listTokenRandom(initialLiquidity);
             }
 
             Blockchain.blockNumber += 1n;
@@ -608,11 +630,11 @@ await opnet('Compare NativeSwap vs Normal OP20 Swap', async (vm: OPNetUnit) => {
                 const quote = await nativeSwap.getQuote(myToken.address, satoshisIn);
                 const price = quote.result.currentPrice;
 
-                await addLiquidityRandom(satoshisIn * price);
+                await listTokenRandom(satoshisIn * price);
             }
 
             if (i + 1 === count) {
-                await addLiquidityRandom(initialLiquidity);
+                await listTokenRandom(initialLiquidity);
             }
 
             Blockchain.blockNumber += 1n;
@@ -684,11 +706,11 @@ await opnet('Compare NativeSwap vs Normal OP20 Swap', async (vm: OPNetUnit) => {
                     const quote = await nativeSwap.getQuote(myToken.address, satoshisIn);
                     const price = quote.result.currentPrice;
 
-                    await addLiquidityRandom(satoshisIn * price);
+                    await listTokenRandom(satoshisIn * price);
                 }
 
                 if (i + 1 === count) {
-                    await addLiquidityRandom(initialLiquidity);
+                    await listTokenRandom(initialLiquidity);
                 }
             } catch (e) {}
 

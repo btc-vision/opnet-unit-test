@@ -60,10 +60,6 @@ await opnet('NativeSwap: Purging Reservations', async (vm: OPNetUnit) => {
 
         const resp = await nativeSwap.reserve(tokenAddress, satIn, minOut);
         Assert.expect(resp.response.error).toBeUndefined();
-
-        //vm.log(
-        //    `Spent ${gas2USD(resp.response.usedGas)} USD$ in gas to reserve ${satIn} satoshis for ${minOut} tokens`,
-        //);
     }
 
     vm.beforeEach(async () => {

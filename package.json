@@ -20,9 +20,10 @@
         "test:orderbook:expire": "tsx src/tests/orderbook/OrderBookExpirationTests.ts",
         "test:orderbook:swap": "tsx src/tests/orderbook/OrderBookSwap.ts",
         "test:orderbook:optimize": "tsx src/tests/orderbook/OrderBookOptimize.ts",
-        "test:native:addliquidity": "tsx src/tests/native-swap/ListLiquidity.ts",
+        "test:native:listtoken": "tsx src/tests/native-swap/ListLiquidity.ts",
         "test:native:createpool": "tsx src/tests/native-swap/CreatePool.ts",
         "test:native:purge": "tsx src/tests/native-swap/PurgeReservations.ts",
+        "test:native:addliquidity": "tsx src/tests/native-swap/AddLiquidity.ts",
         "test:native:compare": "tsx src/tests/old-test-native-swap/NativeCompare.ts",
         "test:native:moto": "tsx src/tests/old-test-native-swap/NativeCompareMoto.ts",
         "test": "npm-run-all test:*"
