@@ -311,9 +311,7 @@ await opnet('Native Swap - Add Liquidity', async (vm: OPNetUnit) => {
 
         await listTokenRandom(BitcoinUtils.expandToDecimals(1_000, tokenDecimals), rndProvider);
 
-        const rndProvider2 = Blockchain.generateRandomAddress();
-
-        console.log('hi');
+        let rndProvider2 = Blockchain.generateRandomAddress();
 
         await token.transfer(
             rndProvider,
@@ -321,9 +319,9 @@ await opnet('Native Swap - Add Liquidity', async (vm: OPNetUnit) => {
             BitcoinUtils.expandToDecimals(100_000_000, tokenDecimals),
         );
 
-        //for (let i = 0; i < 25; i++) {
-        //     await listTokenRandom(BitcoinUtils.expandToDecimals(10000, tokenDecimals));
-        //}
+        for (let i = 0; i < 25; i++) {
+            await listTokenRandom(BitcoinUtils.expandToDecimals(10000, tokenDecimals));
+        }
 
         await reserveAddLiquidity(buyForSat * 100n, false, rndProvider2);
 
@@ -331,11 +329,11 @@ await opnet('Native Swap - Add Liquidity', async (vm: OPNetUnit) => {
 
         await addLiquidityRandom();
 
-        /*rndProvider = Blockchain.generateRandomAddress();
+        rndProvider2 = Blockchain.generateRandomAddress();
 
         await token.transfer(
             userAddress,
-            rndProvider,
+            rndProvider2,
             BitcoinUtils.expandToDecimals(100_000_000, tokenDecimals),
         );
 
@@ -343,11 +341,11 @@ await opnet('Native Swap - Add Liquidity', async (vm: OPNetUnit) => {
             await listTokenRandom(BitcoinUtils.expandToDecimals(10000, tokenDecimals));
         }
 
-        await reserveAddLiquidity(buyForSat * 100n, false, rndProvider);
+        await reserveAddLiquidity(buyForSat * 100n, false, rndProvider2);
 
         Blockchain.blockNumber += 1n;
 
-        await addLiquidityRandom();*/
+        await addLiquidityRandom();
 
         Blockchain.tracePointers = false;
     });
