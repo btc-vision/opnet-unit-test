@@ -4,6 +4,14 @@ import { NativeSwap, Recipient } from '../../contracts/ewma/NativeSwap.js';
 import { createRecipientsOutput, gas2USD } from '../utils/TransactionUtils.js';
 import { BitcoinUtils } from 'opnet';
 
+/**
+ * Here is our candle-chart style data,
+ * using the same structure you provided: { x: number; y: number[] }.
+ */
+let dataNative: { x: number; y: number[] }[] = [];
+
+let open = 0;
+
 await opnet('Native Swap - Add Liquidity', async (vm: OPNetUnit) => {
     let nativeSwap: NativeSwap;
     let token: OP_20;
@@ -40,10 +48,17 @@ await opnet('Native Swap - Add Liquidity', async (vm: OPNetUnit) => {
         const r = await nativeSwap.reserve(tokenAddress, amount, 1n, forLP);
         const decoded = nativeSwap.decodeReservationEvents(r.response.events);
         if (decoded.recipients.length) {
-            toSwap.push({
-                a: provider,
-                r: decoded.recipients,
-            });
+            if (forLP) {
+                toAddLiquidity.push({
+                    a: provider,
+                    r: decoded.recipients,
+                });
+            } else {
+                toSwap.push({
+                    a: provider,
+                    r: decoded.recipients,
+                });
+            }
         } else {
             vm.fail('No recipients found in reservation (swap) event.');
         }
@@ -142,17 +157,6 @@ await opnet('Native Swap - Add Liquidity', async (vm: OPNetUnit) => {
             `Adding liquidity potentially worth ${decoded.totalSatoshis} sat and reserving ${decoded.recipients.length} recipients.`,
         );
 
-        console.log(decoded.recipients);
-
-        if (decoded.recipients.length) {
-            toAddLiquidity.push({
-                a: provider,
-                r: decoded.recipients,
-            });
-        } else {
-            vm.fail('No recipients found in reservation (swap) event.');
-        }
-
         // Reset
         Blockchain.txOrigin = backup;
         Blockchain.msgSender = backup;
@@ -231,14 +235,56 @@ await opnet('Native Swap - Add Liquidity', async (vm: OPNetUnit) => {
 
         Blockchain.blockNumber += 1n;
 
-        //recordCandle(
-        //    Blockchain.blockNumber,
-        //    floorPrice, // raw bigint
-        //    dataNative,
-        //);
+        const quote = await nativeSwap.getQuote(token.address, 100_000_000n);
+        const amountIn = quote.result.expectedAmountIn;
+        let price = quote.result.expectedAmountOut;
+
+        if (amountIn !== 100_000_000n) {
+            price = (price * 100_000_000n) / amountIn;
+        }
+
+        const reversedPrice = 1 / parseFloat(BitcoinUtils.formatUnits(price, tokenDecimals));
+
+        recordCandle(
+            Blockchain.blockNumber,
+            reversedPrice, // raw bigint
+            dataNative,
+        );
+    }
+
+    async function reportQuote(): Promise<void> {
+        const quote = await nativeSwap.getQuote(token.address, 100_000_000n);
+        const amountIn = quote.result.expectedAmountIn;
+        let price = quote.result.expectedAmountOut;
+
+        if (amountIn !== 100_000_000n) {
+            price = (price * 100_000_000n) / amountIn;
+        }
+
+        const reversedPrice = 1 / parseFloat(BitcoinUtils.formatUnits(price, tokenDecimals));
+
+        // Also record a candle in `data`
+        // We'll do the same logic as your snippet: parse the price to float, etc.
+        recordCandle(
+            Blockchain.blockNumber,
+            reversedPrice, // raw bigint
+            dataNative,
+        );
     }
 
     vm.beforeEach(async () => {
+        dataNative = [
+            {
+                x: 1,
+                y: [0, 0, 0, 0],
+            },
+        ];
+        toSwap = [];
+        open = 0;
+        toAddLiquidity = [];
+
+        Blockchain.blockNumber = 1n;
+
         // Reset blockchain state
         Blockchain.dispose();
         Blockchain.clearContracts();
@@ -297,6 +343,8 @@ await opnet('Native Swap - Add Liquidity', async (vm: OPNetUnit) => {
 
         Blockchain.blockNumber += 1n;
 
+        await reportQuote();
+
         await addLiquidityRandom();
 
         await listTokenRandom(BitcoinUtils.expandToDecimals(1_000, tokenDecimals));
@@ -304,6 +352,8 @@ await opnet('Native Swap - Add Liquidity', async (vm: OPNetUnit) => {
         await reserveAddLiquidity(buyForSat, false, rndProvider);
 
         Blockchain.blockNumber += 1n;
+
+        await reportQuote();
 
         await addLiquidityRandom();
 
@@ -327,6 +377,8 @@ await opnet('Native Swap - Add Liquidity', async (vm: OPNetUnit) => {
 
         Blockchain.blockNumber += 1n;
 
+        await reportQuote();
+
         await addLiquidityRandom();
 
         rndProvider2 = Blockchain.generateRandomAddress();
@@ -345,8 +397,127 @@ await opnet('Native Swap - Add Liquidity', async (vm: OPNetUnit) => {
 
         Blockchain.blockNumber += 1n;
 
+        await reportQuote();
+
         await addLiquidityRandom();
 
         Blockchain.tracePointers = false;
+
+        await randomReserve(100_000_000n, false, true);
+
+        Blockchain.blockNumber += 1n;
+
+        await reportQuote();
+
+        await swapAll();
+
+        Blockchain.blockNumber += 1n;
+
+        await reportQuote();
+
+        console.log(`Data: ${JSON.stringify(dataNative)}`);
     });
+
+    const buyForSat = 20_000_000n;
+    await vm.it('should add some liquidity', async () => {
+        for (let i = 0; i < 25; i++) {
+            await listTokenRandom(BitcoinUtils.expandToDecimals(100, tokenDecimals));
+        }
+
+        for (let i = 0; i < 20; i++) {
+            const rndProvider = Blockchain.generateRandomAddress();
+
+            await token.transfer(
+                userAddress,
+                rndProvider,
+                BitcoinUtils.expandToDecimals(100_000_000, tokenDecimals),
+            );
+
+            console.log('start');
+            await reserveAddLiquidity(buyForSat, false, rndProvider);
+
+            Blockchain.blockNumber += 1n;
+
+            await reportQuote();
+
+            await addLiquidityRandom();
+            await removeLiquidity(rndProvider);
+
+            await randomReserve(buyForSat, false, true);
+
+            Blockchain.blockNumber += 1n;
+
+            await reportQuote();
+
+            await swapAll();
+
+            Blockchain.blockNumber += 1n;
+
+            await reportQuote();
+        }
+
+        console.log(`Data 2: ${JSON.stringify(dataNative)}`);
+    });
+
+    await vm.it('should add some liquidity', async () => {
+        for (let i = 0; i < 25; i++) {
+            await listTokenRandom(BitcoinUtils.expandToDecimals(100, tokenDecimals));
+        }
+
+        for (let i = 0; i < 20; i++) {
+            const rndProvider = Blockchain.generateRandomAddress();
+
+            await token.transfer(
+                userAddress,
+                rndProvider,
+                BitcoinUtils.expandToDecimals(100_000_000, tokenDecimals),
+            );
+
+            await randomReserve(buyForSat, false, true);
+
+            Blockchain.blockNumber += 1n;
+
+            await reportQuote();
+
+            await swapAll();
+
+            Blockchain.blockNumber += 1n;
+
+            await reportQuote();
+        }
+
+        console.log(`Data 3: ${JSON.stringify(dataNative)}`);
+    });
+
+    /**
+     * Candle-style logger. Mimics your "logPrice()" example,
+     * pushing data into the global `data` array with shape
+     * { x: blockNumber, y: [-open, -open, -close, -close] }.
+     */
+    function recordCandle(
+        blockNumber: bigint,
+        closeFloat: number,
+        store: { x: number; y: number[] }[],
+    ) {
+        // Convert price from `bigint` to a float, similar to your snippet with formatUnits
+        //const closeFloat = parseFloat(BitcoinUtils.formatUnits(rawPrice, tokenDecimals));
+
+        // You had a condition about blockNumber === 2500n. We can replicate that if needed:
+        //if (blockNumber === 2500n) return;
+
+        if (open !== 0) {
+            store.push({
+                x: Number(blockNumber.toString()),
+                y: [open, open, closeFloat, closeFloat],
+            });
+        } else {
+            store.push({
+                x: Number(blockNumber.toString()),
+                y: [closeFloat, closeFloat, closeFloat, closeFloat],
+            });
+        }
+
+        // Update open to be the new close
+        open = closeFloat;
+    }
 });
