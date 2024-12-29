@@ -7,6 +7,12 @@ export interface LiquidityListedEvent {
     readonly receiver: string;
 }
 
+export interface LiquidityAddedEvent {
+    readonly totalTokensContributed: bigint;
+    readonly virtualTokenExchanged: bigint;
+    readonly totalSatoshisSpent: bigint;
+}
+
 export interface ReservationCreatedEvent {
     readonly expectedAmountOut: bigint;
     readonly totalSatoshis: bigint;
@@ -71,6 +77,14 @@ export class NativeSwap extends ContractRuntime {
         `0x${this.abiCoder.encodeSelector('unlistLiquidity')}`,
     );
 
+    private readonly addLiquiditySelector: number = Number(
+        `0x${this.abiCoder.encodeSelector('addLiquidity')}`,
+    );
+
+    private readonly removeLiquiditySelector: number = Number(
+        `0x${this.abiCoder.encodeSelector('removeLiquidity')}`,
+    );
+
     private readonly swapSelector: number = Number(`0x${this.abiCoder.encodeSelector('swap')}`);
     private readonly getReserveSelector: number = Number(
         `0x${this.abiCoder.encodeSelector('getReserve')}`,
@@ -102,6 +116,14 @@ export class NativeSwap extends ContractRuntime {
         const totalLiquidity = reader.readU128();
         const receiver = reader.readStringWithLength();
         return { totalLiquidity, receiver };
+    }
+
+    public static decodeLiquidityAddedEvent(data: Uint8Array): LiquidityAddedEvent {
+        const reader = new BinaryReader(data);
+        const totalTokensContributed = reader.readU256();
+        const virtualTokenExchanged = reader.readU256();
+        const totalSatoshisSpent = reader.readU256();
+        return { totalTokensContributed, virtualTokenExchanged, totalSatoshisSpent };
     }
 
     public static decodeReservationCreatedEvent(data: Uint8Array): ReservationCreatedEvent {
@@ -192,6 +214,28 @@ export class NativeSwap extends ContractRuntime {
             result: reader.readU256(),
             response: result,
         };
+    }
+
+    public async addLiquidity(token: Address, receiver: string): Promise<CallResponse> {
+        const calldata = new BinaryWriter();
+        calldata.writeSelector(this.addLiquiditySelector);
+        calldata.writeAddress(token);
+        calldata.writeStringWithLength(receiver);
+
+        const result = await this.execute(calldata.getBuffer());
+        if (result.error) throw this.handleError(result.error);
+
+        const response = result.response;
+        if (!response) {
+            throw new Error('No response from addLiquidity');
+        }
+
+        const reader = new BinaryReader(response);
+        if (!reader.readBoolean()) {
+            throw new Error(`Failed to add liquidity`);
+        }
+
+        return result;
     }
 
     public async listLiquidity(
