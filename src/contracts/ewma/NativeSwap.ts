@@ -268,7 +268,7 @@ export class NativeSwap extends ContractRuntime {
 
         const reader = new BinaryReader(response);
         if (!reader.readBoolean()) {
-            throw new Error(`Failed to add liquidity`);
+            throw new Error(`Failed to list token`);
         }
 
         return result;

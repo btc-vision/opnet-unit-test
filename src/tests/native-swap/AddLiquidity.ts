@@ -60,6 +60,8 @@ await opnet('Native Swap - Add Liquidity', async (vm: OPNetUnit) => {
 
     async function listTokenRandom(l: bigint): Promise<void> {
         const provider = Blockchain.generateRandomAddress();
+        Blockchain.txOrigin = userAddress;
+        Blockchain.msgSender = userAddress;
 
         // Transfer tokens from userAddress to provider
         await token.transfer(userAddress, provider, l);
@@ -70,6 +72,7 @@ await opnet('Native Swap - Add Liquidity', async (vm: OPNetUnit) => {
         // Add liquidity
         Blockchain.txOrigin = provider;
         Blockchain.msgSender = provider;
+
         await nativeSwap.listLiquidity(tokenAddress, provider.p2tr(Blockchain.network), l);
 
         vm.info(`Added liquidity for ${l} tokens`);
@@ -111,6 +114,10 @@ await opnet('Native Swap - Add Liquidity', async (vm: OPNetUnit) => {
             Blockchain.msgSender = provider;
         }
 
+        // Add liquidity
+        Blockchain.txOrigin = userAddress;
+        Blockchain.msgSender = userAddress;
+
         // Transfer tokens from userAddress to provider
         await token.transfer(userAddress, provider, l);
 
@@ -146,12 +153,19 @@ await opnet('Native Swap - Add Liquidity', async (vm: OPNetUnit) => {
     }
 
     async function addLiquidityRandom(): Promise<void> {
-        for (let i = 0; i < toSwap.length; i++) {
-            const reservation = toSwap[i];
+        for (let i = 0; i < toAddLiquidity.length; i++) {
+            const reservation = toAddLiquidity[i];
             Blockchain.txOrigin = reservation.a;
             Blockchain.msgSender = reservation.a;
 
             createRecipientsOutput(reservation.r);
+
+            await token.approve(
+                reservation.a,
+                nativeSwap.address,
+                BitcoinUtils.expandToDecimals(1_000_000_000_000, tokenDecimals),
+            );
+
             const s = await nativeSwap.addLiquidity(
                 tokenAddress,
                 reservation.a.p2tr(Blockchain.network),
@@ -159,7 +173,7 @@ await opnet('Native Swap - Add Liquidity', async (vm: OPNetUnit) => {
 
             const d = NativeSwap.decodeLiquidityAddedEvent(s.events[s.events.length - 1].data);
             vm.log(
-                `Swapped spent ${gas2USD(s.usedGas)} USD in gas, totalSatoshisSpent: ${d.totalSatoshisSpent}, totalTokensContributed: ${d.totalTokensContributed}, virtualTokenExchanged: ${d.virtualTokenExchanged}`,
+                `Added liquidity! Spent ${gas2USD(s.usedGas)} USD in gas, totalSatoshisSpent: ${d.totalSatoshisSpent}, totalTokensContributed: ${d.totalTokensContributed}, virtualTokenExchanged: ${d.virtualTokenExchanged}`,
             );
         }
 
@@ -235,11 +249,27 @@ await opnet('Native Swap - Add Liquidity', async (vm: OPNetUnit) => {
         Blockchain.dispose();
     });
 
-    await vm.it('should successfully set quote', async () => {
+    await vm.it('should add some liquidity', async () => {
         Blockchain.tracePointers = false;
 
-        const buyForSat = 10_000_000n;
-        await reserveAddLiquidity(buyForSat);
+        for (let i = 0; i < 25; i++) {
+            await listTokenRandom(BitcoinUtils.expandToDecimals(100, tokenDecimals));
+        }
+
+        const buyForSat = 20_000_000n;
+        await reserveAddLiquidity(buyForSat, false, userAddress);
+
+        Blockchain.blockNumber += 1n;
+
+        await addLiquidityRandom();
+
+        await listTokenRandom(BitcoinUtils.expandToDecimals(1_000, tokenDecimals));
+
+        await reserveAddLiquidity(buyForSat, false, userAddress);
+
+        Blockchain.blockNumber += 1n;
+
+        await addLiquidityRandom();
 
         Blockchain.tracePointers = false;
     });
