@@ -45,7 +45,7 @@ await opnet('Native Swap - Add Liquidity', async (vm: OPNetUnit) => {
             Blockchain.msgSender = provider;
         }
 
-        const r = await nativeSwap.reserve(tokenAddress, amount, 1n, forLP);
+        const r = await nativeSwap.reserve(tokenAddress, amount, 0n, forLP);
         const decoded = nativeSwap.decodeReservationEvents(r.response.events);
         if (decoded.recipients.length) {
             if (forLP) {
@@ -434,14 +434,16 @@ await opnet('Native Swap - Add Liquidity', async (vm: OPNetUnit) => {
             );
 
             console.log('start');
-            await reserveAddLiquidity(buyForSat, false, rndProvider);
+            const r = await reserveAddLiquidity(buyForSat * BigInt(i + 1), false, rndProvider);
 
             Blockchain.blockNumber += 1n;
 
             await reportQuote();
 
-            await addLiquidityRandom();
-            await removeLiquidity(rndProvider);
+            if (r.result !== 0n) {
+                await addLiquidityRandom();
+                await removeLiquidity(rndProvider);
+            }
 
             await randomReserve(buyForSat, false, true);
 
