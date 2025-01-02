@@ -1,6 +1,7 @@
 import { Address } from '@btc-vision/transaction';
 import { Blockchain, CallResponse, OP_20, opnet, OPNetUnit } from '@btc-vision/unit-test-framework';
-import { NativeSwap, Recipient } from '../../contracts/ewma/NativeSwap.js';
+import { NativeSwap } from '../../contracts/ewma/NativeSwap.js';
+import { NativeSwapTypesDecoder, Recipient } from '../../contracts/ewma/NativeSwapTypes.js';
 import { createRecipientsOutput, gas2USD } from '../utils/TransactionUtils.js';
 import { BitcoinUtils } from 'opnet';
 
@@ -45,8 +46,13 @@ await opnet('Native Swap - Add Liquidity', async (vm: OPNetUnit) => {
             Blockchain.msgSender = provider;
         }
 
-        const r = await nativeSwap.reserve(tokenAddress, amount, 0n, forLP);
-        const decoded = nativeSwap.decodeReservationEvents(r.response.events);
+        const r = await nativeSwap.reserve({
+            token: tokenAddress,
+            maximumAmountIn: amount,
+            minimumAmountOut: 0n,
+            forLP: forLP,
+        });
+        const decoded = NativeSwapTypesDecoder.decodeReservationEvents(r.response.events);
         if (decoded.recipients.length) {
             if (forLP) {
                 toAddLiquidity.push({
@@ -92,7 +98,13 @@ await opnet('Native Swap - Add Liquidity', async (vm: OPNetUnit) => {
         Blockchain.txOrigin = provider;
         Blockchain.msgSender = provider;
 
-        await nativeSwap.listLiquidity(tokenAddress, provider.p2tr(Blockchain.network), l);
+        await nativeSwap.listLiquidity({
+            token: tokenAddress,
+            receiver: provider.p2tr(Blockchain.network),
+            amountIn: l,
+            priority: false,
+            disablePriorityQueueFees: false,
+        });
 
         Blockchain.txOrigin = backup;
         Blockchain.msgSender = backup;
@@ -107,8 +119,8 @@ await opnet('Native Swap - Add Liquidity', async (vm: OPNetUnit) => {
             Blockchain.msgSender = reservation.a;
 
             createRecipientsOutput(reservation.r);
-            const s = await nativeSwap.swap(tokenAddress, false);
-            const d = NativeSwap.decodeSwapExecutedEvent(
+            const s = await nativeSwap.swap({ token: tokenAddress, isSimulation: false });
+            const d = NativeSwapTypesDecoder.decodeSwapExecutedEvent(
                 s.response.events[s.response.events.length - 1].data,
             );
 
@@ -151,7 +163,7 @@ await opnet('Native Swap - Add Liquidity', async (vm: OPNetUnit) => {
         Blockchain.msgSender = provider;
 
         const r = await randomReserve(l, true, false);
-        const decoded = nativeSwap.decodeReservationEvents(r.response.events);
+        const decoded = NativeSwapTypesDecoder.decodeReservationEvents(r.response.events);
 
         vm.log(
             `Adding liquidity potentially worth ${decoded.totalSatoshis} sat and reserving ${decoded.recipients.length} recipients.`,
@@ -179,12 +191,14 @@ await opnet('Native Swap - Add Liquidity', async (vm: OPNetUnit) => {
                 BitcoinUtils.expandToDecimals(1_000_000_000_000, tokenDecimals),
             );
 
-            const s = await nativeSwap.addLiquidity(
-                tokenAddress,
-                reservation.a.p2tr(Blockchain.network),
-            );
+            const s = await nativeSwap.addLiquidity({
+                token: tokenAddress,
+                receiver: reservation.a.p2tr(Blockchain.network),
+            });
 
-            const d = NativeSwap.decodeLiquidityAddedEvent(s.events[s.events.length - 1].data);
+            const d = NativeSwapTypesDecoder.decodeLiquidityAddedEvent(
+                s.response.events[s.response.events.length - 1].data,
+            );
             vm.log(
                 `Added liquidity! Spent ${gas2USD(s.usedGas)} USD in gas, totalSatoshisSpent: ${d.totalSatoshisSpent}, totalTokensContributed: ${d.totalTokensContributed}, virtualTokenExchanged: ${d.virtualTokenExchanged}`,
             );
@@ -201,8 +215,8 @@ await opnet('Native Swap - Add Liquidity', async (vm: OPNetUnit) => {
         Blockchain.txOrigin = p;
         Blockchain.msgSender = p;
 
-        const r = await nativeSwap.removeLiquidity(tokenAddress);
-        const d = NativeSwap.decodeRemoveLiquidityEvent(
+        const r = await nativeSwap.removeLiquidity({ token: tokenAddress });
+        const d = NativeSwapTypesDecoder.decodeLiquidityRemovedEvent(
             r.response.events[r.response.events.length - 1].data,
         );
 
@@ -224,18 +238,19 @@ await opnet('Native Swap - Add Liquidity', async (vm: OPNetUnit) => {
         await token.approve(userAddress, nativeSwap.address, initLiquidity);
 
         // Create the pool
-        await nativeSwap.createPool(
-            token.address,
-            floorPrice,
-            initLiquidity,
-            initialLiquidityProvider.p2tr(Blockchain.network),
-            0,
-            0n,
-        );
+        await nativeSwap.createPool({
+            token: token.address,
+            floorPrice: floorPrice,
+            initialLiquidity: initLiquidity,
+            receiver: initialLiquidityProvider.p2tr(Blockchain.network),
+            antiBotEnabledFor: 0,
+            antiBotMaximumTokensPerReservation: 0n,
+            maxReservesIn5BlocksPercent: 4000,
+        });
 
         Blockchain.blockNumber += 1n;
 
-        const quote = await nativeSwap.getQuote(token.address, 100_000_000n);
+        const quote = await nativeSwap.getQuote({ token: token.address, satoshisIn: 100_000_000n });
         const amountIn = quote.result.expectedAmountIn;
         let price = quote.result.expectedAmountOut;
 
@@ -253,7 +268,7 @@ await opnet('Native Swap - Add Liquidity', async (vm: OPNetUnit) => {
     }
 
     async function reportQuote(): Promise<void> {
-        const quote = await nativeSwap.getQuote(token.address, 100_000_000n);
+        const quote = await nativeSwap.getQuote({ token: token.address, satoshisIn: 100_000_000n });
         const amountIn = quote.result.expectedAmountIn;
         let price = quote.result.expectedAmountOut;
 
