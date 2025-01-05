@@ -1,7 +1,8 @@
 import { Address } from '@btc-vision/transaction';
-import { Blockchain, CallResponse, OP_20, opnet, OPNetUnit } from '@btc-vision/unit-test-framework';
+import { Blockchain, OP_20, opnet, OPNetUnit } from '@btc-vision/unit-test-framework';
 import { NativeSwap } from '../../contracts/ewma/NativeSwap.js';
-import { NativeSwapTypesDecoder, Recipient } from '../../contracts/ewma/NativeSwapTypes.js';
+import { Recipient, ReserveResult } from '../../contracts/ewma/NativeSwapTypes.js';
+import { NativeSwapTypesCoders } from '../../contracts/ewma/NativeSwapTypesCoders.js';
 import { createRecipientsOutput, gas2USD } from '../utils/TransactionUtils.js';
 import { BitcoinUtils } from 'opnet';
 
@@ -36,7 +37,7 @@ await opnet('Native Swap - Add Liquidity', async (vm: OPNetUnit) => {
         amount: bigint,
         forLP: boolean = false,
         rnd: boolean = true,
-    ): Promise<{ result: bigint; response: CallResponse }> {
+    ): Promise<ReserveResult> {
         const backup = Blockchain.txOrigin;
 
         let provider: Address = Blockchain.txOrigin;
@@ -52,7 +53,7 @@ await opnet('Native Swap - Add Liquidity', async (vm: OPNetUnit) => {
             minimumAmountOut: 0n,
             forLP: forLP,
         });
-        const decoded = NativeSwapTypesDecoder.decodeReservationEvents(r.response.events);
+        const decoded = NativeSwapTypesCoders.decodeReservationEvents(r.response.events);
         if (decoded.recipients.length) {
             if (forLP) {
                 toAddLiquidity.push({
@@ -70,7 +71,7 @@ await opnet('Native Swap - Add Liquidity', async (vm: OPNetUnit) => {
         }
 
         vm.info(
-            `Reserved ${BitcoinUtils.formatUnits(r.result, tokenDecimals)} tokens for ${provider} with ${decoded.recipients.length} recipients, amount of sat requested: ${decoded.totalSatoshis}`,
+            `Reserved ${BitcoinUtils.formatUnits(r.expectedAmountOut, tokenDecimals)} tokens for ${provider} with ${decoded.recipients.length} recipients, amount of sat requested: ${decoded.totalSatoshis}`,
         );
 
         // Reset
@@ -120,7 +121,7 @@ await opnet('Native Swap - Add Liquidity', async (vm: OPNetUnit) => {
 
             createRecipientsOutput(reservation.r);
             const s = await nativeSwap.swap({ token: tokenAddress, isSimulation: false });
-            const d = NativeSwapTypesDecoder.decodeSwapExecutedEvent(
+            const d = NativeSwapTypesCoders.decodeSwapExecutedEvent(
                 s.response.events[s.response.events.length - 1].data,
             );
 
@@ -137,10 +138,7 @@ await opnet('Native Swap - Add Liquidity', async (vm: OPNetUnit) => {
         l: bigint,
         rnd: boolean = false,
         provider: Address = Blockchain.txOrigin,
-    ): Promise<{
-        result: bigint;
-        response: CallResponse;
-    }> {
+    ): Promise<ReserveResult> {
         const backup = Blockchain.txOrigin;
         if (rnd) {
             provider = Blockchain.generateRandomAddress();
@@ -163,7 +161,7 @@ await opnet('Native Swap - Add Liquidity', async (vm: OPNetUnit) => {
         Blockchain.msgSender = provider;
 
         const r = await randomReserve(l, true, false);
-        const decoded = NativeSwapTypesDecoder.decodeReservationEvents(r.response.events);
+        const decoded = NativeSwapTypesCoders.decodeReservationEvents(r.response.events);
 
         vm.log(
             `Adding liquidity potentially worth ${decoded.totalSatoshis} sat and reserving ${decoded.recipients.length} recipients.`,
@@ -196,11 +194,11 @@ await opnet('Native Swap - Add Liquidity', async (vm: OPNetUnit) => {
                 receiver: reservation.a.p2tr(Blockchain.network),
             });
 
-            const d = NativeSwapTypesDecoder.decodeLiquidityAddedEvent(
+            const d = NativeSwapTypesCoders.decodeLiquidityAddedEvent(
                 s.response.events[s.response.events.length - 1].data,
             );
             vm.log(
-                `Added liquidity! Spent ${gas2USD(s.usedGas)} USD in gas, totalSatoshisSpent: ${d.totalSatoshisSpent}, totalTokensContributed: ${d.totalTokensContributed}, virtualTokenExchanged: ${d.virtualTokenExchanged}`,
+                `Added liquidity! Spent ${gas2USD(s.response.usedGas)} USD in gas, totalSatoshisSpent: ${d.totalSatoshisSpent}, totalTokensContributed: ${d.totalTokensContributed}, virtualTokenExchanged: ${d.virtualTokenExchanged}`,
             );
         }
 
@@ -216,7 +214,7 @@ await opnet('Native Swap - Add Liquidity', async (vm: OPNetUnit) => {
         Blockchain.msgSender = p;
 
         const r = await nativeSwap.removeLiquidity({ token: tokenAddress });
-        const d = NativeSwapTypesDecoder.decodeLiquidityRemovedEvent(
+        const d = NativeSwapTypesCoders.decodeLiquidityRemovedEvent(
             r.response.events[r.response.events.length - 1].data,
         );
 
@@ -251,8 +249,8 @@ await opnet('Native Swap - Add Liquidity', async (vm: OPNetUnit) => {
         Blockchain.blockNumber += 1n;
 
         const quote = await nativeSwap.getQuote({ token: token.address, satoshisIn: 100_000_000n });
-        const amountIn = quote.result.expectedAmountIn;
-        let price = quote.result.expectedAmountOut;
+        const amountIn = quote.requiredSatoshis;
+        let price = quote.price;
 
         if (amountIn !== 100_000_000n) {
             price = (price * 100_000_000n) / amountIn;
@@ -269,8 +267,8 @@ await opnet('Native Swap - Add Liquidity', async (vm: OPNetUnit) => {
 
     async function reportQuote(): Promise<void> {
         const quote = await nativeSwap.getQuote({ token: token.address, satoshisIn: 100_000_000n });
-        const amountIn = quote.result.expectedAmountIn;
-        let price = quote.result.expectedAmountOut;
+        const amountIn = quote.requiredSatoshis;
+        let price = quote.price;
 
         if (amountIn !== 100_000_000n) {
             price = (price * 100_000_000n) / amountIn;
@@ -455,7 +453,7 @@ await opnet('Native Swap - Add Liquidity', async (vm: OPNetUnit) => {
 
             await reportQuote();
 
-            if (r.result !== 0n) {
+            if (r.expectedAmountOut !== 0n) {
                 await addLiquidityRandom();
                 await removeLiquidity(rndProvider);
             }

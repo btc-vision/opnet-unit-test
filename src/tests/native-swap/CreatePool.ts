@@ -2,6 +2,7 @@ import { Address } from '@btc-vision/transaction';
 import { Assert, Blockchain, OP_20, opnet, OPNetUnit } from '@btc-vision/unit-test-framework';
 import { NativeSwap } from '../../contracts/ewma/NativeSwap.js';
 import { gas2BTC, gas2Sat, gas2USD } from '../utils/TransactionUtils.js';
+import { CreatePoolParams } from '../../contracts/ewma/NativeSwapTypes.js';
 
 await opnet('Native Swap - Create Pool', async (vm: OPNetUnit) => {
     let nativeSwap: NativeSwap;
@@ -62,49 +63,52 @@ await opnet('Native Swap - Create Pool', async (vm: OPNetUnit) => {
     await vm.it('should successfully set quote', async () => {
         Blockchain.tracePointers = false;
 
-        const quote = await nativeSwap.createPool(
-            tokenAddress,
+        const quote = await nativeSwap.createPool({
+            token: tokenAddress,
             floorPrice,
             initialLiquidity,
-            initialLiquidityProvider.p2tr(Blockchain.network),
+            receiver: initialLiquidityProvider.p2tr(Blockchain.network),
             antiBotEnabledFor,
             antiBotMaximumTokensPerReservation,
-        );
+            maxReservesIn5BlocksPercent: 4000,
+        });
 
         console.log(quote);
 
         vm.debug(
-            `Quote set! Gas cost: ${gas2Sat(quote.usedGas)}sat (${gas2BTC(quote.usedGas)} BTC, $${gas2USD(quote.usedGas)})`,
+            `Quote set! Gas cost: ${gas2Sat(quote.response.usedGas)}sat (${gas2BTC(quote.response.usedGas)} BTC, $${gas2USD(quote.response.usedGas)})`,
         );
 
         Blockchain.tracePointers = false;
     });
 
     await vm.it('should not set quote if already set', async () => {
-        Blockchain.tracePointers = true;
+        Blockchain.tracePointers = false;
 
-        const quote = await nativeSwap.createPool(
-            tokenAddress,
+        const quote = await nativeSwap.createPool({
+            token: tokenAddress,
             floorPrice,
             initialLiquidity,
-            initialLiquidityProvider.p2tr(Blockchain.network),
+            receiver: initialLiquidityProvider.p2tr(Blockchain.network),
             antiBotEnabledFor,
             antiBotMaximumTokensPerReservation,
-        );
+            maxReservesIn5BlocksPercent: 4000,
+        });
 
         await Assert.expect(async () => {
-            await nativeSwap.createPool(
-                tokenAddress,
+            await nativeSwap.createPool({
+                token: tokenAddress,
                 floorPrice,
                 initialLiquidity,
-                initialLiquidityProvider.p2tr(Blockchain.network),
+                receiver: initialLiquidityProvider.p2tr(Blockchain.network),
                 antiBotEnabledFor,
                 antiBotMaximumTokensPerReservation,
-            );
+                maxReservesIn5BlocksPercent: 4000,
+            });
         }).toThrow(`Base quote already set`);
 
         vm.debug(
-            `Quote set! Gas cost: ${gas2Sat(quote.usedGas)}sat (${gas2BTC(quote.usedGas)} BTC, $${gas2USD(quote.usedGas)})`,
+            `Quote set! Gas cost: ${gas2Sat(quote.response.usedGas)}sat (${gas2BTC(quote.response.usedGas)} BTC, $${gas2USD(quote.response.usedGas)})`,
         );
 
         Blockchain.tracePointers = false;

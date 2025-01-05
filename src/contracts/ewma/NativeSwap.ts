@@ -1,4 +1,4 @@
-import { Address, BinaryWriter, NetEvent } from '@btc-vision/transaction';
+import { Address } from '@btc-vision/transaction';
 import { BytecodeManager, ContractRuntime } from '@btc-vision/unit-test-framework';
 import { createFeeOutput } from '../../tests/utils/TransactionUtils.js';
 import {
@@ -17,11 +17,8 @@ import {
     GetQuoteResult,
     GetReserveParams,
     GetReserveResult,
-    GetVirtualReservesParams,
-    GetVirtualReservesResult,
     ListLiquidityParams,
     ListLiquidityResult,
-    NativeSwapTypesDecoder,
     RemoveLiquidityParams,
     RemoveLiquidityResult,
     ReserveParams,
@@ -31,6 +28,7 @@ import {
     SwapParams,
     SwapResult,
 } from './NativeSwapTypes.js';
+import { NativeSwapTypesCoders } from './NativeSwapTypesCoders.js';
 
 export class NativeSwap extends ContractRuntime {
     public static feeRecipient: string =
@@ -82,10 +80,6 @@ export class NativeSwap extends ContractRuntime {
         `0x${this.abiCoder.encodeSelector('getProviderDetails')}`,
     );
 
-    private readonly getEWMASelector: number = Number(
-        `0x${this.abiCoder.encodeSelector('getEWMA')}`,
-    );
-
     private readonly getPriorityQueueCostSelector: number = Number(
         `0x${this.abiCoder.encodeSelector('getPriorityQueueCost')}`,
     );
@@ -105,7 +99,7 @@ export class NativeSwap extends ContractRuntime {
     }
 
     public async getFees(): Promise<GetFeesResult> {
-        const calldata = NativeSwapTypesDecoder.encodeGetFeesParams(this.getFeesSelector);
+        const calldata = NativeSwapTypesCoders.encodeGetFeesParams(this.getFeesSelector);
 
         this.backupStates();
 
@@ -114,26 +108,22 @@ export class NativeSwap extends ContractRuntime {
 
         this.restoreStates();
 
-        return NativeSwapTypesDecoder.decodeGetFeesResult(result);
+        return NativeSwapTypesCoders.decodeGetFeesResult(result);
     }
 
     public async setFees(params: SetFeesParams): Promise<SetFeesResult> {
-        const calldata = NativeSwapTypesDecoder.encodeSetFeesParams(this.setFeesSelector, params);
-
-        this.backupStates();
+        const calldata = NativeSwapTypesCoders.encodeSetFeesParams(this.setFeesSelector, params);
 
         const result = await this.execute(calldata.getBuffer());
         if (result.error) throw this.handleError(result.error);
 
-        this.restoreStates();
-
-        return NativeSwapTypesDecoder.decodeSetFeesResult(result);
+        return NativeSwapTypesCoders.decodeSetFeesResult(result);
     }
 
     public async getProviderDetails(
         params: GetProviderDetailsParams,
     ): Promise<GetProviderDetailsResult> {
-        const calldata = NativeSwapTypesDecoder.encodeGetProviderDetailsParams(
+        const calldata = NativeSwapTypesCoders.encodeGetProviderDetailsParams(
             this.getProviderDetailsSelector,
             params,
         );
@@ -145,13 +135,13 @@ export class NativeSwap extends ContractRuntime {
 
         this.restoreStates();
 
-        return NativeSwapTypesDecoder.decodeGetProviderDetailsResult(result);
+        return NativeSwapTypesCoders.decodeGetProviderDetailsResult(result);
     }
 
     public async getPriorityQueueCost(
         params: GetPriorityQueueCostParams,
     ): Promise<GetPriorityQueueCostResult> {
-        const calldata = NativeSwapTypesDecoder.encodeGetPriorityQueueCostParams(
+        const calldata = NativeSwapTypesCoders.encodeGetPriorityQueueCostParams(
             this.getPriorityQueueCostSelector,
             params,
         );
@@ -163,55 +153,43 @@ export class NativeSwap extends ContractRuntime {
 
         this.restoreStates();
 
-        return NativeSwapTypesDecoder.decodeGetPriorityQueueCostResult(result);
+        return NativeSwapTypesCoders.decodeGetPriorityQueueCostResult(result);
     }
 
     public async addLiquidity(params: AddLiquidityParams): Promise<AddLiquidityResult> {
-        const calldata = NativeSwapTypesDecoder.encodeAddLiquidityParams(
+        const calldata = NativeSwapTypesCoders.encodeAddLiquidityParams(
             this.addLiquiditySelector,
             params,
         );
 
-        this.backupStates();
-
         const result = await this.execute(calldata.getBuffer());
         if (result.error) throw this.handleError(result.error);
 
-        this.restoreStates();
-
-        return NativeSwapTypesDecoder.decodeAddLiquidityResult(result);
+        return NativeSwapTypesCoders.decodeAddLiquidityResult(result);
     }
 
     public async removeLiquidity(params: RemoveLiquidityParams): Promise<RemoveLiquidityResult> {
-        const calldata = NativeSwapTypesDecoder.encodeRemoveLiquidityParams(
+        const calldata = NativeSwapTypesCoders.encodeRemoveLiquidityParams(
             this.removeLiquiditySelector,
             params,
         );
 
-        this.backupStates();
-
         const result = await this.execute(calldata.getBuffer());
         if (result.error) throw this.handleError(result.error);
 
-        this.restoreStates();
-
-        return NativeSwapTypesDecoder.decodeRemoveLiquidityResult(result);
+        return NativeSwapTypesCoders.decodeRemoveLiquidityResult(result);
     }
 
     public async createPool(params: CreatePoolParams): Promise<CreatePoolResult> {
-        const calldata = NativeSwapTypesDecoder.encodeCreatePoolParams(
+        const calldata = NativeSwapTypesCoders.encodeCreatePoolParams(
             this.createPoolSelector,
             params,
         );
 
-        this.backupStates();
-
         const result = await this.execute(calldata.getBuffer());
         if (result.error) throw this.handleError(result.error);
 
-        this.restoreStates();
-
-        return NativeSwapTypesDecoder.decodeCreatePoolResult(result);
+        return NativeSwapTypesCoders.decodeCreatePoolResult(result);
     }
 
     public async listLiquidity(params: ListLiquidityParams): Promise<ListLiquidityResult> {
@@ -219,67 +197,50 @@ export class NativeSwap extends ContractRuntime {
             createFeeOutput(NativeSwap.priorityQueueFees);
         }
 
-        const calldata = NativeSwapTypesDecoder.encodeListLiquidityParams(
+        const calldata = NativeSwapTypesCoders.encodeListLiquidityParams(
             this.listLiquiditySelector,
             params,
         );
 
-        this.backupStates();
-
         const result = await this.execute(calldata.getBuffer());
         if (result.error) throw this.handleError(result.error);
 
-        this.restoreStates();
-
-        return NativeSwapTypesDecoder.decodeListLiquidityResult(result);
+        return NativeSwapTypesCoders.decodeListLiquidityResult(result);
     }
 
     public async reserve(params: ReserveParams): Promise<ReserveResult> {
         createFeeOutput(NativeSwap.reservationFees);
 
-        const calldata = NativeSwapTypesDecoder.encodeReserveParams(this.reserveSelector, params);
-
-        this.backupStates();
+        const calldata = NativeSwapTypesCoders.encodeReserveParams(this.reserveSelector, params);
 
         const result = await this.execute(calldata.getBuffer());
         if (result.error) throw this.handleError(result.error);
 
-        this.restoreStates();
-
-        return NativeSwapTypesDecoder.decodeReserveResult(result);
+        return NativeSwapTypesCoders.decodeReserveResult(result);
     }
 
     public async cancelListing(params: CancelListingParams): Promise<CancelListingResult> {
-        const calldata = NativeSwapTypesDecoder.encodeCancelListingParams(
+        const calldata = NativeSwapTypesCoders.encodeCancelListingParams(
             this.cancelListingSelector,
             params,
         );
-
-        this.backupStates();
-
         const result = await this.execute(calldata.getBuffer());
         if (result.error) throw this.handleError(result.error);
 
-        this.restoreStates();
-
-        return NativeSwapTypesDecoder.decodeCancelListingResult(result);
+        return NativeSwapTypesCoders.decodeCancelListingResult(result);
     }
 
     public async swap(params: SwapParams): Promise<SwapResult> {
-        const calldata = NativeSwapTypesDecoder.encodeSwapParams(this.swapSelector, params);
-
-        this.backupStates();
+        const calldata = NativeSwapTypesCoders.encodeSwapParams(this.swapSelector, params);
 
         const result = await this.execute(calldata.getBuffer());
         if (result.error) throw this.handleError(result.error);
 
-        this.restoreStates();
-
-        return NativeSwapTypesDecoder.decodeSwapResult(result);
+        return NativeSwapTypesCoders.decodeSwapResult(result);
     }
 
     public async getReserve(params: GetReserveParams): Promise<GetReserveResult> {
-        const calldata = NativeSwapTypesDecoder.encodeGetReserveParams(
+        const calldata = NativeSwapTypesCoders.encodeGetReserveParams(
             this.getReserveSelector,
             params,
         );
@@ -291,11 +252,11 @@ export class NativeSwap extends ContractRuntime {
 
         this.restoreStates();
 
-        return NativeSwapTypesDecoder.decodeGetReserveResult(result);
+        return NativeSwapTypesCoders.decodeGetReserveResult(result);
     }
 
     public async getQuote(params: GetQuoteParams): Promise<GetQuoteResult> {
-        const calldata = NativeSwapTypesDecoder.encodeGetQuoteParams(this.getQuoteSelector, params);
+        const calldata = NativeSwapTypesCoders.encodeGetQuoteParams(this.getQuoteSelector, params);
 
         this.backupStates();
 
@@ -304,62 +265,8 @@ export class NativeSwap extends ContractRuntime {
 
         this.restoreStates();
 
-        return NativeSwapTypesDecoder.decodeGetQuoteResult(result);
+        return NativeSwapTypesCoders.decodeGetQuoteResult(result);
     }
-
-    public async getVirtualReserves(
-        params: GetVirtualReservesParams,
-    ): Promise<GetVirtualReservesResult> {
-        const calldata = NativeSwapTypesDecoder.encodeGetVirtualReservesParams(
-            this.getEWMASelector,
-            params,
-        );
-
-        this.backupStates();
-
-        const result = await this.execute(calldata.getBuffer());
-        if (result.error) throw this.handleError(result.error);
-
-        this.restoreStates();
-
-        return NativeSwapTypesDecoder.decodeGetVirtualReservesResult(result);
-    }
-
-    /*public decodeReservationEvents(events: NetEvent[]): DecodedReservation {
-        const e: DecodedReservation = {
-            recipients: [],
-            totalSatoshis: 0n,
-        };
-
-        for (let i = 0; i < events.length; i++) {
-            const event = events[i];
-            switch (event.type) {
-                case 'LiquidityReserved': {
-                    const recipient = NativeSwapEventsDecoder.decodeLiquidityReservedEvent(
-                        event.data,
-                    );
-                    e.totalSatoshis += recipient.amount;
-
-                    e.recipients.push(recipient);
-                    break;
-                }
-                case 'ReservationCreated': {
-                    e.reservation = NativeSwapEventsDecoder.decodeReservationCreatedEvent(
-                        event.data,
-                    );
-                    break;
-                }
-                case 'Transfer': {
-                    break;
-                }
-                default: {
-                    throw new Error(`Unknown event type: ${event.type}`);
-                }
-            }
-        }
-
-        return e;
-    }*/
 
     protected handleError(error: Error): Error {
         return new Error(`(in order book: ${this.address}) OPNET: ${error.message}`);
