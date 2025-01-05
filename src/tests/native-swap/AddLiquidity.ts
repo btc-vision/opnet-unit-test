@@ -28,7 +28,7 @@ await opnet('Native Swap - Add Liquidity', async (vm: OPNetUnit) => {
 
     const initialLiquidityProvider: Address = Blockchain.generateRandomAddress();
 
-    const floorPrice: bigint = 666666666667000n; //10n ** 18n;
+    const floorPrice: bigint = 10n ** 18n / 1500n; //10n ** 18n;
 
     let toSwap: { a: Address; r: Recipient[] }[] = [];
     let toAddLiquidity: { a: Address; r: Recipient[] }[] = [];
