@@ -1,14 +1,15 @@
 import { Address } from '@btc-vision/transaction';
 import { Blockchain, CallResponse, OP_20, opnet, OPNetUnit } from '@btc-vision/unit-test-framework';
 
-import { NativeSwap, Recipient } from '../../contracts/ewma/NativeSwap.js';
+import { NativeSwap } from '../../contracts/ewma/NativeSwap.js';
 import { MotoswapRouter } from '../../contracts/motoswap/MotoswapRouter.js';
 import { MotoswapFactory } from '../../contracts/motoswap/MotoswapFactory.js';
 import { MotoswapPool } from '../../contracts/motoswap/MotoswapPool.js';
-import { createRecipientsOutput, gas2USD } from '../../tests/utils/TransactionUtils.js';
+import { createRecipientsOutput, gas2USD } from '../utils/TransactionUtils.js';
 import { WBTC_ADDRESS } from '../../common.js';
 import { getReserves } from '../../common/UtilFunctions.js';
 import { BitcoinUtils } from 'opnet';
+import { Recipient } from '../../contracts/ewma/NativeSwapTypes.js';
 
 // Same constants from your example
 const tokenDecimals = 18;
