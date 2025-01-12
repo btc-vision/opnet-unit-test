@@ -7,6 +7,7 @@ import {
     CancelListingResult,
     CreatePoolParams,
     CreatePoolResult,
+    CreatePoolWithSignatureParams,
     DecodedReservationEvents,
     GetFeesResult,
     GetPriorityQueueCostParams,
@@ -270,6 +271,27 @@ export class NativeSwapTypesCoders {
     public static encodeCreatePoolParams(selector: number, params: CreatePoolParams): BinaryWriter {
         const calldata = new BinaryWriter();
 
+        calldata.writeSelector(selector);
+        calldata.writeAddress(params.token);
+        calldata.writeU256(params.floorPrice);
+        calldata.writeU128(params.initialLiquidity);
+        calldata.writeStringWithLength(params.receiver);
+        calldata.writeU16(params.antiBotEnabledFor);
+        calldata.writeU256(params.antiBotMaximumTokensPerReservation);
+        calldata.writeU16(params.maxReservesIn5BlocksPercent);
+
+        return calldata;
+    }
+
+    public static encodeCreatePoolWithSignatureParams(
+        selector: number,
+        params: CreatePoolWithSignatureParams,
+    ): BinaryWriter {
+        const calldata = new BinaryWriter();
+
+        calldata.writeBytesWithLength(params.signature);
+        calldata.writeU256(params.amount);
+        calldata.writeAddress(params.token);
         calldata.writeSelector(selector);
         calldata.writeAddress(params.token);
         calldata.writeU256(params.floorPrice);

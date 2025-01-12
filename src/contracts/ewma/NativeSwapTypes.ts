@@ -106,6 +106,19 @@ export interface CreatePoolResult {
     readonly response: CallResponse;
 }
 
+export interface CreatePoolWithSignatureParams {
+    readonly signature: Uint8Array;
+    readonly amount: bigint;
+    readonly address: Address;
+    readonly token: Address;
+    readonly floorPrice: bigint;
+    readonly initialLiquidity: bigint;
+    readonly receiver: string;
+    readonly antiBotEnabledFor: number;
+    readonly antiBotMaximumTokensPerReservation: bigint;
+    readonly maxReservesIn5BlocksPercent: number; //4000
+}
+
 export interface ListLiquidityParams {
     readonly token: Address;
     readonly receiver: string;

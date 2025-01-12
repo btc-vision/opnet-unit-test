@@ -8,6 +8,7 @@ import {
     CancelListingResult,
     CreatePoolParams,
     CreatePoolResult,
+    CreatePoolWithSignatureParams,
     GetFeesResult,
     GetPriorityQueueCostParams,
     GetPriorityQueueCostResult,
@@ -39,49 +40,55 @@ export class NativeSwap extends ContractRuntime {
 
     // Define selectors for contract methods
     private readonly reserveSelector: number = Number(
-        `0x${this.abiCoder.encodeSelector('reserve')}`,
+        `0x${this.abiCoder.encodeSelector('reserve(address,uint256,uint256,bool)')}`,
     );
 
-    private readonly swapSelector: number = Number(`0x${this.abiCoder.encodeSelector('swap')}`);
+    private readonly swapSelector: number = Number(
+        `0x${this.abiCoder.encodeSelector('swap(address)')}`,
+    );
 
     private readonly listLiquiditySelector: number = Number(
-        `0x${this.abiCoder.encodeSelector('listLiquidity')}`,
+        `0x${this.abiCoder.encodeSelector('listLiquidity(address,string,uint128,bool)')}`,
     );
 
     private readonly cancelListingSelector: number = Number(
-        `0x${this.abiCoder.encodeSelector('cancelListing')}`,
+        `0x${this.abiCoder.encodeSelector('cancelListing(address)')}`,
     );
 
     private readonly createPoolSelector: number = Number(
-        `0x${this.abiCoder.encodeSelector('createPool')}`,
+        `0x${this.abiCoder.encodeSelector('createPool(address,uint256,uint128,string,uint16,uint256,uint16)')}`,
+    );
+
+    private readonly createPoolWithSignatureSelector: number = Number(
+        `0x${this.abiCoder.encodeSelector('createPoolWithSignature(bytes,address,uint256,uint128,string,uint16,uint256,uint16)')}`,
     );
 
     private readonly setFeesSelector: number = Number(
-        `0x${this.abiCoder.encodeSelector('setFees')}`,
+        `0x${this.abiCoder.encodeSelector('setFees(uint64,uint64,uint64)')}`,
     );
 
     private readonly addLiquiditySelector: number = Number(
-        `0x${this.abiCoder.encodeSelector('addLiquidity')}`,
+        `0x${this.abiCoder.encodeSelector('addLiquidity(address,string)')}`,
     );
 
     private readonly removeLiquiditySelector: number = Number(
-        `0x${this.abiCoder.encodeSelector('removeLiquidity')}`,
+        `0x${this.abiCoder.encodeSelector('removeLiquidity(address,uint256)')}`,
     );
 
     private readonly getReserveSelector: number = Number(
-        `0x${this.abiCoder.encodeSelector('getReserve')}`,
+        `0x${this.abiCoder.encodeSelector('getReserve(address)')}`,
     );
 
     private readonly getQuoteSelector: number = Number(
-        `0x${this.abiCoder.encodeSelector('getQuote')}`,
+        `0x${this.abiCoder.encodeSelector('getQuote(address,uint256)')}`,
     );
 
     private readonly getProviderDetailsSelector: number = Number(
-        `0x${this.abiCoder.encodeSelector('getProviderDetails')}`,
+        `0x${this.abiCoder.encodeSelector('getProviderDetails(address)')}`,
     );
 
     private readonly getPriorityQueueCostSelector: number = Number(
-        `0x${this.abiCoder.encodeSelector('getPriorityQueueCost')}`,
+        `0x${this.abiCoder.encodeSelector('getPriorityQueueCost(address)')}`,
     );
 
     private readonly getFeesSelector: number = Number(
@@ -183,6 +190,20 @@ export class NativeSwap extends ContractRuntime {
     public async createPool(params: CreatePoolParams): Promise<CreatePoolResult> {
         const calldata = NativeSwapTypesCoders.encodeCreatePoolParams(
             this.createPoolSelector,
+            params,
+        );
+
+        const result = await this.execute(calldata.getBuffer());
+        if (result.error) throw this.handleError(result.error);
+
+        return NativeSwapTypesCoders.decodeCreatePoolResult(result);
+    }
+
+    public async createPoolWithSignature(
+        params: CreatePoolWithSignatureParams,
+    ): Promise<CreatePoolResult> {
+        const calldata = NativeSwapTypesCoders.encodeCreatePoolWithSignatureParams(
+            this.createPoolWithSignatureSelector,
             params,
         );
 

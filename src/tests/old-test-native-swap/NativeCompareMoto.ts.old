@@ -1,7 +1,8 @@
 import { Address } from '@btc-vision/transaction';
-import { Blockchain, CallResponse, OP_20, opnet, OPNetUnit } from '@btc-vision/unit-test-framework';
+import { Blockchain, OP_20, opnet, OPNetUnit } from '@btc-vision/unit-test-framework';
 
-import { NativeSwap, Recipient } from '../../contracts/ewma/NativeSwap.js';
+import { NativeSwap } from '../../contracts/ewma/NativeSwap.js';
+import { Recipient, ReserveResult } from '../../contracts/ewma/NativeSwapTypes.js';
 import { MotoswapRouter } from '../../contracts/motoswap/MotoswapRouter.js';
 import { MotoswapFactory } from '../../contracts/motoswap/MotoswapFactory.js';
 import { MotoswapPool } from '../../contracts/motoswap/MotoswapPool.js';
@@ -9,6 +10,7 @@ import { createRecipientsOutput, gas2USD } from '../../tests/utils/TransactionUt
 import { WBTC_ADDRESS } from '../../common.js';
 import { getReserves } from '../../common/UtilFunctions.js';
 import { BitcoinUtils } from 'opnet';
+import { NativeSwapTypesCoders } from '../../contracts/ewma/NativeSwapTypesCoders.js';
 
 // Same constants from your example
 const tokenDecimals = 18;
@@ -170,14 +172,15 @@ await opnet('Compare NativeSwap vs Normal OP20 Swap', async (vm: OPNetUnit) => {
         await myToken.approve(userAddress, nativeSwap.address, initLiquidity);
 
         // Create the pool
-        await nativeSwap.createPool(
-            myToken.address,
-            floorPrice,
-            initLiquidity,
-            initialLiquidityProvider.p2tr(Blockchain.network),
-            0,
-            0n,
-        );
+        await nativeSwap.createPool({
+            token: myToken.address,
+            floorPrice: floorPrice,
+            initialLiquidity: initLiquidity,
+            receiver: initialLiquidityProvider.p2tr(Blockchain.network),
+            antiBotEnabledFor: 0,
+            antiBotMaximumTokensPerReservation: 0n,
+            maxReservesIn5BlocksPercent: 4000,
+        });
 
         Blockchain.blockNumber += 1n;
 
@@ -241,7 +244,10 @@ await opnet('Compare NativeSwap vs Normal OP20 Swap', async (vm: OPNetUnit) => {
         const r = await randomReserve(l, true);
         console.log(r);
 
-        await nativeSwap.addLiquidity(tokenAddress, provider.p2tr(Blockchain.network));
+        await nativeSwap.addLiquidity({
+            token: tokenAddress,
+            receiver: provider.p2tr(Blockchain.network),
+        });
 
         vm.info(`Added liquidity for ${l} tokens`);
     }
@@ -258,21 +264,30 @@ await opnet('Compare NativeSwap vs Normal OP20 Swap', async (vm: OPNetUnit) => {
         // Add liquidity
         Blockchain.txOrigin = provider;
         Blockchain.msgSender = provider;
-        await nativeSwap.listLiquidity(tokenAddress, provider.p2tr(Blockchain.network), l);
+        await nativeSwap.listLiquidity({
+            token: tokenAddress,
+            receiver: provider.p2tr(Blockchain.network),
+            amountIn: l,
+            priority: false,
+            disablePriorityQueueFees: false,
+        });
 
         vm.info(`Added liquidity for ${l} tokens`);
     }
 
-    async function randomReserve(
-        amount: bigint,
-        forLP: boolean = false,
-    ): Promise<{ result: bigint; response: CallResponse }> {
+    async function randomReserve(amount: bigint, forLP: boolean = false): Promise<ReserveResult> {
         const provider = Blockchain.generateRandomAddress();
         Blockchain.txOrigin = provider;
         Blockchain.msgSender = provider;
 
-        const r = await nativeSwap.reserve(tokenAddress, amount, 1n, forLP);
-        const decoded = nativeSwap.decodeReservationEvents(r.response.events);
+        const r = await nativeSwap.reserve({
+            token: tokenAddress,
+            maximumAmountIn: amount,
+            minimumAmountOut: 1n,
+            forLP: forLP,
+        });
+
+        const decoded = NativeSwapTypesCoders.decodeReservationEvents(r.response.events);
         if (decoded.recipients.length) {
             toSwap.push({
                 a: provider,
@@ -295,8 +310,12 @@ await opnet('Compare NativeSwap vs Normal OP20 Swap', async (vm: OPNetUnit) => {
             Blockchain.msgSender = reservation.a;
 
             createRecipientsOutput(reservation.r);
-            const s = await nativeSwap.swap(tokenAddress, false);
-            const d = NativeSwap.decodeSwapExecutedEvent(
+            const s = await nativeSwap.swap({
+                token: tokenAddress,
+                isSimulation: false,
+            });
+
+            const d = NativeSwapTypesCoders.decodeSwapExecutedEvent(
                 s.response.events[s.response.events.length - 1].data,
             );
 
@@ -321,8 +340,11 @@ await opnet('Compare NativeSwap vs Normal OP20 Swap', async (vm: OPNetUnit) => {
             Blockchain.msgSender = randomProvider;
 
             for (let x = 0; x < 5; x++) {
-                const quote = await nativeSwap.getQuote(myToken.address, satoshisIn);
-                const price = quote.result.currentPrice;
+                const quote = await nativeSwap.getQuote({
+                    token: myToken.address,
+                    satoshisIn: satoshisIn,
+                });
+                const price = quote.price;
 
                 await listTokenRandom(satoshisIn * price);
             }
@@ -333,8 +355,12 @@ await opnet('Compare NativeSwap vs Normal OP20 Swap', async (vm: OPNetUnit) => {
 
             Blockchain.blockNumber += 1n;
 
-            const quote2 = await nativeSwap.getQuote(myToken.address, satoshisIn);
-            const price2 = quote2.result.currentPrice;
+            const quote2 = await nativeSwap.getQuote({
+                token: myToken.address,
+                satoshisIn: satoshisIn,
+            });
+
+            const price2 = quote2.price;
 
             // Log data in the old array
             nativeSwapPriceData.push({
@@ -367,8 +393,12 @@ await opnet('Compare NativeSwap vs Normal OP20 Swap', async (vm: OPNetUnit) => {
 
             await swapAll();
 
-            const quote = await nativeSwap.getQuote(myToken.address, satoshisIn);
-            const price = quote.result.currentPrice;
+            const quote = await nativeSwap.getQuote({
+                token: myToken.address,
+                satoshisIn: satoshisIn,
+            });
+
+            const price = quote.price;
 
             // Log data in the old array
             nativeSwapPriceData.push({
@@ -602,8 +632,12 @@ await opnet('Compare NativeSwap vs Normal OP20 Swap', async (vm: OPNetUnit) => {
 
             await swapAll();
 
-            const quote = await nativeSwap.getQuote(myToken.address, satoshisIn);
-            const price = quote.result.currentPrice;
+            const quote = await nativeSwap.getQuote({
+                token: myToken.address,
+                satoshisIn: satoshisIn,
+            });
+
+            const price = quote.price;
 
             // Log data in the old array
             nativeSwapPriceData.push({
@@ -627,8 +661,12 @@ await opnet('Compare NativeSwap vs Normal OP20 Swap', async (vm: OPNetUnit) => {
 
             for (let y = 0; y < 5; y++) {
                 // Advance the chain
-                const quote = await nativeSwap.getQuote(myToken.address, satoshisIn);
-                const price = quote.result.currentPrice;
+                const quote = await nativeSwap.getQuote({
+                    token: myToken.address,
+                    satoshisIn: satoshisIn,
+                });
+
+                const price = quote.price;
 
                 await listTokenRandom(satoshisIn * price);
             }
@@ -639,8 +677,12 @@ await opnet('Compare NativeSwap vs Normal OP20 Swap', async (vm: OPNetUnit) => {
 
             Blockchain.blockNumber += 1n;
 
-            const quote2 = await nativeSwap.getQuote(myToken.address, satoshisIn);
-            const price2 = quote2.result.currentPrice;
+            const quote2 = await nativeSwap.getQuote({
+                token: myToken.address,
+                satoshisIn: satoshisIn,
+            });
+
+            const price2 = quote2.price;
 
             // Log data in the old array
             nativeSwapPriceData.push({
@@ -677,8 +719,12 @@ await opnet('Compare NativeSwap vs Normal OP20 Swap', async (vm: OPNetUnit) => {
 
             await swapAll();
 
-            const quote = await nativeSwap.getQuote(myToken.address, satoshisIn);
-            const price = quote.result.currentPrice;
+            const quote = await nativeSwap.getQuote({
+                token: myToken.address,
+                satoshisIn: satoshisIn,
+            });
+
+            const price = quote.price;
 
             // Log data in the old array
             nativeSwapPriceData.push({
@@ -703,8 +749,12 @@ await opnet('Compare NativeSwap vs Normal OP20 Swap', async (vm: OPNetUnit) => {
 
                 for (let y = 0; y < 5; y++) {
                     // Advance the chain
-                    const quote = await nativeSwap.getQuote(myToken.address, satoshisIn);
-                    const price = quote.result.currentPrice;
+                    const quote = await nativeSwap.getQuote({
+                        token: myToken.address,
+                        satoshisIn: satoshisIn,
+                    });
+
+                    const price = quote.price;
 
                     await listTokenRandom(satoshisIn * price);
                 }
@@ -716,8 +766,12 @@ await opnet('Compare NativeSwap vs Normal OP20 Swap', async (vm: OPNetUnit) => {
 
             Blockchain.blockNumber += 1n;
 
-            const quote2 = await nativeSwap.getQuote(myToken.address, satoshisIn);
-            const price2 = quote2.result.currentPrice;
+            const quote2 = await nativeSwap.getQuote({
+                token: myToken.address,
+                satoshisIn: satoshisIn,
+            });
+
+            const price2 = quote2.price;
 
             // Log data in the old array
             nativeSwapPriceData.push({
@@ -752,8 +806,12 @@ await opnet('Compare NativeSwap vs Normal OP20 Swap', async (vm: OPNetUnit) => {
 
             await swapAll();
 
-            const quote = await nativeSwap.getQuote(myToken.address, satoshisIn);
-            const price = quote.result.currentPrice;
+            const quote = await nativeSwap.getQuote({
+                token: myToken.address,
+                satoshisIn: satoshisIn,
+            });
+
+            const price = quote.price;
 
             // Log data in the old array
             nativeSwapPriceData.push({
