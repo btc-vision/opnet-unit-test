@@ -9,6 +9,8 @@ import {
     CreatePoolParams,
     CreatePoolResult,
     CreatePoolWithSignatureParams,
+    GetAntibotSettingsParams,
+    GetAntibotSettingsResult,
     GetFeesResult,
     GetPriorityQueueCostParams,
     GetPriorityQueueCostResult,
@@ -95,6 +97,10 @@ export class NativeSwap extends ContractRuntime {
         `0x${this.abiCoder.encodeSelector('getFees')}`,
     );
 
+    private readonly getAntibotSettingsSelector: number = Number(
+        `0x${this.abiCoder.encodeSelector('getAntibotSettings(address)')}`,
+    );
+
     public constructor(deployer: Address, address: Address, gasLimit: bigint = 100_000_000_000n) {
         super({
             address: address,
@@ -125,6 +131,20 @@ export class NativeSwap extends ContractRuntime {
         if (result.error) throw this.handleError(result.error);
 
         return NativeSwapTypesCoders.decodeSetFeesResult(result);
+    }
+
+    public async getAntibotSettings(
+        params: GetAntibotSettingsParams,
+    ): Promise<GetAntibotSettingsResult> {
+        const calldata = NativeSwapTypesCoders.encodeGetAntibotSettingsParams(
+            this.getAntibotSettingsSelector,
+            params,
+        );
+
+        const result = await this.execute(calldata.getBuffer());
+        if (result.error) throw this.handleError(result.error);
+
+        return NativeSwapTypesCoders.decodeGetAntibotSettingsResult(result);
     }
 
     public async getProviderDetails(

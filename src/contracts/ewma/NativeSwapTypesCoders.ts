@@ -9,6 +9,8 @@ import {
     CreatePoolResult,
     CreatePoolWithSignatureParams,
     DecodedReservationEvents,
+    GetAntibotSettingsParams,
+    GetAntibotSettingsResult,
     GetFeesResult,
     GetPriorityQueueCostParams,
     GetPriorityQueueCostResult,
@@ -160,6 +162,32 @@ export class NativeSwapTypesCoders {
 
         return {
             result: reader.readBoolean(),
+            response: response,
+        };
+    }
+
+    public static encodeGetAntibotSettingsParams(
+        selector: number,
+        params: GetAntibotSettingsParams,
+    ): BinaryWriter {
+        const calldata = new BinaryWriter();
+
+        calldata.writeSelector(selector);
+        calldata.writeAddress(params.token);
+
+        return calldata;
+    }
+
+    public static decodeGetAntibotSettingsResult(response: CallResponse): GetAntibotSettingsResult {
+        if (!response.response) {
+            throw new Error('No response to decode from getAntibotSettings');
+        }
+
+        const reader = new BinaryReader(response.response);
+
+        return {
+            antiBotExpirationBlock: reader.readU64(),
+            maxTokensPerReservation: reader.readU256(),
             response: response,
         };
     }
@@ -473,5 +501,19 @@ export class NativeSwapTypesCoders {
             price: reader.readU256(),
             response: response,
         };
+    }
+
+    public static getLiquidityListedEvent(events: NetEvent[]): LiquidityListedEvent | null {
+        for (let i = 0; i < events.length; i++) {
+            const event = events[i];
+            switch (event.type) {
+                case 'LiquidityListed': {
+                    const liquidityListed = this.decodeLiquidityListedEvent(event.data);
+                    return liquidityListed;
+                }
+            }
+        }
+
+        return null;
     }
 }

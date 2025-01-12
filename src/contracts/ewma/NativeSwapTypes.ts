@@ -52,6 +52,16 @@ export interface GetFeesResult {
     readonly response: CallResponse;
 }
 
+export interface GetAntibotSettingsParams {
+    readonly token: Address;
+}
+
+export interface GetAntibotSettingsResult {
+    readonly antiBotExpirationBlock: bigint;
+    readonly maxTokensPerReservation: bigint;
+    readonly response: CallResponse;
+}
+
 export interface GetProviderDetailsParams {
     readonly token: Address;
 }
