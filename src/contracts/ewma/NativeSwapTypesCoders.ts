@@ -1,4 +1,4 @@
-import { BinaryReader, BinaryWriter, NetEvent } from '@btc-vision/transaction';
+import { Address, BinaryReader, BinaryWriter, NetEvent } from '@btc-vision/transaction';
 import { CallResponse } from '@btc-vision/unit-test-framework';
 import {
     AddLiquidityParams,
@@ -21,6 +21,7 @@ import {
     GetQuoteResult,
     GetReserveParams,
     GetReserveResult,
+    GetStakingContractAddressResult,
     LiquidityAddedEvent,
     LiquidityListedEvent,
     LiquidityRemovedEvent,
@@ -151,6 +152,28 @@ export class NativeSwapTypesCoders {
         };
     }
 
+    public static encodeGetStakingContractAddressParams(selector: number): BinaryWriter {
+        const calldata = new BinaryWriter();
+
+        calldata.writeSelector(selector);
+
+        return calldata;
+    }
+
+    public static decodeGetStakingContractAddressResult(
+        response: CallResponse,
+    ): GetStakingContractAddressResult {
+        if (!response.response) {
+            throw new Error('No response to decode from getStakingContractAddress');
+        }
+
+        const reader = new BinaryReader(response.response);
+        return {
+            stakingContractAddress: reader.readAddress(),
+            response: response,
+        };
+    }
+
     public static encodeSetFeesParams(selector: number, params: SetFeesParams): BinaryWriter {
         const calldata = new BinaryWriter();
 
@@ -165,6 +188,31 @@ export class NativeSwapTypesCoders {
     public static decodeSetFeesResult(response: CallResponse): SetFeesResult {
         if (!response.response) {
             throw new Error('No response to decode from setFees');
+        }
+
+        const reader = new BinaryReader(response.response);
+
+        return {
+            result: reader.readBoolean(),
+            response: response,
+        };
+    }
+
+    public static encodeSetStakingContractAddressParams(
+        selector: number,
+        to: Address,
+    ): BinaryWriter {
+        const calldata = new BinaryWriter();
+
+        calldata.writeSelector(selector);
+        calldata.writeAddress(to);
+
+        return calldata;
+    }
+
+    public static decodeSetContractAddressResult(response: CallResponse): SetFeesResult {
+        if (!response.response) {
+            throw new Error('No response to decode from setContractAddress');
         }
 
         const reader = new BinaryReader(response.response);

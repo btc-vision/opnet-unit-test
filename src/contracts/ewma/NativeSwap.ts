@@ -20,6 +20,7 @@ import {
     GetQuoteResult,
     GetReserveParams,
     GetReserveResult,
+    GetStakingContractAddressResult,
     ListLiquidityParams,
     ListLiquidityResult,
     RemoveLiquidityParams,
@@ -101,6 +102,13 @@ export class NativeSwap extends ContractRuntime {
         `0x${this.abiCoder.encodeSelector('getAntibotSettings(address)')}`,
     );
 
+    private readonly setStakingContractAddressSelector: number = Number(
+        `0x${this.abiCoder.encodeSelector('setStakingContractAddress(address)')}`,
+    );
+    private readonly getStakingContractAddressSelector: number = Number(
+        `0x${this.abiCoder.encodeSelector('getStakingContractAddress')}`,
+    );
+
     public constructor(deployer: Address, address: Address, gasLimit: bigint = 100_000_000_000n) {
         super({
             address: address,
@@ -131,6 +139,33 @@ export class NativeSwap extends ContractRuntime {
         if (result.error) throw this.handleError(result.error);
 
         return NativeSwapTypesCoders.decodeSetFeesResult(result);
+    }
+
+    public async getStakingContractAddress(): Promise<GetStakingContractAddressResult> {
+        const calldata = NativeSwapTypesCoders.encodeGetStakingContractAddressParams(
+            this.getStakingContractAddressSelector,
+        );
+
+        this.backupStates();
+
+        const result = await this.execute(calldata.getBuffer());
+        if (result.error) throw this.handleError(result.error);
+
+        this.restoreStates();
+
+        return NativeSwapTypesCoders.decodeGetStakingContractAddressResult(result);
+    }
+
+    public async setStakingContractAddress(to: Address): Promise<SetFeesResult> {
+        const calldata = NativeSwapTypesCoders.encodeSetStakingContractAddressParams(
+            this.setStakingContractAddressSelector,
+            to,
+        );
+
+        const result = await this.execute(calldata.getBuffer());
+        if (result.error) throw this.handleError(result.error);
+
+        return NativeSwapTypesCoders.decodeSetContractAddressResult(result);
     }
 
     public async getAntibotSettings(

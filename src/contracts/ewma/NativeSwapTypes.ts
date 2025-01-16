@@ -58,6 +58,11 @@ export interface GetFeesResult {
     readonly response: CallResponse;
 }
 
+export interface GetStakingContractAddressResult {
+    readonly stakingContractAddress: Address;
+    readonly response: CallResponse;
+}
+
 export interface GetAntibotSettingsParams {
     readonly token: Address;
 }
