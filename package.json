@@ -28,6 +28,7 @@
         "test:native:compare": "tsx src/tests/old-test-native-swap/NativeCompare.ts.old",
         "test:native:moto": "tsx src/tests/old-test-native-swap/NativeCompareMoto.ts.old",
         "test:exploit": "tsx src/tests/common/exploit.ts",
+        "t": "tsx src/tests/native-swap/fee/StakingPoolFeeCollection.ts",
         "test": "npm-run-all test:*"
     },
     "author": "OP_NET",
