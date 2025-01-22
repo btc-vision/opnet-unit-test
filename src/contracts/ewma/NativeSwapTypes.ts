@@ -34,6 +34,12 @@ export interface SwapExecutedEvent {
     readonly amountOut: bigint;
 }
 
+export interface ApprovedEvent {
+    readonly owner: Address;
+    readonly spender: Address;
+    readonly value: bigint;
+}
+
 export interface SetFeesParams {
     readonly reservationBaseFee: bigint;
     readonly priorityQueueBaseFee: bigint;
@@ -119,7 +125,6 @@ export interface CreatePoolResult {
 export interface CreatePoolWithSignatureParams {
     readonly signature: Uint8Array;
     readonly amount: bigint;
-    readonly address: Address;
     readonly token: Address;
     readonly floorPrice: bigint;
     readonly initialLiquidity: bigint;

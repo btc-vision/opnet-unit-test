@@ -16,10 +16,7 @@ await opnet('Native Swap - Create Pool', async (vm: OPNetUnit) => {
     const userAddress: Address = Blockchain.generateRandomAddress();
     const tokenAddress: Address = Blockchain.generateRandomAddress();
     const ewmaAddress: Address = Blockchain.generateRandomAddress();
-
     const liquidityAmount: bigint = Blockchain.expandToDecimal(1000, tokenDecimals);
-    const satoshisIn: bigint = 1_000_000_000_000n; //100_000n  BTC 1_000_000_000_000n
-
     const floorPrice: bigint = 1000n;
     const initialLiquidity: bigint = 1000n;
     const initialLiquidityProvider: Address = Blockchain.generateRandomAddress();
@@ -67,8 +64,6 @@ await opnet('Native Swap - Create Pool', async (vm: OPNetUnit) => {
     await vm.it('should revert when token address does not exist', async () => {
         const fakeTokenAddress: Address = Blockchain.generateRandomAddress();
 
-        Blockchain.tracePointers = false;
-
         await Assert.expect(async () => {
             await nativeSwap.createPool({
                 token: fakeTokenAddress,
@@ -80,14 +75,11 @@ await opnet('Native Swap - Create Pool', async (vm: OPNetUnit) => {
                 maxReservesIn5BlocksPercent: 4000,
             });
         }).toThrow(`OPNET: RuntimeError: Error: Contract not found at address`);
-
-        Blockchain.tracePointers = false;
     });
 
     await vm.it('should revert when caller is not the token owner', async () => {
         const fakeCallerAddress: Address = Blockchain.generateRandomAddress();
 
-        Blockchain.tracePointers = false;
         Blockchain.txOrigin = fakeCallerAddress;
         Blockchain.msgSender = fakeCallerAddress;
 
@@ -102,13 +94,9 @@ await opnet('Native Swap - Create Pool', async (vm: OPNetUnit) => {
                 maxReservesIn5BlocksPercent: 4000,
             });
         }).toThrow(`OPNET: Execution aborted: NATIVE_SWAP: Only token owner can call createPool`);
-
-        Blockchain.tracePointers = false;
     });
 
     await vm.it('should revert when receiver is an invalid bitcoin address', async () => {
-        Blockchain.tracePointers = false;
-
         await Assert.expect(async () => {
             await nativeSwap.createPool({
                 token: tokenAddress,
@@ -120,13 +108,9 @@ await opnet('Native Swap - Create Pool', async (vm: OPNetUnit) => {
                 maxReservesIn5BlocksPercent: 4000,
             });
         }).toThrow(`NATIVE_SWAP: Invalid receiver address`);
-
-        Blockchain.tracePointers = false;
     });
 
     await vm.it('should revert when receiver is an empty bitcoin address', async () => {
-        Blockchain.tracePointers = false;
-
         await Assert.expect(async () => {
             await nativeSwap.createPool({
                 token: tokenAddress,
@@ -138,13 +122,9 @@ await opnet('Native Swap - Create Pool', async (vm: OPNetUnit) => {
                 maxReservesIn5BlocksPercent: 4000,
             });
         }).toThrow(`NATIVE_SWAP: Invalid receiver address`);
-
-        Blockchain.tracePointers = false;
     });
 
     await vm.it('should revert when floor price is 0', async () => {
-        Blockchain.tracePointers = false;
-
         await Assert.expect(async () => {
             await nativeSwap.createPool({
                 token: tokenAddress,
@@ -156,13 +136,9 @@ await opnet('Native Swap - Create Pool', async (vm: OPNetUnit) => {
                 maxReservesIn5BlocksPercent: 4000,
             });
         }).toThrow(`NATIVE_SWAP: Floor price cannot be zero`);
-
-        Blockchain.tracePointers = false;
     });
 
     await vm.it('should revert when initial liquidity is 0', async () => {
-        Blockchain.tracePointers = false;
-
         await Assert.expect(async () => {
             await nativeSwap.createPool({
                 token: tokenAddress,
@@ -174,13 +150,9 @@ await opnet('Native Swap - Create Pool', async (vm: OPNetUnit) => {
                 maxReservesIn5BlocksPercent: 4000,
             });
         }).toThrow(`NATIVE_SWAP: Initial liquidity cannot be zero`);
-
-        Blockchain.tracePointers = false;
     });
 
     await vm.it('should revert when antiBotMaximumTokensPerReservation settings is 0', async () => {
-        Blockchain.tracePointers = false;
-
         await Assert.expect(async () => {
             await nativeSwap.createPool({
                 token: tokenAddress,
@@ -192,13 +164,9 @@ await opnet('Native Swap - Create Pool', async (vm: OPNetUnit) => {
                 maxReservesIn5BlocksPercent: 4000,
             });
         }).toThrow(`NATIVE_SWAP: Anti-bot max tokens per reservation cannot be zero`);
-
-        Blockchain.tracePointers = false;
     });
 
     await vm.it('antiBot settings are correctly set', async () => {
-        Blockchain.tracePointers = false;
-
         const pool: CreatePoolResult = await nativeSwap.createPool({
             token: tokenAddress,
             floorPrice,
@@ -219,13 +187,9 @@ await opnet('Native Swap - Create Pool', async (vm: OPNetUnit) => {
 
         Assert.expect(antibotSettings.antiBotExpirationBlock).toEqual(Blockchain.blockNumber + 10n);
         Assert.expect(antibotSettings.maxTokensPerReservation).toEqual(10n);
-
-        Blockchain.tracePointers = false;
     });
 
     await vm.it('should successfully set quote', async () => {
-        Blockchain.tracePointers = false;
-
         const quote = await nativeSwap.createPool({
             token: tokenAddress,
             floorPrice,
@@ -240,11 +204,10 @@ await opnet('Native Swap - Create Pool', async (vm: OPNetUnit) => {
             `Quote set! Gas cost: ${gas2Sat(quote.response.usedGas)}sat (${gas2BTC(quote.response.usedGas)} BTC, $${gas2USD(quote.response.usedGas)})`,
         );
 
-        Blockchain.tracePointers = false;
+        Assert.expect(quote.result).toEqual(true);
     });
 
     await vm.it('LiquidityListedEvent should be emitted', async () => {
-        Blockchain.tracePointers = false;
         const receiver: string = initialLiquidityProvider.p2tr(Blockchain.network);
 
         const quote = await nativeSwap.createPool({
@@ -264,13 +227,9 @@ await opnet('Native Swap - Create Pool', async (vm: OPNetUnit) => {
         Assert.expect(event?.provider).toEqual(receiver);
 
         vm.debug(`total liquidity is ${event?.totalLiquidity}, receiver is ${event?.provider}`);
-
-        Blockchain.tracePointers = false;
     });
 
     await vm.it('should not set quote if already set', async () => {
-        Blockchain.tracePointers = false;
-
         const quote = await nativeSwap.createPool({
             token: tokenAddress,
             floorPrice,
@@ -296,7 +255,5 @@ await opnet('Native Swap - Create Pool', async (vm: OPNetUnit) => {
         vm.debug(
             `Quote set! Gas cost: ${gas2Sat(quote.response.usedGas)}sat (${gas2BTC(quote.response.usedGas)} BTC, $${gas2USD(quote.response.usedGas)})`,
         );
-
-        Blockchain.tracePointers = false;
     });
 });

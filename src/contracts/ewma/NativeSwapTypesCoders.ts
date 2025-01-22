@@ -3,6 +3,7 @@ import { CallResponse } from '@btc-vision/unit-test-framework';
 import {
     AddLiquidityParams,
     AddLiquidityResult,
+    ApprovedEvent,
     CancelListingParams,
     CancelListingResult,
     CreatePoolParams,
@@ -118,6 +119,14 @@ export class NativeSwapTypesCoders {
         }
 
         return reservation;
+    }
+
+    public static decodeApprovedEvent(data: Uint8Array): ApprovedEvent {
+        const reader = new BinaryReader(data);
+        const owner = reader.readAddress();
+        const spender = reader.readAddress();
+        const value = reader.readU256();
+        return { owner, spender, value };
     }
 
     public static encodeGetFeesParams(selector: number): BinaryWriter {
@@ -317,10 +326,9 @@ export class NativeSwapTypesCoders {
     ): BinaryWriter {
         const calldata = new BinaryWriter();
 
+        calldata.writeSelector(selector);
         calldata.writeBytesWithLength(params.signature);
         calldata.writeU256(params.amount);
-        calldata.writeAddress(params.token);
-        calldata.writeSelector(selector);
         calldata.writeAddress(params.token);
         calldata.writeU256(params.floorPrice);
         calldata.writeU128(params.initialLiquidity);
@@ -335,6 +343,18 @@ export class NativeSwapTypesCoders {
     public static decodeCreatePoolResult(response: CallResponse): CreatePoolResult {
         if (!response.response) {
             throw new Error('No response to decode from createPool');
+        }
+
+        const reader = new BinaryReader(response.response);
+        return {
+            result: reader.readBoolean(),
+            response: response,
+        };
+    }
+
+    public static decodeCreatePoolWithSignatureResult(response: CallResponse): CreatePoolResult {
+        if (!response.response) {
+            throw new Error('No response to decode from createPoolWithSignature');
         }
 
         const reader = new BinaryReader(response.response);
@@ -510,6 +530,20 @@ export class NativeSwapTypesCoders {
                 case 'LiquidityListed': {
                     const liquidityListed = this.decodeLiquidityListedEvent(event.data);
                     return liquidityListed;
+                }
+            }
+        }
+
+        return null;
+    }
+
+    public static getApprovedEvent(events: NetEvent[]): ApprovedEvent | null {
+        for (let i = 0; i < events.length; i++) {
+            const event = events[i];
+            switch (event.type) {
+                case 'Approve': {
+                    const approved = this.decodeApprovedEvent(event.data);
+                    return approved;
                 }
             }
         }

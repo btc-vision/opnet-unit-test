@@ -230,7 +230,7 @@ export class NativeSwap extends ContractRuntime {
         const result = await this.execute(calldata.getBuffer());
         if (result.error) throw this.handleError(result.error);
 
-        return NativeSwapTypesCoders.decodeCreatePoolResult(result);
+        return NativeSwapTypesCoders.decodeCreatePoolWithSignatureResult(result);
     }
 
     public async listLiquidity(params: ListLiquidityParams): Promise<ListLiquidityResult> {
