@@ -32,6 +32,7 @@
         "test:native:getsetfees": "tsx src/tests/native-swap/GetSetFees.ts",
         "test:native:getquote": "tsx src/tests/native-swap/GetQuote.ts",
         "test:native:getreserve": "tsx src/tests/native-swap/GetReserve.ts",
+        "test:native:logic": "tsx src/tests/native-swap/Logic.ts",
         "test": "npm-run-all test:*"
     },
     "author": "OP_NET",
