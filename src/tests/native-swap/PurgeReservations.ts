@@ -175,31 +175,31 @@ await opnet('NativeSwap: Purging Reservations', async (vm: OPNetUnit) => {
                 Blockchain.blockNumber = 1001n;
                 await makeReservation(buyer, 100_000n, 1n);
                 console.log('wat 1');
-            }).toThrow('Reservation already active');
+            }).toThrow('You already have an active reservation');
 
             await Assert.expect(async () => {
                 Blockchain.blockNumber = 1002n;
                 await makeReservation(buyer, 100_000n, 1n);
                 console.log('wat 2');
-            }).toThrow('Reservation already active');
+            }).toThrow('You already have an active reservation');
 
             await Assert.expect(async () => {
                 Blockchain.blockNumber = 1003n;
                 await makeReservation(buyer, 100_000n, 1n);
                 console.log('wat 3');
-            }).toThrow('Reservation already active');
+            }).toThrow('You already have an active reservation');
 
             await Assert.expect(async () => {
                 Blockchain.blockNumber = 1004n;
                 await makeReservation(buyer, 100_000n, 1n);
                 console.log('wat 4');
-            }).toThrow('Reservation already active');
+            }).toThrow('You already have an active reservation');
 
             await Assert.expect(async () => {
                 Blockchain.blockNumber = 1005n;
                 await makeReservation(buyer, 100_000n, 1n);
                 console.log('wat 5');
-            }).toThrow('Reservation already active');
+            }).toThrow('You already have an active reservation');
 
             // Advance beyond expiration for first two reservations
             Blockchain.blockNumber = 1006n;
