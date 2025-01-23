@@ -24,6 +24,7 @@ export default tseslint.config(
             '@typescript-eslint/no-confusing-void-expression': 'off',
             '@typescript-eslint/no-extraneous-class': 'off',
             '@typescript-eslint/no-misused-promises': 'off',
+            'prefer-const': 'off',
         },
     },
     {
