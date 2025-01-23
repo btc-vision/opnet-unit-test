@@ -1,538 +1,359 @@
+import { Assert, Blockchain, opnet } from '@btc-vision/unit-test-framework';
 import { Address } from '@btc-vision/transaction';
-import { Blockchain, OP_20, opnet, OPNetUnit } from '@btc-vision/unit-test-framework';
-import { NativeSwap } from '../../contracts/ewma/NativeSwap.js';
-import { Recipient, ReserveResult } from '../../contracts/ewma/NativeSwapTypes.js';
 import { NativeSwapTypesCoders } from '../../contracts/ewma/NativeSwapTypesCoders.js';
-import { createRecipientsOutput, gas2USD } from '../utils/TransactionUtils.js';
-import { BitcoinUtils } from 'opnet';
+import { NativeSwapTestHelper } from './CommonTestMethods.js';
 
-/**
- * Here is our candle-chart style data,
- * using the same structure you provided: { x: number; y: number[] }.
- */
-let dataNative: { x: number; y: number[] }[] = [];
+await opnet('Native Swap - Reservation Process', async (vm) => {
+    const testHelper = new NativeSwapTestHelper(vm);
 
-let open = 0;
+    testHelper.init();
+    testHelper.afterEach();
 
-await opnet('Native Swap - Add Liquidity', async (vm: OPNetUnit) => {
-    let nativeSwap: NativeSwap;
-    let token: OP_20;
+    const TIMEOUT_ENABLED: boolean = false;
 
-    const tokenDecimals = 18;
-    const point25InitialLiquidity = 52_500n * 10n ** BigInt(tokenDecimals);
-    const initialLiquidity = 1_000_000n * 10n ** BigInt(tokenDecimals); //20_947_500n
+    await vm.it('should allow a basic reservation with valid inputs', async () => {
+        // We'll do a small second user
+        const newUser = Blockchain.generateRandomAddress();
 
-    const userAddress: Address = Blockchain.generateRandomAddress();
-    const tokenAddress: Address = Blockchain.generateRandomAddress();
-    const ewmaAddress: Address = Blockchain.generateRandomAddress();
+        // Transfer some tokens to newUser so they can list (and thus become providers)
+        Blockchain.txOrigin = testHelper.userAddress;
+        Blockchain.msgSender = testHelper.userAddress;
 
-    const initialLiquidityProvider: Address = Blockchain.generateRandomAddress();
+        const tokensToList = testHelper.tokenAmountFor10kSat;
+        await testHelper.token.transfer(testHelper.userAddress, newUser, tokensToList);
 
-    const floorPrice: bigint = 10n ** 18n / 1500n; //10n ** 18n;
+        // Approve NativeSwap so newUser can list liquidity
+        await testHelper.token.approve(newUser, testHelper.nativeSwap.address, tokensToList);
 
-    let toSwap: { a: Address; r: Recipient[] }[] = [];
-    let toAddLiquidity: { a: Address; r: Recipient[] }[] = [];
+        // Now list liquidity from newUser
+        Blockchain.txOrigin = newUser;
+        Blockchain.msgSender = newUser;
 
-    async function randomReserve(
-        amount: bigint,
-        forLP: boolean = false,
-        rnd: boolean = true,
-    ): Promise<ReserveResult> {
-        const backup = Blockchain.txOrigin;
-
-        let provider: Address = Blockchain.txOrigin;
-        if (rnd) {
-            provider = Blockchain.generateRandomAddress();
-            Blockchain.txOrigin = provider;
-            Blockchain.msgSender = provider;
-        }
-
-        const r = await nativeSwap.reserve({
-            token: tokenAddress,
-            maximumAmountIn: amount,
-            minimumAmountOut: 0n,
-            forLP: forLP,
-        });
-        const decoded = NativeSwapTypesCoders.decodeReservationEvents(r.response.events);
-        if (decoded.recipients.length) {
-            if (forLP) {
-                toAddLiquidity.push({
-                    a: provider,
-                    r: decoded.recipients,
-                });
-            } else {
-                toSwap.push({
-                    a: provider,
-                    r: decoded.recipients,
-                });
-            }
-        } else {
-            vm.fail('No recipients found in reservation (swap) event.');
-        }
-
-        vm.info(
-            `Reserved ${BitcoinUtils.formatUnits(r.expectedAmountOut, tokenDecimals)} tokens for ${provider} with ${decoded.recipients.length} recipients, amount of sat requested: ${decoded.totalSatoshis}`,
-        );
-
-        // Reset
-        Blockchain.txOrigin = backup;
-        Blockchain.msgSender = backup;
-        return r;
-    }
-
-    async function listTokenRandom(
-        l: bigint,
-        provider: Address = Blockchain.generateRandomAddress(),
-    ): Promise<void> {
-        const backup = Blockchain.txOrigin;
-
-        Blockchain.txOrigin = userAddress;
-        Blockchain.msgSender = userAddress;
-
-        // Transfer tokens from userAddress to provider
-        await token.transfer(userAddress, provider, l);
-
-        // Approve EWMA contract to spend tokens
-        await token.approve(provider, nativeSwap.address, l);
-
-        // Add liquidity
-        Blockchain.txOrigin = provider;
-        Blockchain.msgSender = provider;
-
-        await nativeSwap.listLiquidity({
-            token: tokenAddress,
-            receiver: provider.p2tr(Blockchain.network),
-            amountIn: l,
+        await testHelper.nativeSwap.listLiquidity({
+            token: testHelper.tokenAddress,
+            receiver: newUser.p2tr(Blockchain.network),
+            amountIn: tokensToList,
             priority: false,
-            disablePriorityQueueFees: false,
+            disablePriorityQueueFees: true,
         });
 
-        Blockchain.txOrigin = backup;
-        Blockchain.msgSender = backup;
+        // Next, create a reservation from a separate random address
+        const buyer = Blockchain.generateRandomAddress();
+        Blockchain.txOrigin = buyer;
+        Blockchain.msgSender = buyer;
 
-        vm.info(`Added liquidity for ${l} tokens`);
-    }
+        // This should succeed with the default min trade size = 10_000 sat
+        // We'll pass 1 BTC in sat (100_000_000n).
+        // minimumAmountOut = 0 => we accept whatever the contract can fill
+        const r = await testHelper.nativeSwap.reserve({
+            token: testHelper.tokenAddress,
+            maximumAmountIn: 100_000_000n,
+            minimumAmountOut: 0n,
+            forLP: false,
+        });
 
-    async function swapAll(): Promise<void> {
-        for (let i = 0; i < toSwap.length; i++) {
-            const reservation = toSwap[i];
-            Blockchain.txOrigin = reservation.a;
-            Blockchain.msgSender = reservation.a;
+        // Confirm the contract call was successful
+        Assert.equal(
+            r.expectedAmountOut,
+            21002666666666645664000n,
+            'Expected expectedAmountOut to be 21002666666666645664000n',
+        );
 
-            createRecipientsOutput(reservation.r);
-            const s = await nativeSwap.swap({ token: tokenAddress, isSimulation: false });
-            const d = NativeSwapTypesCoders.decodeSwapExecutedEvent(
-                s.response.events[s.response.events.length - 1].data,
-            );
+        Assert.equal(r.totalSatoshis, 31504000n, 'Expected totalSatoshis to be 31504000n');
 
-            vm.log(
-                `Swapped spent ${gas2USD(s.response.usedGas)} USD in gas, ${d.amountOut} tokens`,
-            );
-        }
-        Blockchain.txOrigin = userAddress;
-        Blockchain.msgSender = userAddress;
-        toSwap = [];
-    }
-
-    async function reserveAddLiquidity(
-        l: bigint,
-        rnd: boolean = false,
-        provider: Address = Blockchain.txOrigin,
-    ): Promise<ReserveResult> {
-        const backup = Blockchain.txOrigin;
-        if (rnd) {
-            provider = Blockchain.generateRandomAddress();
-            Blockchain.txOrigin = provider;
-            Blockchain.msgSender = provider;
-        }
-
-        // Add liquidity
-        Blockchain.txOrigin = userAddress;
-        Blockchain.msgSender = userAddress;
-
-        // Transfer tokens from userAddress to provider
-        await token.transfer(userAddress, provider, l);
-
-        // Approve EWMA contract to spend tokens
-        await token.approve(provider, nativeSwap.address, l);
-
-        // Add liquidity
-        Blockchain.txOrigin = provider;
-        Blockchain.msgSender = provider;
-
-        const r = await randomReserve(l, true, false);
+        // Decode reservation events for further checks
         const decoded = NativeSwapTypesCoders.decodeReservationEvents(r.response.events);
+        // tokensReserved should be > 0
+        Assert.toBeGreaterThan(decoded.reservation?.expectedAmountOut || 0n, 0n);
+    });
 
-        vm.log(
-            `Adding liquidity potentially worth ${decoded.totalSatoshis} sat and reserving ${decoded.recipients.length} recipients.`,
-        );
+    await vm.it('should revert if token address is invalid', async () => {
+        const deadTokenAddr = Address.dead();
+        const user = Blockchain.generateRandomAddress();
 
-        // Reset
-        Blockchain.txOrigin = backup;
-        Blockchain.msgSender = backup;
-        return r;
+        Blockchain.txOrigin = user;
+        Blockchain.msgSender = user;
 
-        //createRecipientsOutput(reservation.r);
-    }
-
-    async function addLiquidityRandom(): Promise<void> {
-        for (let i = 0; i < toAddLiquidity.length; i++) {
-            const reservation = toAddLiquidity[i];
-            Blockchain.txOrigin = reservation.a;
-            Blockchain.msgSender = reservation.a;
-
-            createRecipientsOutput(reservation.r);
-
-            await token.approve(
-                reservation.a,
-                nativeSwap.address,
-                BitcoinUtils.expandToDecimals(1_000_000_000_000, tokenDecimals),
-            );
-
-            const s = await nativeSwap.addLiquidity({
-                token: tokenAddress,
-                receiver: reservation.a.p2tr(Blockchain.network),
+        await Assert.throwsAsync(async () => {
+            await testHelper.nativeSwap.reserve({
+                token: deadTokenAddr, // invalid token
+                maximumAmountIn: 200_000_000n,
+                minimumAmountOut: 0n,
+                forLP: false,
             });
+        }, /Invalid token address/i);
+    });
 
-            const d = NativeSwapTypesCoders.decodeLiquidityAddedEvent(
-                s.response.events[s.response.events.length - 1].data,
-            );
-            vm.log(
-                `Added liquidity! Spent ${gas2USD(s.response.usedGas)} USD in gas, totalSatoshisSpent: ${d.totalSatoshisSpent}, totalTokensContributed: ${d.totalTokensContributed}, virtualTokenExchanged: ${d.virtualTokenExchanged}`,
-            );
-        }
+    await vm.it('should revert if maximumAmountIn = 0', async () => {
+        const user = Blockchain.generateRandomAddress();
 
-        Blockchain.txOrigin = userAddress;
-        Blockchain.msgSender = userAddress;
-        toAddLiquidity = [];
-    }
+        Blockchain.txOrigin = user;
+        Blockchain.msgSender = user;
 
-    async function removeLiquidity(p: Address): Promise<void> {
-        const rn = Blockchain.txOrigin;
+        await Assert.throwsAsync(async () => {
+            await testHelper.nativeSwap.reserve({
+                token: testHelper.tokenAddress,
+                maximumAmountIn: 0n,
+                minimumAmountOut: testHelper.scaleToken(10n),
+                forLP: false,
+            });
+        }, /Maximum amount in cannot be zero/i);
+    });
 
-        Blockchain.txOrigin = p;
-        Blockchain.msgSender = p;
+    await vm.it('should revert if maximumAmountIn is below the minimum trade size', async () => {
+        // e.g. user tries to buy with 5_000 sat but the min is 10_000
+        const user = Blockchain.generateRandomAddress();
 
-        const r = await nativeSwap.removeLiquidity({ token: tokenAddress });
-        const d = NativeSwapTypesCoders.decodeLiquidityRemovedEvent(
-            r.response.events[r.response.events.length - 1].data,
-        );
+        Blockchain.txOrigin = user;
+        Blockchain.msgSender = user;
 
-        vm.log(
-            `Removed liquidity! Spent ${gas2USD(r.response.usedGas)} USD in gas, btcOwed: ${d.btcOwed} sat, tokenAmount: ${d.tokenAmount} tokens`,
-        );
+        await Assert.throwsAsync(async () => {
+            await testHelper.nativeSwap.reserve({
+                token: testHelper.tokenAddress,
+                maximumAmountIn: 5000n,
+                minimumAmountOut: 0n,
+                forLP: false,
+            });
+        }, /Requested amount is below minimum trade size/i);
+    });
 
-        Blockchain.txOrigin = rn;
-        Blockchain.msgSender = rn;
-    }
+    await vm.it('should revert if insufficient fees have been collected', async () => {
+        // Force FeeManager to require a large reservation base fee
+        Blockchain.txOrigin = testHelper.userAddress;
+        Blockchain.msgSender = testHelper.userAddress;
 
-    /**
-     * Helper: Create the NativeSwap pool with initial liquidity
-     */
-    async function createNativeSwapPool(floorPrice: bigint, initLiquidity: bigint): Promise<void> {
-        // Approve NativeSwap to take tokens
-        Blockchain.txOrigin = userAddress;
-        Blockchain.msgSender = userAddress;
-        await token.approve(userAddress, nativeSwap.address, initLiquidity);
-
-        // Create the pool
-        await nativeSwap.createPool({
-            token: token.address,
-            floorPrice: floorPrice,
-            initialLiquidity: initLiquidity,
-            receiver: initialLiquidityProvider.p2tr(Blockchain.network),
-            antiBotEnabledFor: 0,
-            antiBotMaximumTokensPerReservation: 0n,
-            maxReservesIn5BlocksPercent: 4000,
+        // Adjust the fees
+        await testHelper.nativeSwap.setFees({
+            reservationBaseFee: 50_000n, // 500k sats
+            priorityQueueBaseFee: 10n,
+            pricePerUserInPriorityQueueBTC: 10n,
         });
 
-        Blockchain.blockNumber += 1n;
+        // Next, attempt a reservation from a random user.
+        const user = Blockchain.generateRandomAddress();
+        Blockchain.txOrigin = user;
+        Blockchain.msgSender = user;
 
-        const quote = await nativeSwap.getQuote({ token: token.address, satoshisIn: 100_000_000n });
-        const amountIn = quote.requiredSatoshis;
-        let price = quote.price;
+        // Because testHelper/nativeSwap automatically tries to create a fee output for reservationFees,
+        // but we forced the contract to require 500_000 sats, the "reservationFees" is presumably 10_000n or 50_000n.
+        // That won't meet the 500_000n requirement => revert.
+        await Assert.throwsAsync(async () => {
+            await testHelper.nativeSwap.reserve({
+                token: testHelper.tokenAddress,
+                maximumAmountIn: 200_000_000n,
+                minimumAmountOut: testHelper.scaleToken(1000n),
+                forLP: false,
+            });
+        }, /Insufficient fees collected/i);
 
-        if (amountIn !== 100_000_000n) {
-            price = (price * 100_000_000n) / amountIn;
-        }
+        // (Cleanup, revert fees for subsequent tests.)
+        Blockchain.txOrigin = testHelper.userAddress;
+        Blockchain.msgSender = testHelper.userAddress;
+        await testHelper.nativeSwap.setFees({
+            reservationBaseFee: 10_000n, // revert back
+            priorityQueueBaseFee: 50_000n,
+            pricePerUserInPriorityQueueBTC: 100n,
+        });
+    });
 
-        const reversedPrice = 1 / parseFloat(BitcoinUtils.formatUnits(price, tokenDecimals));
+    await vm.it(
+        'should revert if user tries to create a second reservation while one is active',
+        async () => {
+            const user = Blockchain.generateRandomAddress();
 
-        recordCandle(
-            Blockchain.blockNumber,
-            reversedPrice, // raw bigint
-            dataNative,
-        );
+            // 1st reservation
+            Blockchain.txOrigin = user;
+            Blockchain.msgSender = user;
+            await testHelper.nativeSwap.reserve({
+                token: testHelper.tokenAddress,
+                maximumAmountIn: 200_000_000n,
+                minimumAmountOut: testHelper.scaleToken(1000n),
+                forLP: false,
+            });
+
+            // 2nd reservation should fail
+            await Assert.throwsAsync(async () => {
+                await testHelper.nativeSwap.reserve({
+                    token: testHelper.tokenAddress,
+                    maximumAmountIn: 300_000_000n,
+                    minimumAmountOut: testHelper.scaleToken(1000n),
+                    forLP: false,
+                });
+            }, /You already have an active reservation/i);
+        },
+    );
+
+    if (TIMEOUT_ENABLED) {
+        await vm.it('should revert if user is timed out for new reservations', async () => {
+            // We simulate a previously expired reservation that sets a user timeout
+            const user = Blockchain.generateRandomAddress();
+
+            Blockchain.txOrigin = user;
+            Blockchain.msgSender = user;
+            await testHelper.nativeSwap.reserve({
+                token: testHelper.tokenAddress,
+                maximumAmountIn: 200_000_000n,
+                minimumAmountOut: testHelper.scaleToken(1000n),
+                forLP: false,
+            });
+
+            // Move blocks so reservation is old
+            Blockchain.blockNumber = Blockchain.blockNumber + 10n;
+
+            // The contract will purge old reservations (the code automatically triggers purge if purgeOldReservations = true in constructor).
+            // Next reservation => user timed out => revert
+            await Assert.throwsAsync(async () => {
+                await testHelper.nativeSwap.reserve({
+                    token: testHelper.tokenAddress,
+                    maximumAmountIn: 300_000_000n,
+                    minimumAmountOut: testHelper.scaleToken(1000n),
+                    forLP: false,
+                });
+            }, /User is timed out/i);
+        });
     }
 
-    async function reportQuote(): Promise<void> {
-        const quote = await nativeSwap.getQuote({ token: token.address, satoshisIn: 100_000_000n });
-        const amountIn = quote.requiredSatoshis;
-        let price = quote.price;
+    await vm.it('should revert if tokensReserved < minimumAmountOut', async () => {
+        // We set up a scenario with limited liquidity
+        const user = Blockchain.generateRandomAddress();
 
-        if (amountIn !== 100_000_000n) {
-            price = (price * 100_000_000n) / amountIn;
-        }
+        Blockchain.txOrigin = user;
+        Blockchain.msgSender = user;
 
-        const reversedPrice = 1 / parseFloat(BitcoinUtils.formatUnits(price, tokenDecimals));
+        // We request a huge min out => expect revert
+        await Assert.throwsAsync(async () => {
+            await testHelper.nativeSwap.reserve({
+                token: testHelper.tokenAddress,
+                maximumAmountIn: 100_000_000n,
+                minimumAmountOut: 999_999_999_999_999_999_999_999_999n, // huge min
+                forLP: false,
+            });
+        }, /Not enough liquidity reserved/i);
+    });
 
-        // Also record a candle in `data`
-        // We'll do the same logic as your snippet: parse the price to float, etc.
-        recordCandle(
-            Blockchain.blockNumber,
-            reversedPrice, // raw bigint
-            dataNative,
-        );
-    }
+    await vm.it('should allow partial reservations across multiple providers', async () => {
+        // We'll add multiple providers with small amounts each.
+        const providerA = Blockchain.generateRandomAddress();
+        const providerB = Blockchain.generateRandomAddress();
+        const providerC = Blockchain.generateRandomAddress();
 
-    vm.beforeEach(async () => {
-        dataNative = [
-            {
-                x: 1,
-                y: [0, 0, 0, 0],
-            },
-        ];
-        toSwap = [];
-        open = 0;
-        toAddLiquidity = [];
+        // Everyone must get tokens from the main user, then list
+        await testHelper.listTokenRandom(testHelper.scaleToken(50n), providerA);
+        await testHelper.listTokenRandom(testHelper.scaleToken(100n), providerB);
+        await testHelper.listTokenRandom(testHelper.scaleToken(75n), providerC);
 
-        Blockchain.blockNumber = 1n;
+        // Then the user tries a big reservation
+        const user = Blockchain.generateRandomAddress();
+        Blockchain.txOrigin = user;
+        Blockchain.msgSender = user;
 
-        // Reset blockchain state
-        Blockchain.dispose();
-        Blockchain.clearContracts();
-        await Blockchain.init();
-
-        // Instantiate and register the OP_20 token
-        token = new OP_20({
-            file: 'MyToken',
-            deployer: userAddress,
-            address: tokenAddress,
-            decimals: tokenDecimals,
+        const res = await testHelper.nativeSwap.reserve({
+            token: testHelper.tokenAddress,
+            maximumAmountIn: 100_000_000n, // 1 BTC
+            minimumAmountOut: testHelper.scaleToken(10n), // just ask for 10 tokens min
+            forLP: false,
         });
 
-        Blockchain.register(token);
-        await token.init();
+        // That should partially fill from providers A, B, C in normal queue order.
+        Assert.equal(!!res.response.error, false, 'Expected no revert');
+        vm.log('Reservation partial fill success, events =>');
+        const decoded = NativeSwapTypesCoders.decodeReservationEvents(res.response.events);
 
-        // Mint tokens to the user
-        const totalSupply = Blockchain.expandToDecimal(1_000_000_000_000, tokenDecimals);
-        await token.mintRaw(userAddress, totalSupply);
+        // TODO: Verify events data returned.
 
-        // Instantiate and register the nativeSwap contract
-        nativeSwap = new NativeSwap(userAddress, ewmaAddress);
-        Blockchain.register(nativeSwap);
-        await nativeSwap.init();
-
-        // Add liquidity
-        Blockchain.txOrigin = userAddress;
-        Blockchain.msgSender = userAddress;
-
-        await createNativeSwapPool(floorPrice, point25InitialLiquidity);
+        // We expect some tokens to be reserved from each provider.
+        // totalSatoshis > 0, expectedAmountOut (the reservationCreatedEvent) > 0
+        Assert.toBeGreaterThan(decoded.totalSatoshis, 0n);
+        Assert.toBeGreaterThanOrEqual(
+            decoded.reservation?.expectedAmountOut || 0n,
+            testHelper.scaleToken(10n),
+        );
     });
 
-    vm.afterEach(() => {
-        nativeSwap.dispose();
-        token.dispose();
-        Blockchain.dispose();
-    });
+    await vm.it(
+        'should revert if final tokensRemaining or cost is below strict dust thresholds',
+        async () => {
+            await testHelper.randomReserve(100_000_000_000_000_000_000n, 0n);
 
-    await vm.it('should add some liquidity', async () => {
-        Blockchain.tracePointers = false;
+            await Assert.throwsAsync(async () => {
+                await testHelper.randomReserve(100_000_000n, testHelper.scaleToken(0n));
+            }, /Minimum liquidity not met/i);
+        },
+    );
 
-        const rndProvider = Blockchain.generateRandomAddress();
-
-        await token.transfer(
-            userAddress,
-            rndProvider,
-            BitcoinUtils.expandToDecimals(100_000_000_000, tokenDecimals),
-        );
-
-        for (let i = 0; i < 25; i++) {
-            await listTokenRandom(BitcoinUtils.expandToDecimals(100, tokenDecimals));
-        }
-
-        const buyForSat = 20_000_000n;
-        await reserveAddLiquidity(buyForSat, false, rndProvider);
-
-        Blockchain.blockNumber += 1n;
-
-        await reportQuote();
-
-        await addLiquidityRandom();
-
-        await listTokenRandom(BitcoinUtils.expandToDecimals(1_000, tokenDecimals));
-
-        await reserveAddLiquidity(buyForSat, false, rndProvider);
-
-        Blockchain.blockNumber += 1n;
-
-        await reportQuote();
-
-        await addLiquidityRandom();
-
-        await removeLiquidity(rndProvider);
-
-        await listTokenRandom(BitcoinUtils.expandToDecimals(1_000, tokenDecimals), rndProvider);
-
-        let rndProvider2 = Blockchain.generateRandomAddress();
-
-        await token.transfer(
-            rndProvider,
-            rndProvider2,
-            BitcoinUtils.expandToDecimals(100_000_000, tokenDecimals),
-        );
-
-        for (let i = 0; i < 25; i++) {
-            await listTokenRandom(BitcoinUtils.expandToDecimals(10000, tokenDecimals));
-        }
-
-        await reserveAddLiquidity(buyForSat * 100n, false, rndProvider2);
-
-        Blockchain.blockNumber += 1n;
-
-        await reportQuote();
-
-        await addLiquidityRandom();
-
-        rndProvider2 = Blockchain.generateRandomAddress();
-
-        await token.transfer(
-            userAddress,
-            rndProvider2,
-            BitcoinUtils.expandToDecimals(100_000_000, tokenDecimals),
-        );
-
-        for (let i = 0; i < 25; i++) {
-            await listTokenRandom(BitcoinUtils.expandToDecimals(10000, tokenDecimals));
-        }
-
-        await reserveAddLiquidity(buyForSat * 100n, false, rndProvider2);
-
-        Blockchain.blockNumber += 1n;
-
-        await reportQuote();
-
-        await addLiquidityRandom();
-
-        Blockchain.tracePointers = false;
-
-        await randomReserve(100_000_000n, false, true);
-
-        Blockchain.blockNumber += 1n;
-
-        await reportQuote();
-
-        await swapAll();
-
-        Blockchain.blockNumber += 1n;
-
-        await reportQuote();
-
-        console.log(`Data: ${JSON.stringify(dataNative)}`);
-    });
-
-    const buyForSat = 20_000_000n;
-    await vm.it('should add some liquidity', async () => {
-        for (let i = 0; i < 25; i++) {
-            await listTokenRandom(BitcoinUtils.expandToDecimals(100, tokenDecimals));
-        }
-
-        for (let i = 0; i < 20; i++) {
-            const rndProvider = Blockchain.generateRandomAddress();
-
-            await token.transfer(
-                userAddress,
-                rndProvider,
-                BitcoinUtils.expandToDecimals(100_000_000, tokenDecimals),
+    await vm.it(
+        'should purge old reservations and restore any leftover liquidity to providers',
+        async () => {
+            const p = Blockchain.generateRandomAddress();
+            await testHelper.listTokenRandom(
+                testHelper.tokenAmountFor10kSat + testHelper.scaleToken(1n),
+                p,
             );
 
-            console.log('start');
-            const r = await reserveAddLiquidity(buyForSat * BigInt(i + 1), false, rndProvider);
+            const reserveBefore = await testHelper.nativeSwap.getReserve({
+                token: testHelper.tokenAddress,
+            });
 
-            Blockchain.blockNumber += 1n;
+            Assert.expect(reserveBefore.reservedLiquidity).toEqual(0n);
 
-            await reportQuote();
-
-            if (r.expectedAmountOut !== 0n) {
-                await addLiquidityRandom();
-                await removeLiquidity(rndProvider);
-            }
-
-            await randomReserve(buyForSat, false, true);
-
-            Blockchain.blockNumber += 1n;
-
-            await reportQuote();
-
-            await swapAll();
-
-            Blockchain.blockNumber += 1n;
-
-            await reportQuote();
-        }
-
-        console.log(`Data 2: ${JSON.stringify(dataNative)}`);
-    });
-
-    await vm.it('should add some liquidity', async () => {
-        for (let i = 0; i < 25; i++) {
-            await listTokenRandom(BitcoinUtils.expandToDecimals(100, tokenDecimals));
-        }
-
-        for (let i = 0; i < 20; i++) {
-            const rndProvider = Blockchain.generateRandomAddress();
-
-            await token.transfer(
-                userAddress,
-                rndProvider,
-                BitcoinUtils.expandToDecimals(100_000_000, tokenDecimals),
+            const reserved = await testHelper.randomReserve(
+                10_000n,
+                testHelper.tokenAmountFor10kSat,
             );
 
-            await randomReserve(buyForSat, false, true);
+            Assert.expect(reserved.expectedAmountOut).toEqual(testHelper.tokenAmountFor10kSat);
 
-            Blockchain.blockNumber += 1n;
+            Blockchain.blockNumber = Blockchain.blockNumber + 6n; // > 5 blocks from default
 
-            await reportQuote();
+            const reserveAfter = await testHelper.nativeSwap.getReserve({
+                token: testHelper.tokenAddress,
+            });
 
-            await swapAll();
+            Assert.expect(reserveAfter.liquidity).toEqual(reserveBefore.liquidity);
+            Assert.expect(reserveAfter.reservedLiquidity).toEqual(0n);
 
-            Blockchain.blockNumber += 1n;
+            Assert.expect(reserveAfter.virtualBTCReserve).toEqual(reserveBefore.virtualBTCReserve);
+            Assert.expect(reserveAfter.virtualTokenReserve).toEqual(
+                reserveBefore.virtualTokenReserve,
+            );
 
-            await reportQuote();
-        }
+            // The next call on the contract will cause an internal purge
+            //    leftover tokens from that reservation should be restored to providers
+            // We'll do a new reservation from a new user => triggers purge
+            const r2 = await testHelper.randomReserve(200_000_000n, 0n);
+            console.log(r2.response.events);
 
-        console.log(`Data 3: ${JSON.stringify(dataNative)}`);
+            // Confirm the new reservation succeeded
+            // TODO: Verify the events for the new reservation
+        },
+    );
+
+    await vm.it('should allow forLP reservations and not revert', async () => {
+        // The user who will become an LP
+        const newLpUser = Blockchain.generateRandomAddress();
+
+        // Transfer them tokens so they can deposit into the pool
+        Blockchain.txOrigin = testHelper.userAddress;
+        Blockchain.msgSender = testHelper.userAddress;
+        const depositAmount = 10_000n;
+        await testHelper.token.transfer(testHelper.userAddress, newLpUser, depositAmount);
+
+        // Approve from newLpUser side
+        Blockchain.txOrigin = newLpUser;
+        Blockchain.msgSender = newLpUser;
+        await testHelper.token.approve(newLpUser, testHelper.nativeSwap.address, depositAmount);
+
+        // Reserve with forLP
+        const r = await testHelper.nativeSwap.reserve({
+            token: testHelper.tokenAddress,
+            maximumAmountIn: 200_000_000n,
+            minimumAmountOut: testHelper.scaleToken(5000n), // ask for 5_000 tokens min
+            forLP: true,
+        });
+
+        const decoded = NativeSwapTypesCoders.decodeReservationEvents(r.response.events);
+        Assert.toBeGreaterThan(decoded.reservation?.expectedAmountOut || 0n, 4_999n);
+
+        // TODO: Verify in detail the events data
     });
-
-    /**
-     * Candle-style logger. Mimics your "logPrice()" example,
-     * pushing data into the global `data` array with shape
-     * { x: blockNumber, y: [-open, -open, -close, -close] }.
-     */
-    function recordCandle(
-        blockNumber: bigint,
-        closeFloat: number,
-        store: { x: number; y: number[] }[],
-    ) {
-        // Convert price from `bigint` to a float, similar to your snippet with formatUnits
-        //const closeFloat = parseFloat(BitcoinUtils.formatUnits(rawPrice, tokenDecimals));
-
-        // You had a condition about blockNumber === 2500n. We can replicate that if needed:
-        //if (blockNumber === 2500n) return;
-
-        if (open !== 0) {
-            store.push({
-                x: Number(blockNumber.toString()),
-                y: [open, open, closeFloat, closeFloat],
-            });
-        } else {
-            store.push({
-                x: Number(blockNumber.toString()),
-                y: [closeFloat, closeFloat, closeFloat, closeFloat],
-            });
-        }
-
-        // Update open to be the new close
-        open = closeFloat;
-    }
 });
