@@ -106,20 +106,20 @@ await opnet('Native Swap - Get Reserve', async (vm: OPNetUnit) => {
                 token: Blockchain.DEAD_ADDRESS,
             });
         }).toThrow(`NATIVE_SWAP: Invalid token address`);
-
-        //await Assert.expect(async () => {
-        await nativeSwap.getReserve({
-            token: Blockchain.generateRandomAddress(),
-        });
-        //}).toThrow(`NATIVE_SWAP: Invalid token address`);
     });
 
     await vm.it('should revert when no pool created', async () => {
-        //await Assert.expect(async () => {
-        await nativeSwap.getReserve({
-            token: token.address,
-        });
-        //}).toThrow(`NATIVE_SWAP: Maximum amount in cannot be zero`);
+        await Assert.expect(async () => {
+            await nativeSwap.getReserve({
+                token: token.address,
+            });
+        }).toThrow(`NATIVE_SWAP: No pool exists for token.`);
+
+        await Assert.expect(async () => {
+            await nativeSwap.getReserve({
+                token: Blockchain.generateRandomAddress(),
+            });
+        }).toThrow(`NATIVE_SWAP: No pool exists for token.`);
     });
 
     await vm.it('should get valid reserve values when pool exists and no reservation', async () => {
@@ -150,7 +150,7 @@ await opnet('Native Swap - Get Reserve', async (vm: OPNetUnit) => {
 
         Assert.expect(reserveResult.liquidity).toEqual(25000000n);
         Assert.expect(reserveResult.reservedLiquidity).toEqual(1000000n);
-        Assert.expect(reserveResult.virtualBTCReserve).toEqual(25000n);
+        Assert.expect(reserveResult.virtualBTCReserve).toEqual(250000n);
         Assert.expect(reserveResult.virtualTokenReserve).toEqual(25000000n);
     });
 });

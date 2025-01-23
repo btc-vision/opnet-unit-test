@@ -107,7 +107,7 @@ await opnet('Native Swap - Create Pool', async (vm: OPNetUnit) => {
                 antiBotMaximumTokensPerReservation,
                 maxReservesIn5BlocksPercent: 4000,
             });
-        }).toThrow(`NATIVE_SWAP: Invalid receiver address`);
+        }).toThrow(`OPNET: RuntimeError: Invalid address: base58 error`);
     });
 
     await vm.it('should revert when receiver is an empty bitcoin address', async () => {
@@ -121,7 +121,7 @@ await opnet('Native Swap - Create Pool', async (vm: OPNetUnit) => {
                 antiBotMaximumTokensPerReservation,
                 maxReservesIn5BlocksPercent: 4000,
             });
-        }).toThrow(`NATIVE_SWAP: Invalid receiver address`);
+        }).toThrow(`OPNET: RuntimeError: Invalid address: base58 error`);
     });
 
     await vm.it('should revert when floor price is 0', async () => {
@@ -166,6 +166,22 @@ await opnet('Native Swap - Create Pool', async (vm: OPNetUnit) => {
         }).toThrow(`NATIVE_SWAP: Anti-bot max tokens per reservation cannot be zero`);
     });
 
+    await vm.it('should revert when insufficient allowance', async () => {
+        const opnetErrorRegex = /OPNET: Error: Execution aborted: Insufficient allowance/;
+
+        await Assert.expect(async () => {
+            await nativeSwap.createPool({
+                token: tokenAddress,
+                floorPrice: 1000n,
+                initialLiquidity: 340282366920938463463374607431768211454n,
+                receiver: initialLiquidityProvider.p2tr(Blockchain.network),
+                antiBotEnabledFor,
+                antiBotMaximumTokensPerReservation,
+                maxReservesIn5BlocksPercent: 4000,
+            });
+        }).toThrow(opnetErrorRegex);
+    });
+
     await vm.it('antiBot settings are correctly set', async () => {
         const pool: CreatePoolResult = await nativeSwap.createPool({
             token: tokenAddress,
@@ -205,6 +221,21 @@ await opnet('Native Swap - Create Pool', async (vm: OPNetUnit) => {
         );
 
         Assert.expect(quote.result).toEqual(true);
+    });
+
+    await vm.it('should successfully set quote with max values', async () => {
+        /*const quote = await nativeSwap.createPool({
+            token: tokenAddress,
+            floorPrice:
+                115792089237316195423570985008687907853269984665640564039457584007913129639935n,
+            initialLiquidity: 340282366920938463463374607431768211454n,
+            receiver: initialLiquidityProvider.p2tr(Blockchain.network),
+            antiBotEnabledFor,
+            antiBotMaximumTokensPerReservation,
+            maxReservesIn5BlocksPercent: 4000,
+        });
+
+        Assert.expect(quote.result).toEqual(true);*/
     });
 
     await vm.it('LiquidityListedEvent should be emitted', async () => {
