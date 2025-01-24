@@ -119,24 +119,35 @@ await opnet('Native Swap - Create Pool With Signature', async (vm: OPNetUnit) =>
     });
 
     await vm.it('should revert when caller is not the token owner', async () => {
-        const fakeCallerAddress: Address = Blockchain.generateRandomAddress();
-        Blockchain.txOrigin = fakeCallerAddress;
-        Blockchain.msgSender = fakeCallerAddress;
+        const wallet = new Wallet(
+            EcKeyPair.generateWallet(Blockchain.network).privateKey,
+            Blockchain.network,
+        );
 
-        const signature: Uint8Array = new Uint8Array(64);
+        Blockchain.txOrigin = wallet.address;
+        Blockchain.msgSender = wallet.address;
 
-        for (let i = 0; i < 64; ++i) {
-            signature[i] = i;
-        }
+        const writer = new BinaryWriter();
+        writer.writeAddress(wallet.address);
+        writer.writeAddress(nativeSwap.address);
+        writer.writeU256(initialLiquidity);
+
+        const signature = MessageSigner.tweakAndSignMessage(
+            wallet.keypair,
+            writer.getBuffer(),
+            Blockchain.network,
+        );
+
+        const receiver: string = initialLiquidityProvider.p2tr(Blockchain.network);
 
         await Assert.expect(async () => {
             await nativeSwap.createPoolWithSignature({
-                signature,
+                signature: signature.signature,
                 amount: initialLiquidity,
                 token: tokenAddress,
                 floorPrice,
                 initialLiquidity,
-                receiver: initialLiquidityProvider.p2tr(Blockchain.network),
+                receiver,
                 antiBotEnabledFor,
                 antiBotMaximumTokensPerReservation,
                 maxReservesIn5BlocksPercent: 4000,
