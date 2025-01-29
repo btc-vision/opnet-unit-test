@@ -138,8 +138,8 @@ export interface ListLiquidityParams {
     readonly token: Address;
     readonly receiver: string;
     readonly amountIn: bigint;
-    readonly priority: boolean; // = false lose 3% in fees
-    readonly disablePriorityQueueFees: boolean; // not persisted
+    readonly priority?: boolean; // = false lose 3% in fees
+    readonly disablePriorityQueueFees?: boolean; // not persisted
 }
 
 export interface ListLiquidityResult {
@@ -171,7 +171,6 @@ export interface CancelListingResult {
 
 export interface SwapParams {
     readonly token: Address;
-    readonly isSimulation: boolean; // = false; not persisted
 }
 
 export interface SwapResult {

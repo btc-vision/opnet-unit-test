@@ -158,18 +158,18 @@ await opnet('EWMA Contract - Big Listing and Big Pump Scenario', async (vm: OPNe
         const zeroQuote = await ewma.getQuote(tokenAddress, satoshisIn);
         vm.debug(
             `(Block ${Blockchain.blockNumber}) Price: ${BitcoinUtils.formatUnits(
-                zeroQuote.result.currentPrice,
+                zeroquote.price,
                 tokenDecimals,
-            )} tokens per sat | 
+            )} tokens per sat |
              Out: ${BitcoinUtils.formatUnits(
                  zeroQuote.result.expectedAmountOut,
                  tokenDecimals,
-             )} tokens | 
+             )} tokens |
              Sats spent: ${zeroQuote.result.expectedAmountIn}`,
         );
 
         const close = parseFloat(
-            BitcoinUtils.formatUnits(zeroQuote.result.currentPrice, tokenDecimals),
+            BitcoinUtils.formatUnits(zeroquote.price, tokenDecimals),
         );
 
         if (Blockchain.blockNumber === 2500n) return;

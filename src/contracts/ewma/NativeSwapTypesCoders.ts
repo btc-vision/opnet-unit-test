@@ -374,7 +374,7 @@ export class NativeSwapTypesCoders {
         calldata.writeAddress(params.token);
         calldata.writeStringWithLength(params.receiver);
         calldata.writeU128(params.amountIn);
-        calldata.writeBoolean(params.priority);
+        calldata.writeBoolean(!!params.priority);
 
         return calldata;
     }
