@@ -497,6 +497,7 @@ await opnet('NativeSwap: Priority and Normal Queue listLiquidity', async (vm: OP
                 minimumAmountOut: 1n,
                 forLP: false,
             });
+
             const decodedReservation2 = NativeSwapTypesCoders.decodeReservationEvents(
                 reservation.response.events,
             );

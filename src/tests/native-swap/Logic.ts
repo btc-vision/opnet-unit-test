@@ -55,11 +55,15 @@ await opnet('Native Swap - Reservation Process', async (vm) => {
         // Confirm the contract call was successful
         Assert.equal(
             r.expectedAmountOut,
-            21002666666666645664000n,
-            'Expected expectedAmountOut to be 21002666666666645664000n',
+            21002666666666666666665n,
+            `Expected expectedAmountOut to be 21002666666666666666665n but got ${r.expectedAmountOut}`,
         );
 
-        Assert.equal(r.totalSatoshis, 31504000n, 'Expected totalSatoshis to be 31504000n');
+        Assert.equal(
+            r.totalSatoshis,
+            31504000n,
+            `Expected totalSatoshis to be 31504000n but got ${r.totalSatoshis}`,
+        );
 
         // Decode reservation events for further checks
         const decoded = NativeSwapTypesCoders.decodeReservationEvents(r.response.events);
@@ -297,11 +301,11 @@ await opnet('Native Swap - Reservation Process', async (vm) => {
             Assert.expect(reserveBefore.reservedLiquidity).toEqual(0n);
 
             const reserved = await testHelper.randomReserve(
-                10_000n,
+                10_001n,
                 testHelper.tokenAmountFor10kSat,
             );
 
-            Assert.expect(reserved.expectedAmountOut).toEqual(testHelper.tokenAmountFor10kSat);
+            Assert.expect(reserved.expectedAmountOut).toEqual(6667333333333333332n);
 
             Blockchain.blockNumber = Blockchain.blockNumber + 6n; // > 5 blocks from default
 

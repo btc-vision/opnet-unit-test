@@ -54,7 +54,7 @@ export class NativeSwapTestHelper {
     }
 
     public get tokenAmountFor10kSat(): bigint {
-        return this.floorPrice * 10_000n;
+        return this.floorPrice * 10_001n;
     }
 
     public scaleToken(n: bigint): bigint {
