@@ -130,7 +130,6 @@ export async function helper_swap(
 
     const result = await nativeSwap.swap({
         token: tokenAddress,
-        isSimulation: false,
     });
 
     if (log) {
