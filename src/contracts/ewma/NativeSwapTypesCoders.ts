@@ -520,7 +520,7 @@ export class NativeSwapTypesCoders {
             tokensOut: reader.readU256(),
             requiredSatoshis: reader.readU256(),
             price: reader.readU256(),
-            scale: reader.readU256(),
+            scale: reader.readU64(),
             response: response,
         };
     }
