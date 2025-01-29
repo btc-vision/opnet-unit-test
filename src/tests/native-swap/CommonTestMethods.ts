@@ -287,8 +287,8 @@ export class NativeSwapTestHelper {
             createRecipientsOutput(reservation.r);
             const s = await this.nativeSwap.swap({
                 token: this.tokenAddress,
-                isSimulation: false,
             });
+
             const d = NativeSwapTypesCoders.decodeSwapExecutedEvent(
                 s.response.events[s.response.events.length - 1].data,
             );

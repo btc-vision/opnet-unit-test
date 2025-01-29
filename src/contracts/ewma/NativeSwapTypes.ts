@@ -125,6 +125,7 @@ export interface CreatePoolResult {
 export interface CreatePoolWithSignatureParams {
     readonly signature: Uint8Array;
     readonly amount: bigint;
+    readonly nonce: bigint;
     readonly token: Address;
     readonly floorPrice: bigint;
     readonly initialLiquidity: bigint;
@@ -199,6 +200,7 @@ export interface GetQuoteResult {
     readonly tokensOut: bigint;
     readonly requiredSatoshis: bigint;
     readonly price: bigint;
+    readonly scale: bigint;
     readonly response: CallResponse;
 }
 

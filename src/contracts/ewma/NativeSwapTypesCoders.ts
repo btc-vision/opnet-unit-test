@@ -329,6 +329,7 @@ export class NativeSwapTypesCoders {
         calldata.writeSelector(selector);
         calldata.writeBytesWithLength(params.signature);
         calldata.writeU256(params.amount);
+        calldata.writeU256(params.nonce);
         calldata.writeAddress(params.token);
         calldata.writeU256(params.floorPrice);
         calldata.writeU128(params.initialLiquidity);
@@ -519,6 +520,7 @@ export class NativeSwapTypesCoders {
             tokensOut: reader.readU256(),
             requiredSatoshis: reader.readU256(),
             price: reader.readU256(),
+            scale: reader.readU256(),
             response: response,
         };
     }

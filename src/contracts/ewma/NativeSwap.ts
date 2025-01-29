@@ -62,7 +62,7 @@ export class NativeSwap extends ContractRuntime {
     );
 
     private readonly createPoolWithSignatureSelector: number = Number(
-        `0x${this.abiCoder.encodeSelector('createPoolWithSignature(bytes,address,uint256,uint128,string,uint16,uint256,uint16)')}`,
+        `0x${this.abiCoder.encodeSelector('createPoolWithSignature(bytes,address,uint256,uint256,uint128,string,uint16,uint256,uint16)')}`,
     );
 
     private readonly setFeesSelector: number = Number(
