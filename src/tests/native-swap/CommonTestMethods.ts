@@ -174,12 +174,13 @@ export class NativeSwapTestHelper {
             satoshisIn: 100_000_000n,
         });
 
-        let { requiredSatoshis: amountIn, price } = quote;
+        let { requiredSatoshis: amountIn, price, scale } = quote;
         if (amountIn !== 100_000_000n) {
             price = (price * 100_000_000n) / amountIn;
         }
 
-        const reversedPrice = 1 / parseFloat(BitcoinUtils.formatUnits(price, this.tokenDecimals));
+        const reversedPrice =
+            1 / parseFloat(BitcoinUtils.formatUnits(price / scale, this.tokenDecimals));
         this.recordCandle(Blockchain.blockNumber, reversedPrice);
     }
 
@@ -188,13 +189,14 @@ export class NativeSwapTestHelper {
             token: this.token.address,
             satoshisIn: 100_000_000n,
         });
-        let { requiredSatoshis: amountIn, price } = quote;
+        let { requiredSatoshis: amountIn, price, scale } = quote;
 
         if (amountIn !== 100_000_000n) {
             price = (price * 100_000_000n) / amountIn;
         }
 
-        const reversedPrice = 1 / parseFloat(BitcoinUtils.formatUnits(price, this.tokenDecimals));
+        const reversedPrice =
+            1 / parseFloat(BitcoinUtils.formatUnits(price / scale, this.tokenDecimals));
         this.recordCandle(Blockchain.blockNumber, reversedPrice);
     }
 

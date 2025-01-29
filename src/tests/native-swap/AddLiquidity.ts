@@ -256,7 +256,8 @@ await opnet('Native Swap - Add Liquidity', async (vm: OPNetUnit) => {
             price = (price * 100_000_000n) / amountIn;
         }
 
-        const reversedPrice = 1 / parseFloat(BitcoinUtils.formatUnits(price, tokenDecimals));
+        const reversedPrice =
+            1 / parseFloat(BitcoinUtils.formatUnits(price / quote.scale, tokenDecimals));
 
         recordCandle(
             Blockchain.blockNumber,
@@ -274,7 +275,8 @@ await opnet('Native Swap - Add Liquidity', async (vm: OPNetUnit) => {
             price = (price * 100_000_000n) / amountIn;
         }
 
-        const reversedPrice = 1 / parseFloat(BitcoinUtils.formatUnits(price, tokenDecimals));
+        const reversedPrice =
+            1 / parseFloat(BitcoinUtils.formatUnits(price / quote.scale, tokenDecimals));
 
         // Also record a candle in `data`
         // We'll do the same logic as your snippet: parse the price to float, etc.
@@ -514,12 +516,6 @@ await opnet('Native Swap - Add Liquidity', async (vm: OPNetUnit) => {
         closeFloat: number,
         store: { x: number; y: number[] }[],
     ) {
-        // Convert price from `bigint` to a float, similar to your snippet with formatUnits
-        //const closeFloat = parseFloat(BitcoinUtils.formatUnits(rawPrice, tokenDecimals));
-
-        // You had a condition about blockNumber === 2500n. We can replicate that if needed:
-        //if (blockNumber === 2500n) return;
-
         if (open !== 0) {
             store.push({
                 x: Number(blockNumber.toString()),
