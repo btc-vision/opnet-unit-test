@@ -366,7 +366,7 @@ await opnet('NativeSwap: Purging Reservations', async (vm: OPNetUnit) => {
     });
 
     await vm.it('should handle scenario where no providers remain after purge', async () => {
-        const provider = await addProviderLiquidity(Blockchain.expandTo18Decimals(10));
+        await addProviderLiquidity(Blockchain.expandTo18Decimals(10));
         const buyer = Blockchain.generateRandomAddress();
         await token.mintRaw(buyer, 10_000_000n);
 
@@ -383,7 +383,7 @@ await opnet('NativeSwap: Purging Reservations', async (vm: OPNetUnit) => {
     });
 
     await vm.it('should handle reservations with very large block numbers', async () => {
-        const provider = await addProviderLiquidity(Blockchain.expandTo18Decimals(10_000));
+        await addProviderLiquidity(Blockchain.expandTo18Decimals(10_000));
         const buyer = Blockchain.generateRandomAddress();
         await token.mintRaw(buyer, 10_000_000n);
 
