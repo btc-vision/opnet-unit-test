@@ -506,7 +506,6 @@ await opnet('NativeSwap: Priority and Normal Queue listLiquidity', async (vm: OP
             Blockchain.blockNumber = Blockchain.blockNumber + 1n;
             await nativeSwap.swap({
                 token: tokenAddress,
-                isSimulation: false,
             });
 
             // Advance block
@@ -674,7 +673,6 @@ await opnet('NativeSwap: Priority and Normal Queue listLiquidity', async (vm: OP
 
         await nativeSwap.swap({
             token: tokenAddress,
-            isSimulation: false,
         });
 
         // Now the provider tries to add more liquidity with a different receiver
@@ -820,7 +818,6 @@ await opnet('NativeSwap: Priority and Normal Queue listLiquidity', async (vm: OP
             // Partial swap execution
             const swapped = await nativeSwap.swap({
                 token: tokenAddress,
-                isSimulation: false,
             });
 
             const swapEvent = NativeSwapTypesCoders.decodeSwapExecutedEvent(
@@ -843,7 +840,6 @@ await opnet('NativeSwap: Priority and Normal Queue listLiquidity', async (vm: OP
             await Assert.expect(async () => {
                 await nativeSwap.swap({
                     token: tokenAddress,
-                    isSimulation: false,
                 });
             }).toThrow('No active reservation for this address');
         },

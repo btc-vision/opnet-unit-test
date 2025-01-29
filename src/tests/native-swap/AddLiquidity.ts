@@ -120,7 +120,7 @@ await opnet('Native Swap - Add Liquidity', async (vm: OPNetUnit) => {
             Blockchain.msgSender = reservation.a;
 
             createRecipientsOutput(reservation.r);
-            const s = await nativeSwap.swap({ token: tokenAddress, isSimulation: false });
+            const s = await nativeSwap.swap({ token: tokenAddress });
             const d = NativeSwapTypesCoders.decodeSwapExecutedEvent(
                 s.response.events[s.response.events.length - 1].data,
             );
