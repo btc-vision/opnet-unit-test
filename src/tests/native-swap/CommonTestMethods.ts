@@ -14,14 +14,14 @@ export class NativeSwapTestHelper {
     public toAddLiquidity: { a: Address; r: Recipient[] }[] = [];
 
     public tokenDecimals = 18;
-    public point25InitialLiquidity = 10n ** BigInt(this.tokenDecimals); //52_500n * 10n ** BigInt(this.tokenDecimals);
+    public point25InitialLiquidity = 52_500n * 10n ** BigInt(this.tokenDecimals); //10n ** BigInt(this.tokenDecimals); //
 
     public userAddress: Address = Blockchain.generateRandomAddress();
     public tokenAddress: Address = Blockchain.generateRandomAddress();
     public nativeSwapAddress: Address = Blockchain.generateRandomAddress();
 
     public initialLiquidityProvider: Address = Blockchain.generateRandomAddress();
-    public floorPrice: bigint = 10_000_000_000n; //10n ** 18n / 1500; // approx 1/1500
+    public floorPrice: bigint = 10n ** 18n / 1500n; // approx 1/1500 //10_000_000_000n; //
 
     constructor(private vm: OPNetUnit) {}
 
@@ -57,6 +57,12 @@ export class NativeSwapTestHelper {
         return this.floorPrice * 10_001n;
     }
 
+    private _startBlock: bigint = 0n;
+
+    public set startBlock(block: bigint) {
+        this._startBlock = block;
+    }
+
     public scaleToken(n: bigint): bigint {
         return BitcoinUtils.expandToDecimals(n.toString(), this.tokenDecimals);
     }
@@ -78,7 +84,7 @@ export class NativeSwapTestHelper {
             this.toSwap = [];
             this.toAddLiquidity = [];
 
-            Blockchain.blockNumber = 4908n;
+            Blockchain.blockNumber = this._startBlock;
 
             // Reset blockchain state
             Blockchain.dispose();
@@ -229,8 +235,8 @@ export class NativeSwapTestHelper {
             minimumAmountOut: minimumAmountOut,
             forLP,
         });
-        const decoded = NativeSwapTypesCoders.decodeReservationEvents(r.response.events);
 
+        const decoded = NativeSwapTypesCoders.decodeReservationEvents(r.response.events);
         if (decoded.recipients.length) {
             if (forLP) {
                 this.toAddLiquidity.push({

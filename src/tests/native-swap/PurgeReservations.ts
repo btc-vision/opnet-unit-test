@@ -1,6 +1,8 @@
 import { Address } from '@btc-vision/transaction';
 import { Assert, Blockchain, OP_20, opnet, OPNetUnit } from '@btc-vision/unit-test-framework';
 import { NativeSwap } from '../../contracts/ewma/NativeSwap.js';
+import { ReserveResult } from '../../contracts/ewma/NativeSwapTypes.js';
+import { gas2USD } from '../utils/TransactionUtils.js';
 
 await opnet('NativeSwap: Purging Reservations', async (vm: OPNetUnit) => {
     let nativeSwap: NativeSwap;
@@ -56,7 +58,11 @@ await opnet('NativeSwap: Purging Reservations', async (vm: OPNetUnit) => {
         return provider;
     }
 
-    async function makeReservation(buyer: Address, satIn: bigint, minOut: bigint): Promise<void> {
+    async function makeReservation(
+        buyer: Address,
+        satIn: bigint,
+        minOut: bigint,
+    ): Promise<ReserveResult> {
         Blockchain.msgSender = buyer;
         Blockchain.txOrigin = buyer;
 
@@ -67,9 +73,9 @@ await opnet('NativeSwap: Purging Reservations', async (vm: OPNetUnit) => {
             forLP: false,
         });
 
-        console.log(resp.expectedAmountOut);
-
         Assert.expect(resp.response.error).toBeUndefined();
+
+        return resp;
     }
 
     vm.beforeEach(async () => {
@@ -244,6 +250,10 @@ await opnet('NativeSwap: Purging Reservations', async (vm: OPNetUnit) => {
         'should handle a large number of reservations spread across many blocks and purge them efficiently',
         async () => {
             await addProviderLiquidity(Blockchain.expandTo18Decimals(21_000_000));
+            const initialReserve = await nativeSwap.getReserve({
+                token: tokenAddress,
+            });
+
             Blockchain.blockNumber = 1000n;
 
             // Create 50 reservations over 10 different blocks
@@ -255,19 +265,25 @@ await opnet('NativeSwap: Purging Reservations', async (vm: OPNetUnit) => {
                 }
             }
 
+            const before = await nativeSwap.getReserve({
+                token: tokenAddress,
+            });
+
             // Advance beyond expiration
             Blockchain.blockNumber = 20000n;
 
-            //const reserveBefore = await nativeSwap.getReserve(tokenAddress);
-            //Assert.expect(reserveBefore.reserved).toEqual(0n);
-
             // Purge
-            await makeReservation(Blockchain.generateRandomAddress(), 10_000n, 1n);
+            const a = await makeReservation(Blockchain.generateRandomAddress(), 10_000n, 1n);
+            vm.log(
+                `Spent ${gas2USD(a.response.usedGas)} USD to purge and reserve 50 reservations.`,
+            );
 
             const reserve = await nativeSwap.getReserve({
                 token: tokenAddress,
             });
-            Assert.expect(reserve.reservedLiquidity).toBeGreaterThan(0n);
+
+            Assert.expect(reserve.liquidity).toEqual(initialReserve.liquidity);
+            Assert.expect(reserve.reservedLiquidity).toBeLessThan(before.reservedLiquidity);
         },
     );
 
@@ -292,8 +308,6 @@ await opnet('NativeSwap: Purging Reservations', async (vm: OPNetUnit) => {
                 token: tokenAddress,
             });
 
-            console.log(`reserve2`, reserve2);
-
             // Advance beyond expiration
             Blockchain.blockNumber = 1006n;
 
@@ -307,7 +321,6 @@ await opnet('NativeSwap: Purging Reservations', async (vm: OPNetUnit) => {
                 token: tokenAddress,
             });
 
-            console.log(reserve);
             Assert.expect(reserve.reservedLiquidity).toBeGreaterThan(0n);
         },
     );
