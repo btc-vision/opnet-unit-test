@@ -34,6 +34,7 @@
         "test:native:getreserve": "tsx src/tests/native-swap/GetReserve.ts",
         "test:native:reserve": "tsx src/tests/native-swap/Reserve.ts",
         "test:native:logic": "tsx src/tests/native-swap/Logic.ts",
+        "test:native:problem": "tsx src/tests/native-swap/SwapProblem.ts",
         "test": "npm-run-all test:*"
     },
     "author": "OP_NET",

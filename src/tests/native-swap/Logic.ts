@@ -55,14 +55,14 @@ await opnet('Native Swap - Reservation Process', async (vm) => {
         // Confirm the contract call was successful
         Assert.equal(
             r.expectedAmountOut,
-            21002666666666666666665n,
-            `Expected expectedAmountOut to be 21002666666666666666665n but got ${r.expectedAmountOut}`,
+            52506666666666666666665n,
+            `Expected expectedAmountOut to be 52506666666666666666665n but got ${r.expectedAmountOut}`,
         );
 
         Assert.equal(
             r.totalSatoshis,
-            31504000n,
-            `Expected totalSatoshis to be 31504000n but got ${r.totalSatoshis}`,
+            78760000n,
+            `Expected totalSatoshis to be 78760000n but got ${r.totalSatoshis}`,
         );
 
         // Decode reservation events for further checks

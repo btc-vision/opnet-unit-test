@@ -14,14 +14,14 @@ export class NativeSwapTestHelper {
     public toAddLiquidity: { a: Address; r: Recipient[] }[] = [];
 
     public tokenDecimals = 18;
-    public point25InitialLiquidity = 52_500n * 10n ** BigInt(this.tokenDecimals);
+    public point25InitialLiquidity = 10n ** BigInt(this.tokenDecimals); //52_500n * 10n ** BigInt(this.tokenDecimals);
 
     public userAddress: Address = Blockchain.generateRandomAddress();
     public tokenAddress: Address = Blockchain.generateRandomAddress();
-    public ewmaAddress: Address = Blockchain.generateRandomAddress();
+    public nativeSwapAddress: Address = Blockchain.generateRandomAddress();
 
     public initialLiquidityProvider: Address = Blockchain.generateRandomAddress();
-    public floorPrice: bigint = 10n ** 18n / 1500n; // approx 1/1500
+    public floorPrice: bigint = 10_000_000_000n; //10n ** 18n / 1500; // approx 1/1500
 
     constructor(private vm: OPNetUnit) {}
 
@@ -78,7 +78,7 @@ export class NativeSwapTestHelper {
             this.toSwap = [];
             this.toAddLiquidity = [];
 
-            Blockchain.blockNumber = 1n;
+            Blockchain.blockNumber = 4908n;
 
             // Reset blockchain state
             Blockchain.dispose();
@@ -101,7 +101,7 @@ export class NativeSwapTestHelper {
             await this.token.mintRaw(this.userAddress, totalSupply);
 
             // Instantiate and register the nativeSwap contract
-            this.nativeSwap = new NativeSwap(this.userAddress, this.ewmaAddress);
+            this.nativeSwap = new NativeSwap(this.userAddress, this.nativeSwapAddress);
             Blockchain.register(this.nativeSwap);
             await this.nativeSwap.init();
 
@@ -155,6 +155,14 @@ export class NativeSwapTestHelper {
         Blockchain.txOrigin = this.userAddress;
         Blockchain.msgSender = this.userAddress;
         await this.token.approve(this.userAddress, this.nativeSwap.address, initLiquidity);
+
+        console.log(
+            'Creating pool with floor price',
+            floorPrice,
+            'and initial liquidity',
+            initLiquidity,
+        );
+        // 10000000000n 1000000000000000000n
 
         // Create the pool
         await this.nativeSwap.createPool({
@@ -281,7 +289,7 @@ export class NativeSwapTestHelper {
         this.vm.info(`Added liquidity for ${l} tokens`);
     }
 
-    public async swapAll(): Promise<void> {
+    public async swapAll(clearList: boolean = true): Promise<void> {
         for (const reservation of this.toSwap) {
             Blockchain.txOrigin = reservation.a;
             Blockchain.msgSender = reservation.a;
@@ -301,7 +309,7 @@ export class NativeSwapTestHelper {
         }
         Blockchain.txOrigin = this.userAddress;
         Blockchain.msgSender = this.userAddress;
-        this.toSwap = [];
+        if (clearList) this.toSwap = [];
     }
 
     public async reserveAddLiquidity(
