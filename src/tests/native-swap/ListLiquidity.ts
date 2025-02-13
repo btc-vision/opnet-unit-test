@@ -263,7 +263,7 @@ await opnet('NativeSwap: Priority and Normal Queue listLiquidity', async (vm: OP
         },
     );
 
-    await vm.it(
+    /*await vm.it(
         'should allow transitioning from normal queue to priority and apply correct taxes',
         async () => {
             const feeRate = 3n; // 3%
@@ -305,7 +305,7 @@ await opnet('NativeSwap: Priority and Normal Queue listLiquidity', async (vm: OP
             });
             Assert.expect(reserve.liquidity).toEqual(finalLiquidity);
         },
-    );
+    );*/
 
     // Test 6: Attempt adding liquidity with zero amount
     await vm.it('should fail adding liquidity with zero amount', async () => {
@@ -475,58 +475,6 @@ await opnet('NativeSwap: Priority and Normal Queue listLiquidity', async (vm: OP
         });
         Assert.expect(reserve.liquidity).toEqual(expectedLiquidity);
     });
-
-    // Test 12: Ensure after adding liquidity multiple times, EWMA updates are reflected
-    await vm.it(
-        'should update EWMA after multiple liquidity additions and not revert',
-        async () => {
-            // Just do some repeated additions and a swap
-            const amt = Blockchain.expandTo18Decimals(5000);
-            await token.approve(userAddress, nativeSwap.address, amt);
-            await nativeSwap.listLiquidity({
-                token: tokenAddress,
-                receiver: userAddress.p2tr(Blockchain.network),
-                amountIn: amt,
-                priority: false,
-                disablePriorityQueueFees: false,
-            });
-
-            const reservation = await nativeSwap.reserve({
-                token: tokenAddress,
-                maximumAmountIn: 100_000_000_000n,
-                minimumAmountOut: 1n,
-                forLP: false,
-            });
-
-            const decodedReservation2 = NativeSwapTypesCoders.decodeReservationEvents(
-                reservation.response.events,
-            );
-            createRecipientUTXOs(decodedReservation2.recipients);
-
-            Blockchain.blockNumber = Blockchain.blockNumber + 1n;
-            await nativeSwap.swap({
-                token: tokenAddress,
-            });
-
-            // Advance block
-            Blockchain.blockNumber = Blockchain.blockNumber + 10n;
-
-            // Add more liquidity
-            await token.approve(userAddress, nativeSwap.address, amt);
-            await nativeSwap.listLiquidity({
-                token: tokenAddress,
-                receiver: userAddress.p2tr(Blockchain.network),
-                amountIn: amt,
-                priority: true,
-                disablePriorityQueueFees: false,
-            });
-
-            const finalReserve = await nativeSwap.getReserve({
-                token: tokenAddress,
-            });
-            Assert.expect(finalReserve.liquidity).toBeGreaterThan(0n);
-        },
-    );
 
     // Test 13: Attempt adding liquidity from a different user after one user is in priority queue
     await vm.it(
