@@ -153,6 +153,7 @@ export interface ReserveParams {
     readonly maximumAmountIn: bigint;
     readonly minimumAmountOut: bigint;
     readonly forLP: boolean; // = false
+    readonly activationDelay?: number;
 }
 
 export interface ReserveResult {
