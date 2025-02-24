@@ -349,6 +349,6 @@ export class NativeSwap extends ContractRuntime {
     }
 
     protected defineRequiredBytecodes(): void {
-        BytecodeManager.loadBytecode('./bytecode/nativeswap.wasm', this.address);
+        BytecodeManager.loadBytecode('./bytecode/NativeSwap.wasm', this.address);
     }
 }

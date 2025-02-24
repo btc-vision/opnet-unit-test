@@ -9,7 +9,7 @@
 		"preserveConstEnums": true,
 		"resolveJsonModule": true,
 		"skipLibCheck": true,
-		"sourceMap": false,
+		"sourceMap": true,
 		"moduleDetection": "force",
 		"allowImportingTsExtensions": false,
 		"experimentalDecorators": true,

@@ -47,7 +47,6 @@ await opnet('Native Swap - Staking Pool Fee Collection', async (vm: OPNetUnit) =
         Blockchain.blockNumber = 1n;
 
         // Reset blockchain state
-        Blockchain.dispose();
         Blockchain.clearContracts();
         await Blockchain.init();
 
@@ -108,7 +107,6 @@ await opnet('Native Swap - Staking Pool Fee Collection', async (vm: OPNetUnit) =
 
         await nativeSwap.swap({
             token: tokenAddress,
-            isSimulation: false,
         });
 
         const expectedFee = (swapAmount * 20n) / 10000n;
