@@ -26,8 +26,6 @@
         "test:native": "npm-run-all test:native:listtoken test:native:createpool test:native:purge test:native:addliquidity test:native:fee test:native:getsetfees test:native:getquote test:native:getreserve test:native:reserve",
         "test:native:moto": "tsx src/tests/old-test-native-swap/NativeCompareMoto.ts.old",
         "test:native:compare": "tsx src/tests/old-test-native-swap/NativeCompare.ts",
-        "test:exploit": "tsx src/tests/common/exploit.ts",
-        "test:native": "npm-run-all test:native:*",
         "test": "npm-run-all test:*"
     },
     "author": "OP_NET",

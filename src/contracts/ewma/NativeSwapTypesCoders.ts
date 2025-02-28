@@ -448,6 +448,7 @@ export class NativeSwapTypesCoders {
         calldata.writeU256(params.maximumAmountIn);
         calldata.writeU256(params.minimumAmountOut);
         calldata.writeBoolean(params.forLP);
+        calldata.writeU8(params.activationDelay || 2);
 
         return calldata;
     }
