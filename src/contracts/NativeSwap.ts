@@ -1,6 +1,6 @@
 import { Address } from '@btc-vision/transaction';
 import { BytecodeManager, ContractRuntime } from '@btc-vision/unit-test-framework';
-import { createFeeOutput } from '../../tests/utils/TransactionUtils.js';
+import { createFeeOutput } from '../tests/utils/TransactionUtils.js';
 import {
     AddLiquidityParams,
     AddLiquidityResult,

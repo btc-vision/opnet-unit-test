@@ -1,7 +1,7 @@
 import { Address, BinaryWriter, EcKeyPair, MessageSigner, Wallet } from '@btc-vision/transaction';
 import { Assert, Blockchain, OP_20, opnet, OPNetUnit } from '@btc-vision/unit-test-framework';
-import { NativeSwap } from '../../contracts/ewma/NativeSwap.js';
-import { NativeSwapTypesCoders } from '../../contracts/ewma/NativeSwapTypesCoders.js';
+import { NativeSwap } from '../../contracts/NativeSwap.js';
+import { NativeSwapTypesCoders } from '../../contracts/NativeSwapTypesCoders.js';
 
 await opnet('Native Swap - Create Pool With Signature', async (vm: OPNetUnit) => {
     let nativeSwap: NativeSwap;

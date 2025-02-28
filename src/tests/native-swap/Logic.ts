@@ -1,6 +1,6 @@
 import { Assert, Blockchain, opnet } from '@btc-vision/unit-test-framework';
 import { Address } from '@btc-vision/transaction';
-import { NativeSwapTypesCoders } from '../../contracts/ewma/NativeSwapTypesCoders.js';
+import { NativeSwapTypesCoders } from '../../contracts/NativeSwapTypesCoders.js';
 import { NativeSwapTestHelper } from './CommonTestMethods.js';
 
 await opnet('Native Swap - Reservation Process', async (vm) => {

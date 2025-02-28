@@ -1,6 +1,6 @@
 import { Address } from '@btc-vision/transaction';
 import { Assert, Blockchain, opnet, OPNetUnit } from '@btc-vision/unit-test-framework';
-import { NativeSwap } from '../../contracts/ewma/NativeSwap.js';
+import { NativeSwap } from '../../contracts/NativeSwap.js';
 
 await opnet('Native Swap - Get/Set Fees', async (vm: OPNetUnit) => {
     let nativeSwap: NativeSwap;

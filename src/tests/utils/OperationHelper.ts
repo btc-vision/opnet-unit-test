@@ -10,16 +10,16 @@ import {
     logSwapExecutedEvent,
     logSwapResult,
 } from './LoggerHelper.js';
-import { NativeSwapTypesCoders } from '../../contracts/ewma/NativeSwapTypesCoders.js';
+import { NativeSwapTypesCoders } from '../../contracts/NativeSwapTypesCoders.js';
 import { createRecipientUTXOs } from './UTXOSimulator.js';
-import { NativeSwap } from '../../contracts/ewma/NativeSwap.js';
+import { NativeSwap } from '../../contracts/NativeSwap.js';
 import {
     CreatePoolResult,
     GetQuoteResult,
     GetReserveResult,
     ReserveResult,
     SwapResult,
-} from '../../contracts/ewma/NativeSwapTypes.js';
+} from '../../contracts/NativeSwapTypes.js';
 
 export async function helper_createPool(
     nativeSwap: NativeSwap,

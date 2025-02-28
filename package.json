@@ -6,12 +6,6 @@
     "scripts": {
         "build": "gulp",
         "prepublish": "npm-run-all build",
-        "build:pool": "tsx src/utils/motoswap/pool.ts",
-        "test:factory": "tsx src/tests/motoswap/factory.ts",
-        "test:gas": "tsx src/tests/motoswap/gas.ts",
-        "test:pool": "tsx src/tests/motoswap/pool.ts",
-        "test:router": "tsx src/tests/motoswap/router.ts",
-        "test:router2": "tsx src/tests/motoswap/router2.ts",
         "test:native:listtoken": "tsx src/tests/native-swap/ListLiquidity.ts",
         "test:native:createpool": "tsx src/tests/native-swap/CreatePool.ts",
         "test:native:createpoolWithSignature": "tsx src/tests/native-swap/CreatePoolWithSignature.ts",
@@ -24,8 +18,6 @@
         "test:native:getreserve": "tsx src/tests/native-swap/GetReserve.ts",
         "test:native:reserve": "tsx src/tests/native-swap/Reserve.ts",
         "test:native": "npm-run-all test:native:listtoken test:native:createpool test:native:purge test:native:addliquidity test:native:fee test:native:getsetfees test:native:getquote test:native:getreserve test:native:reserve",
-        "test:native:moto": "tsx src/tests/old-test-native-swap/NativeCompareMoto.ts.old",
-        "test:native:compare": "tsx src/tests/old-test-native-swap/NativeCompare.ts",
         "test": "npm-run-all test:*"
     },
     "author": "OP_NET",
@@ -37,7 +29,7 @@
         "@btc-vision/unit-test-framework": "^0.0.18",
         "gulp-logger-new": "^1.0.1",
         "npm-run-all": "^4.1.5",
-        "opnet": "^1.2.26"
+        "opnet": "^1.2.27"
     },
     "devDependencies": {
         "@eslint/js": "^9.17.0",

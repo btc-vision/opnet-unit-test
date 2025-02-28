@@ -7,7 +7,7 @@ import {
     ReserveResult,
     SwapExecutedEvent,
     SwapResult,
-} from '../../contracts/ewma/NativeSwapTypes.js';
+} from '../../contracts/NativeSwapTypes.js';
 
 export function logGetReserveResult(result: GetReserveResult): void {
     Blockchain.log(``);

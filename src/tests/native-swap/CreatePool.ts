@@ -1,12 +1,9 @@
 import { Address } from '@btc-vision/transaction';
 import { Assert, Blockchain, OP_20, opnet, OPNetUnit } from '@btc-vision/unit-test-framework';
-import { NativeSwap } from '../../contracts/ewma/NativeSwap.js';
+import { NativeSwap } from '../../contracts/NativeSwap.js';
 import { gas2BTC, gas2Sat, gas2USD } from '../utils/TransactionUtils.js';
-import { NativeSwapTypesCoders } from '../../contracts/ewma/NativeSwapTypesCoders.js';
-import {
-    CreatePoolResult,
-    GetAntibotSettingsResult,
-} from '../../contracts/ewma/NativeSwapTypes.js';
+import { NativeSwapTypesCoders } from '../../contracts/NativeSwapTypesCoders.js';
+import { CreatePoolResult, GetAntibotSettingsResult } from '../../contracts/NativeSwapTypes.js';
 
 await opnet('Native Swap - Create Pool', async (vm: OPNetUnit) => {
     let nativeSwap: NativeSwap;

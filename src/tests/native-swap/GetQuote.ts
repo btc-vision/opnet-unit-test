@@ -1,6 +1,6 @@
 import { Address } from '@btc-vision/transaction';
 import { Assert, Blockchain, OP_20, opnet, OPNetUnit } from '@btc-vision/unit-test-framework';
-import { NativeSwap } from '../../contracts/ewma/NativeSwap.js';
+import { NativeSwap } from '../../contracts/NativeSwap.js';
 import {
     helper_createPool,
     helper_createToken,
