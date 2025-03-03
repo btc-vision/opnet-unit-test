@@ -71,7 +71,7 @@ await opnet('Native Swap - Create Pool', async (vm: OPNetUnit) => {
                 antiBotMaximumTokensPerReservation,
                 maxReservesIn5BlocksPercent: 4000,
             });
-        }).toThrow(`OPNET: RuntimeError: Error: Contract not found at address`);
+        }).toThrow(`Contract not found at address`);
     });
 
     await vm.it('should revert when caller is not the token owner', async () => {
@@ -90,7 +90,7 @@ await opnet('Native Swap - Create Pool', async (vm: OPNetUnit) => {
                 antiBotMaximumTokensPerReservation,
                 maxReservesIn5BlocksPercent: 4000,
             });
-        }).toThrow(`OPNET: Execution aborted: NATIVE_SWAP: Only token owner can call createPool`);
+        }).toThrow(`Only token owner can call createPool`);
     });
 
     await vm.it('should revert when receiver is an invalid bitcoin address', async () => {
@@ -104,7 +104,7 @@ await opnet('Native Swap - Create Pool', async (vm: OPNetUnit) => {
                 antiBotMaximumTokensPerReservation,
                 maxReservesIn5BlocksPercent: 4000,
             });
-        }).toThrow(`OPNET: RuntimeError: Invalid address: base58 error`);
+        }).toThrow(`Invalid address: base58 error`);
     });
 
     await vm.it('should revert when receiver is an empty bitcoin address', async () => {
@@ -118,7 +118,7 @@ await opnet('Native Swap - Create Pool', async (vm: OPNetUnit) => {
                 antiBotMaximumTokensPerReservation,
                 maxReservesIn5BlocksPercent: 4000,
             });
-        }).toThrow(`OPNET: RuntimeError: Invalid address: base58 error`);
+        }).toThrow(`Invalid address: base58 error`);
     });
 
     await vm.it('should revert when floor price is 0', async () => {
@@ -132,7 +132,7 @@ await opnet('Native Swap - Create Pool', async (vm: OPNetUnit) => {
                 antiBotMaximumTokensPerReservation,
                 maxReservesIn5BlocksPercent: 4000,
             });
-        }).toThrow(`NATIVE_SWAP: Floor price cannot be zero`);
+        }).toThrow(`Floor price cannot be zero`);
     });
 
     await vm.it('should revert when initial liquidity is 0', async () => {
@@ -146,7 +146,7 @@ await opnet('Native Swap - Create Pool', async (vm: OPNetUnit) => {
                 antiBotMaximumTokensPerReservation,
                 maxReservesIn5BlocksPercent: 4000,
             });
-        }).toThrow(`NATIVE_SWAP: Initial liquidity cannot be zero`);
+        }).toThrow(`Initial liquidity cannot be zero`);
     });
 
     await vm.it('should revert when antiBotMaximumTokensPerReservation settings is 0', async () => {
@@ -160,11 +160,11 @@ await opnet('Native Swap - Create Pool', async (vm: OPNetUnit) => {
                 antiBotMaximumTokensPerReservation: 0n,
                 maxReservesIn5BlocksPercent: 4000,
             });
-        }).toThrow(`NATIVE_SWAP: Anti-bot max tokens per reservation cannot be zero`);
+        }).toThrow(`Anti-bot max tokens per reservation cannot be zero`);
     });
 
     await vm.it('should revert when insufficient allowance', async () => {
-        const opnetErrorRegex = /OPNET: Error: Execution aborted: Insufficient allowance/;
+        const opnetErrorRegex = /Insufficient allowance/;
 
         await Assert.expect(async () => {
             await nativeSwap.createPool({

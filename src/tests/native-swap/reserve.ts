@@ -44,7 +44,7 @@ await opnet('Native Swap - Reserve', async (vm: OPNetUnit) => {
                 false,
                 false,
             );
-        }).toThrow(`NATIVE_SWAP: Invalid token address`);
+        }).toThrow(`Invalid token address`);
 
         await Assert.expect(async () => {
             await helper_reserve(
@@ -57,7 +57,7 @@ await opnet('Native Swap - Reserve', async (vm: OPNetUnit) => {
                 false,
                 false,
             );
-        }).toThrow(`NATIVE_SWAP: Invalid token address`);
+        }).toThrow(`Invalid token address`);
     });
 
     await vm.it('should revert when no pool created', async () => {
@@ -72,7 +72,7 @@ await opnet('Native Swap - Reserve', async (vm: OPNetUnit) => {
                 false,
                 false,
             );
-        }).toThrow(`NATIVE_SWAP: No pool exists for token.`);
+        }).toThrow(`No pool exists for token`);
 
         await Assert.expect(async () => {
             await helper_reserve(
@@ -85,7 +85,7 @@ await opnet('Native Swap - Reserve', async (vm: OPNetUnit) => {
                 false,
                 false,
             );
-        }).toThrow(`NATIVE_SWAP: No pool exists for token.`);
+        }).toThrow(`No pool exists for token`);
     });
 
     await vm.it('should revert when maximum amount is 0', async () => {
@@ -100,7 +100,7 @@ await opnet('Native Swap - Reserve', async (vm: OPNetUnit) => {
                 false,
                 false,
             );
-        }).toThrow(`NATIVE_SWAP: Maximum amount in cannot be zero`);
+        }).toThrow(` Maximum amount in cannot be zero`);
     });
 
     await vm.it('should revert when maximum amount is below trade size', async () => {
@@ -115,6 +115,6 @@ await opnet('Native Swap - Reserve', async (vm: OPNetUnit) => {
                 false,
                 false,
             );
-        }).toThrow(`NATIVE_SWAP: Requested amount is below minimum trade size`);
+        }).toThrow(`Requested amount is below minimum trade size`);
     });
 });
