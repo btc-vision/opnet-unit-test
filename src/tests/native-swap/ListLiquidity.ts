@@ -169,7 +169,19 @@ await opnet('NativeSwap: Priority and Normal Queue listLiquidity', async (vm: OP
 
             Assert.expect(resp.response.error).toBeUndefined();
 
+            const events = resp.response.events;
+            const LiquidityListedEvt = events.find((e) => e.type === 'LiquidityListed');
+            if (!LiquidityListedEvt) {
+                throw new Error('No LiquidityListed event found for priority queue');
+            }
+
             const feeAmount = (amountIn * 3n) / 100n;
+            const decoded = NativeSwapTypesCoders.decodeLiquidityListedEvent(
+                LiquidityListedEvt.data,
+            );
+
+            Assert.expect(decoded.totalLiquidity).toEqual(amountIn - feeAmount);
+
             const finalUserBalance = await token.balanceOf(userAddress);
             const finalContractBalance = await token.balanceOf(nativeSwap.address);
             const finalDeadBalance = await token.balanceOf(Address.dead());
@@ -179,17 +191,6 @@ await opnet('NativeSwap: Priority and Normal Queue listLiquidity', async (vm: OP
                 amountIn - feeAmount,
             );
             Assert.expect(initialUserBalance - finalUserBalance).toEqual(amountIn);
-
-            const events = resp.response.events;
-            const LiquidityListedEvt = events.find((e) => e.type === 'LiquidityListed');
-            if (!LiquidityListedEvt) {
-                throw new Error('No LiquidityListed event found for priority queue');
-            }
-
-            const decoded = NativeSwapTypesCoders.decodeLiquidityListedEvent(
-                LiquidityListedEvt.data,
-            );
-            Assert.expect(decoded.totalLiquidity).toEqual(amountIn - feeAmount);
         },
     );
 
