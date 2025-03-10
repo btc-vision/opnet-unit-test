@@ -13,7 +13,6 @@ import {
     GetAntibotSettingsParams,
     GetAntibotSettingsResult,
     GetFeesResult,
-    GetPriorityQueueCostParams,
     GetPriorityQueueCostResult,
     GetProviderDetailsParams,
     GetProviderDetailsResult,
@@ -35,6 +34,7 @@ import {
     ReserveResult,
     SetFeesParams,
     SetFeesResult,
+    SetStakingContractAddressParams,
     SwapExecutedEvent,
     SwapParams,
     SwapResult,
@@ -147,7 +147,6 @@ export class NativeSwapTypesCoders {
         return {
             reservationBaseFee: reader.readU64(),
             priorityQueueBaseFee: reader.readU64(),
-            pricePerUserInPriorityQueueBTC: reader.readU64(),
             response: response,
         };
     }
@@ -180,7 +179,6 @@ export class NativeSwapTypesCoders {
         calldata.writeSelector(selector);
         calldata.writeU64(params.reservationBaseFee);
         calldata.writeU64(params.priorityQueueBaseFee);
-        calldata.writeU64(params.pricePerUserInPriorityQueueBTC);
 
         return calldata;
     }
@@ -200,12 +198,12 @@ export class NativeSwapTypesCoders {
 
     public static encodeSetStakingContractAddressParams(
         selector: number,
-        to: Address,
+        params: SetStakingContractAddressParams,
     ): BinaryWriter {
         const calldata = new BinaryWriter();
 
         calldata.writeSelector(selector);
-        calldata.writeAddress(to);
+        calldata.writeAddress(params.stakingContractAddress);
 
         return calldata;
     }
@@ -276,14 +274,10 @@ export class NativeSwapTypesCoders {
         };
     }
 
-    public static encodeGetPriorityQueueCostParams(
-        selector: number,
-        params: GetPriorityQueueCostParams,
-    ): BinaryWriter {
+    public static encodeGetPriorityQueueCostParams(selector: number): BinaryWriter {
         const calldata = new BinaryWriter();
 
         calldata.writeSelector(selector);
-        calldata.writeAddress(params.token);
 
         return calldata;
     }
@@ -496,7 +490,6 @@ export class NativeSwapTypesCoders {
         const reader = new BinaryReader(response.response);
 
         return {
-            totalTokensReturned: reader.readU128(),
             response: response,
         };
     }

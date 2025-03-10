@@ -43,7 +43,6 @@ export interface ApprovedEvent {
 export interface SetFeesParams {
     readonly reservationBaseFee: bigint;
     readonly priorityQueueBaseFee: bigint;
-    readonly pricePerUserInPriorityQueueBTC: bigint;
 }
 
 export interface SetFeesResult {
@@ -54,8 +53,11 @@ export interface SetFeesResult {
 export interface GetFeesResult {
     readonly reservationBaseFee: bigint;
     readonly priorityQueueBaseFee: bigint;
-    readonly pricePerUserInPriorityQueueBTC: bigint;
     readonly response: CallResponse;
+}
+
+export interface SetStakingContractAddressParams {
+    readonly stakingContractAddress: Address;
 }
 
 export interface GetStakingContractAddressResult {
@@ -82,10 +84,6 @@ export interface GetProviderDetailsResult {
     readonly reserved: bigint;
     readonly btcReceiver: string;
     readonly response: CallResponse;
-}
-
-export interface GetPriorityQueueCostParams {
-    readonly token: Address;
 }
 
 export interface GetPriorityQueueCostResult {
@@ -172,7 +170,6 @@ export interface CancelListingParams {
 }
 
 export interface CancelListingResult {
-    readonly totalTokensReturned: bigint;
     readonly response: CallResponse;
 }
 

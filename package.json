@@ -6,6 +6,8 @@
     "scripts": {
         "build": "gulp",
         "prepublish": "npm-run-all build",
+        "test:native:onlyowner": "tsx src/tests/native-swap/onlyowner/OnlyOwner.ts",
+        "test:native:reentrancy": "tsx src/tests/native-swap/reentrancy/Reentrancy.ts",
         "test:native:listtoken": "tsx src/tests/native-swap/ListLiquidity.ts",
         "test:native:createpool": "tsx src/tests/native-swap/CreatePool.ts",
         "test:native:createpoolWithSignature": "tsx src/tests/native-swap/CreatePoolWithSignature.ts",

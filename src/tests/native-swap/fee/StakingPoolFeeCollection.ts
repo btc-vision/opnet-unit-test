@@ -73,7 +73,7 @@ await opnet('Native Swap - Staking Pool Fee Collection', async (vm: OPNetUnit) =
         Blockchain.register(nativeSwap);
         await nativeSwap.init();
 
-        await nativeSwap.setStakingContractAddress(stakingContractAddress);
+        await nativeSwap.setStakingContractAddress({ stakingContractAddress });
 
         // Add liquidity
         await createNativeSwapPool(floorPrice, totalSupply);

@@ -12,7 +12,6 @@ import {
     GetAntibotSettingsParams,
     GetAntibotSettingsResult,
     GetFeesResult,
-    GetPriorityQueueCostParams,
     GetPriorityQueueCostResult,
     GetProviderDetailsParams,
     GetProviderDetailsResult,
@@ -29,10 +28,12 @@ import {
     ReserveResult,
     SetFeesParams,
     SetFeesResult,
+    SetStakingContractAddressParams,
     SwapParams,
     SwapResult,
 } from './NativeSwapTypes.js';
 import { NativeSwapTypesCoders } from './NativeSwapTypesCoders.js';
+import { Blockchain } from '../../../unit-test-framework/build/index.js';
 
 export class NativeSwap extends ContractRuntime {
     public static feeRecipient: string =
@@ -67,7 +68,7 @@ export class NativeSwap extends ContractRuntime {
     );
 
     private readonly setFeesSelector: number = Number(
-        `0x${this.abiCoder.encodeSelector('setFees(uint64,uint64,uint64)')}`,
+        `0x${this.abiCoder.encodeSelector('setFees(uint64,uint64)')}`,
     );
 
     private readonly addLiquiditySelector: number = Number(
@@ -75,7 +76,7 @@ export class NativeSwap extends ContractRuntime {
     );
 
     private readonly removeLiquiditySelector: number = Number(
-        `0x${this.abiCoder.encodeSelector('removeLiquidity(address,uint256)')}`,
+        `0x${this.abiCoder.encodeSelector('removeLiquidity(address)')}`,
     );
 
     private readonly getReserveSelector: number = Number(
@@ -91,7 +92,7 @@ export class NativeSwap extends ContractRuntime {
     );
 
     private readonly getPriorityQueueCostSelector: number = Number(
-        `0x${this.abiCoder.encodeSelector('getPriorityQueueCost(address)')}`,
+        `0x${this.abiCoder.encodeSelector('getPriorityQueueCost')}`,
     );
 
     private readonly getFeesSelector: number = Number(
@@ -156,10 +157,12 @@ export class NativeSwap extends ContractRuntime {
         return NativeSwapTypesCoders.decodeGetStakingContractAddressResult(result);
     }
 
-    public async setStakingContractAddress(to: Address): Promise<SetFeesResult> {
+    public async setStakingContractAddress(
+        params: SetStakingContractAddressParams,
+    ): Promise<SetFeesResult> {
         const calldata = NativeSwapTypesCoders.encodeSetStakingContractAddressParams(
             this.setStakingContractAddressSelector,
-            to,
+            params,
         );
 
         const result = await this.execute(calldata.getBuffer());
@@ -200,12 +203,9 @@ export class NativeSwap extends ContractRuntime {
         return NativeSwapTypesCoders.decodeGetProviderDetailsResult(result);
     }
 
-    public async getPriorityQueueCost(
-        params: GetPriorityQueueCostParams,
-    ): Promise<GetPriorityQueueCostResult> {
+    public async getPriorityQueueCost(): Promise<GetPriorityQueueCostResult> {
         const calldata = NativeSwapTypesCoders.encodeGetPriorityQueueCostParams(
             this.getPriorityQueueCostSelector,
-            params,
         );
 
         this.backupStates();

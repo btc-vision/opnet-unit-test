@@ -130,7 +130,6 @@ await opnet('Native Swap - Reservation Process', async (vm) => {
         await testHelper.nativeSwap.setFees({
             reservationBaseFee: 50_000n, // 500k sats
             priorityQueueBaseFee: 10n,
-            pricePerUserInPriorityQueueBTC: 10n,
         });
 
         // Next, attempt a reservation from a random user.
@@ -156,7 +155,6 @@ await opnet('Native Swap - Reservation Process', async (vm) => {
         await testHelper.nativeSwap.setFees({
             reservationBaseFee: 10_000n, // revert back
             priorityQueueBaseFee: 50_000n,
-            pricePerUserInPriorityQueueBTC: 100n,
         });
     });
 

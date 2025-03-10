@@ -36,7 +36,6 @@ await opnet('Native Swap - Get/Set Fees', async (vm: OPNetUnit) => {
 
         await Assert.expect(async () => {
             await nativeSwap.setFees({
-                pricePerUserInPriorityQueueBTC: 10n,
                 priorityQueueBaseFee: 100n,
                 reservationBaseFee: 1000n,
             });
@@ -46,7 +45,6 @@ await opnet('Native Swap - Get/Set Fees', async (vm: OPNetUnit) => {
     await vm.it('should revert when reservation base fee exceed the cap', async () => {
         await Assert.expect(async () => {
             await nativeSwap.setFees({
-                pricePerUserInPriorityQueueBTC: 10n,
                 priorityQueueBaseFee: 100n,
                 reservationBaseFee: 100001n,
             });
@@ -56,26 +54,14 @@ await opnet('Native Swap - Get/Set Fees', async (vm: OPNetUnit) => {
     await vm.it('should revert when priority queue base fee exceed the cap', async () => {
         await Assert.expect(async () => {
             await nativeSwap.setFees({
-                pricePerUserInPriorityQueueBTC: 10n,
                 priorityQueueBaseFee: 500001n,
                 reservationBaseFee: 1000n,
             });
         }).toThrow(`Priority queue base fee cannot exceed the cap`);
     });
 
-    await vm.it('should revert when price per user in priority queue exceed the cap', async () => {
-        await Assert.expect(async () => {
-            await nativeSwap.setFees({
-                pricePerUserInPriorityQueueBTC: 10001n,
-                priorityQueueBaseFee: 500000n,
-                reservationBaseFee: 1000n,
-            });
-        }).toThrow(`Price per user in priority queue cannot exceed the cap`);
-    });
-
     await vm.it('fees should be correctly setted when owner and in ranges ', async () => {
         const setFeesResult = await nativeSwap.setFees({
-            pricePerUserInPriorityQueueBTC: 10000n,
             priorityQueueBaseFee: 500000n,
             reservationBaseFee: 1000n,
         });
@@ -86,6 +72,5 @@ await opnet('Native Swap - Get/Set Fees', async (vm: OPNetUnit) => {
 
         Assert.expect(getFeesResult.priorityQueueBaseFee).toEqual(500000n);
         Assert.expect(getFeesResult.reservationBaseFee).toEqual(1000n);
-        Assert.expect(getFeesResult.pricePerUserInPriorityQueueBTC).toEqual(10000n);
     });
 });
