@@ -1,27 +1,17 @@
 import { NativeSwap } from '../../../contracts/NativeSwap.js';
 import {
+    Assert,
     Blockchain,
     opnet,
     OPNetUnit,
-    OP_20,
 } from '../../../../../unit-test-framework/build/index.js';
 import { Address } from '../../../../../transaction/build/index.js';
 import { BitcoinUtils } from '../../../../../opnet/src/index.js';
 import { createRecipientsOutput, gas2USD } from '../../utils/TransactionUtils.js';
 import { NativeSwapTypesCoders } from '../../../contracts/NativeSwapTypesCoders.js';
 import { Recipient, ReserveResult } from '../../../contracts/NativeSwapTypes.js';
-import { Add } from '../../../../../opnet/build/index.js';
 import { ReentrantToken } from '../../../contracts/ReentrantToken.js';
-/*
-import { BitcoinUtils } from '../../../../../opnet/src/index.js';
-import { Address } from '../../../../../transaction/build/index.js';
-import {
-    Blockchain,
-    OP_20,
-    opnet,
-    OPNetUnit,
-} from '../../../../../unit-test-framework/build/index.js';
-*/
+
 await opnet('Native Swap - Reentrancy', async (vm: OPNetUnit) => {
     let nativeSwap: NativeSwap;
     let token: ReentrantToken;
@@ -193,7 +183,9 @@ await opnet('Native Swap - Reentrancy', async (vm: OPNetUnit) => {
 
         await token.setCallback('reserve(address,uint256,uint256,bool)');
 
-        await swapAll();
+        await Assert.expect(async () => {
+            await swapAll();
+        }).toThrow(/Error: Execution reverted: NATIVE_SWAP: LOCKED/);
     });
 
     await vm.it('should revert when trying reentrancy call on swap method', async () => {
@@ -211,6 +203,328 @@ await opnet('Native Swap - Reentrancy', async (vm: OPNetUnit) => {
 
         await token.setCallback('swap(address)');
 
-        await swapAll();
+        await Assert.expect(async () => {
+            await swapAll();
+        }).toThrow(/Error: Execution reverted: NATIVE_SWAP: LOCKED/);
     });
+
+    await vm.it('should revert when trying reentrancy call on listLiquidity method', async () => {
+        Blockchain.txOrigin = userAddress;
+        Blockchain.msgSender = userAddress;
+
+        Blockchain.blockNumber += 1n;
+        await listTokenRandom(BitcoinUtils.expandToDecimals(100, tokenDecimals));
+
+        Blockchain.blockNumber += 1n;
+
+        await reserve(20_000_000n, providerAddress);
+
+        Blockchain.blockNumber += 3n;
+
+        await token.setCallback('listLiquidity(address,string,uint128,bool)');
+
+        await Assert.expect(async () => {
+            await swapAll();
+        }).toThrow(/Error: Execution reverted: NATIVE_SWAP: LOCKED/);
+    });
+
+    await vm.it('should revert when trying reentrancy call on cancelListing method', async () => {
+        Blockchain.txOrigin = userAddress;
+        Blockchain.msgSender = userAddress;
+
+        Blockchain.blockNumber += 1n;
+        await listTokenRandom(BitcoinUtils.expandToDecimals(100, tokenDecimals));
+
+        Blockchain.blockNumber += 1n;
+
+        await reserve(20_000_000n, providerAddress);
+
+        Blockchain.blockNumber += 3n;
+
+        await token.setCallback('cancelListing(address)');
+
+        await Assert.expect(async () => {
+            await swapAll();
+        }).toThrow(/Error: Execution reverted: NATIVE_SWAP: LOCKED/);
+    });
+
+    await vm.it('should revert when trying reentrancy call on addLiquidity method', async () => {
+        Blockchain.txOrigin = userAddress;
+        Blockchain.msgSender = userAddress;
+
+        Blockchain.blockNumber += 1n;
+        await listTokenRandom(BitcoinUtils.expandToDecimals(100, tokenDecimals));
+
+        Blockchain.blockNumber += 1n;
+
+        await reserve(20_000_000n, providerAddress);
+
+        Blockchain.blockNumber += 3n;
+
+        await token.setCallback('addLiquidity(address,string)');
+
+        await Assert.expect(async () => {
+            await swapAll();
+        }).toThrow(/Error: Execution reverted: NATIVE_SWAP: LOCKED/);
+    });
+
+    await vm.it('should revert when trying reentrancy call on removeLiquidity method', async () => {
+        Blockchain.txOrigin = userAddress;
+        Blockchain.msgSender = userAddress;
+
+        Blockchain.blockNumber += 1n;
+        await listTokenRandom(BitcoinUtils.expandToDecimals(100, tokenDecimals));
+
+        Blockchain.blockNumber += 1n;
+
+        await reserve(20_000_000n, providerAddress);
+
+        Blockchain.blockNumber += 3n;
+
+        await token.setCallback('removeLiquidity(address)');
+
+        await Assert.expect(async () => {
+            await swapAll();
+        }).toThrow(/Error: Execution reverted: NATIVE_SWAP: LOCKED/);
+    });
+
+    await vm.it('should revert when trying reentrancy call on createPool method', async () => {
+        Blockchain.txOrigin = userAddress;
+        Blockchain.msgSender = userAddress;
+
+        Blockchain.blockNumber += 1n;
+        await listTokenRandom(BitcoinUtils.expandToDecimals(100, tokenDecimals));
+
+        Blockchain.blockNumber += 1n;
+
+        await reserve(20_000_000n, providerAddress);
+
+        Blockchain.blockNumber += 3n;
+
+        await token.setCallback('createPool(address,uint256,uint128,string,uint16,uint256,uint16)');
+
+        await Assert.expect(async () => {
+            await swapAll();
+        }).toThrow(/Error: Execution reverted: NATIVE_SWAP: LOCKED/);
+    });
+
+    await vm.it(
+        'should revert when trying reentrancy call on createPoolWithSignature method',
+        async () => {
+            Blockchain.txOrigin = userAddress;
+            Blockchain.msgSender = userAddress;
+
+            Blockchain.blockNumber += 1n;
+            await listTokenRandom(BitcoinUtils.expandToDecimals(100, tokenDecimals));
+
+            Blockchain.blockNumber += 1n;
+
+            await reserve(20_000_000n, providerAddress);
+
+            Blockchain.blockNumber += 3n;
+
+            await token.setCallback(
+                'createPoolWithSignature(bytes,address,uint256,uint256,uint128,string,uint16,uint256,uint16)',
+            );
+
+            await Assert.expect(async () => {
+                await swapAll();
+            }).toThrow(/Error: Execution reverted: NATIVE_SWAP: LOCKED/);
+        },
+    );
+
+    await vm.it('should revert when trying reentrancy call on setFees method', async () => {
+        Blockchain.txOrigin = userAddress;
+        Blockchain.msgSender = userAddress;
+
+        Blockchain.blockNumber += 1n;
+        await listTokenRandom(BitcoinUtils.expandToDecimals(100, tokenDecimals));
+
+        Blockchain.blockNumber += 1n;
+
+        await reserve(20_000_000n, providerAddress);
+
+        Blockchain.blockNumber += 3n;
+
+        await token.setCallback('setFees(uint64,uint64)');
+
+        await Assert.expect(async () => {
+            await swapAll();
+        }).toThrow(/Error: Execution reverted: NATIVE_SWAP: LOCKED/);
+    });
+
+    await vm.it(
+        'should revert when trying reentrancy call on setStakingContractAddress method',
+        async () => {
+            Blockchain.txOrigin = userAddress;
+            Blockchain.msgSender = userAddress;
+
+            Blockchain.blockNumber += 1n;
+            await listTokenRandom(BitcoinUtils.expandToDecimals(100, tokenDecimals));
+
+            Blockchain.blockNumber += 1n;
+
+            await reserve(20_000_000n, providerAddress);
+
+            Blockchain.blockNumber += 3n;
+
+            await token.setCallback('setStakingContractAddress(address)');
+
+            await Assert.expect(async () => {
+                await swapAll();
+            }).toThrow(/Error: Execution reverted: NATIVE_SWAP: LOCKED/);
+        },
+    );
+
+    await vm.it('should revert when trying reentrancy call on getReserve method', async () => {
+        Blockchain.txOrigin = userAddress;
+        Blockchain.msgSender = userAddress;
+
+        Blockchain.blockNumber += 1n;
+        await listTokenRandom(BitcoinUtils.expandToDecimals(100, tokenDecimals));
+
+        Blockchain.blockNumber += 1n;
+
+        await reserve(20_000_000n, providerAddress);
+
+        Blockchain.blockNumber += 3n;
+
+        await token.setCallback('getReserve(address)');
+
+        await Assert.expect(async () => {
+            await swapAll();
+        }).toThrow(/Error: Execution reverted: NATIVE_SWAP: LOCKED/);
+    });
+
+    await vm.it('should revert when trying reentrancy call on getQuote method', async () => {
+        Blockchain.txOrigin = userAddress;
+        Blockchain.msgSender = userAddress;
+
+        Blockchain.blockNumber += 1n;
+        await listTokenRandom(BitcoinUtils.expandToDecimals(100, tokenDecimals));
+
+        Blockchain.blockNumber += 1n;
+
+        await reserve(20_000_000n, providerAddress);
+
+        Blockchain.blockNumber += 3n;
+
+        await token.setCallback('getQuote(address,uint256)');
+
+        await Assert.expect(async () => {
+            await swapAll();
+        }).toThrow(/Error: Execution reverted: NATIVE_SWAP: LOCKED/);
+    });
+
+    await vm.it(
+        'should revert when trying reentrancy call on getProviderDetails method',
+        async () => {
+            Blockchain.txOrigin = userAddress;
+            Blockchain.msgSender = userAddress;
+
+            Blockchain.blockNumber += 1n;
+            await listTokenRandom(BitcoinUtils.expandToDecimals(100, tokenDecimals));
+
+            Blockchain.blockNumber += 1n;
+
+            await reserve(20_000_000n, providerAddress);
+
+            Blockchain.blockNumber += 3n;
+
+            await token.setCallback('getProviderDetails(address)');
+
+            await Assert.expect(async () => {
+                await swapAll();
+            }).toThrow(/Error: Execution reverted: NATIVE_SWAP: LOCKED/);
+        },
+    );
+
+    await vm.it(
+        'should revert when trying reentrancy call on getPriorityQueueCost method',
+        async () => {
+            Blockchain.txOrigin = userAddress;
+            Blockchain.msgSender = userAddress;
+
+            Blockchain.blockNumber += 1n;
+            await listTokenRandom(BitcoinUtils.expandToDecimals(100, tokenDecimals));
+
+            Blockchain.blockNumber += 1n;
+
+            await reserve(20_000_000n, providerAddress);
+
+            Blockchain.blockNumber += 3n;
+
+            await token.setCallback('getPriorityQueueCost');
+
+            await Assert.expect(async () => {
+                await swapAll();
+            }).toThrow(/Error: Execution reverted: NATIVE_SWAP: LOCKED/);
+        },
+    );
+
+    await vm.it('should revert when trying reentrancy call on getFees method', async () => {
+        Blockchain.txOrigin = userAddress;
+        Blockchain.msgSender = userAddress;
+
+        Blockchain.blockNumber += 1n;
+        await listTokenRandom(BitcoinUtils.expandToDecimals(100, tokenDecimals));
+
+        Blockchain.blockNumber += 1n;
+
+        await reserve(20_000_000n, providerAddress);
+
+        Blockchain.blockNumber += 3n;
+
+        await token.setCallback('getFees');
+
+        await Assert.expect(async () => {
+            await swapAll();
+        }).toThrow(/Error: Execution reverted: NATIVE_SWAP: LOCKED/);
+    });
+
+    await vm.it(
+        'should revert when trying reentrancy call on getAntibotSettings method',
+        async () => {
+            Blockchain.txOrigin = userAddress;
+            Blockchain.msgSender = userAddress;
+
+            Blockchain.blockNumber += 1n;
+            await listTokenRandom(BitcoinUtils.expandToDecimals(100, tokenDecimals));
+
+            Blockchain.blockNumber += 1n;
+
+            await reserve(20_000_000n, providerAddress);
+
+            Blockchain.blockNumber += 3n;
+
+            await token.setCallback('getAntibotSettings(address)');
+
+            await Assert.expect(async () => {
+                await swapAll();
+            }).toThrow(/Error: Execution reverted: NATIVE_SWAP: LOCKED/);
+        },
+    );
+
+    await vm.it(
+        'should revert when trying reentrancy call on getStakingContractAddress method',
+        async () => {
+            Blockchain.txOrigin = userAddress;
+            Blockchain.msgSender = userAddress;
+
+            Blockchain.blockNumber += 1n;
+            await listTokenRandom(BitcoinUtils.expandToDecimals(100, tokenDecimals));
+
+            Blockchain.blockNumber += 1n;
+
+            await reserve(20_000_000n, providerAddress);
+
+            Blockchain.blockNumber += 3n;
+
+            await token.setCallback('getStakingContractAddress');
+
+            await Assert.expect(async () => {
+                await swapAll();
+            }).toThrow(/Error: Execution reverted: NATIVE_SWAP: LOCKED/);
+        },
+    );
 });
