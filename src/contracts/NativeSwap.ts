@@ -44,7 +44,7 @@ export class NativeSwap extends ContractRuntime {
 
     // Define selectors for contract methods
     private readonly reserveSelector: number = Number(
-        `0x${this.abiCoder.encodeSelector('reserve(address,uint256,uint256,bool)')}`,
+        `0x${this.abiCoder.encodeSelector('reserve(address,uint256,uint256,bool,uint8)')}`,
     );
 
     private readonly swapSelector: number = Number(
