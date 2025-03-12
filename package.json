@@ -19,7 +19,7 @@
         "test:native:getquote": "tsx src/tests/native-swap/GetQuote.ts",
         "test:native:getreserve": "tsx src/tests/native-swap/GetReserve.ts",
         "test:native:reserve": "tsx src/tests/native-swap/Reserve.ts",
-        "test:native": "npm-run-all test:native:listtoken test:native:createpool test:native:purge test:native:addliquidity test:native:fee test:native:getsetfees test:native:getquote test:native:getreserve test:native:reserve",
+        "test:native": "npm-run-all test:native:listtoken test:native:createpool test:native:createpoolWithSignature test:native:purge test:native:addliquidity test:native:fee test:native:getsetfees test:native:getquote test:native:getreserve test:native:reserve",
         "test": "npm-run-all test:*"
     },
     "author": "OP_NET",

@@ -41,7 +41,6 @@ export async function helper_createPool(
         token.decimals,
     );
 
-    // Add liquidity
     Blockchain.txOrigin = owner;
     Blockchain.msgSender = owner;
 

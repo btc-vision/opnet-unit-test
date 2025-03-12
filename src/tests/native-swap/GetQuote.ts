@@ -49,6 +49,15 @@ await opnet('Native Swap - Get Quote', async (vm: OPNetUnit) => {
 
         await Assert.expect(async () => {
             await nativeSwap.getQuote({
+                token: new Address(),
+                satoshisIn: 10n,
+            });
+        }).toThrow(`NATIVE_SWAP: Invalid token address`);
+    });
+
+    await vm.it('should revert when token is dead address', async () => {
+        await Assert.expect(async () => {
+            await nativeSwap.getQuote({
                 token: Blockchain.DEAD_ADDRESS,
                 satoshisIn: 10n,
             });
@@ -59,13 +68,6 @@ await opnet('Native Swap - Get Quote', async (vm: OPNetUnit) => {
         await Assert.expect(async () => {
             await nativeSwap.getQuote({
                 token: token.address,
-                satoshisIn: 10n,
-            });
-        }).toThrow(`NATIVE_SWAP: No pool exists for token.`);
-
-        await Assert.expect(async () => {
-            await nativeSwap.getQuote({
-                token: Blockchain.generateRandomAddress(),
                 satoshisIn: 10n,
             });
         }).toThrow(`NATIVE_SWAP: No pool exists for token.`);
@@ -96,16 +98,16 @@ await opnet('Native Swap - Get Quote', async (vm: OPNetUnit) => {
             false,
         );
 
-        await helper_reserve(nativeSwap, tokenAddress, provider, 10000n, 0n, false, false, true);
+        await helper_reserve(nativeSwap, tokenAddress, provider, 10000n, 0n, false, false, false);
         await helper_getReserve(nativeSwap, token, false);
 
-        Blockchain.blockNumber = Blockchain.blockNumber + 1n;
+        Blockchain.blockNumber = Blockchain.blockNumber + 3n;
 
         await helper_swap(nativeSwap, tokenAddress, provider, false);
         await helper_getReserve(nativeSwap, token, false);
 
-        const quote = await helper_getQuote(nativeSwap, token, 1000n, true);
-        Assert.expect(quote.tokensOut).toEqual(50n);
+        const quote = await helper_getQuote(nativeSwap, token, 1000n, false);
+        Assert.expect(quote.tokensOut).toEqual(1000n);
     });
 
     await vm.it(

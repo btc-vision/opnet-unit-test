@@ -2,6 +2,7 @@ import { Address, BinaryWriter, EcKeyPair, MessageSigner, Wallet } from '@btc-vi
 import { Assert, Blockchain, OP_20, opnet, OPNetUnit } from '@btc-vision/unit-test-framework';
 import { NativeSwap } from '../../contracts/NativeSwap.js';
 import { NativeSwapTypesCoders } from '../../contracts/NativeSwapTypesCoders.js';
+import { helper_createToken } from '../utils/OperationHelper.js';
 
 await opnet('Native Swap - Create Pool With Signature', async (vm: OPNetUnit) => {
     let nativeSwap: NativeSwap;
@@ -9,7 +10,6 @@ await opnet('Native Swap - Create Pool With Signature', async (vm: OPNetUnit) =>
 
     const tokenDecimals = 18;
     const userAddress: Address = Blockchain.generateRandomAddress();
-    const tokenAddress: Address = Blockchain.generateRandomAddress();
     const ewmaAddress: Address = Blockchain.generateRandomAddress();
     const floorPrice: bigint = 1000n;
     const initialLiquidity: bigint = 1000n;
@@ -18,31 +18,16 @@ await opnet('Native Swap - Create Pool With Signature', async (vm: OPNetUnit) =>
     const antiBotMaximumTokensPerReservation = 0n;
 
     vm.beforeEach(async () => {
-        // Reset blockchain state
         Blockchain.dispose();
         Blockchain.clearContracts();
         await Blockchain.init();
 
-        // Instantiate and register the OP_20 token
-        token = new OP_20({
-            file: 'MyToken',
-            deployer: userAddress,
-            address: tokenAddress,
-            decimals: tokenDecimals,
-        });
+        token = await helper_createToken(userAddress, tokenDecimals, 10_000_000);
 
-        Blockchain.register(token);
-        await token.init();
-
-        // Mint tokens to the user
-        await token.mint(userAddress, 10_000_000);
-
-        // Instantiate and register the nativeSwap contract
         nativeSwap = new NativeSwap(userAddress, ewmaAddress);
         Blockchain.register(nativeSwap);
         await nativeSwap.init();
 
-        // Add liquidity
         Blockchain.txOrigin = userAddress;
         Blockchain.msgSender = userAddress;
     });
@@ -60,7 +45,7 @@ await opnet('Native Swap - Create Pool With Signature', async (vm: OPNetUnit) =>
             await nativeSwap.createPoolWithSignature({
                 signature,
                 amount: initialLiquidity,
-                token: tokenAddress,
+                token: token.address,
                 floorPrice,
                 initialLiquidity,
                 receiver: initialLiquidityProvider.p2tr(Blockchain.network),
@@ -86,7 +71,7 @@ await opnet('Native Swap - Create Pool With Signature', async (vm: OPNetUnit) =>
             await nativeSwap.createPoolWithSignature({
                 signature,
                 amount: initialLiquidity,
-                token: tokenAddress,
+                token: token.address,
                 floorPrice,
                 initialLiquidity,
                 receiver: initialLiquidityProvider.p2tr(Blockchain.network),
@@ -109,7 +94,7 @@ await opnet('Native Swap - Create Pool With Signature', async (vm: OPNetUnit) =>
             await nativeSwap.createPoolWithSignature({
                 signature,
                 amount: initialLiquidity,
-                token: tokenAddress,
+                token: token.address,
                 floorPrice,
                 initialLiquidity,
                 receiver: initialLiquidityProvider.p2tr(Blockchain.network),
@@ -134,6 +119,7 @@ await opnet('Native Swap - Create Pool With Signature', async (vm: OPNetUnit) =>
         writer.writeAddress(wallet.address);
         writer.writeAddress(nativeSwap.address);
         writer.writeU256(initialLiquidity);
+        writer.writeU256(0n);
 
         const signature = MessageSigner.tweakAndSignMessage(
             wallet.keypair,
@@ -147,7 +133,7 @@ await opnet('Native Swap - Create Pool With Signature', async (vm: OPNetUnit) =>
             await nativeSwap.createPoolWithSignature({
                 signature: signature.signature,
                 amount: initialLiquidity,
-                token: tokenAddress,
+                token: token.address,
                 floorPrice,
                 initialLiquidity,
                 receiver,
@@ -172,19 +158,9 @@ await opnet('Native Swap - Create Pool With Signature', async (vm: OPNetUnit) =>
         writer.writeAddress(Blockchain.txOrigin);
         writer.writeAddress(nativeSwap.address);
         writer.writeU256(initialLiquidity);
+        writer.writeU256(0n);
 
-        const tempToken = new OP_20({
-            file: 'MyToken',
-            deployer: wallet.address,
-            address: Blockchain.generateRandomAddress(),
-            decimals: tokenDecimals,
-        });
-
-        Blockchain.register(tempToken);
-        await tempToken.init();
-
-        // Mint tokens to the user
-        await tempToken.mint(wallet.address, 10_000_000);
+        const tempToken = await helper_createToken(wallet.address, tokenDecimals, 10_000_000);
 
         const signature = MessageSigner.tweakAndSignMessage(
             wallet.keypair,
