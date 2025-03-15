@@ -14,7 +14,7 @@
             receiver: testHelper.initialLiquidityProvider.p2tr(Blockchain.network),
             antiBotEnabledFor: 20,
             antiBotMaximumTokensPerReservation: 1_000n,
-            maxReservesIn5BlocksPercent: 4000,
+            maxReservesIn5BlocksPercent: 40,
         });
 
         // Now if user tries to reserve more than 1,000 tokens while anti-bot is active => revert

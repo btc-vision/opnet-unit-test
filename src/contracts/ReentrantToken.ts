@@ -1,5 +1,5 @@
 import { BinaryReader, BinaryWriter } from '@btc-vision/transaction';
-import { OP_20 } from '../../../unit-test-framework/build/index.js';
+import { OP_20 } from '@btc-vision/unit-test-framework';
 
 export class ReentrantToken extends OP_20 {
     protected readonly setCallbackSelector: number = Number(

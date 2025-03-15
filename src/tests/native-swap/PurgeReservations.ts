@@ -34,7 +34,7 @@ await opnet('NativeSwap: Purging Reservations', async (vm: OPNetUnit) => {
             receiver: initialLiquidityProvider.p2tr(Blockchain.network),
             antiBotEnabledFor: antiBotEnabledFor,
             antiBotMaximumTokensPerReservation: antiBotMaximumTokensPerReservation,
-            maxReservesIn5BlocksPercent: 4000,
+            maxReservesIn5BlocksPercent: 40,
         });
     }
 

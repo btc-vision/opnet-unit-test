@@ -49,7 +49,7 @@ await opnet('Native Swap - User flows - Create a new pool ', async (vm: OPNetUni
             receiver: btcReceiverAddress,
             antiBotEnabledFor: 0,
             antiBotMaximumTokensPerReservation: 0n,
-            maxReservesIn5BlocksPercent: 7500,
+            maxReservesIn5BlocksPercent: 75,
         });
 
         const evt: LiquidityListedEvent = NativeSwapTypesCoders.decodeLiquidityListedEvent(
@@ -79,7 +79,7 @@ await opnet('Native Swap - User flows - Create a new pool ', async (vm: OPNetUni
             receiver: btcReceiverAddress,
             antiBotEnabledFor: 3,
             antiBotMaximumTokensPerReservation: 50000n,
-            maxReservesIn5BlocksPercent: 7500,
+            maxReservesIn5BlocksPercent: 75,
         });
 
         const evt: LiquidityListedEvent = NativeSwapTypesCoders.decodeLiquidityListedEvent(
@@ -110,7 +110,7 @@ await opnet('Native Swap - User flows - Create a new pool ', async (vm: OPNetUni
                 receiver: btcReceiverAddress,
                 antiBotEnabledFor: 3,
                 antiBotMaximumTokensPerReservation: 50000n,
-                maxReservesIn5BlocksPercent: 7500,
+                maxReservesIn5BlocksPercent: 75,
             });
         }).toThrow('Insufficient allowance');
     });
@@ -129,7 +129,7 @@ await opnet('Native Swap - User flows - Create a new pool ', async (vm: OPNetUni
             receiver: btcReceiverAddress,
             antiBotEnabledFor: 3,
             antiBotMaximumTokensPerReservation: 50000n,
-            maxReservesIn5BlocksPercent: 7500,
+            maxReservesIn5BlocksPercent: 75,
         });
 
         await Assert.expect(async () => {
@@ -140,7 +140,7 @@ await opnet('Native Swap - User flows - Create a new pool ', async (vm: OPNetUni
                 receiver: btcReceiverAddress,
                 antiBotEnabledFor: 3,
                 antiBotMaximumTokensPerReservation: 50000n,
-                maxReservesIn5BlocksPercent: 7500,
+                maxReservesIn5BlocksPercent: 75,
             });
         }).toThrow('Base quote already set');
     });
@@ -156,7 +156,7 @@ await opnet('Native Swap - User flows - Create a new pool ', async (vm: OPNetUni
                 receiver: btcReceiverAddress,
                 antiBotEnabledFor: 3,
                 antiBotMaximumTokensPerReservation: 50000n,
-                maxReservesIn5BlocksPercent: 7500,
+                maxReservesIn5BlocksPercent: 75,
             });
         }).toThrow(`Contract not found at address`);
     });
@@ -175,7 +175,7 @@ await opnet('Native Swap - User flows - Create a new pool ', async (vm: OPNetUni
                 receiver: btcReceiverAddress,
                 antiBotEnabledFor: 3,
                 antiBotMaximumTokensPerReservation: 50000n,
-                maxReservesIn5BlocksPercent: 7500,
+                maxReservesIn5BlocksPercent: 75,
             });
         }).toThrow(`Only token owner can call createPool`);
     });
@@ -189,7 +189,7 @@ await opnet('Native Swap - User flows - Create a new pool ', async (vm: OPNetUni
                 receiver: 'invalid address',
                 antiBotEnabledFor: 3,
                 antiBotMaximumTokensPerReservation: 50000n,
-                maxReservesIn5BlocksPercent: 7500,
+                maxReservesIn5BlocksPercent: 75,
             });
         }).toThrow(`Invalid address: base58 error`);
     });
@@ -203,7 +203,7 @@ await opnet('Native Swap - User flows - Create a new pool ', async (vm: OPNetUni
                 receiver: '',
                 antiBotEnabledFor: 3,
                 antiBotMaximumTokensPerReservation: 50000n,
-                maxReservesIn5BlocksPercent: 7500,
+                maxReservesIn5BlocksPercent: 75,
             });
         }).toThrow(`Invalid address: base58 error`);
     });
@@ -217,7 +217,7 @@ await opnet('Native Swap - User flows - Create a new pool ', async (vm: OPNetUni
                 receiver: btcReceiverAddress,
                 antiBotEnabledFor: 3,
                 antiBotMaximumTokensPerReservation: 50000n,
-                maxReservesIn5BlocksPercent: 7500,
+                maxReservesIn5BlocksPercent: 75,
             });
         }).toThrow(`Floor price cannot be zero`);
     });
@@ -231,7 +231,7 @@ await opnet('Native Swap - User flows - Create a new pool ', async (vm: OPNetUni
                 receiver: btcReceiverAddress,
                 antiBotEnabledFor: 3,
                 antiBotMaximumTokensPerReservation: 50000n,
-                maxReservesIn5BlocksPercent: 7500,
+                maxReservesIn5BlocksPercent: 75,
             });
         }).toThrow(`Initial liquidity cannot be zero`);
     });
@@ -245,7 +245,7 @@ await opnet('Native Swap - User flows - Create a new pool ', async (vm: OPNetUni
                 receiver: btcReceiverAddress,
                 antiBotEnabledFor: 1,
                 antiBotMaximumTokensPerReservation: 0n,
-                maxReservesIn5BlocksPercent: 4000,
+                maxReservesIn5BlocksPercent: 40,
             });
         }).toThrow(`Anti-bot max tokens per reservation cannot be zero`);
     });
@@ -264,7 +264,7 @@ await opnet('Native Swap - User flows - Create a new pool ', async (vm: OPNetUni
                 antiBotEnabledFor: 1,
                 nonce: 0n,
                 antiBotMaximumTokensPerReservation: 0n,
-                maxReservesIn5BlocksPercent: 4000,
+                maxReservesIn5BlocksPercent: 40,
             });
         }).toThrow(`NATIVE_SWAP: Invalid signature length`);
     });
@@ -290,7 +290,7 @@ await opnet('Native Swap - User flows - Create a new pool ', async (vm: OPNetUni
                 antiBotEnabledFor: 1,
                 nonce: 0n,
                 antiBotMaximumTokensPerReservation: 0n,
-                maxReservesIn5BlocksPercent: 4000,
+                maxReservesIn5BlocksPercent: 40,
             });
         }).toThrow(`Address can not be dead address`);
     });
@@ -313,7 +313,7 @@ await opnet('Native Swap - User flows - Create a new pool ', async (vm: OPNetUni
                 antiBotEnabledFor: 1,
                 nonce: 0n,
                 antiBotMaximumTokensPerReservation: 0n,
-                maxReservesIn5BlocksPercent: 4000,
+                maxReservesIn5BlocksPercent: 40,
             });
         }).toThrow(`ApproveFrom: Invalid signature`);
     });
@@ -351,7 +351,7 @@ await opnet('Native Swap - User flows - Create a new pool ', async (vm: OPNetUni
             nonce: 0n,
             antiBotEnabledFor: 0,
             antiBotMaximumTokensPerReservation: 0n,
-            maxReservesIn5BlocksPercent: 4000,
+            maxReservesIn5BlocksPercent: 40,
         });
 
         const approvedEvent = NativeSwapTypesCoders.getApprovedEvent(result.response.events);

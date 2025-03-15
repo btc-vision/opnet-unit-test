@@ -63,7 +63,7 @@ await opnet('NativeSwap: Priority and Normal Queue listLiquidity', async (vm: OP
             receiver: initialLiquidityAddress,
             antiBotEnabledFor: antiBotEnabledFor,
             antiBotMaximumTokensPerReservation: antiBotMaximumTokensPerReservation,
-            maxReservesIn5BlocksPercent: 4000,
+            maxReservesIn5BlocksPercent: 40,
         });
 
         vm.debug(

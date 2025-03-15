@@ -35,7 +35,7 @@ export async function helper_createPool(
     tokenLiquidityToApprove: number,
     floorPrice: bigint,
     poolInitialLiquidity: bigint,
-    maxReservesIn5BlocksPercent: number = 60000,
+    maxReservesIn5BlocksPercent: number = 60,
     log: boolean = true,
 ): Promise<CreatePoolResult> {
     if (log) {

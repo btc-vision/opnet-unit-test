@@ -4,7 +4,6 @@ import { Address } from '@btc-vision/transaction';
 import { helper_createToken, helper_reserve, ReserveData } from '../../utils/OperationHelper.js';
 import { NativeSwapTypesCoders } from '../../../contracts/NativeSwapTypesCoders.js';
 import { createRecipientsOutput, gas2USD } from '../../utils/TransactionUtils.js';
-import { BitcoinUtils } from '../../../../../opnet/src/index.js';
 
 await opnet('Native Swap - User flows - Add liquidity ', async (vm: OPNetUnit) => {
     let nativeSwap: NativeSwap;
@@ -67,32 +66,31 @@ await opnet('Native Swap - User flows - Add liquidity ', async (vm: OPNetUnit) =
     }
 
     async function addLiquidity(reserveData: ReserveData): Promise<void> {
-            Blockchain.txOrigin = reserveData.provider;
-            Blockchain.msgSender = reservation.provider;
+        Blockchain.txOrigin = reserveData.provider;
+        Blockchain.msgSender = reservation.provider;
 
-            createRecipientsOutput(reservation.r);
+        createRecipientsOutput(reservation.r);
 
-            await token.approve(
-                reservation.a,
-                nativeSwap.address,
-                BitcoinUtils.expandToDecimals(1_000_000_000_000, tokenDecimals),
-            );
+        await token.approve(
+            reservation.a,
+            nativeSwap.address,
+            BitcoinUtils.expandToDecimals(1_000_000_000_000, tokenDecimals),
+        );
 
-            const s = await nativeSwap.addLiquidity({
-                token: tokenAddress,
-                receiver: reservation.a.p2tr(Blockchain.network),
-            });
+        const s = await nativeSwap.addLiquidity({
+            token: tokenAddress,
+            receiver: reservation.a.p2tr(Blockchain.network),
+        });
 
-            const d = NativeSwapTypesCoders.decodeLiquidityAddedEvent(
-                s.response.events[s.response.events.length - 1].data,
-            );
-            vm.log(
-                `Added liquidity! Spent ${gas2USD(s.response.usedGas)} USD in gas, totalSatoshisSpent: ${d.totalSatoshisSpent}, totalTokensContributed: ${d.totalTokensContributed}, virtualTokenExchanged: ${d.virtualTokenExchanged}`,
-            );
-        }
-
-        Blockchain.txOrigin = userAddress;
-        Blockchain.msgSender = userAddress;
-        toAddLiquidity = [];
+        const d = NativeSwapTypesCoders.decodeLiquidityAddedEvent(
+            s.response.events[s.response.events.length - 1].data,
+        );
+        vm.log(
+            `Added liquidity! Spent ${gas2USD(s.response.usedGas)} USD in gas, totalSatoshisSpent: ${d.totalSatoshisSpent}, totalTokensContributed: ${d.totalTokensContributed}, virtualTokenExchanged: ${d.virtualTokenExchanged}`,
+        );
     }
+
+    Blockchain.txOrigin = userAddress;
+    Blockchain.msgSender = userAddress;
+    toAddLiquidity = [];
 });

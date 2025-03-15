@@ -1,16 +1,11 @@
 import { NativeSwap } from '../../../contracts/NativeSwap.js';
-import {
-    Assert,
-    Blockchain,
-    opnet,
-    OPNetUnit,
-} from '../../../../../unit-test-framework/build/index.js';
-import { Address } from '../../../../../transaction/build/index.js';
-import { BitcoinUtils } from '../../../../../opnet/src/index.js';
-import { createRecipientsOutput, gas2USD } from '../../utils/TransactionUtils.js';
-import { NativeSwapTypesCoders } from '../../../contracts/NativeSwapTypesCoders.js';
-import { Recipient, ReserveResult } from '../../../contracts/NativeSwapTypes.js';
+import { Assert, Blockchain, opnet, OPNetUnit } from '@btc-vision/unit-test-framework';
 import { ReentrantToken } from '../../../contracts/ReentrantToken.js';
+import { Address } from '@btc-vision/transaction';
+import { Recipient, ReserveResult } from '../../../contracts/NativeSwapTypes.js';
+import { NativeSwapTypesCoders } from '../../../contracts/NativeSwapTypesCoders.js';
+import { createRecipientsOutput, gas2USD } from '../../utils/TransactionUtils.js';
+import { BitcoinUtils } from 'opnet';
 
 await opnet('Native Swap - Reentrancy', async (vm: OPNetUnit) => {
     let nativeSwap: NativeSwap;
@@ -124,7 +119,7 @@ await opnet('Native Swap - Reentrancy', async (vm: OPNetUnit) => {
             receiver: initialLiquidityProvider.p2tr(Blockchain.network),
             antiBotEnabledFor: 0,
             antiBotMaximumTokensPerReservation: 0n,
-            maxReservesIn5BlocksPercent: 4000,
+            maxReservesIn5BlocksPercent: 40,
         });
 
         Blockchain.blockNumber += 1n;

@@ -244,7 +244,7 @@ await opnet('Native Swap - Add Liquidity', async (vm: OPNetUnit) => {
             receiver: initialLiquidityProvider.p2tr(Blockchain.network),
             antiBotEnabledFor: 0,
             antiBotMaximumTokensPerReservation: 0n,
-            maxReservesIn5BlocksPercent: 4000,
+            maxReservesIn5BlocksPercent: 40,
         });
 
         Blockchain.blockNumber += 1n;
