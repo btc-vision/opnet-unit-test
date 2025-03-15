@@ -14,7 +14,6 @@ await opnet('Native Swap - Get/Set Fees', async (vm: OPNetUnit) => {
         Blockchain.clearContracts();
         await Blockchain.init();
 
-        // Instantiate and register the nativeSwap contract
         nativeSwap = new NativeSwap(userAddress, ewmaAddress);
         Blockchain.register(nativeSwap);
         await nativeSwap.init();

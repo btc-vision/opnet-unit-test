@@ -33,7 +33,6 @@ import {
     SwapResult,
 } from './NativeSwapTypes.js';
 import { NativeSwapTypesCoders } from './NativeSwapTypesCoders.js';
-import { Blockchain } from '../../../unit-test-framework/build/index.js';
 
 export class NativeSwap extends ContractRuntime {
     public static feeRecipient: string =

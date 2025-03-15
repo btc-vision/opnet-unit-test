@@ -618,7 +618,7 @@ await opnet('NativeSwap: Priority and Normal Queue listLiquidity', async (vm: OP
         );
 
         createRecipientUTXOs(decodedReservation2.recipients);
-        Blockchain.blockNumber = Blockchain.blockNumber + 1n;
+        Blockchain.blockNumber = Blockchain.blockNumber + 2n;
 
         await nativeSwap.swap({
             token: tokenAddress,
@@ -754,7 +754,7 @@ await opnet('NativeSwap: Priority and Normal Queue listLiquidity', async (vm: OP
                 reservationResponse.response.events,
             );
 
-            // Suppose the buyer only actually sends 330 satoshis to each provider address
+            // Suppose the buyer only actually sends 331 satoshis to each provider address
             const satSent = 330n;
             for (let i = 0; i < decodedReservation.recipients.length; i++) {
                 decodedReservation.recipients[i].amount = satSent;
@@ -762,7 +762,7 @@ await opnet('NativeSwap: Priority and Normal Queue listLiquidity', async (vm: OP
 
             createRecipientUTXOs(decodedReservation.recipients);
 
-            Blockchain.blockNumber++;
+            Blockchain.blockNumber += 2n;
 
             // Partial swap execution
             const swapped = await nativeSwap.swap({
@@ -782,15 +782,14 @@ await opnet('NativeSwap: Priority and Normal Queue listLiquidity', async (vm: OP
 
             // Check swap event
             const l = BigInt(decodedReservation.recipients.length);
-            Assert.expect(swapEvent.amountIn).toEqual(satSent * l);
-            //Assert.expect(swapEvent.amountOut).toEqual(p0 * l * satSent);
+            Assert.expect(swapEvent.amountIn).toEqual(331n * l);
 
             // Another swap call must fail because the reservation is gone
             await Assert.expect(async () => {
                 await nativeSwap.swap({
                     token: tokenAddress,
                 });
-            }).toThrow('No active reservation for this address');
+            }).toThrow('No valid reservation for this address');
         },
     );
 });

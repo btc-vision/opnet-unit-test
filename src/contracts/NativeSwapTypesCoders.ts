@@ -1,4 +1,4 @@
-import { Address, BinaryReader, BinaryWriter, NetEvent } from '@btc-vision/transaction';
+import { BinaryReader, BinaryWriter, NetEvent } from '@btc-vision/transaction';
 import { CallResponse } from '@btc-vision/unit-test-framework';
 import {
     AddLiquidityParams,
@@ -442,7 +442,7 @@ export class NativeSwapTypesCoders {
         calldata.writeU256(params.maximumAmountIn);
         calldata.writeU256(params.minimumAmountOut);
         calldata.writeBoolean(params.forLP);
-        calldata.writeU8(params.activationDelay || 2);
+        calldata.writeU8(params.activationDelay ?? 2);
 
         return calldata;
     }

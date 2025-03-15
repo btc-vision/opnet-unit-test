@@ -1,6 +1,7 @@
 import { Address } from '@btc-vision/transaction';
 import { Assert, Blockchain, OP_20, opnet, OPNetUnit } from '@btc-vision/unit-test-framework';
 import { NativeSwap } from '../../contracts/NativeSwap.js';
+import { helper_createToken } from '../utils/OperationHelper.js';
 
 await opnet('Native Swap - Get Reserve', async (vm: OPNetUnit) => {
     let nativeSwap: NativeSwap;
@@ -8,21 +9,19 @@ await opnet('Native Swap - Get Reserve', async (vm: OPNetUnit) => {
 
     const tokenDecimals = 18;
     const userAddress: Address = Blockchain.generateRandomAddress();
-    const tokenAddress: Address = Blockchain.generateRandomAddress();
     const ewmaAddress: Address = Blockchain.generateRandomAddress();
 
     async function createDefaultLiquidityPool(): Promise<void> {
         const initialLiquidityProvider: Address = Blockchain.generateRandomAddress();
         const liquidityAmount: bigint = Blockchain.expandToDecimal(1000, tokenDecimals);
 
-        // Add liquidity
         Blockchain.txOrigin = userAddress;
         Blockchain.msgSender = userAddress;
 
         await token.approve(userAddress, nativeSwap.address, liquidityAmount);
 
         const quote = await nativeSwap.createPool({
-            token: tokenAddress,
+            token: token.address,
             floorPrice: 100n,
             initialLiquidity: 25000000n,
             receiver: initialLiquidityProvider.p2tr(Blockchain.network),
@@ -49,40 +48,23 @@ await opnet('Native Swap - Get Reserve', async (vm: OPNetUnit) => {
         }
 
         const r = await nativeSwap.reserve({
-            token: tokenAddress,
+            token: token.address,
             maximumAmountIn: amount,
             minimumAmountOut: 0n,
             forLP: forLP,
         });
 
-        // Reset
         Blockchain.txOrigin = backup;
         Blockchain.msgSender = backup;
-
-        //Assert.expect(r.expectedAmountOut).toEqual(amount);
     }
 
     vm.beforeEach(async () => {
-        // Reset blockchain state
         Blockchain.dispose();
         Blockchain.clearContracts();
         await Blockchain.init();
 
-        // Instantiate and register the OP_20 token
-        token = new OP_20({
-            file: 'MyToken',
-            deployer: userAddress,
-            address: tokenAddress,
-            decimals: tokenDecimals,
-        });
+        token = await helper_createToken(userAddress, tokenDecimals, 10_000_000);
 
-        Blockchain.register(token);
-        await token.init();
-
-        // Mint tokens to the user
-        await token.mint(userAddress, 10_000_000);
-
-        // Instantiate and register the nativeSwap contract
         nativeSwap = new NativeSwap(userAddress, ewmaAddress);
         Blockchain.register(nativeSwap);
         await nativeSwap.init();

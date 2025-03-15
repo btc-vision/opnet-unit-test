@@ -52,6 +52,7 @@ await opnet('Native Swap - Add Liquidity', async (vm: OPNetUnit) => {
             maximumAmountIn: amount,
             minimumAmountOut: 0n,
             forLP: forLP,
+            activationDelay: 0,
         });
         const decoded = NativeSwapTypesCoders.decodeReservationEvents(r.response.events);
         if (decoded.recipients.length) {
@@ -338,7 +339,7 @@ await opnet('Native Swap - Add Liquidity', async (vm: OPNetUnit) => {
         Blockchain.dispose();
     });
 
-    await vm.it('should add some liquidity', async () => {
+    await vm.it('should add some liquidity1', async () => {
         Blockchain.tracePointers = false;
 
         const rndProvider = Blockchain.generateRandomAddress();
@@ -359,14 +360,13 @@ await opnet('Native Swap - Add Liquidity', async (vm: OPNetUnit) => {
         Blockchain.blockNumber += 1n;
 
         await reportQuote();
-
         await addLiquidityRandom();
 
         await listTokenRandom(BitcoinUtils.expandToDecimals(1_000, tokenDecimals));
 
         await reserveAddLiquidity(buyForSat, false, rndProvider);
 
-        Blockchain.blockNumber += 1n;
+        Blockchain.blockNumber += 2n;
 
         await reportQuote();
 
@@ -390,7 +390,7 @@ await opnet('Native Swap - Add Liquidity', async (vm: OPNetUnit) => {
 
         await reserveAddLiquidity(buyForSat * 100n, false, rndProvider2);
 
-        Blockchain.blockNumber += 1n;
+        Blockchain.blockNumber += 2n;
 
         await reportQuote();
 
@@ -410,7 +410,7 @@ await opnet('Native Swap - Add Liquidity', async (vm: OPNetUnit) => {
 
         await reserveAddLiquidity(buyForSat * 100n, false, rndProvider2);
 
-        Blockchain.blockNumber += 1n;
+        Blockchain.blockNumber += 2n;
 
         await reportQuote();
 
@@ -420,13 +420,13 @@ await opnet('Native Swap - Add Liquidity', async (vm: OPNetUnit) => {
 
         await randomReserve(100_000_000n, false, true);
 
-        Blockchain.blockNumber += 1n;
+        Blockchain.blockNumber += 2n;
 
         await reportQuote();
 
         await swapAll();
 
-        Blockchain.blockNumber += 1n;
+        Blockchain.blockNumber += 2n;
 
         await reportQuote();
 
@@ -434,7 +434,7 @@ await opnet('Native Swap - Add Liquidity', async (vm: OPNetUnit) => {
     });
 
     const buyForSat = 20_000_000n;
-    await vm.it('should add some liquidity', async () => {
+    await vm.it('should add some liquidity2', async () => {
         for (let i = 0; i < 25; i++) {
             await listTokenRandom(BitcoinUtils.expandToDecimals(100, tokenDecimals));
         }
@@ -476,7 +476,7 @@ await opnet('Native Swap - Add Liquidity', async (vm: OPNetUnit) => {
         console.log(`Data 2: ${JSON.stringify(dataNative)}`);
     });
 
-    await vm.it('should add some liquidity', async () => {
+    await vm.it('should add some liquidity3', async () => {
         for (let i = 0; i < 25; i++) {
             await listTokenRandom(BitcoinUtils.expandToDecimals(100, tokenDecimals));
         }

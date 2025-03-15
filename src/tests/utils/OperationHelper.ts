@@ -17,9 +17,15 @@ import {
     CreatePoolResult,
     GetQuoteResult,
     GetReserveResult,
+    Recipient,
     ReserveResult,
     SwapResult,
 } from '../../contracts/NativeSwapTypes.js';
+
+export interface ReserveData {
+    provider: Address;
+    recipient: Recipient;
+}
 
 export async function helper_createPool(
     nativeSwap: NativeSwap,
