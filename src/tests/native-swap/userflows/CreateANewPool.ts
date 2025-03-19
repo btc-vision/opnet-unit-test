@@ -3,7 +3,7 @@ import { NativeSwap } from '../../../contracts/NativeSwap.js';
 import { Address, BinaryWriter, EcKeyPair, MessageSigner, Wallet } from '@btc-vision/transaction';
 import { helper_createToken } from '../../utils/OperationHelper.js';
 import { NativeSwapTypesCoders } from '../../../contracts/NativeSwapTypesCoders.js';
-import { LiquidityListedEvent } from '../../../contracts/NativeSwapTypes.js';
+import { ILiquidityListedEvent } from '../../../contracts/NativeSwapTypes.js';
 
 await opnet('Native Swap - User flows - Create a new pool ', async (vm: OPNetUnit) => {
     let nativeSwap: NativeSwap;
@@ -52,7 +52,7 @@ await opnet('Native Swap - User flows - Create a new pool ', async (vm: OPNetUni
             maxReservesIn5BlocksPercent: 75,
         });
 
-        const evt: LiquidityListedEvent = NativeSwapTypesCoders.decodeLiquidityListedEvent(
+        const evt: ILiquidityListedEvent = NativeSwapTypesCoders.decodeLiquidityListedEvent(
             createPoolResult.response.events[1].data,
         );
 
@@ -82,7 +82,7 @@ await opnet('Native Swap - User flows - Create a new pool ', async (vm: OPNetUni
             maxReservesIn5BlocksPercent: 75,
         });
 
-        const evt: LiquidityListedEvent = NativeSwapTypesCoders.decodeLiquidityListedEvent(
+        const evt: ILiquidityListedEvent = NativeSwapTypesCoders.decodeLiquidityListedEvent(
             createPoolResult.response.events[1].data,
         );
 

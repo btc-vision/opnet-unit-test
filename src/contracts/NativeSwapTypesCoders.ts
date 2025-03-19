@@ -3,7 +3,6 @@ import { CallResponse } from '@btc-vision/unit-test-framework';
 import {
     AddLiquidityParams,
     AddLiquidityResult,
-    ApprovedEvent,
     CancelListingParams,
     CancelListingResult,
     CreatePoolParams,
@@ -21,70 +20,84 @@ import {
     GetReserveParams,
     GetReserveResult,
     GetStakingContractAddressResult,
-    LiquidityAddedEvent,
-    LiquidityListedEvent,
-    LiquidityRemovedEvent,
-    LiquidityReservedEvent,
+    IApprovedEvent,
+    ILiquidityAddedEvent,
+    ILiquidityListedEvent,
+    ILiquidityRemovedEvent,
+    ILiquidityReservedEvent,
+    IListingCanceledEvent,
+    IReservationCreatedEvent,
+    ISwapExecutedEvent,
+    ITransferEvent,
     ListLiquidityParams,
     ListLiquidityResult,
     RemoveLiquidityParams,
     RemoveLiquidityResult,
-    ReservationCreatedEvent,
     ReserveParams,
     ReserveResult,
     SetFeesParams,
     SetFeesResult,
     SetStakingContractAddressParams,
-    SwapExecutedEvent,
     SwapParams,
     SwapResult,
 } from './NativeSwapTypes.js';
 
 export class NativeSwapTypesCoders {
-    public static decodeLiquidityAddedEvent(data: Uint8Array): LiquidityAddedEvent {
+    public static decodeLiquidityAddedEvent(data: Uint8Array): ILiquidityAddedEvent {
         const reader = new BinaryReader(data);
         const totalTokensContributed = reader.readU256();
         const virtualTokenExchanged = reader.readU256();
         const totalSatoshisSpent = reader.readU256();
-        return { totalTokensContributed, virtualTokenExchanged, totalSatoshisSpent };
+        return {
+            name: 'LiquidityAddedEvent',
+            totalTokensContributed,
+            virtualTokenExchanged,
+            totalSatoshisSpent,
+        };
     }
 
-    public static decodeLiquidityListedEvent(data: Uint8Array): LiquidityListedEvent {
+    public static decodeLiquidityListedEvent(data: Uint8Array): ILiquidityListedEvent {
         const reader = new BinaryReader(data);
         const totalLiquidity = reader.readU128();
         const provider = reader.readStringWithLength();
-        return { totalLiquidity, provider };
+        return { name: 'LiquidityListedEvent', totalLiquidity, provider };
     }
 
-    public static decodeLiquidityRemovedEvent(data: Uint8Array): LiquidityRemovedEvent {
+    public static decodeLiquidityRemovedEvent(data: Uint8Array): ILiquidityRemovedEvent {
         const reader = new BinaryReader(data);
         const providerId = reader.readU256();
         const btcOwed = reader.readU256();
         const tokenAmount = reader.readU256();
 
-        return { providerId, btcOwed, tokenAmount };
+        return { name: 'LiquidityRemovedEvent', providerId, btcOwed, tokenAmount };
     }
 
-    public static decodeLiquidityReservedEvent(data: Uint8Array): LiquidityReservedEvent {
+    public static decodeLiquidityReservedEvent(data: Uint8Array): ILiquidityReservedEvent {
         const reader = new BinaryReader(data);
         const depositAddress = reader.readStringWithLength();
         const amount = reader.readU128();
-        return { depositAddress, amount };
+        return { name: 'LiquidityReservedEvent', depositAddress, amount };
     }
 
-    public static decodeReservationCreatedEvent(data: Uint8Array): ReservationCreatedEvent {
+    public static decodeCancelListingEvent(data: Uint8Array): IListingCanceledEvent {
+        const reader = new BinaryReader(data);
+        const amount = reader.readU128();
+        return { name: 'ListingCanceledEvent', amount };
+    }
+
+    public static decodeReservationCreatedEvent(data: Uint8Array): IReservationCreatedEvent {
         const reader = new BinaryReader(data);
         const expectedAmountOut = reader.readU256();
         const totalSatoshis = reader.readU256();
-        return { expectedAmountOut, totalSatoshis };
+        return { name: 'ReservationCreatedEvent', expectedAmountOut, totalSatoshis };
     }
 
-    public static decodeSwapExecutedEvent(data: Uint8Array): SwapExecutedEvent {
+    public static decodeSwapExecutedEvent(data: Uint8Array): ISwapExecutedEvent {
         const reader = new BinaryReader(data);
         const buyer = reader.readAddress();
         const amountIn = reader.readU256();
         const amountOut = reader.readU256();
-        return { buyer, amountIn, amountOut };
+        return { name: 'SwapExecutedEvent', buyer, amountIn, amountOut };
     }
 
     public static decodeReservationEvents(events: NetEvent[]): DecodedReservationEvents {
@@ -110,9 +123,6 @@ export class NativeSwapTypesCoders {
                     reservation.reservation = this.decodeReservationCreatedEvent(event.data);
                     break;
                 }
-                case 'Transfer': {
-                    break;
-                }
                 default: {
                     throw new Error(`Unknown event type: ${event.type}`);
                 }
@@ -122,12 +132,20 @@ export class NativeSwapTypesCoders {
         return reservation;
     }
 
-    public static decodeApprovedEvent(data: Uint8Array): ApprovedEvent {
+    public static decodeApprovedEvent(data: Uint8Array): IApprovedEvent {
         const reader = new BinaryReader(data);
         const owner = reader.readAddress();
         const spender = reader.readAddress();
         const value = reader.readU256();
-        return { owner, spender, value };
+        return { name: 'ApprovedEvent', owner, spender, value };
+    }
+
+    public static decodeTransferEvent(data: Uint8Array): ITransferEvent {
+        const reader = new BinaryReader(data);
+        const from = reader.readAddress();
+        const to = reader.readAddress();
+        const amount = reader.readU256();
+        return { name: 'TransferEvent', from, to, amount };
     }
 
     public static encodeGetFeesParams(selector: number): BinaryWriter {
@@ -567,7 +585,7 @@ export class NativeSwapTypesCoders {
         };
     }
 
-    public static getLiquidityListedEvent(events: NetEvent[]): LiquidityListedEvent | null {
+    public static getLiquidityListedEvent(events: NetEvent[]): ILiquidityListedEvent | null {
         for (let i = 0; i < events.length; i++) {
             const event = events[i];
             switch (event.type) {
@@ -581,7 +599,7 @@ export class NativeSwapTypesCoders {
         return null;
     }
 
-    public static getApprovedEvent(events: NetEvent[]): ApprovedEvent | null {
+    public static getApprovedEvent(events: NetEvent[]): IApprovedEvent | null {
         for (let i = 0; i < events.length; i++) {
             const event = events[i];
             switch (event.type) {

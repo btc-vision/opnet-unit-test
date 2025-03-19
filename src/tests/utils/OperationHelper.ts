@@ -80,7 +80,7 @@ export async function helper_reserve(
     sendUTXO: boolean = false,
 ): Promise<ReserveResult> {
     if (log) {
-        logAction('reserve');
+        logAction(`reserve`);
     }
 
     const backup = Blockchain.txOrigin;

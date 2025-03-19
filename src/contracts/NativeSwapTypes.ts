@@ -1,44 +1,74 @@
 import { Address } from '@btc-vision/transaction';
 import { CallResponse } from '@btc-vision/unit-test-framework';
 
-export interface LiquidityAddedEvent {
+export interface ILiquidityAddedEvent {
+    readonly name: string;
     readonly totalTokensContributed: bigint;
     readonly virtualTokenExchanged: bigint;
     readonly totalSatoshisSpent: bigint;
 }
 
-export interface LiquidityListedEvent {
+export interface ILiquidityListedEvent {
+    readonly name: string;
     readonly totalLiquidity: bigint;
     readonly provider: string;
 }
 
-export interface LiquidityRemovedEvent {
+export interface ILiquidityRemovedEvent {
+    readonly name: string;
     readonly providerId: bigint;
     readonly btcOwed: bigint;
     readonly tokenAmount: bigint;
 }
 
-export interface LiquidityReservedEvent {
+export interface ILiquidityReservedEvent {
+    readonly name: string;
     readonly depositAddress: string;
     readonly amount: bigint;
 }
 
-export interface ReservationCreatedEvent {
+export interface IListingCanceledEvent {
+    readonly name: string;
+    readonly amount: bigint;
+}
+
+export interface IReservationCreatedEvent {
+    readonly name: string;
     readonly expectedAmountOut: bigint;
     readonly totalSatoshis: bigint;
 }
 
-export interface SwapExecutedEvent {
+export interface ISwapExecutedEvent {
+    readonly name: string;
     readonly buyer: Address;
     readonly amountIn: bigint;
     readonly amountOut: bigint;
 }
 
-export interface ApprovedEvent {
+export interface IApprovedEvent {
+    readonly name: string;
     readonly owner: Address;
     readonly spender: Address;
     readonly value: bigint;
 }
+
+export interface ITransferEvent {
+    readonly name: string;
+    readonly from: Address;
+    readonly to: Address;
+    readonly amount: bigint;
+}
+
+export type AllEvent =
+    | ILiquidityAddedEvent
+    | ILiquidityListedEvent
+    | ILiquidityRemovedEvent
+    | ILiquidityReservedEvent
+    | IReservationCreatedEvent
+    | ISwapExecutedEvent
+    | IApprovedEvent
+    | ITransferEvent
+    | IListingCanceledEvent;
 
 export interface SetFeesParams {
     readonly reservationBaseFee: bigint;
@@ -214,6 +244,6 @@ export interface Recipient {
 
 export interface DecodedReservationEvents {
     readonly recipients: Recipient[];
-    reservation?: ReservationCreatedEvent;
+    reservation?: IReservationCreatedEvent;
     totalSatoshis: bigint;
 }
