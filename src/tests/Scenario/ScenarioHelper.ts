@@ -252,7 +252,6 @@ export class ScenarioHelper {
         const token = this.getToken(tokenName);
         const result = await token.transfer(from, to, amount);
 
-        console.log(result);
         Assert.expect(result.events.length).toEqual(1);
 
         const event = NativeSwapTypesCoders.decodeTransferEvent(

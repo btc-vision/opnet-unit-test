@@ -349,9 +349,8 @@ export function logCallResponse(result: CallResponse): void {
     Blockchain.log(`----------`);
     Blockchain.log(`status: ${result.status}`);
     Blockchain.log(`events: ${result.events.length} event(s)`);
-    Blockchain.log(`events: ${result.events.length}`);
     for (let i = 0; i < result.events.length; i++) {
-        console.log(result.events[i]);
+        Blockchain.log(`event type ${i}: ${result.events[i].type}`);
     }
 
     Blockchain.log(``);
