@@ -516,32 +516,72 @@ export class ScenarioHelper {
             disablePriorityQueueFees: false,
         });
 
-        Assert.expect(result.response.events.length).toEqual(2);
+        if (priority) {
+            Assert.expect(result.response.events.length).toEqual(3);
 
-        const transferEvent = NativeSwapTypesCoders.decodeTransferEvent(
-            result.response.events[0].data,
-        );
+            const transferEvent1 = NativeSwapTypesCoders.decodeTransferEvent(
+                result.response.events[0].data,
+            );
 
-        const liquidityListedEvent = NativeSwapTypesCoders.decodeLiquidityListedEvent(
-            result.response.events[1].data,
-        );
+            const transferEvent2 = NativeSwapTypesCoders.decodeTransferEvent(
+                result.response.events[1].data,
+            );
 
-        if (this.verbose) {
-            logListLiquidityResult(result);
-            logTransferEvent(transferEvent);
-            logLiquidityListedEvent(liquidityListedEvent);
-        }
+            const liquidityListedEvent = NativeSwapTypesCoders.decodeLiquidityListedEvent(
+                result.response.events[2].data,
+            );
 
-        if (op.expected.events.length === 2) {
-            const expectedEvent1 = parseExpectedEvent(
-                op.expected.events[0],
-            ) as ExpectedTransferEvent;
-            expectedEvent1.validate(transferEvent);
+            if (this.verbose) {
+                logListLiquidityResult(result);
+                logTransferEvent(transferEvent1);
+                logTransferEvent(transferEvent2);
+                logLiquidityListedEvent(liquidityListedEvent);
+            }
 
-            const expectedEvent2 = parseExpectedEvent(
-                op.expected.events[1],
-            ) as ExpectedLiquidityListedEvent;
-            expectedEvent2.validate(liquidityListedEvent);
+            if (op.expected.events.length === 3) {
+                const expectedEvent1 = parseExpectedEvent(
+                    op.expected.events[0],
+                ) as ExpectedTransferEvent;
+                expectedEvent1.validate(transferEvent1);
+
+                const expectedEvent2 = parseExpectedEvent(
+                    op.expected.events[1],
+                ) as ExpectedTransferEvent;
+                expectedEvent2.validate(transferEvent2);
+
+                const expectedEvent3 = parseExpectedEvent(
+                    op.expected.events[2],
+                ) as ExpectedLiquidityListedEvent;
+                expectedEvent3.validate(liquidityListedEvent);
+            }
+        } else {
+            Assert.expect(result.response.events.length).toEqual(2);
+
+            const transferEvent = NativeSwapTypesCoders.decodeTransferEvent(
+                result.response.events[0].data,
+            );
+
+            const liquidityListedEvent = NativeSwapTypesCoders.decodeLiquidityListedEvent(
+                result.response.events[1].data,
+            );
+
+            if (this.verbose) {
+                logListLiquidityResult(result);
+                logTransferEvent(transferEvent);
+                logLiquidityListedEvent(liquidityListedEvent);
+            }
+
+            if (op.expected.events.length === 2) {
+                const expectedEvent1 = parseExpectedEvent(
+                    op.expected.events[0],
+                ) as ExpectedTransferEvent;
+                expectedEvent1.validate(transferEvent);
+
+                const expectedEvent2 = parseExpectedEvent(
+                    op.expected.events[1],
+                ) as ExpectedLiquidityListedEvent;
+                expectedEvent2.validate(liquidityListedEvent);
+            }
         }
     }
 
