@@ -24,6 +24,6 @@ await opnet('Native Swap - User flows - Add liquidity ', async (vm: OPNetUnit) =
 
          */
         const player = new ScenarioPlayer();
-        await player.runScenarioFile('c:/temp/test.json');
+        await player.runScenarioFile('./senarios/senario1.json');
     });
 });

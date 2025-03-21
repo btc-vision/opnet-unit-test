@@ -12,7 +12,7 @@ export class ScenarioPlayer {
     public async runScenarioFile(jsonPath: string): Promise<void> {
         const filePath = path.resolve(jsonPath);
         const rawContent = fs.readFileSync(filePath, 'utf-8');
-        const scenarioData: ScenarioDefinition = JSON.parse(rawContent);
+        const scenarioData: ScenarioDefinition = JSON.parse(rawContent) as ScenarioDefinition;
 
         for (const test of scenarioData.tests) {
             await this.runTest(test, scenarioData.verbose);
