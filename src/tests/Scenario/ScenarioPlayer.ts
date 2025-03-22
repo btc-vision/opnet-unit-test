@@ -7,6 +7,7 @@ import {
     TestDefinition,
 } from './ScenarioHelper.js';
 import { Assert } from '@btc-vision/unit-test-framework';
+import { logBeginSection, logEndSection } from '../utils/LoggerHelper.js';
 
 export class ScenarioPlayer {
     public async runScenarioFile(jsonPath: string): Promise<void> {
@@ -21,10 +22,12 @@ export class ScenarioPlayer {
 
     private async runTest(test: TestDefinition, verbose: boolean): Promise<void> {
         const helper = new ScenarioHelper(verbose);
+        logBeginSection(test.name);
 
         for (const op of test.operations) {
             await this.callScenarioMethod(op, helper);
         }
+        logEndSection(test.name);
     }
 
     private async callScenarioMethod(
