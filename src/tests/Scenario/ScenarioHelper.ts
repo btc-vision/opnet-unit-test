@@ -26,7 +26,7 @@ import {
 import { NativeSwapTypesCoders } from '../../contracts/NativeSwapTypesCoders.js';
 import { ReserveData } from '../utils/OperationHelper.js';
 import { Address } from '@btc-vision/transaction';
-import { Recipient } from '../../contracts/NativeSwapTypes.js';
+import { GetQuoteResult, GetReserveResult, Recipient } from '../../contracts/NativeSwapTypes.js';
 import { JSonExpectedEvent, parseExpectedEvent } from './JSonEvents.js';
 import { ExpectedApprovedEvent } from './Expected/ExpectedApprovedEvent.js';
 import { ExpectedTransferEvent } from './Expected/ExpectedTransferEvent.js';
@@ -38,6 +38,8 @@ import { ExpectedSwapExecutedEvent } from './Expected/ExpectedSwapExecutedEvent.
 import { ExpectedLiquidityAddedEvent } from './Expected/ExpectedLiquidityAddedEvent.js';
 import { ExpectedLiquidityRemovedEvent } from './Expected/ExpectedLiquidityRemovedEvent.js';
 import { ExpectedListingCanceledEvent } from './Expected/ExpectedListingCanceledEvent.js';
+import { ExpectedFulfilledProviderEvent } from './Expected/ExpectedFulfilledProviderEvent.js';
+import { ExpectedActivateProviderEvent } from './Expected/ExpectedActivateProviderEvent.js';
 
 export interface OperationDefinition {
     command: string;
@@ -228,10 +230,12 @@ export class ScenarioHelper {
         }
 
         if (op.expected.events.length === 1) {
+            Blockchain.log(`Validating ${op.expected.events.length} events`);
             const expectedEvent = parseExpectedEvent(
                 op.expected.events[0],
             ) as ExpectedApprovedEvent;
             expectedEvent.validate(event);
+            Blockchain.log(`Validating events completed`);
         }
     }
 
@@ -264,10 +268,12 @@ export class ScenarioHelper {
         }
 
         if (op.expected.events.length === 1) {
+            Blockchain.log(`Validating ${op.expected.events.length} events`);
             const expectedEvent = parseExpectedEvent(
                 op.expected.events[0],
             ) as ExpectedTransferEvent;
             expectedEvent.validate(event);
+            Blockchain.log(`Validating events completed`);
         }
     }
 
@@ -324,6 +330,7 @@ export class ScenarioHelper {
         }
 
         if (op.expected.events.length === 2) {
+            Blockchain.log(`Validating ${op.expected.events.length} events`);
             const expectedEvent1 = parseExpectedEvent(
                 op.expected.events[0],
             ) as ExpectedTransferEvent;
@@ -333,6 +340,7 @@ export class ScenarioHelper {
                 op.expected.events[1],
             ) as ExpectedLiquidityListedEvent;
             expectedEvent2.validate(liquidityListedEvent);
+            Blockchain.log(`Validating events completed`);
         }
     }
 
@@ -400,6 +408,7 @@ export class ScenarioHelper {
         }
 
         if (op.expected.events.length === 2) {
+            Blockchain.log(`Validating ${op.expected.events.length} events`);
             const expectedEvent1 = parseExpectedEvent(
                 op.expected.events[0],
             ) as ExpectedTransferEvent;
@@ -409,6 +418,7 @@ export class ScenarioHelper {
                 op.expected.events[1],
             ) as ExpectedLiquidityListedEvent;
             expectedEvent2.validate(liquidityListedEvent);
+            Blockchain.log(`Validating events completed`);
         }
     }
 
@@ -539,6 +549,7 @@ export class ScenarioHelper {
             }
 
             if (op.expected.events.length === 3) {
+                Blockchain.log(`Validating ${op.expected.events.length} events`);
                 const expectedEvent1 = parseExpectedEvent(
                     op.expected.events[0],
                 ) as ExpectedTransferEvent;
@@ -553,6 +564,7 @@ export class ScenarioHelper {
                     op.expected.events[2],
                 ) as ExpectedLiquidityListedEvent;
                 expectedEvent3.validate(liquidityListedEvent);
+                Blockchain.log(`Validating events completed`);
             }
         } else {
             Assert.expect(result.response.events.length).toEqual(2);
@@ -572,6 +584,7 @@ export class ScenarioHelper {
             }
 
             if (op.expected.events.length === 2) {
+                Blockchain.log(`Validating ${op.expected.events.length} events`);
                 const expectedEvent1 = parseExpectedEvent(
                     op.expected.events[0],
                 ) as ExpectedTransferEvent;
@@ -581,6 +594,7 @@ export class ScenarioHelper {
                     op.expected.events[1],
                 ) as ExpectedLiquidityListedEvent;
                 expectedEvent2.validate(liquidityListedEvent);
+                Blockchain.log(`Validating events completed`);
             }
         }
     }
@@ -603,7 +617,10 @@ export class ScenarioHelper {
             logSwapEvents(result.response.events);
         }
 
-        Assert.expect(op.expected.events.length == result.response.events.length);
+        if (op.expected.events.length > 0) {
+            Assert.expect(op.expected.events.length == result.response.events.length);
+            Blockchain.log(`Validating ${op.expected.events.length} events`);
+        }
 
         for (let i = 0; i < op.expected.events.length; i++) {
             const eventExpected = op.expected.events[i];
@@ -622,11 +639,26 @@ export class ScenarioHelper {
                     op.expected.events[i],
                 ) as ExpectedSwapExecutedEvent;
                 expected.validate(received);
+            } else if (
+                eventExpected.eventName === 'ActivateProviderEvent' &&
+                eventReceived.type === 'ActivateProvider'
+            ) {
+                const received = NativeSwapTypesCoders.decodeActivateProviderEvent(
+                    eventReceived.data,
+                );
+                const expected = parseExpectedEvent(
+                    op.expected.events[i],
+                ) as ExpectedActivateProviderEvent;
+                expected.validate(received);
             } else {
                 throw new Error(
                     `Not matching event: ${eventExpected.eventName}, ${eventReceived.type}`,
                 );
             }
+        }
+
+        if (op.expected.events.length > 0) {
+            Blockchain.log(`Validating events completed`);
         }
     }
 
@@ -651,7 +683,10 @@ export class ScenarioHelper {
             logAddLiquidityEvents(result.response.events);
         }
 
-        Assert.expect(op.expected.events.length == result.response.events.length);
+        if (op.expected.events.length > 0) {
+            Assert.expect(op.expected.events.length == result.response.events.length);
+            Blockchain.log(`Validating ${op.expected.events.length} events`);
+        }
 
         for (let i = 0; i < op.expected.events.length; i++) {
             const eventExpected = op.expected.events[i];
@@ -672,11 +707,26 @@ export class ScenarioHelper {
                     op.expected.events[i],
                 ) as ExpectedLiquidityAddedEvent;
                 expected.validate(received);
+            } else if (
+                eventExpected.eventName === 'ActivateProviderEvent' &&
+                eventReceived.type === 'ActivateProvider'
+            ) {
+                const received = NativeSwapTypesCoders.decodeActivateProviderEvent(
+                    eventReceived.data,
+                );
+                const expected = parseExpectedEvent(
+                    op.expected.events[i],
+                ) as ExpectedActivateProviderEvent;
+                expected.validate(received);
             } else {
                 throw new Error(
                     `Not matching event: ${eventExpected.eventName}, ${eventReceived.type}`,
                 );
             }
+        }
+
+        if (op.expected.events.length > 0) {
+            Blockchain.log(`Validating events completed`);
         }
     }
 
@@ -738,14 +788,18 @@ export class ScenarioHelper {
         const token = this.getToken(tokenName);
         const result = await this.nativeSwap.cancelListing({ token: token.address });
 
-        Assert.expect(result.response.events.length).toEqual(2);
+        Assert.expect(result.response.events.length).toEqual(3);
 
-        const transferEvent = NativeSwapTypesCoders.decodeTransferEvent(
+        const fulfilledProviderEvent = NativeSwapTypesCoders.decodeFulfilledProviderEvent(
             result.response.events[0].data,
         );
 
-        const listingCanceledEvent = NativeSwapTypesCoders.decodeCancelListingEvent(
+        const transferEvent = NativeSwapTypesCoders.decodeTransferEvent(
             result.response.events[1].data,
+        );
+
+        const listingCanceledEvent = NativeSwapTypesCoders.decodeCancelListingEvent(
+            result.response.events[2].data,
         );
 
         if (this.verbose) {
@@ -753,16 +807,26 @@ export class ScenarioHelper {
             logCancelListingEvents(result.response.events);
         }
 
-        if (op.expected.events.length === 2) {
+        if (op.expected.events.length === 3) {
+            Blockchain.log(`Validating ${op.expected.events.length} events`);
             const expectedEvent1 = parseExpectedEvent(
                 op.expected.events[0],
-            ) as ExpectedTransferEvent;
-            expectedEvent1.validate(transferEvent);
+            ) as ExpectedFulfilledProviderEvent;
+            expectedEvent1.validate(fulfilledProviderEvent);
 
             const expectedEvent2 = parseExpectedEvent(
                 op.expected.events[1],
+            ) as ExpectedTransferEvent;
+            expectedEvent2.validate(transferEvent);
+
+            const expectedEvent3 = parseExpectedEvent(
+                op.expected.events[2],
             ) as ExpectedListingCanceledEvent;
-            expectedEvent2.validate(listingCanceledEvent);
+            expectedEvent3.validate(listingCanceledEvent);
+
+            if (op.expected.events.length > 0) {
+                Blockchain.log(`Validating events completed`);
+            }
         }
     }
 
@@ -807,6 +871,16 @@ export class ScenarioHelper {
                     throw new Error('Not matching key');
             }
         }
+    }
+
+    public async getReserveForChart(tokenName: string): Promise<GetReserveResult> {
+        const token = this.getToken(tokenName);
+        return await this.nativeSwap.getReserve({ token: token.address });
+    }
+
+    public async getQuoteForChart(tokenName: string, satoshisIn: bigint): Promise<GetQuoteResult> {
+        const token = this.getToken(tokenName);
+        return await this.nativeSwap.getQuote({ token: token.address, satoshisIn: satoshisIn });
     }
 
     public async getQuote(op: OperationDefinition): Promise<void> {

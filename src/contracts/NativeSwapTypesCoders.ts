@@ -20,7 +20,9 @@ import {
     GetReserveParams,
     GetReserveResult,
     GetStakingContractAddressResult,
+    IActivateProviderEvent,
     IApprovedEvent,
+    IFulfilledProviderEvent,
     ILiquidityAddedEvent,
     ILiquidityListedEvent,
     ILiquidityRemovedEvent,
@@ -43,6 +45,28 @@ import {
 } from './NativeSwapTypes.js';
 
 export class NativeSwapTypesCoders {
+    public static decodeActivateProviderEvent(data: Uint8Array): IActivateProviderEvent {
+        const reader = new BinaryReader(data);
+        const providerId = reader.readU256();
+        const listingAmount = reader.readU128();
+
+        return {
+            name: 'ActivateProviderEvent',
+            providerId,
+            listingAmount,
+        };
+    }
+
+    public static decodeFulfilledProviderEvent(data: Uint8Array): IFulfilledProviderEvent {
+        const reader = new BinaryReader(data);
+        const providerId = reader.readU256();
+
+        return {
+            name: 'FulfilledProviderEvent',
+            providerId,
+        };
+    }
+
     public static decodeLiquidityAddedEvent(data: Uint8Array): ILiquidityAddedEvent {
         const reader = new BinaryReader(data);
         const totalTokensContributed = reader.readU256();
@@ -76,7 +100,8 @@ export class NativeSwapTypesCoders {
         const reader = new BinaryReader(data);
         const depositAddress = reader.readStringWithLength();
         const amount = reader.readU128();
-        return { name: 'LiquidityReservedEvent', depositAddress, amount };
+        const providerId = reader.readU256();
+        return { name: 'LiquidityReservedEvent', depositAddress, amount, providerId };
     }
 
     public static decodeCancelListingEvent(data: Uint8Array): IListingCanceledEvent {

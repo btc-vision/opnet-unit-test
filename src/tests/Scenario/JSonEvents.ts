@@ -8,6 +8,8 @@ import { ExpectedLiquidityListedEvent } from './Expected/ExpectedLiquidityListed
 import { Address } from '@btc-vision/transaction';
 import { ExpectedTransferEvent } from './Expected/ExpectedTransferEvent.js';
 import { ExpectedListingCanceledEvent } from './Expected/ExpectedListingCanceledEvent.js';
+import { ExpectedFulfilledProviderEvent } from './Expected/ExpectedFulfilledProviderEvent.js';
+import { ExpectedActivateProviderEvent } from './Expected/ExpectedActivateProviderEvent.js';
 
 export interface JSonLiquidityAddedEvent {
     eventName: 'LiquidityAddedEvent';
@@ -33,6 +35,7 @@ export interface JSonLiquidityReservedEvent {
     eventName: 'LiquidityReservedEvent';
     readonly depositAddress: string;
     readonly amount: string;
+    readonly providerId: string;
 }
 
 export interface JSonReservationCreatedEvent {
@@ -67,6 +70,17 @@ export interface JSonListingCanceledEvent {
     readonly amount: string;
 }
 
+export interface JSonActivateProviderEvent {
+    eventName: 'ActivateProviderEvent';
+    readonly providerId: string;
+    readonly listingAmount: string;
+}
+
+export interface JSonFulfilledProviderEvent {
+    eventName: 'FulfilledProviderEvent';
+    readonly providerId: string;
+}
+
 export type JSonExpectedEvent =
     | JSonLiquidityAddedEvent
     | JSonLiquidityListedEvent
@@ -76,7 +90,9 @@ export type JSonExpectedEvent =
     | JSonSwapExecutedEvent
     | JSonApprovedEvent
     | JSonTransferEvent
-    | JSonListingCanceledEvent;
+    | JSonListingCanceledEvent
+    | JSonActivateProviderEvent
+    | JSonFulfilledProviderEvent;
 
 export type ExpectedEvent =
     | ExpectedLiquidityAddedEvent
@@ -87,7 +103,9 @@ export type ExpectedEvent =
     | ExpectedReservationCreatedEvent
     | ExpectedSwapExecutedEvent
     | ExpectedTransferEvent
-    | ExpectedListingCanceledEvent;
+    | ExpectedListingCanceledEvent
+    | ExpectedFulfilledProviderEvent
+    | ExpectedActivateProviderEvent;
 
 export function parseExpectedEvent(raw: JSonExpectedEvent): ExpectedEvent {
     switch (raw.eventName) {
@@ -106,7 +124,11 @@ export function parseExpectedEvent(raw: JSonExpectedEvent): ExpectedEvent {
 
         case 'LiquidityReservedEvent': {
             const r = raw as JSonLiquidityReservedEvent;
-            return new ExpectedLiquidityReservedEvent(r.depositAddress, BigInt(r.amount));
+            return new ExpectedLiquidityReservedEvent(
+                r.depositAddress,
+                BigInt(r.amount),
+                BigInt(r.providerId),
+            );
         }
         case 'LiquidityRemovedEvent': {
             const r = raw as JSonLiquidityRemovedEvent;
@@ -152,6 +174,15 @@ export function parseExpectedEvent(raw: JSonExpectedEvent): ExpectedEvent {
             const r = raw as JSonListingCanceledEvent;
             return new ExpectedListingCanceledEvent(BigInt(r.amount));
         }
+        case 'FulfilledProviderEvent': {
+            const r = raw as JSonFulfilledProviderEvent;
+            return new ExpectedFulfilledProviderEvent(BigInt(r.providerId));
+        }
+        case 'ActivateProviderEvent': {
+            const r = raw as JSonActivateProviderEvent;
+            return new ExpectedActivateProviderEvent(BigInt(r.providerId), BigInt(r.listingAmount));
+        }
+
         default:
             throw new Error('Unsupported eventName');
     }

@@ -1,6 +1,17 @@
 import { Address } from '@btc-vision/transaction';
 import { CallResponse } from '@btc-vision/unit-test-framework';
 
+export interface IActivateProviderEvent {
+    readonly name: string;
+    readonly providerId: bigint;
+    readonly listingAmount: bigint;
+}
+
+export interface IFulfilledProviderEvent {
+    readonly name: string;
+    readonly providerId: bigint;
+}
+
 export interface ILiquidityAddedEvent {
     readonly name: string;
     readonly totalTokensContributed: bigint;
@@ -25,6 +36,7 @@ export interface ILiquidityReservedEvent {
     readonly name: string;
     readonly depositAddress: string;
     readonly amount: bigint;
+    readonly providerId: bigint;
 }
 
 export interface IListingCanceledEvent {
@@ -68,7 +80,9 @@ export type AllEvent =
     | ISwapExecutedEvent
     | IApprovedEvent
     | ITransferEvent
-    | IListingCanceledEvent;
+    | IListingCanceledEvent
+    | IActivateProviderEvent
+    | IFulfilledProviderEvent;
 
 export interface SetFeesParams {
     readonly reservationBaseFee: bigint;

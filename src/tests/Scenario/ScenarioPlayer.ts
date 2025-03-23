@@ -6,8 +6,52 @@ import {
     ScenarioHelper,
     TestDefinition,
 } from './ScenarioHelper.js';
-import { Assert } from '@btc-vision/unit-test-framework';
+import { Assert, Blockchain } from '@btc-vision/unit-test-framework';
 import { logBeginSection, logEndSection } from '../utils/LoggerHelper.js';
+
+class ReserveInfo {
+    public blockId: string;
+    public liquidity: bigint;
+    public reservedLiquidity: bigint;
+    public virtualBTCReserve: bigint;
+    public virtualTokenReserve: bigint;
+
+    constructor(
+        blockId: string,
+        liquidity: bigint,
+        reservedLiquidity: bigint,
+        virtualBTCReserve: bigint,
+        virtualTokenReserve: bigint,
+    ) {
+        this.blockId = blockId;
+        this.liquidity = liquidity;
+        this.reservedLiquidity = reservedLiquidity;
+        this.virtualBTCReserve = virtualBTCReserve;
+        this.virtualTokenReserve = virtualTokenReserve;
+    }
+}
+
+class QuoteInfo {
+    public blockId: string;
+    public tokensOut: bigint;
+    public requiredSatoshis: bigint;
+    public price: bigint;
+    public scale: bigint;
+
+    constructor(
+        blockId: string,
+        tokensOut: bigint,
+        requiredSatoshis: bigint,
+        price: bigint,
+        scale: bigint,
+    ) {
+        this.blockId = blockId;
+        this.tokensOut = tokensOut;
+        this.requiredSatoshis = requiredSatoshis;
+        this.price = price;
+        this.scale = scale;
+    }
+}
 
 export class ScenarioPlayer {
     public async runScenarioFile(jsonPath: string): Promise<void> {
@@ -23,11 +67,126 @@ export class ScenarioPlayer {
     private async runTest(test: TestDefinition, verbose: boolean): Promise<void> {
         const helper = new ScenarioHelper(verbose);
         logBeginSection(test.name);
+        const reserveMap = new Map<string, ReserveInfo[]>();
+        const quoteMap = new Map<string, QuoteInfo[]>();
 
-        for (const op of test.operations) {
-            await this.callScenarioMethod(op, helper);
+        try {
+            let i: number = 0;
+            let lastblock: bigint = 0n;
+
+            for (const op of test.operations) {
+                if (Blockchain.blockNumber !== lastblock) {
+                    lastblock = Blockchain.blockNumber;
+                    i = 0;
+                }
+
+                if (op.command == 'createToken') {
+                    if (!reserveMap.has(op.parameters['tokenName'])) {
+                        reserveMap.set(op.parameters['tokenName'], []);
+                    }
+
+                    if (!quoteMap.has(op.parameters['tokenName'])) {
+                        quoteMap.set(op.parameters['tokenName'], []);
+                    }
+                }
+
+                await this.callScenarioMethod(op, helper);
+
+                if (
+                    op.command == `reserve` ||
+                    op.command == `listLiquidity` ||
+                    op.command == `reserveLiquidity` ||
+                    op.command == `swap` ||
+                    op.command == `removeLiquidity` ||
+                    op.command == `addLiquidity` ||
+                    op.command == `cancelListing`
+                ) {
+                    i++;
+
+                    const reserveArr = reserveMap.get(op.parameters['tokenName']);
+                    const quoteArr = quoteMap.get(op.parameters['tokenName']);
+
+                    if (reserveArr) {
+                        reserveArr.push(
+                            await this.createReserveInfo(helper, op.parameters['tokenName'], i),
+                        );
+                    } else {
+                        throw new Error(`No reserve found for ${op.parameters['tokenName']}`);
+                    }
+
+                    if (quoteArr) {
+                        quoteArr.push(
+                            await this.createQuoteInfo(helper, op.parameters['tokenName'], i),
+                        );
+                    }
+                }
+            }
+
+            for (const [tokenName, reserves] of reserveMap.entries()) {
+                const filePath = path.join(`c:/temp/out/results/`, `${tokenName}_reserve.json`);
+                const json = JSON.stringify(reserves, null, 2);
+
+                fs.writeFileSync(filePath, json, 'utf8');
+            }
+
+            for (const [tokenName, quotes] of quoteMap.entries()) {
+                const filePath = path.join(`c:/temp/out/results/`, `${tokenName}_quote.json`);
+                const json = JSON.stringify(quotes, null, 2);
+
+                fs.writeFileSync(filePath, json, 'utf8');
+            }
+        } catch (e) {
+            for (const [tokenName, reserves] of reserveMap.entries()) {
+                const filePath = path.join(`c:/temp/out/results/`, `${tokenName}_reserve.json`);
+                const json = JSON.stringify(reserves, null, 2);
+
+                fs.writeFileSync(filePath, json, 'utf8');
+            }
+
+            for (const [tokenName, quotes] of quoteMap.entries()) {
+                const filePath = path.join(`c:/temp/out/results/`, `${tokenName}_quote.json`);
+                const json = JSON.stringify(quotes, null, 2);
+
+                fs.writeFileSync(filePath, json, 'utf8');
+            }
+
+            console.log('Error', e);
+            throw e;
         }
+
         logEndSection(test.name);
+    }
+
+    private async createReserveInfo(
+        helper: ScenarioHelper,
+        tokenName: string,
+        index: number,
+    ): Promise<ReserveInfo> {
+        const result = await helper.getReserveForChart(tokenName);
+
+        return new ReserveInfo(
+            `${Blockchain.blockNumber}_${index}`,
+            result.liquidity,
+            result.reservedLiquidity,
+            result.virtualBTCReserve,
+            result.virtualTokenReserve,
+        );
+    }
+
+    private async createQuoteInfo(
+        helper: ScenarioHelper,
+        tokenName: string,
+        index: number,
+    ): Promise<QuoteInfo> {
+        const result = await helper.getQuoteForChart(tokenName, BigInt(1000));
+
+        return new QuoteInfo(
+            `${Blockchain.blockNumber}_${index}`,
+            result.tokensOut,
+            result.requiredSatoshis,
+            result.price,
+            result.scale,
+        );
     }
 
     private async callScenarioMethod(

@@ -5,7 +5,9 @@ import {
     CreatePoolResult,
     GetQuoteResult,
     GetReserveResult,
+    IActivateProviderEvent,
     IApprovedEvent,
+    IFulfilledProviderEvent,
     ILiquidityAddedEvent,
     ILiquidityListedEvent,
     ILiquidityRemovedEvent,
@@ -20,7 +22,7 @@ import {
     ReserveResult,
     SwapResult,
 } from '../../contracts/NativeSwapTypes.js';
-import { NetEvent } from '../../../../transaction/src/index.js';
+import { NetEvent } from '@btc-vision/transaction';
 import { NativeSwapTypesCoders } from '../../contracts/NativeSwapTypesCoders.js';
 
 export function logGetReserveResult(result: GetReserveResult): void {
@@ -216,6 +218,11 @@ export function logCancelListingEvents(events: NetEvent[]): void {
     for (let i = 0; i < events.length; i++) {
         const event = events[i];
         switch (event.type) {
+            case 'FulfilledProvider':
+                logFulfilledProviderEvent(
+                    NativeSwapTypesCoders.decodeFulfilledProviderEvent(event.data),
+                );
+                break;
             case 'Transfer': {
                 logTransferEvent(NativeSwapTypesCoders.decodeTransferEvent(event.data));
                 break;
@@ -229,6 +236,23 @@ export function logCancelListingEvents(events: NetEvent[]): void {
             }
         }
     }
+    Blockchain.log(``);
+}
+
+export function logActivateProviderEvent(event: IActivateProviderEvent): void {
+    Blockchain.log(``);
+    Blockchain.log(`ActivateProviderEvent`);
+    Blockchain.log(`-----------------`);
+    Blockchain.log(`providerId: ${event.providerId}`);
+    Blockchain.log(`listingAmount: ${event.listingAmount}`);
+    Blockchain.log(``);
+}
+
+export function logFulfilledProviderEvent(event: IFulfilledProviderEvent): void {
+    Blockchain.log(``);
+    Blockchain.log(`FulfilledProviderEvent`);
+    Blockchain.log(`-----------------`);
+    Blockchain.log(`providerId: ${event.providerId}`);
     Blockchain.log(``);
 }
 
@@ -276,6 +300,7 @@ export function logLiquidityReservedEvent(event: ILiquidityReservedEvent): void 
     Blockchain.log(`-----------------`);
     Blockchain.log(`amount: ${event.amount}`);
     Blockchain.log(`depositAddress: ${event.depositAddress}`);
+    Blockchain.log(`providerId: ${event.providerId}`);
     Blockchain.log(``);
 }
 
