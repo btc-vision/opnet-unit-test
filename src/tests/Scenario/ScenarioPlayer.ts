@@ -122,35 +122,26 @@ export class ScenarioPlayer {
                 }
             }
 
+            if (!fs.existsSync('./results')) {
+                fs.mkdirSync('./results');
+            }
+
             for (const [tokenName, reserves] of reserveMap.entries()) {
-                const filePath = path.join(`c:/temp/out/results/`, `${tokenName}_reserve.json`);
+                const filePath = path.join(`./results/`, `${tokenName}_reserve.json`);
                 const json = JSON.stringify(reserves, null, 2);
 
                 fs.writeFileSync(filePath, json, 'utf8');
             }
 
             for (const [tokenName, quotes] of quoteMap.entries()) {
-                const filePath = path.join(`c:/temp/out/results/`, `${tokenName}_quote.json`);
+                const filePath = path.join(`./results/`, `${tokenName}_quote.json`);
                 const json = JSON.stringify(quotes, null, 2);
 
                 fs.writeFileSync(filePath, json, 'utf8');
             }
         } catch (e) {
-            for (const [tokenName, reserves] of reserveMap.entries()) {
-                const filePath = path.join(`c:/temp/out/results/`, `${tokenName}_reserve.json`);
-                const json = JSON.stringify(reserves, null, 2);
-
-                fs.writeFileSync(filePath, json, 'utf8');
-            }
-
-            for (const [tokenName, quotes] of quoteMap.entries()) {
-                const filePath = path.join(`c:/temp/out/results/`, `${tokenName}_quote.json`);
-                const json = JSON.stringify(quotes, null, 2);
-
-                fs.writeFileSync(filePath, json, 'utf8');
-            }
-
             console.log('Error', e);
+
             throw e;
         }
 
