@@ -20,7 +20,9 @@
         "test:native": "npm-run-all test:native:onlyowner test:native:reentrancy test:native:listtoken test:native:purge test:native:addliquidity test:native:fee test:native:getsetfees test:native:getquote test:native:getreserve test:native:reserve",
         "test:userflows:createanewpool": "tsx src/tests/native-swap/userflows/CreateANewPool.ts",
         "test:userflows:addliquidity": "tsx src/tests/native-swap/userflows/AddLiquidity.ts",
+        "test:userflows:scenario1": "tsx src/tests/native-swap/userflows/Scenario1.ts",
         "test:userflows:scenario2": "tsx src/tests/native-swap/userflows/Scenario2.ts",
+        "test:userflows:scenario3": "tsx src/tests/native-swap/userflows/Scenario3.ts",
         "test": "npm-run-all test:*"
     },
     "author": "OP_NET",
