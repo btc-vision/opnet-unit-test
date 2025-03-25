@@ -6,8 +6,8 @@ await opnet('Native Swap - User flows - Add liquidity ', async (vm: OPNetUnit) =
 
     vm.afterEach(() => {});
 
-    await vm.it('should run scenario3 correctly', async () => {
+    await vm.it('should run scenario4 correctly', async () => {
         const player = new ScenarioPlayer();
-        await player.runScenarioFile('./scenarios/scenario3.json');
+        await player.runScenarioFile('./scenarios/scenario4.json');
     });
 });

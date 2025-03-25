@@ -23,6 +23,7 @@
         "test:userflows:scenario1": "tsx src/tests/native-swap/userflows/Scenario1.ts",
         "test:userflows:scenario2": "tsx src/tests/native-swap/userflows/Scenario2.ts",
         "test:userflows:scenario3": "tsx src/tests/native-swap/userflows/Scenario3.ts",
+        "test:userflows:scenario4": "tsx src/tests/native-swap/userflows/Scenario4.ts",
         "test": "npm-run-all test:*"
     },
     "author": "OP_NET",
