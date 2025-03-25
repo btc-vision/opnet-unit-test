@@ -64,6 +64,8 @@ export interface ScenarioDefinition {
 
 export class ScenarioHelper {
     private _tokens: Map<string, OP_20> = new Map<string, OP_20>();
+    private _reserveRecipients: Map<string, Recipient[]> = new Map<string, Recipient[]>();
+    private _reserveExpirations: Map<string, bigint> = new Map<string, bigint>();
 
     constructor(private verbose: boolean = false) {}
 
@@ -230,12 +232,16 @@ export class ScenarioHelper {
         }
 
         if (op.expected.events.length === 1) {
-            Blockchain.log(`Validating ${op.expected.events.length} events`);
+            if (this.verbose) {
+                Blockchain.log(`Validating ${op.expected.events.length} events`);
+            }
             const expectedEvent = parseExpectedEvent(
                 op.expected.events[0],
             ) as ExpectedApprovedEvent;
             expectedEvent.validate(event);
-            Blockchain.log(`Validating events completed`);
+            if (this.verbose) {
+                Blockchain.log(`Validating events completed`);
+            }
         }
     }
 
@@ -268,12 +274,16 @@ export class ScenarioHelper {
         }
 
         if (op.expected.events.length === 1) {
-            Blockchain.log(`Validating ${op.expected.events.length} events`);
+            if (this.verbose) {
+                Blockchain.log(`Validating ${op.expected.events.length} events`);
+            }
             const expectedEvent = parseExpectedEvent(
                 op.expected.events[0],
             ) as ExpectedTransferEvent;
             expectedEvent.validate(event);
-            Blockchain.log(`Validating events completed`);
+            if (this.verbose) {
+                Blockchain.log(`Validating events completed`);
+            }
         }
     }
 
@@ -330,7 +340,9 @@ export class ScenarioHelper {
         }
 
         if (op.expected.events.length === 2) {
-            Blockchain.log(`Validating ${op.expected.events.length} events`);
+            if (this.verbose) {
+                Blockchain.log(`Validating ${op.expected.events.length} events`);
+            }
             const expectedEvent1 = parseExpectedEvent(
                 op.expected.events[0],
             ) as ExpectedTransferEvent;
@@ -340,7 +352,9 @@ export class ScenarioHelper {
                 op.expected.events[1],
             ) as ExpectedLiquidityListedEvent;
             expectedEvent2.validate(liquidityListedEvent);
-            Blockchain.log(`Validating events completed`);
+            if (this.verbose) {
+                Blockchain.log(`Validating events completed`);
+            }
         }
     }
 
@@ -408,7 +422,9 @@ export class ScenarioHelper {
         }
 
         if (op.expected.events.length === 2) {
-            Blockchain.log(`Validating ${op.expected.events.length} events`);
+            if (this.verbose) {
+                Blockchain.log(`Validating ${op.expected.events.length} events`);
+            }
             const expectedEvent1 = parseExpectedEvent(
                 op.expected.events[0],
             ) as ExpectedTransferEvent;
@@ -418,7 +434,9 @@ export class ScenarioHelper {
                 op.expected.events[1],
             ) as ExpectedLiquidityListedEvent;
             expectedEvent2.validate(liquidityListedEvent);
-            Blockchain.log(`Validating events completed`);
+            if (this.verbose) {
+                Blockchain.log(`Validating events completed`);
+            }
         }
     }
 
@@ -458,10 +476,20 @@ export class ScenarioHelper {
             result.response.events,
         );
 
+        this._reserveExpirations.set(Blockchain.msgSender.toString(), Blockchain.blockNumber + 5n);
+
+        const recipientsArr: Recipient[] = [];
+        this._reserveRecipients.set(Blockchain.msgSender.toString(), recipientsArr);
+
         for (let i = 0; i < decodedReservation.recipients.length; i++) {
             reserveData.push({
                 recipient: decodedReservation.recipients[0],
                 provider: Blockchain.txOrigin,
+            });
+
+            recipientsArr.push({
+                amount: decodedReservation.recipients[0].amount,
+                address: decodedReservation.recipients[0].address,
             });
         }
 
@@ -549,7 +577,9 @@ export class ScenarioHelper {
             }
 
             if (op.expected.events.length === 3) {
-                Blockchain.log(`Validating ${op.expected.events.length} events`);
+                if (this.verbose) {
+                    Blockchain.log(`Validating ${op.expected.events.length} events`);
+                }
                 const expectedEvent1 = parseExpectedEvent(
                     op.expected.events[0],
                 ) as ExpectedTransferEvent;
@@ -564,7 +594,9 @@ export class ScenarioHelper {
                     op.expected.events[2],
                 ) as ExpectedLiquidityListedEvent;
                 expectedEvent3.validate(liquidityListedEvent);
-                Blockchain.log(`Validating events completed`);
+                if (this.verbose) {
+                    Blockchain.log(`Validating events completed`);
+                }
             }
         } else {
             Assert.expect(result.response.events.length).toEqual(2);
@@ -584,7 +616,9 @@ export class ScenarioHelper {
             }
 
             if (op.expected.events.length === 2) {
-                Blockchain.log(`Validating ${op.expected.events.length} events`);
+                if (this.verbose) {
+                    Blockchain.log(`Validating ${op.expected.events.length} events`);
+                }
                 const expectedEvent1 = parseExpectedEvent(
                     op.expected.events[0],
                 ) as ExpectedTransferEvent;
@@ -594,20 +628,37 @@ export class ScenarioHelper {
                     op.expected.events[1],
                 ) as ExpectedLiquidityListedEvent;
                 expectedEvent2.validate(liquidityListedEvent);
-                Blockchain.log(`Validating events completed`);
+                if (this.verbose) {
+                    Blockchain.log(`Validating events completed`);
+                }
             }
         }
     }
 
     public async swap(op: OperationDefinition): Promise<void> {
         const tokenName = op.parameters['tokenName'];
+        const sendUTXO = op.parameters['sendUTXO'];
 
         if (this.verbose) {
             logAction(`swap`);
             logParameter(`tokenName`, tokenName);
+            logParameter(`sendUTXO`, sendUTXO);
         }
 
         const token = this.getToken(tokenName);
+
+        if (this._reserveRecipients.has(Blockchain.msgSender.toString())) {
+            if (sendUTXO === 'true') {
+                const recipientsArr = this._reserveRecipients.get(Blockchain.msgSender.toString());
+                if (recipientsArr) {
+                    this.internalCreateRecipientUTXOs(recipientsArr);
+                }
+            }
+
+            this._reserveRecipients.delete(Blockchain.msgSender.toString());
+            this._reserveExpirations.delete(Blockchain.msgSender.toString());
+        }
+
         const result = await this.nativeSwap.swap({
             token: token.address,
         });
@@ -619,7 +670,9 @@ export class ScenarioHelper {
 
         if (op.expected.events.length > 0) {
             Assert.expect(op.expected.events.length == result.response.events.length);
-            Blockchain.log(`Validating ${op.expected.events.length} events`);
+            if (this.verbose) {
+                Blockchain.log(`Validating ${op.expected.events.length} events`);
+            }
         }
 
         for (let i = 0; i < op.expected.events.length; i++) {
@@ -685,7 +738,9 @@ export class ScenarioHelper {
 
         if (op.expected.events.length > 0) {
             Assert.expect(op.expected.events.length == result.response.events.length);
-            Blockchain.log(`Validating ${op.expected.events.length} events`);
+            if (this.verbose) {
+                Blockchain.log(`Validating ${op.expected.events.length} events`);
+            }
         }
 
         for (let i = 0; i < op.expected.events.length; i++) {
@@ -808,7 +863,9 @@ export class ScenarioHelper {
         }
 
         if (op.expected.events.length === 3) {
-            Blockchain.log(`Validating ${op.expected.events.length} events`);
+            if (this.verbose) {
+                Blockchain.log(`Validating ${op.expected.events.length} events`);
+            }
             const expectedEvent1 = parseExpectedEvent(
                 op.expected.events[0],
             ) as ExpectedFulfilledProviderEvent;
@@ -824,8 +881,10 @@ export class ScenarioHelper {
             ) as ExpectedListingCanceledEvent;
             expectedEvent3.validate(listingCanceledEvent);
 
-            if (op.expected.events.length > 0) {
-                Blockchain.log(`Validating events completed`);
+            if (this.verbose) {
+                if (op.expected.events.length > 0) {
+                    Blockchain.log(`Validating events completed`);
+                }
             }
         }
     }
@@ -939,6 +998,43 @@ export class ScenarioHelper {
         createRecipientsOutput(op.recipients);
     }
 
+    public clearExpiredReservation(): void {
+        const toDelete: string[] = [];
+
+        this._reserveExpirations.forEach((blockNumber: bigint, key: string): void => {
+            if (Blockchain.blockNumber > blockNumber) {
+                toDelete.push(key);
+            }
+        });
+
+        toDelete.forEach((key: string): void => {
+            Blockchain.log(`Clearing reservation for ${key}`);
+            this._reserveRecipients.delete(key);
+            this._reserveExpirations.delete(key);
+        });
+    }
+
+    public providerHasReservation(depositAddress: string): boolean {
+        let result: boolean = false;
+
+        for (const [key, value] of this._reserveRecipients.entries()) {
+            if (value) {
+                for (const recipient of value) {
+                    if (recipient.address === depositAddress) {
+                        result = true;
+                        break;
+                    }
+                }
+
+                if (result) {
+                    break;
+                }
+            }
+        }
+
+        return result;
+    }
+
     private getToken(name: string): OP_20 {
         const token = this._tokens.get(name);
 
@@ -958,5 +1054,17 @@ export class ScenarioHelper {
             arr[i / 2] = parseInt(hex.substring(i, i + 2), 16);
         }
         return arr;
+    }
+
+    private internalCreateRecipientUTXOs(recipients: Recipient[]): void {
+        if (this.verbose) {
+            logAction(`createRecipientUTXOs`);
+            recipients.forEach((recipient: Recipient): void => {
+                logParameter(`address`, recipient.address);
+                logParameter(`amount`, recipient.amount.toString());
+            });
+        }
+
+        createRecipientsOutput(recipients);
     }
 }

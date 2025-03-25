@@ -155,6 +155,19 @@ export function logSwapEvents(events: NetEvent[]): void {
                 logSwapExecutedEvent(NativeSwapTypesCoders.decodeSwapExecutedEvent(event.data));
                 break;
             }
+            case 'ActivateProvider': {
+                logActivateProviderEvent(
+                    NativeSwapTypesCoders.decodeActivateProviderEvent(event.data),
+                );
+                break;
+            }
+
+            case 'FulfilledProvider': {
+                logFulfilledProviderEvent(
+                    NativeSwapTypesCoders.decodeFulfilledProviderEvent(event.data),
+                );
+                break;
+            }
             default: {
                 throw new Error(`Unknown event type: ${event.type}`);
             }

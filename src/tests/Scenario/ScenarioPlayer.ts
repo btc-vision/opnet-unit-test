@@ -78,6 +78,7 @@ export class ScenarioPlayer {
                 if (Blockchain.blockNumber !== lastblock) {
                     lastblock = Blockchain.blockNumber;
                     i = 0;
+                    helper.clearExpiredReservation();
                 }
 
                 if (op.command == 'createToken') {
@@ -334,8 +335,18 @@ export class ScenarioPlayer {
                 }
 
                 break;
-            case 'cancelListing':
-                if (op.expected.throw) {
+            case 'cancelListing': {
+                let checkThrow: boolean = op.expected.throw;
+
+                if (!checkThrow && op.parameters['depositAddress']) {
+                    const depositAddress = op.parameters['depositAddress'];
+
+                    if (helper.providerHasReservation(depositAddress)) {
+                        checkThrow = true;
+                    }
+                }
+
+                if (checkThrow) {
                     await Assert.expect(async () => {
                         await helper.cancelListing(op);
                     }).toThrow();
@@ -344,6 +355,7 @@ export class ScenarioPlayer {
                 }
 
                 break;
+            }
             case 'getReserve':
                 if (op.expected.throw) {
                     await Assert.expect(async () => {
