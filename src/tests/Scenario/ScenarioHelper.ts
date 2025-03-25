@@ -488,8 +488,8 @@ export class ScenarioHelper {
             });
 
             recipientsArr.push({
-                amount: decodedReservation.recipients[0].amount,
-                address: decodedReservation.recipients[0].address,
+                amount: decodedReservation.recipients[i].amount,
+                address: decodedReservation.recipients[i].address,
             });
         }
 
