@@ -415,7 +415,7 @@ await opnet('NativeSwap: Purging Reservations', async (vm: OPNetUnit) => {
         Assert.expect(reserve.liquidity).toBeGreaterThan(0n);
     });
 
-    await vm.it('should handle purge a very complex set of blocks', async () => {
+    await vm.it('should handle purge reservation spread in multiple block ranges', async () => {
         await addProviderLiquidity(Blockchain.expandTo18Decimals(10_000));
 
         const buyer = Blockchain.generateRandomAddress();
