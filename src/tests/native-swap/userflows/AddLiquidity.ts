@@ -43,7 +43,8 @@ await opnet('Native Swap - User flows - Add liquidity ', async (vm: OPNetUnit) =
          */
 
         const player = new ScenarioPlayer();
-        await player.runScenarioFile('c:/temp/random_operations_tests.json');
+        await player.runScenarioFile('c:/temp/crafted1.json');
+        //await player.runScenarioFile('c:/temp/random_operations_tests.json');
         //await player.runScenarioFile('c:/temp/expired_reservation_tests.json');
         //await player.runScenarioFile('c:/temp/initialprovider_reserve_swap_tests.json');
         //await player.runScenarioFile('c:/temp/list_and_cancel_tests.json');

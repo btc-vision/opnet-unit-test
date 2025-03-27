@@ -66,6 +66,7 @@ export class ScenarioHelper {
     private _tokens: Map<string, OP_20> = new Map<string, OP_20>();
     private _reserveRecipients: Map<string, Recipient[]> = new Map<string, Recipient[]>();
     private _reserveExpirations: Map<string, bigint> = new Map<string, bigint>();
+    private _fulfilledProvider: bigint[] = [];
 
     constructor(private verbose: boolean = false) {}
 
@@ -476,7 +477,7 @@ export class ScenarioHelper {
             result.response.events,
         );
 
-        this._reserveExpirations.set(Blockchain.msgSender.toString(), Blockchain.blockNumber + 5n);
+        this._reserveExpirations.set(Blockchain.msgSender.toString(), Blockchain.blockNumber + 6n);
 
         const recipientsArr: Recipient[] = [];
         this._reserveRecipients.set(Blockchain.msgSender.toString(), recipientsArr);
@@ -654,18 +655,30 @@ export class ScenarioHelper {
                     this.internalCreateRecipientUTXOs(recipientsArr);
                 }
             }
-
-            this._reserveRecipients.delete(Blockchain.msgSender.toString());
-            this._reserveExpirations.delete(Blockchain.msgSender.toString());
         }
 
         const result = await this.nativeSwap.swap({
             token: token.address,
         });
 
+        if (this._reserveRecipients.has(Blockchain.msgSender.toString())) {
+            this._reserveRecipients.delete(Blockchain.msgSender.toString());
+            this._reserveExpirations.delete(Blockchain.msgSender.toString());
+        }
+
         if (this.verbose) {
             logSwapResult(result);
             logSwapEvents(result.response.events);
+        }
+
+        for (let i = 0; i < result.response.events.length; i++) {
+            if (result.response.events[i].type === 'FulfilledProvider') {
+                const decoded = NativeSwapTypesCoders.decodeFulfilledProviderEvent(
+                    result.response.events[i].data,
+                );
+
+                this._fulfilledProvider.push(decoded.providerId);
+            }
         }
 
         if (op.expected.events.length > 0) {
@@ -834,10 +847,17 @@ export class ScenarioHelper {
 
     public async cancelListing(op: OperationDefinition): Promise<void> {
         const tokenName = op.parameters['tokenName'];
+        const providerId: string = op.parameters['providerId'];
 
         if (this.verbose) {
             logAction(`cancelListing`);
             logParameter(`tokenName`, tokenName);
+            logParameter(`providerId`, providerId);
+        }
+
+        if (this._fulfilledProvider.includes(BigInt(providerId))) {
+            Blockchain.log(`Provider id ${providerId} fulfilled. Cannot cancel.`);
+            return;
         }
 
         const token = this.getToken(tokenName);
@@ -934,10 +954,19 @@ export class ScenarioHelper {
 
     public async getReserveForChart(tokenName: string): Promise<GetReserveResult> {
         const token = this.getToken(tokenName);
+        if (this.verbose) {
+            logAction(`getReserve`);
+            logParameter(`tokenName`, tokenName);
+        }
         return await this.nativeSwap.getReserve({ token: token.address });
     }
 
     public async getQuoteForChart(tokenName: string, satoshisIn: bigint): Promise<GetQuoteResult> {
+        if (this.verbose) {
+            logAction(`getQuote`);
+            logParameter(`tokenName`, tokenName);
+            logParameter(`satoshisIn`, satoshisIn.toString());
+        }
         const token = this.getToken(tokenName);
         return await this.nativeSwap.getQuote({ token: token.address, satoshisIn: satoshisIn });
     }
@@ -999,6 +1028,7 @@ export class ScenarioHelper {
     }
 
     public clearExpiredReservation(): void {
+        Blockchain.log(`Clearing reservations`);
         const toDelete: string[] = [];
 
         this._reserveExpirations.forEach((blockNumber: bigint, key: string): void => {
