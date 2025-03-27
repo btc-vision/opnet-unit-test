@@ -226,7 +226,7 @@ await opnet('NativeSwap: Purging Reservations', async (vm: OPNetUnit) => {
     );
 
     await vm.it('should handle reservations expiring exactly at the boundary block', async () => {
-        const provider = await addProviderLiquidity(Blockchain.expandTo18Decimals(1000));
+        await addProviderLiquidity(Blockchain.expandTo18Decimals(1000));
         const buyer = Blockchain.generateRandomAddress();
         await token.mintRaw(buyer, 1_000_000n);
 
@@ -413,6 +413,33 @@ await opnet('NativeSwap: Purging Reservations', async (vm: OPNetUnit) => {
             token: tokenAddress,
         });
         Assert.expect(reserve.liquidity).toBeGreaterThan(0n);
+    });
+
+    await vm.it('should handle purge a very complex set of blocks', async () => {
+        await addProviderLiquidity(Blockchain.expandTo18Decimals(10_000));
+
+        const buyer = Blockchain.generateRandomAddress();
+        await token.mintRaw(buyer, 10_000_000n);
+
+        Blockchain.blockNumber = 1000n;
+
+        await makeReservation(buyer, 100_000n, 1n);
+
+        Blockchain.blockNumber = 1006n;
+
+        await makeReservation(buyer, 10_000n, 1n);
+
+        Blockchain.blockNumber = 1012n;
+
+        await makeReservation(buyer, 10_000n, 1n);
+
+        Blockchain.blockNumber = 1012n + 6n;
+
+        const reserve = await nativeSwap.getReserve({
+            token: tokenAddress,
+        });
+
+        Assert.expect(reserve.liquidity).toEqual(0n);
     });
 
     await vm.it(
