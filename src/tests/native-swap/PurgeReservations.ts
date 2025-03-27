@@ -449,7 +449,7 @@ await opnet('NativeSwap: Purging Reservations', async (vm: OPNetUnit) => {
         for (let i = 0; i < 2000; i++) {
             const buyer5 = Blockchain.generateRandomAddress();
 
-            await makeReservation(buyer5, 100_000n, 1n);
+            await makeReservation(buyer5, BigInt(Math.floor(Math.random() * 10000000000)), 1n);
         }
 
         Blockchain.blockNumber = Blockchain.blockNumber + 20n;

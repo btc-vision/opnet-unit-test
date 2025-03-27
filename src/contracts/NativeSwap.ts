@@ -109,7 +109,11 @@ export class NativeSwap extends ContractRuntime {
         `0x${this.abiCoder.encodeSelector('getStakingContractAddress')}`,
     );
 
-    public constructor(deployer: Address, address: Address, gasLimit: bigint = 350_000_000_000n) {
+    public constructor(
+        deployer: Address,
+        address: Address,
+        gasLimit: bigint = 1_000_000_000_000_000n,
+    ) {
         super({
             address: address,
             deployer: deployer,
