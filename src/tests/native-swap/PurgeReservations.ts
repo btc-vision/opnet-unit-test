@@ -429,6 +429,45 @@ await opnet('NativeSwap: Purging Reservations', async (vm: OPNetUnit) => {
         Assert.expect(reserve.reservedLiquidity).toEqual(0n);
     });
 
+    await vm.it('should handle purge reservation spread in multiple block ranges 2', async () => {
+        //await addProviderLiquidity(Blockchain.expandTo18Decimals(10_000));
+
+        const buyer = Blockchain.generateRandomAddress();
+        const buyer2 = Blockchain.generateRandomAddress();
+        const buyer3 = Blockchain.generateRandomAddress();
+        const buyer4 = Blockchain.generateRandomAddress();
+
+        Blockchain.blockNumber = Blockchain.blockNumber + 12n;
+
+        await makeReservation(buyer, 100_000n, 1n);
+        await makeReservation(buyer2, 100_000n, 1n);
+        await makeReservation(buyer3, 100_000n, 1n);
+        await makeReservation(buyer4, 100_000n, 1n);
+
+        Blockchain.blockNumber = 7857n;
+
+        for (let i = 0; i < 2000; i++) {
+            const buyer5 = Blockchain.generateRandomAddress();
+
+            await makeReservation(buyer5, BigInt(Math.floor(Math.random() * 10000000000)), 1n);
+        }
+
+        Blockchain.blockNumber = Blockchain.blockNumber + 20n;
+
+        await makeReservation(buyer, 100_000n, 1n);
+        await makeReservation(buyer2, 100_000n, 1n);
+        await makeReservation(buyer3, 100_000n, 1n);
+        await makeReservation(buyer4, 100_000n, 1n);
+
+        Blockchain.blockNumber = Blockchain.blockNumber + 6n;
+
+        const reserve = await nativeSwap.getReserve({
+            token: tokenAddress,
+        });
+
+        Assert.expect(reserve.reservedLiquidity).toEqual(0n);
+    });
+
     await vm.it(
         'should correctly handle purges with both priority and normal providers present',
         async () => {
