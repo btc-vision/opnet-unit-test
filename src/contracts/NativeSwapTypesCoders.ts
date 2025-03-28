@@ -141,6 +141,7 @@ export class NativeSwapTypesCoders {
                     reservation.recipients.push({
                         address: recipient.depositAddress,
                         amount: recipient.amount,
+                        providerId: recipient.providerId.toString(),
                     });
                     break;
                 }

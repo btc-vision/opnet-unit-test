@@ -378,6 +378,7 @@ export function logRecipient(recipient: Recipient) {
     Blockchain.log(`-----------------`);
     Blockchain.log(`address: ${recipient.address}`);
     Blockchain.log(`amount: ${recipient.amount}`);
+    Blockchain.log(`providerId: ${recipient.providerId}`);
     Blockchain.log(``);
 }
 

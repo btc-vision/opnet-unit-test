@@ -254,6 +254,7 @@ export interface GetQuoteResult {
 export interface Recipient {
     readonly address: string;
     amount: bigint;
+    readonly providerId: string;
 }
 
 export interface DecodedReservationEvents {

@@ -345,8 +345,9 @@ export class ScenarioPlayer {
 
                 if (!checkThrow && op.parameters['depositAddress']) {
                     const depositAddress = op.parameters['depositAddress'];
+                    const providerId = op.parameters['providerId'];
 
-                    if (helper.providerHasReservation(depositAddress)) {
+                    if (helper.providerHasReservation(depositAddress, providerId)) {
                         checkThrow = true;
                     }
                 }

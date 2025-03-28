@@ -67,6 +67,7 @@ export class ScenarioHelper {
     private _reserveRecipients: Map<string, Recipient[]> = new Map<string, Recipient[]>();
     private _reserveExpirations: Map<string, bigint> = new Map<string, bigint>();
     private _fulfilledProvider: bigint[] = [];
+    private _consumedProvider: string[] = [];
 
     constructor(private verbose: boolean = false) {}
 
@@ -491,6 +492,7 @@ export class ScenarioHelper {
             recipientsArr.push({
                 amount: decodedReservation.recipients[i].amount,
                 address: decodedReservation.recipients[i].address,
+                providerId: decodedReservation.recipients[i].providerId,
             });
         }
 
@@ -649,10 +651,18 @@ export class ScenarioHelper {
         const token = this.getToken(tokenName);
 
         if (this._reserveRecipients.has(Blockchain.msgSender.toString())) {
+            const recipientsArr = this._reserveRecipients.get(Blockchain.msgSender.toString());
+
             if (sendUTXO === 'true') {
-                const recipientsArr = this._reserveRecipients.get(Blockchain.msgSender.toString());
                 if (recipientsArr) {
                     this.internalCreateRecipientUTXOs(recipientsArr);
+                }
+            }
+
+            if (recipientsArr) {
+                for (const recipient of recipientsArr) {
+                    this._consumedProvider.push(recipient.providerId);
+                    Blockchain.log(`add consumed provider ${recipient.providerId}`);
                 }
             }
         }
@@ -860,6 +870,10 @@ export class ScenarioHelper {
             return;
         }
 
+        if (this._consumedProvider.includes(providerId)) {
+            Blockchain.log(`Provider id ${providerId} is providing liquidity. Cannot cancel.`);
+        }
+
         const token = this.getToken(tokenName);
         const result = await this.nativeSwap.cancelListing({ token: token.address });
 
@@ -1021,6 +1035,7 @@ export class ScenarioHelper {
             op.recipients.forEach((recipient: Recipient): void => {
                 logParameter(`address`, recipient.address);
                 logParameter(`amount`, recipient.amount.toString());
+                logParameter(`providerId`, recipient.providerId);
             });
         }
 
@@ -1044,7 +1059,7 @@ export class ScenarioHelper {
         });
     }
 
-    public providerHasReservation(depositAddress: string): boolean {
+    public providerHasReservation(depositAddress: string, providerId: string): boolean {
         let result: boolean = false;
 
         for (const [key, value] of this._reserveRecipients.entries()) {
@@ -1060,6 +1075,10 @@ export class ScenarioHelper {
                     break;
                 }
             }
+        }
+
+        if (!result) {
+            result = this._consumedProvider.includes(providerId);
         }
 
         return result;
@@ -1092,6 +1111,7 @@ export class ScenarioHelper {
             recipients.forEach((recipient: Recipient): void => {
                 logParameter(`address`, recipient.address);
                 logParameter(`amount`, recipient.amount.toString());
+                logParameter(`providerId`, recipient.providerId);
             });
         }
 
