@@ -95,13 +95,13 @@ await opnet('Native Swap - Get Reserve', async (vm: OPNetUnit) => {
             await nativeSwap.getReserve({
                 token: token.address,
             });
-        }).toThrow(`NATIVE_SWAP: No pool exists for token.`);
+        }).toThrow(`NATIVE_SWAP: Pool does not exist for token`);
 
         await Assert.expect(async () => {
             await nativeSwap.getReserve({
                 token: Blockchain.generateRandomAddress(),
             });
-        }).toThrow(`NATIVE_SWAP: No pool exists for token.`);
+        }).toThrow(`NATIVE_SWAP: Pool does not exist for token`);
     });
 
     await vm.it('should get valid reserve values when pool exists and no reservation', async () => {

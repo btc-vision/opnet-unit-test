@@ -38,7 +38,7 @@ await opnet('Native Swap - Get/Set Fees', async (vm: OPNetUnit) => {
                 priorityQueueBaseFee: 100n,
                 reservationBaseFee: 1000n,
             });
-        }).toThrow(`Only owner can call this method`);
+        }).toThrow(`Only deployer can call this method`);
     });
 
     await vm.it('should revert when reservation base fee exceed the cap', async () => {

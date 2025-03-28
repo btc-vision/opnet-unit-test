@@ -132,6 +132,9 @@ await opnet('Native Swap - Reentrancy', async (vm: OPNetUnit) => {
         Blockchain.clearContracts();
         await Blockchain.init();
 
+        Blockchain.txOrigin = userAddress;
+        Blockchain.msgSender = userAddress;
+
         // Instantiate and register the OP_20 token
         token = new ReentrantToken({
             file: 'ReentrantToken',
@@ -149,9 +152,6 @@ await opnet('Native Swap - Reentrancy', async (vm: OPNetUnit) => {
         nativeSwap = new NativeSwap(userAddress, ewmaAddress);
         Blockchain.register(nativeSwap);
         await nativeSwap.init();
-
-        Blockchain.txOrigin = userAddress;
-        Blockchain.msgSender = userAddress;
 
         await createNativeSwapPool(floorPrice, point25InitialLiquidity);
     });

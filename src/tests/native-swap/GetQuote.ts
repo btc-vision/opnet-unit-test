@@ -70,7 +70,7 @@ await opnet('Native Swap - Get Quote', async (vm: OPNetUnit) => {
                 token: token.address,
                 satoshisIn: 10n,
             });
-        }).toThrow(`NATIVE_SWAP: No pool exists for token.`);
+        }).toThrow(`NATIVE_SWAP: Pool does not exist for token`);
     });
 
     await vm.it('should revert when maximum amount is 0', async () => {
@@ -94,7 +94,7 @@ await opnet('Native Swap - Get Quote', async (vm: OPNetUnit) => {
             1000,
             1n,
             10000n,
-            60000,
+            60,
             false,
         );
 
@@ -121,7 +121,7 @@ await opnet('Native Swap - Get Quote', async (vm: OPNetUnit) => {
                 1000,
                 10n,
                 2000000n,
-                60000,
+                60,
                 false,
             );
 
@@ -147,7 +147,7 @@ await opnet('Native Swap - Get Quote', async (vm: OPNetUnit) => {
                 1000,
                 10n,
                 2000000n,
-                60000,
+                60,
                 false,
             );
 
@@ -173,7 +173,7 @@ await opnet('Native Swap - Get Quote', async (vm: OPNetUnit) => {
                 1000,
                 10n,
                 2000000n,
-                60000,
+                60,
                 false,
             );
 

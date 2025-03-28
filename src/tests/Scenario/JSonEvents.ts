@@ -110,7 +110,7 @@ export type ExpectedEvent =
 export function parseExpectedEvent(raw: JSonExpectedEvent): ExpectedEvent {
     switch (raw.eventName) {
         case 'LiquidityAddedEvent': {
-            const r = raw as JSonLiquidityAddedEvent;
+            const r = raw;
             return new ExpectedLiquidityAddedEvent(
                 BigInt(r.totalTokensContributed),
                 BigInt(r.virtualTokenExchanged),
@@ -118,12 +118,12 @@ export function parseExpectedEvent(raw: JSonExpectedEvent): ExpectedEvent {
             );
         }
         case 'LiquidityListedEvent': {
-            const r = raw as JSonLiquidityListedEvent;
+            const r = raw;
             return new ExpectedLiquidityListedEvent(BigInt(r.totalLiquidity), r.provider);
         }
 
         case 'LiquidityReservedEvent': {
-            const r = raw as JSonLiquidityReservedEvent;
+            const r = raw;
             return new ExpectedLiquidityReservedEvent(
                 r.depositAddress,
                 BigInt(r.amount),
@@ -131,7 +131,7 @@ export function parseExpectedEvent(raw: JSonExpectedEvent): ExpectedEvent {
             );
         }
         case 'LiquidityRemovedEvent': {
-            const r = raw as JSonLiquidityRemovedEvent;
+            const r = raw;
             return new ExpectedLiquidityRemovedEvent(
                 BigInt(r.providerId),
                 BigInt(r.btcOwed),
@@ -139,14 +139,14 @@ export function parseExpectedEvent(raw: JSonExpectedEvent): ExpectedEvent {
             );
         }
         case 'ReservationCreatedEvent': {
-            const r = raw as JSonReservationCreatedEvent;
+            const r = raw;
             return new ExpectedReservationCreatedEvent(
                 BigInt(r.expectedAmountOut),
                 BigInt(r.totalSatoshis),
             );
         }
         case 'SwapExecutedEvent': {
-            const r = raw as JSonSwapExecutedEvent;
+            const r = raw;
             return new ExpectedSwapExecutedEvent(
                 Address.fromString(r.buyer),
                 BigInt(r.amountIn),
@@ -154,7 +154,7 @@ export function parseExpectedEvent(raw: JSonExpectedEvent): ExpectedEvent {
             );
         }
         case 'ApprovedEvent': {
-            const r = raw as JSonApprovedEvent;
+            const r = raw;
             return new ExpectedApprovedEvent(
                 Address.fromString(r.owner),
                 Address.fromString(r.spender),
@@ -163,7 +163,7 @@ export function parseExpectedEvent(raw: JSonExpectedEvent): ExpectedEvent {
         }
 
         case 'TransferEvent': {
-            const r = raw as JSonTransferEvent;
+            const r = raw;
             return new ExpectedTransferEvent(
                 Address.fromString(r.from),
                 Address.fromString(r.to),
@@ -171,15 +171,15 @@ export function parseExpectedEvent(raw: JSonExpectedEvent): ExpectedEvent {
             );
         }
         case 'ListingCanceledEvent': {
-            const r = raw as JSonListingCanceledEvent;
+            const r = raw;
             return new ExpectedListingCanceledEvent(BigInt(r.amount));
         }
         case 'FulfilledProviderEvent': {
-            const r = raw as JSonFulfilledProviderEvent;
+            const r = raw;
             return new ExpectedFulfilledProviderEvent(BigInt(r.providerId));
         }
         case 'ActivateProviderEvent': {
-            const r = raw as JSonActivateProviderEvent;
+            const r = raw;
             return new ExpectedActivateProviderEvent(BigInt(r.providerId), BigInt(r.listingAmount));
         }
 

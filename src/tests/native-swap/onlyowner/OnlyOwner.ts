@@ -38,7 +38,7 @@ await opnet('Native Swap - Onlyowner tests', async (vm: OPNetUnit) => {
                 priorityQueueBaseFee: 100n,
                 reservationBaseFee: 1000n,
             });
-        }).toThrow(`Only owner can call this method`);
+        }).toThrow(`Only deployer can call this method`);
     });
 
     await vm.it(
@@ -53,7 +53,7 @@ await opnet('Native Swap - Onlyowner tests', async (vm: OPNetUnit) => {
                 await nativeSwap.setStakingContractAddress({
                     stakingContractAddress: stakingContractAddress,
                 });
-            }).toThrow(`Only owner can call this method`);
+            }).toThrow(`Only deployer can call this method`);
         },
     );
 });
