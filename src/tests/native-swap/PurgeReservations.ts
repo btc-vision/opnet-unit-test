@@ -294,10 +294,6 @@ await opnet('NativeSwap: Purging Reservations', async (vm: OPNetUnit) => {
                 } catch {}
             }
 
-            const reserve2 = await nativeSwap.getReserve({
-                token: tokenAddress,
-            });
-
             // Advance beyond expiration
             Blockchain.blockNumber = 1006n;
 
@@ -471,25 +467,13 @@ await opnet('NativeSwap: Purging Reservations', async (vm: OPNetUnit) => {
     await vm.it(
         'should correctly handle purges with both priority and normal providers present',
         async () => {
-            const normalProvider1 = await addProviderLiquidity(
-                Blockchain.expandTo18Decimals(10_000),
-                false,
-            );
+            await addProviderLiquidity(Blockchain.expandTo18Decimals(10_000), false);
 
-            const normalProvider2 = await addProviderLiquidity(
-                Blockchain.expandTo18Decimals(10_000),
-                false,
-            );
+            await addProviderLiquidity(Blockchain.expandTo18Decimals(10_000), false);
 
-            const priorityProvider1 = await addProviderLiquidity(
-                Blockchain.expandTo18Decimals(10_000),
-                false,
-            );
+            await addProviderLiquidity(Blockchain.expandTo18Decimals(10_000), false);
 
-            const priorityProvider2 = await addProviderLiquidity(
-                Blockchain.expandTo18Decimals(10_000),
-                true,
-            );
+            await addProviderLiquidity(Blockchain.expandTo18Decimals(10_000), true);
 
             const buyer = Blockchain.generateRandomAddress();
             for (let i = 0; i < 8; i++) {
