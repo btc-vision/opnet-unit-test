@@ -1,8 +1,9 @@
 import { opnet, OPNetUnit } from '@btc-vision/unit-test-framework';
+import { Address, BinaryReader, BinaryWriter } from '@btc-vision/transaction';
+import { sha256 } from '@btc-vision/bitcoin';
 import { ScenarioPlayer } from '../../Scenario/ScenarioPlayer.js';
 
 await opnet('Native Swap - User flows - Add liquidity ', async (vm: OPNetUnit) => {
-    /*
     function addressToPointerU256(address: Address, token: Address): bigint {
         const writer = new BinaryWriter(64);
         writer.writeAddress(address);
@@ -11,7 +12,7 @@ await opnet('Native Swap - User flows - Add liquidity ', async (vm: OPNetUnit) =
         const reader = new BinaryReader(sha256(Buffer.from(writer.getBuffer())));
         return reader.readU256();
     }
-*/
+
     vm.beforeEach(async () => {});
 
     vm.afterEach(() => {});
@@ -20,7 +21,7 @@ await opnet('Native Swap - User flows - Add liquidity ', async (vm: OPNetUnit) =
         /*const addresses = [];
         let token: Address | null = null;
 
-        for (let i = 0; i < 1500; i++) {
+        for (let i = 0; i < 10000; i++) {
             const a = Blockchain.generateRandomAddress();
             let providerId: bigint = 0n;
 
@@ -40,8 +41,7 @@ await opnet('Native Swap - User flows - Add liquidity ', async (vm: OPNetUnit) =
         const jsonString = JSON.stringify(addresses, null, 2);
 
         fs.writeFileSync('c:/temp/randomAddresses.json', jsonString, 'utf8');
-         */
-
+*/
         const player = new ScenarioPlayer();
         await player.runScenarioFile('c:/temp/crafted1.json');
         //await player.runScenarioFile('c:/temp/random_operations_tests.json');
