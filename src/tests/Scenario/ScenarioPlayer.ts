@@ -81,6 +81,7 @@ export class ScenarioPlayer {
                     helper.clearExpiredReservation();
                 }
 
+                /*
                 if (op.command == 'createToken') {
                     if (!reserveMap.has(op.parameters['tokenName'])) {
                         reserveMap.set(op.parameters['tokenName'], []);
@@ -90,9 +91,9 @@ export class ScenarioPlayer {
                         quoteMap.set(op.parameters['tokenName'], []);
                     }
                 }
-
+*/
                 await this.callScenarioMethod(op, helper);
-
+                /*
                 if (
                     op.command == `reserve` ||
                     op.command == `listLiquidity` ||
@@ -121,8 +122,10 @@ export class ScenarioPlayer {
                         );
                     }
                 }
+                */
             }
 
+            /*
             if (!fs.existsSync('./results')) {
                 fs.mkdirSync('./results');
             }
@@ -140,6 +143,8 @@ export class ScenarioPlayer {
 
                 fs.writeFileSync(filePath, json, 'utf8');
             }
+            
+ */
         } catch (e) {
             console.log('Error', e);
 
@@ -346,8 +351,9 @@ export class ScenarioPlayer {
                 if (!checkThrow && op.parameters['depositAddress']) {
                     const depositAddress = op.parameters['depositAddress'];
                     const providerId = op.parameters['providerId'];
+                    const tokenName = op.parameters['tokenName'];
 
-                    if (helper.providerHasReservation(depositAddress, providerId)) {
+                    if (helper.providerHasReservation(tokenName, depositAddress, providerId)) {
                         checkThrow = true;
                     }
                 }

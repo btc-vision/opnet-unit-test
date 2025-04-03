@@ -64,8 +64,14 @@ export interface ScenarioDefinition {
 
 export class ScenarioHelper {
     private _tokens: Map<string, OP_20> = new Map<string, OP_20>();
-    private _reserveRecipients: Map<string, Recipient[]> = new Map<string, Recipient[]>();
-    private _reserveExpirations: Map<string, bigint> = new Map<string, bigint>();
+    private _reserveRecipients: Map<string, Map<string, Recipient[]>> = new Map<
+        string,
+        Map<string, Recipient[]>
+    >();
+    private _reserveExpirations: Map<string, Map<string, bigint>> = new Map<
+        string,
+        Map<string, bigint>
+    >();
     private _fulfilledProvider: bigint[] = [];
     private _consumedProvider: string[] = [];
 
@@ -478,10 +484,13 @@ export class ScenarioHelper {
             result.response.events,
         );
 
-        this._reserveExpirations.set(Blockchain.msgSender.toString(), Blockchain.blockNumber + 6n);
+        this.addToReserveExpirations(
+            tokenName,
+            Blockchain.msgSender.toString(),
+            Blockchain.blockNumber + 6n,
+        );
 
         const recipientsArr: Recipient[] = [];
-        this._reserveRecipients.set(Blockchain.msgSender.toString(), recipientsArr);
 
         for (let i = 0; i < decodedReservation.recipients.length; i++) {
             reserveData.push({
@@ -495,6 +504,8 @@ export class ScenarioHelper {
                 providerId: decodedReservation.recipients[i].providerId,
             });
         }
+
+        this.addToReserveRecipients(tokenName, Blockchain.msgSender.toString(), recipientsArr);
 
         Assert.expect(op.expected.events.length == result.response.events.length);
 
@@ -649,20 +660,24 @@ export class ScenarioHelper {
         }
 
         const token = this.getToken(tokenName);
+        const recipientsMap = this._reserveRecipients.get(tokenName);
+        const expirationsMap = this._reserveExpirations.get(tokenName);
 
-        if (this._reserveRecipients.has(Blockchain.msgSender.toString())) {
-            const recipientsArr = this._reserveRecipients.get(Blockchain.msgSender.toString());
+        if (recipientsMap !== undefined) {
+            if (recipientsMap.has(Blockchain.msgSender.toString())) {
+                const recipientsArr = recipientsMap.get(Blockchain.msgSender.toString());
 
-            if (sendUTXO === 'true') {
-                if (recipientsArr) {
-                    this.internalCreateRecipientUTXOs(recipientsArr);
+                if (sendUTXO === 'true') {
+                    if (recipientsArr) {
+                        this.internalCreateRecipientUTXOs(recipientsArr);
+                    }
                 }
-            }
 
-            if (recipientsArr) {
-                for (const recipient of recipientsArr) {
-                    this._consumedProvider.push(recipient.providerId);
-                    Blockchain.log(`add consumed provider ${recipient.providerId}`);
+                if (recipientsArr) {
+                    for (const recipient of recipientsArr) {
+                        this._consumedProvider.push(recipient.providerId);
+                        Blockchain.log(`add consumed provider ${recipient.providerId}`);
+                    }
                 }
             }
         }
@@ -671,9 +686,16 @@ export class ScenarioHelper {
             token: token.address,
         });
 
-        if (this._reserveRecipients.has(Blockchain.msgSender.toString())) {
-            this._reserveRecipients.delete(Blockchain.msgSender.toString());
-            this._reserveExpirations.delete(Blockchain.msgSender.toString());
+        if (recipientsMap !== undefined) {
+            if (recipientsMap.has(Blockchain.msgSender.toString())) {
+                recipientsMap.delete(Blockchain.msgSender.toString());
+            }
+        }
+
+        if (expirationsMap !== undefined) {
+            if (expirationsMap.has(Blockchain.msgSender.toString())) {
+                expirationsMap.delete(Blockchain.msgSender.toString());
+            }
         }
 
         if (this.verbose) {
@@ -1044,35 +1066,51 @@ export class ScenarioHelper {
 
     public clearExpiredReservation(): void {
         Blockchain.log(`Clearing reservations`);
-        const toDelete: string[] = [];
+        const toDelete: Map<string, string[]> = new Map<string, string[]>();
 
-        this._reserveExpirations.forEach((blockNumber: bigint, key: string): void => {
-            if (Blockchain.blockNumber > blockNumber) {
-                toDelete.push(key);
-            }
+        this._reserveExpirations.forEach((map: Map<string, bigint>, tokenName: string) => {
+            const blockArr: string[] = [];
+            toDelete.set(tokenName, blockArr);
+
+            map.forEach((blockNumber: bigint, key: string): void => {
+                if (Blockchain.blockNumber > blockNumber) {
+                    blockArr.push(key);
+                }
+            });
         });
 
-        toDelete.forEach((key: string): void => {
-            Blockchain.log(`Clearing reservation for ${key}`);
-            this._reserveRecipients.delete(key);
-            this._reserveExpirations.delete(key);
+        toDelete.forEach((values: string[], key: string): void => {
+            values.forEach((value: string): void => {
+                Blockchain.log(`Clearing reservation for ${key}:${value}`);
+                const recipientsMap = this._reserveRecipients.get(key);
+                const expirationsMap = this._reserveExpirations.get(key);
+                recipientsMap?.delete(value);
+                expirationsMap?.delete(value);
+            });
         });
     }
 
-    public providerHasReservation(depositAddress: string, providerId: string): boolean {
+    public providerHasReservation(
+        tokenName: string,
+        depositAddress: string,
+        providerId: string,
+    ): boolean {
         let result: boolean = false;
+        const map = this._reserveRecipients.get(tokenName);
 
-        for (const [key, value] of this._reserveRecipients.entries()) {
-            if (value) {
-                for (const recipient of value) {
-                    if (recipient.address === depositAddress) {
-                        result = true;
+        if (map !== undefined) {
+            for (const [key, value] of map.entries()) {
+                if (value) {
+                    for (const recipient of value) {
+                        if (recipient.address === depositAddress) {
+                            result = true;
+                            break;
+                        }
+                    }
+
+                    if (result) {
                         break;
                     }
-                }
-
-                if (result) {
-                    break;
                 }
             }
         }
@@ -1116,5 +1154,33 @@ export class ScenarioHelper {
         }
 
         createRecipientsOutput(recipients);
+    }
+
+    private addToReserveRecipients(
+        tokenName: string,
+        sender: string,
+        recipients: Recipient[],
+    ): void {
+        if (!this._reserveRecipients.has(tokenName)) {
+            this._reserveRecipients.set(tokenName, new Map<string, Recipient[]>());
+        }
+
+        const tokenMap = this._reserveRecipients.get(tokenName);
+
+        if (tokenMap) {
+            tokenMap.set(sender, recipients);
+        }
+    }
+
+    private addToReserveExpirations(tokenName: string, sender: string, blockNumber: bigint): void {
+        if (!this._reserveExpirations.has(tokenName)) {
+            this._reserveExpirations.set(tokenName, new Map<string, bigint>());
+        }
+
+        const tokenMap = this._reserveExpirations.get(tokenName);
+
+        if (tokenMap) {
+            tokenMap.set(sender, blockNumber);
+        }
     }
 }
