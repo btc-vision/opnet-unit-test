@@ -12,7 +12,11 @@ export class ReentrantToken extends OP_20 {
         calldata.writeStringWithLength(method);
 
         const buf = calldata.getBuffer();
-        const result = await this.execute(buf, this.deployer, this.deployer);
+        const result = await this.execute({
+            calldata: buf,
+            txOrigin: this.deployer,
+            sender: this.deployer,
+        });
 
         const response = result.response;
         if (!response) {

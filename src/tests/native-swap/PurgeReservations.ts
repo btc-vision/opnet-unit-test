@@ -46,6 +46,7 @@ await opnet('NativeSwap: Purging Reservations', async (vm: OPNetUnit) => {
         await token.mintRaw(provider, amountIn);
         Blockchain.msgSender = provider;
         Blockchain.txOrigin = provider;
+
         await token.approve(provider, nativeSwap.address, amountIn);
         const resp = await nativeSwap.listLiquidity({
             token: tokenAddress,
@@ -81,6 +82,7 @@ await opnet('NativeSwap: Purging Reservations', async (vm: OPNetUnit) => {
     vm.beforeEach(async () => {
         Blockchain.dispose();
         Blockchain.clearContracts();
+
         await Blockchain.init();
 
         Blockchain.blockNumber = 1n;

@@ -119,19 +119,17 @@ export class NativeSwap extends ContractRuntime {
             deployer: deployer,
             gasLimit,
         });
-
-        this.preserveState();
     }
 
     public async getFees(): Promise<GetFeesResult> {
         const calldata = NativeSwapTypesCoders.encodeGetFeesParams(this.getFeesSelector);
 
-        this.backupStates();
+        const result = await this.execute({
+            calldata: calldata.getBuffer(),
+            saveStates: false,
+        });
 
-        const result = await this.execute(calldata.getBuffer());
         if (result.error) throw this.handleError(result.error);
-
-        this.restoreStates();
 
         return NativeSwapTypesCoders.decodeGetFeesResult(result);
     }
@@ -139,7 +137,10 @@ export class NativeSwap extends ContractRuntime {
     public async setFees(params: SetFeesParams): Promise<SetFeesResult> {
         const calldata = NativeSwapTypesCoders.encodeSetFeesParams(this.setFeesSelector, params);
 
-        const result = await this.execute(calldata.getBuffer());
+        const result = await this.execute({
+            calldata: calldata.getBuffer(),
+        });
+
         if (result.error) throw this.handleError(result.error);
 
         return NativeSwapTypesCoders.decodeSetFeesResult(result);
@@ -150,12 +151,12 @@ export class NativeSwap extends ContractRuntime {
             this.getStakingContractAddressSelector,
         );
 
-        this.backupStates();
+        const result = await this.execute({
+            calldata: calldata.getBuffer(),
+            saveStates: false,
+        });
 
-        const result = await this.execute(calldata.getBuffer());
         if (result.error) throw this.handleError(result.error);
-
-        this.restoreStates();
 
         return NativeSwapTypesCoders.decodeGetStakingContractAddressResult(result);
     }
@@ -168,7 +169,10 @@ export class NativeSwap extends ContractRuntime {
             params,
         );
 
-        const result = await this.execute(calldata.getBuffer());
+        const result = await this.execute({
+            calldata: calldata.getBuffer(),
+        });
+
         if (result.error) throw this.handleError(result.error);
 
         return NativeSwapTypesCoders.decodeSetContractAddressResult(result);
@@ -182,7 +186,10 @@ export class NativeSwap extends ContractRuntime {
             params,
         );
 
-        const result = await this.execute(calldata.getBuffer());
+        const result = await this.execute({
+            calldata: calldata.getBuffer(),
+        });
+
         if (result.error) throw this.handleError(result.error);
 
         return NativeSwapTypesCoders.decodeGetAntibotSettingsResult(result);
@@ -196,12 +203,12 @@ export class NativeSwap extends ContractRuntime {
             params,
         );
 
-        this.backupStates();
+        const result = await this.execute({
+            calldata: calldata.getBuffer(),
+            saveStates: false,
+        });
 
-        const result = await this.execute(calldata.getBuffer());
         if (result.error) throw this.handleError(result.error);
-
-        this.restoreStates();
 
         return NativeSwapTypesCoders.decodeGetProviderDetailsResult(result);
     }
@@ -211,12 +218,12 @@ export class NativeSwap extends ContractRuntime {
             this.getPriorityQueueCostSelector,
         );
 
-        this.backupStates();
+        const result = await this.execute({
+            calldata: calldata.getBuffer(),
+            saveStates: false,
+        });
 
-        const result = await this.execute(calldata.getBuffer());
         if (result.error) throw this.handleError(result.error);
-
-        this.restoreStates();
 
         return NativeSwapTypesCoders.decodeGetPriorityQueueCostResult(result);
     }
@@ -227,7 +234,10 @@ export class NativeSwap extends ContractRuntime {
             params,
         );
 
-        const result = await this.execute(calldata.getBuffer());
+        const result = await this.execute({
+            calldata: calldata.getBuffer(),
+        });
+
         if (result.error) throw this.handleError(result.error);
 
         return NativeSwapTypesCoders.decodeAddLiquidityResult(result);
@@ -239,7 +249,10 @@ export class NativeSwap extends ContractRuntime {
             params,
         );
 
-        const result = await this.execute(calldata.getBuffer());
+        const result = await this.execute({
+            calldata: calldata.getBuffer(),
+        });
+
         if (result.error) throw this.handleError(result.error);
 
         return NativeSwapTypesCoders.decodeRemoveLiquidityResult(result);
@@ -251,7 +264,10 @@ export class NativeSwap extends ContractRuntime {
             params,
         );
 
-        const result = await this.execute(calldata.getBuffer());
+        const result = await this.execute({
+            calldata: calldata.getBuffer(),
+        });
+
         if (result.error) throw this.handleError(result.error);
 
         return NativeSwapTypesCoders.decodeCreatePoolResult(result);
@@ -265,7 +281,10 @@ export class NativeSwap extends ContractRuntime {
             params,
         );
 
-        const result = await this.execute(calldata.getBuffer());
+        const result = await this.execute({
+            calldata: calldata.getBuffer(),
+        });
+
         if (result.error) throw this.handleError(result.error);
 
         return NativeSwapTypesCoders.decodeCreatePoolWithSignatureResult(result);
@@ -281,7 +300,10 @@ export class NativeSwap extends ContractRuntime {
             params,
         );
 
-        const result = await this.execute(calldata.getBuffer());
+        const result = await this.execute({
+            calldata: calldata.getBuffer(),
+        });
+
         if (result.error) throw this.handleError(result.error);
 
         return NativeSwapTypesCoders.decodeListLiquidityResult(result);
@@ -292,7 +314,10 @@ export class NativeSwap extends ContractRuntime {
 
         const calldata = NativeSwapTypesCoders.encodeReserveParams(this.reserveSelector, params);
 
-        const result = await this.execute(calldata.getBuffer());
+        const result = await this.execute({
+            calldata: calldata.getBuffer(),
+        });
+
         if (result.error) throw this.handleError(result.error);
 
         return NativeSwapTypesCoders.decodeReserveResult(result);
@@ -303,7 +328,11 @@ export class NativeSwap extends ContractRuntime {
             this.cancelListingSelector,
             params,
         );
-        const result = await this.execute(calldata.getBuffer());
+
+        const result = await this.execute({
+            calldata: calldata.getBuffer(),
+        });
+
         if (result.error) throw this.handleError(result.error);
 
         return NativeSwapTypesCoders.decodeCancelListingResult(result);
@@ -312,7 +341,10 @@ export class NativeSwap extends ContractRuntime {
     public async swap(params: SwapParams): Promise<SwapResult> {
         const calldata = NativeSwapTypesCoders.encodeSwapParams(this.swapSelector, params);
 
-        const result = await this.execute(calldata.getBuffer());
+        const result = await this.execute({
+            calldata: calldata.getBuffer(),
+        });
+
         if (result.error) throw this.handleError(result.error);
 
         return NativeSwapTypesCoders.decodeSwapResult(result);
@@ -324,12 +356,12 @@ export class NativeSwap extends ContractRuntime {
             params,
         );
 
-        this.backupStates();
+        const result = await this.execute({
+            calldata: calldata.getBuffer(),
+            saveStates: false,
+        });
 
-        const result = await this.execute(calldata.getBuffer());
         if (result.error) throw this.handleError(result.error);
-
-        this.restoreStates();
 
         return NativeSwapTypesCoders.decodeGetReserveResult(result);
     }
@@ -337,12 +369,12 @@ export class NativeSwap extends ContractRuntime {
     public async getQuote(params: GetQuoteParams): Promise<GetQuoteResult> {
         const calldata = NativeSwapTypesCoders.encodeGetQuoteParams(this.getQuoteSelector, params);
 
-        this.backupStates();
+        const result = await this.execute({
+            calldata: calldata.getBuffer(),
+            saveStates: false,
+        });
 
-        const result = await this.execute(calldata.getBuffer());
         if (result.error) throw this.handleError(result.error);
-
-        this.restoreStates();
 
         return NativeSwapTypesCoders.decodeGetQuoteResult(result);
     }
