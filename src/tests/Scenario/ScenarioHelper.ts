@@ -26,7 +26,12 @@ import {
 import { NativeSwapTypesCoders } from '../../contracts/NativeSwapTypesCoders.js';
 import { ReserveData } from '../utils/OperationHelper.js';
 import { Address } from '@btc-vision/transaction';
-import { GetQuoteResult, GetReserveResult, Recipient } from '../../contracts/NativeSwapTypes.js';
+import {
+    GetProviderDetailsResult,
+    GetQuoteResult,
+    GetReserveResult,
+    Recipient,
+} from '../../contracts/NativeSwapTypes.js';
 import { JSonExpectedEvent, parseExpectedEvent } from './JSonEvents.js';
 import { ExpectedApprovedEvent } from './Expected/ExpectedApprovedEvent.js';
 import { ExpectedTransferEvent } from './Expected/ExpectedTransferEvent.js';
@@ -40,6 +45,7 @@ import { ExpectedLiquidityRemovedEvent } from './Expected/ExpectedLiquidityRemov
 import { ExpectedListingCanceledEvent } from './Expected/ExpectedListingCanceledEvent.js';
 import { ExpectedFulfilledProviderEvent } from './Expected/ExpectedFulfilledProviderEvent.js';
 import { ExpectedActivateProviderEvent } from './Expected/ExpectedActivateProviderEvent.js';
+import { GetProviderDetails } from 'opnet';
 
 export interface OperationDefinition {
     command: string;
@@ -74,6 +80,7 @@ export class ScenarioHelper {
     >();
     private _fulfilledProvider: bigint[] = [];
     private _consumedProvider: string[] = [];
+    public _providerMap = new Map<string, string[]>();
 
     constructor(private verbose: boolean = false) {}
 
@@ -216,7 +223,7 @@ export class ScenarioHelper {
         const owner = Address.fromString(op.parameters['owner']);
         const spender = Address.fromString(op.parameters['spender']);
         const amount = BigInt(op.parameters['amount']);
-
+        /*
         if (this.verbose) {
             logAction(`approve`);
             logParameter(`tokenName`, tokenName.toString());
@@ -224,7 +231,7 @@ export class ScenarioHelper {
             logParameter(`spender`, spender.toString());
             logParameter(`amount`, amount.toString());
         }
-
+*/
         const token = this.getToken(tokenName);
         const result = await token.approve(owner, spender, amount);
 
@@ -233,23 +240,23 @@ export class ScenarioHelper {
         const event = NativeSwapTypesCoders.decodeApprovedEvent(
             result.events[result.events.length - 1].data,
         );
-
+        /*
         if (this.verbose) {
             logApproveResponse(result);
             logApprovedExecutedEvent(event);
         }
-
+*/
         if (op.expected.events.length === 1) {
-            if (this.verbose) {
+            /*if (this.verbose) {
                 Blockchain.log(`Validating ${op.expected.events.length} events`);
-            }
+            }*/
             const expectedEvent = parseExpectedEvent(
                 op.expected.events[0],
             ) as ExpectedApprovedEvent;
             expectedEvent.validate(event);
-            if (this.verbose) {
+            /*if (this.verbose) {
                 Blockchain.log(`Validating events completed`);
-            }
+            }*/
         }
     }
 
@@ -259,6 +266,7 @@ export class ScenarioHelper {
         const to = Address.fromString(op.parameters['to']);
         const amount = BigInt(op.parameters['amount']);
 
+        /*
         if (this.verbose) {
             logAction(`transfer`);
             logParameter(`tokenName`, tokenName.toString());
@@ -266,7 +274,7 @@ export class ScenarioHelper {
             logParameter(`to`, to.toString());
             logParameter(`amount`, amount.toString());
         }
-
+*/
         const token = this.getToken(tokenName);
         const result = await token.transfer(from, to, amount);
 
@@ -276,10 +284,10 @@ export class ScenarioHelper {
             result.events[result.events.length - 1].data,
         );
 
-        if (this.verbose) {
+        /*if (this.verbose) {
             logCallResponse(result);
             logTransferEvent(event);
-        }
+        }*/
 
         if (op.expected.events.length === 1) {
             if (this.verbose) {
@@ -289,9 +297,9 @@ export class ScenarioHelper {
                 op.expected.events[0],
             ) as ExpectedTransferEvent;
             expectedEvent.validate(event);
-            if (this.verbose) {
+            /*if (this.verbose) {
                 Blockchain.log(`Validating events completed`);
-            }
+            }*/
         }
     }
 
@@ -567,6 +575,15 @@ export class ScenarioHelper {
             priority: priority,
             disablePriorityQueueFees: false,
         });
+
+        if (result.result) {
+            if (!this._providerMap.has(tokenName)) {
+                this._providerMap.set(tokenName, []);
+            }
+
+            const arr = this._providerMap.get(tokenName);
+            arr?.push(Blockchain.msgSender.toString());
+        }
 
         if (priority) {
             Assert.expect(result.response.events.length).toEqual(3);
@@ -899,6 +916,18 @@ export class ScenarioHelper {
         const token = this.getToken(tokenName);
         const result = await this.nativeSwap.cancelListing({ token: token.address });
 
+        if (result.result) {
+            if (this._providerMap.has(tokenName)) {
+                const arr = this._providerMap.get(tokenName);
+                if (arr) {
+                    const index = arr.indexOf(Blockchain.msgSender.toString());
+                    if (index !== -1) {
+                        arr.splice(index, 1);
+                    }
+                }
+            }
+        }
+
         Assert.expect(result.response.events.length).toEqual(3);
 
         const fulfilledProviderEvent = NativeSwapTypesCoders.decodeFulfilledProviderEvent(
@@ -1051,6 +1080,24 @@ export class ScenarioHelper {
         }
     }
 
+    public async getProviderDetails(op: OperationDefinition): Promise<GetProviderDetailsResult> {
+        const tokenName = op.parameters['tokenName'];
+        const token = this.getToken(tokenName);
+
+        if (this.verbose) {
+            logAction(`getProviderDetails`);
+            logParameter(`tokenName`, tokenName);
+        }
+
+        return await this.nativeSwap.getProviderDetails({ token: token.address });
+    }
+
+    public async getProviderDetailForReport(tokenName: string): Promise<GetProviderDetailsResult> {
+        const token = this.getToken(tokenName);
+
+        return await this.nativeSwap.getProviderDetails({ token: token.address });
+    }
+
     public createRecipientUTXOs(op: OperationDefinition): void {
         if (this.verbose) {
             logAction(`createRecipientUTXOs`);
@@ -1069,11 +1116,15 @@ export class ScenarioHelper {
         const toDelete: Map<string, string[]> = new Map<string, string[]>();
 
         this._reserveExpirations.forEach((map: Map<string, bigint>, tokenName: string) => {
+            Blockchain.log(`Scanning reservations for ${tokenName}`);
             const blockArr: string[] = [];
             toDelete.set(tokenName, blockArr);
 
             map.forEach((blockNumber: bigint, key: string): void => {
-                if (Blockchain.blockNumber > blockNumber) {
+                if (tokenName === 'LULU TOKEN') {
+                    Blockchain.log(`${key}: ${blockNumber.toString()}`);
+                }
+                if (Blockchain.blockNumber >= blockNumber) {
                     blockArr.push(key);
                 }
             });
@@ -1090,13 +1141,21 @@ export class ScenarioHelper {
         });
     }
 
-    public providerHasReservation(
+    public cancelShouldThrow(
         tokenName: string,
         depositAddress: string,
         providerId: string,
     ): boolean {
         let result: boolean = false;
         const map = this._reserveRecipients.get(tokenName);
+
+        if (this._fulfilledProvider.includes(BigInt(providerId))) {
+            return false;
+        }
+
+        if (this._consumedProvider.includes(providerId)) {
+            return true;
+        }
 
         if (map !== undefined) {
             for (const [key, value] of map.entries()) {
@@ -1113,10 +1172,6 @@ export class ScenarioHelper {
                     }
                 }
             }
-        }
-
-        if (!result) {
-            result = this._consumedProvider.includes(providerId);
         }
 
         return result;

@@ -8,6 +8,10 @@ import {
 } from './ScenarioHelper.js';
 import { Assert, Blockchain } from '@btc-vision/unit-test-framework';
 import { logBeginSection, logEndSection } from '../utils/LoggerHelper.js';
+import { Address } from '@btc-vision/transaction';
+import { GetProviderDetails } from 'opnet';
+import { GetProviderDetailsResult, Recipient } from '../../contracts/NativeSwapTypes.js';
+import { JSonExpectedEvent } from './JSonEvents.js';
 
 class ReserveInfo {
     public blockId: string;
@@ -53,6 +57,28 @@ class QuoteInfo {
     }
 }
 
+class ProviderDetailsInfo {
+    public liquidity: string;
+    public reserved: string;
+    public liquidityProvided: string;
+    public btcReceiver: string;
+    public address: string;
+
+    constructor(
+        liquidity: string,
+        reserved: string,
+        liquidityProvided: string,
+        btcReceiver: string,
+        address: string,
+    ) {
+        this.liquidity = liquidity;
+        this.reserved = reserved;
+        this.liquidityProvided = liquidityProvided;
+        this.btcReceiver = btcReceiver;
+        this.address = address;
+    }
+}
+
 export class ScenarioPlayer {
     public async runScenarioFile(jsonPath: string): Promise<void> {
         const filePath = path.resolve(jsonPath);
@@ -74,6 +100,7 @@ export class ScenarioPlayer {
             let i: number = 0;
             let lastblock: bigint = 0n;
 
+            Blockchain.log(`Running ${test.name}`);
             for (const op of test.operations) {
                 if (Blockchain.blockNumber !== lastblock) {
                     lastblock = Blockchain.blockNumber;
@@ -93,6 +120,7 @@ export class ScenarioPlayer {
                 }
 */
                 await this.callScenarioMethod(op, helper);
+
                 /*
                 if (
                     op.command == `reserve` ||
@@ -145,6 +173,44 @@ export class ScenarioPlayer {
             }
             
  */
+            Blockchain.blockNumber = Blockchain.blockNumber + 1n;
+
+            for (const [tokenName, providers] of helper._providerMap.entries()) {
+                const filePath = path.join(`./results/`, `${tokenName}_providers.json`);
+                const details: ProviderDetailsInfo[] = [];
+
+                for (const provider of providers) {
+                    Blockchain.txOrigin = Address.fromString(provider);
+                    Blockchain.msgSender = Blockchain.txOrigin;
+
+                    const detail = await helper.getProviderDetailForReport(tokenName);
+                    details.push(
+                        new ProviderDetailsInfo(
+                            detail.liquidity.toString(),
+                            detail.reserved.toString(),
+                            detail.liquidityProvided.toString(),
+                            detail.btcReceiver,
+                            Blockchain.msgSender.toString(),
+                        ),
+                    );
+                }
+
+                const json = JSON.stringify(details, null, 2);
+
+                fs.writeFileSync(filePath, json, 'utf8');
+            }
+
+            Blockchain.log('reset');
+            helper.reset({
+                command: 'reset',
+                parameters: {},
+                recipients: [],
+                expected: {
+                    throw: false,
+                    events: [],
+                    stateCheck: {},
+                },
+            });
         } catch (e) {
             console.log('Error', e);
 
@@ -353,7 +419,7 @@ export class ScenarioPlayer {
                     const providerId = op.parameters['providerId'];
                     const tokenName = op.parameters['tokenName'];
 
-                    if (helper.providerHasReservation(tokenName, depositAddress, providerId)) {
+                    if (helper.cancelShouldThrow(tokenName, depositAddress, providerId)) {
                         checkThrow = true;
                     }
                 }
@@ -391,7 +457,16 @@ export class ScenarioPlayer {
                 }
 
                 break;
-
+            case 'getProviderDetails':
+                if (op.expected.throw) {
+                    await Assert.expect(async () => {
+                        await helper.getProviderDetails(op);
+                    }).toThrow();
+                    Blockchain.log(`getProviderDetails throwed as expected`);
+                } else {
+                    await helper.getProviderDetails(op);
+                }
+                break;
             case 'createRecipientUTXOs':
                 if (op.expected.throw) {
                     await Assert.expect(() => {

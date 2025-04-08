@@ -126,6 +126,7 @@ export interface GetProviderDetailsParams {
 export interface GetProviderDetailsResult {
     readonly liquidity: bigint;
     readonly reserved: bigint;
+    readonly liquidityProvided: bigint;
     readonly btcReceiver: string;
     readonly response: CallResponse;
 }
@@ -214,6 +215,7 @@ export interface CancelListingParams {
 }
 
 export interface CancelListingResult {
+    readonly result: boolean;
     readonly response: CallResponse;
 }
 

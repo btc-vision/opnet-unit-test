@@ -58,14 +58,14 @@ await opnet('Native Swap - User flows - Add liquidity ', async (vm: OPNetUnit) =
         fs.writeFileSync('c:/temp/opnet/randomAddresses.json', jsonString, 'utf8');
 */
         const player = new ScenarioPlayer();
-        await player.runScenarioFile('c:/temp/opnet/createrandom3tokens.json');
+        //await player.runScenarioFile('c:/temp/opnet/createrandom3tokens.json');
         //await player.runScenarioFile('c:/temp/opnet/random1token.json');
-        //await player.runScenarioFile('c:/temp/random_operations_tests.json');
-        //await player.runScenarioFile('c:/temp/expired_reservation_tests.json');
-        //await player.runScenarioFile('c:/temp/initialprovider_reserve_swap_tests.json');
-        //await player.runScenarioFile('c:/temp/list_and_cancel_tests.json');
-        //await player.runScenarioFile('c:/temp/list_reserve_cancel_tests.json');
-        //await player.runScenarioFile('c:/temp/listing_tests.json');
-        //await player.runScenarioFile('c:/temp/reserve_tests.json');
+        //await player.runScenarioFile('c:/temp/opnet/expired_reservation_tests.json');
+        //await player.runScenarioFile('c:/temp/opnet/initialprovider_reserve_swap_tests.json');
+        //await player.runScenarioFile('c:/temp/opnet/list_and_cancel_tests.json');
+        //await player.runScenarioFile('c:/temp/opnet/listing_tests.json');
+        //await player.runScenarioFile('c:/temp/opnet/reserve_tests.json');
+        //await player.runScenarioFile('c:/temp/opnet/prioritylisting.json');
+        await player.runScenarioFile('c:/temp/opnet/random_3_tokens_withprioritylisting.json');
     });
 });

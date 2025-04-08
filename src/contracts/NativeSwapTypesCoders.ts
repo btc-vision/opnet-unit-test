@@ -313,6 +313,7 @@ export class NativeSwapTypesCoders {
         return {
             liquidity: reader.readU128(),
             reserved: reader.readU128(),
+            liquidityProvided: reader.readU256(),
             btcReceiver: reader.readStringWithLength(),
             response: response,
         };
@@ -534,6 +535,7 @@ export class NativeSwapTypesCoders {
         const reader = new BinaryReader(response.response);
 
         return {
+            result: reader.readBoolean(),
             response: response,
         };
     }
