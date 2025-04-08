@@ -46,6 +46,6 @@ export function gas2BTC(gas: bigint): number {
     return sat2BTC(gas2Sat(gas));
 }
 
-export function gas2USD(gas: bigint, btcPrice: number = 98_000): number {
+export function gas2USD(gas: bigint, btcPrice: number = 78_000): number {
     return gas2BTC(gas) * btcPrice;
 }
