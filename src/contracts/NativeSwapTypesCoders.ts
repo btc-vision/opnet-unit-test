@@ -49,21 +49,27 @@ export class NativeSwapTypesCoders {
         const reader = new BinaryReader(data);
         const providerId = reader.readU256();
         const listingAmount = reader.readU128();
+        const btcToRemove = reader.readU128();
 
         return {
             name: 'ActivateProviderEvent',
             providerId,
             listingAmount,
+            btcToRemove,
         };
     }
 
     public static decodeFulfilledProviderEvent(data: Uint8Array): IFulfilledProviderEvent {
         const reader = new BinaryReader(data);
         const providerId = reader.readU256();
+        const canceled = reader.readBoolean();
+        const removalCompleted = reader.readBoolean();
 
         return {
             name: 'FulfilledProviderEvent',
             providerId,
+            canceled,
+            removalCompleted,
         };
     }
 

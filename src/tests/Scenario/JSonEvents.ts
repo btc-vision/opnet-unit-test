@@ -74,11 +74,14 @@ export interface JSonActivateProviderEvent {
     eventName: 'ActivateProviderEvent';
     readonly providerId: string;
     readonly listingAmount: string;
+    readonly btcToRemove: string;
 }
 
 export interface JSonFulfilledProviderEvent {
     eventName: 'FulfilledProviderEvent';
     readonly providerId: string;
+    readonly canceled: string;
+    readonly removalCompleted: string;
 }
 
 export type JSonExpectedEvent =
@@ -176,11 +179,19 @@ export function parseExpectedEvent(raw: JSonExpectedEvent): ExpectedEvent {
         }
         case 'FulfilledProviderEvent': {
             const r = raw;
-            return new ExpectedFulfilledProviderEvent(BigInt(r.providerId));
+            return new ExpectedFulfilledProviderEvent(
+                BigInt(r.providerId),
+                r.canceled === 'true',
+                r.removalCompleted === 'true',
+            );
         }
         case 'ActivateProviderEvent': {
             const r = raw;
-            return new ExpectedActivateProviderEvent(BigInt(r.providerId), BigInt(r.listingAmount));
+            return new ExpectedActivateProviderEvent(
+                BigInt(r.providerId),
+                BigInt(r.listingAmount),
+                BigInt(r.btcToRemove),
+            );
         }
 
         default:

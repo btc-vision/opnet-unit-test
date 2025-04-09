@@ -930,6 +930,17 @@ export class ScenarioHelper {
                     op.expected.events[i],
                 ) as ExpectedLiquidityRemovedEvent;
                 expected.validate(received);
+            } else if (
+                eventExpected.eventName === 'ActivateProviderEvent' &&
+                eventReceived.type === 'ActivateProvider'
+            ) {
+                const received = NativeSwapTypesCoders.decodeActivateProviderEvent(
+                    eventReceived.data,
+                );
+                const expected = parseExpectedEvent(
+                    op.expected.events[i],
+                ) as ExpectedActivateProviderEvent;
+                expected.validate(received);
             } else {
                 throw new Error(
                     `Not matching event: ${eventExpected.eventName}, ${eventReceived.type}`,

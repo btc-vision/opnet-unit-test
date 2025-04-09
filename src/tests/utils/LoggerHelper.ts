@@ -216,6 +216,12 @@ export function logRemoveLiquidityEvents(events: NetEvent[]): void {
                 );
                 break;
             }
+            case 'ActivateProvider': {
+                logActivateProviderEvent(
+                    NativeSwapTypesCoders.decodeActivateProviderEvent(event.data),
+                );
+                break;
+            }
             default: {
                 throw new Error(`Unknown event type: ${event.type}`);
             }
@@ -258,6 +264,7 @@ export function logActivateProviderEvent(event: IActivateProviderEvent): void {
     Blockchain.log(`-----------------`);
     Blockchain.log(`providerId: ${event.providerId}`);
     Blockchain.log(`listingAmount: ${event.listingAmount}`);
+    Blockchain.log(`btcToRemove: ${event.btcToRemove}`);
     Blockchain.log(``);
 }
 
@@ -266,6 +273,8 @@ export function logFulfilledProviderEvent(event: IFulfilledProviderEvent): void 
     Blockchain.log(`FulfilledProviderEvent`);
     Blockchain.log(`-----------------`);
     Blockchain.log(`providerId: ${event.providerId}`);
+    Blockchain.log(`canceled: ${event.canceled}`);
+    Blockchain.log(`removalCompleted: ${event.removalCompleted}`);
     Blockchain.log(``);
 }
 

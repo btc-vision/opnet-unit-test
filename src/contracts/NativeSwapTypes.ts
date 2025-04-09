@@ -5,11 +5,14 @@ export interface IActivateProviderEvent {
     readonly name: string;
     readonly providerId: bigint;
     readonly listingAmount: bigint;
+    readonly btcToRemove: bigint;
 }
 
 export interface IFulfilledProviderEvent {
     readonly name: string;
     readonly providerId: bigint;
+    readonly canceled: boolean;
+    readonly removalCompleted: boolean;
 }
 
 export interface ILiquidityAddedEvent {
