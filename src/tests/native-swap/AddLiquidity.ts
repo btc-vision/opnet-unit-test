@@ -1,9 +1,9 @@
 import { Address } from '@btc-vision/transaction';
-import { Blockchain, OP_20, opnet, OPNetUnit } from '@btc-vision/unit-test-framework';
+import { Blockchain, gas2USD, OP_20, opnet, OPNetUnit } from '@btc-vision/unit-test-framework';
 import { NativeSwap } from '../../contracts/NativeSwap.js';
 import { Recipient, ReserveResult } from '../../contracts/NativeSwapTypes.js';
 import { NativeSwapTypesCoders } from '../../contracts/NativeSwapTypesCoders.js';
-import { createRecipientsOutput, gas2USD } from '../utils/TransactionUtils.js';
+import { createRecipientsOutput } from '../utils/TransactionUtils.js';
 import { BitcoinUtils } from 'opnet';
 
 /**

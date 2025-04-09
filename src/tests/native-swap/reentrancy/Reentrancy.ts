@@ -1,10 +1,10 @@
 import { NativeSwap } from '../../../contracts/NativeSwap.js';
-import { Assert, Blockchain, opnet, OPNetUnit } from '@btc-vision/unit-test-framework';
+import { Assert, Blockchain, gas2USD, opnet, OPNetUnit } from '@btc-vision/unit-test-framework';
 import { ReentrantToken } from '../../../contracts/ReentrantToken.js';
 import { Address } from '@btc-vision/transaction';
 import { Recipient, ReserveResult } from '../../../contracts/NativeSwapTypes.js';
 import { NativeSwapTypesCoders } from '../../../contracts/NativeSwapTypesCoders.js';
-import { createRecipientsOutput, gas2USD } from '../../utils/TransactionUtils.js';
+import { createRecipientsOutput } from '../../utils/TransactionUtils.js';
 import { BitcoinUtils } from 'opnet';
 
 await opnet('Native Swap - Reentrancy', async (vm: OPNetUnit) => {

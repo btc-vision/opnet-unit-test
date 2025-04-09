@@ -1,7 +1,15 @@
 import { Address } from '@btc-vision/transaction';
-import { Assert, Blockchain, OP_20, opnet, OPNetUnit } from '@btc-vision/unit-test-framework';
+import {
+    Assert,
+    Blockchain,
+    gas2BTC,
+    gas2Sat,
+    gas2USD,
+    OP_20,
+    opnet,
+    OPNetUnit,
+} from '@btc-vision/unit-test-framework';
 import { NativeSwap } from '../../contracts/NativeSwap.js';
-import { gas2BTC, gas2Sat, gas2USD } from '../utils/TransactionUtils.js';
 import { createRecipientUTXOs } from '../utils/UTXOSimulator.js';
 import { NativeSwapTypesCoders } from '../../contracts/NativeSwapTypesCoders.js';
 import { ListLiquidityResult } from '../../contracts/NativeSwapTypes.js';

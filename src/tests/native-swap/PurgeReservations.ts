@@ -1,8 +1,14 @@
 import { Address } from '@btc-vision/transaction';
-import { Assert, Blockchain, OP_20, opnet, OPNetUnit } from '@btc-vision/unit-test-framework';
+import {
+    Assert,
+    Blockchain,
+    gas2USD,
+    OP_20,
+    opnet,
+    OPNetUnit,
+} from '@btc-vision/unit-test-framework';
 import { NativeSwap } from '../../contracts/NativeSwap.js';
 import { ReserveResult } from '../../contracts/NativeSwapTypes.js';
-import { gas2USD } from '../utils/TransactionUtils.js';
 
 await opnet('NativeSwap: Purging Reservations', async (vm: OPNetUnit) => {
     let nativeSwap: NativeSwap;

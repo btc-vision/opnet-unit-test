@@ -1,6 +1,5 @@
-import { Assert, Blockchain, opnet } from '@btc-vision/unit-test-framework';
+import { Assert, Blockchain, gas2USD, opnet } from '@btc-vision/unit-test-framework';
 import { NativeSwapTestHelper } from './CommonTestMethods.js';
-import { gas2USD } from '../utils/TransactionUtils.js';
 
 await opnet('Native Swap - Reservation Process', async (vm) => {
     const testHelper = new NativeSwapTestHelper(vm);
