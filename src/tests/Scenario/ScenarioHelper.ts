@@ -517,6 +517,10 @@ export class ScenarioHelper {
 
         Assert.expect(op.expected.events.length == result.response.events.length);
 
+        if (this.verbose) {
+            Blockchain.log(`Validating ${op.expected.events.length} events`);
+        }
+
         for (let i = 0; i < op.expected.events.length; i++) {
             const eventExpected = op.expected.events[i];
             const eventReceived = result.response.events[i];
@@ -548,6 +552,10 @@ export class ScenarioHelper {
                     `Not matching event: ${eventExpected.eventName}, ${eventReceived.type}`,
                 );
             }
+        }
+
+        if (this.verbose) {
+            Blockchain.log(`Validating events completed`);
         }
 
         return reserveData;
@@ -780,18 +788,54 @@ export class ScenarioHelper {
     public async addLiquidity(op: OperationDefinition): Promise<void> {
         const tokenName = op.parameters['tokenName'];
         const receiver = op.parameters['receiver'];
+        const sendUTXO = op.parameters['sendUTXO'];
 
         if (this.verbose) {
             logAction(`addLiquidity`);
             logParameter(`tokenName`, tokenName);
             logParameter(`receiver`, receiver);
+            logParameter(`sendUTXO`, sendUTXO);
         }
 
         const token = this.getToken(tokenName);
+        const recipientsMap = this._reserveRecipients.get(tokenName);
+        const expirationsMap = this._reserveExpirations.get(tokenName);
+
+        if (recipientsMap !== undefined) {
+            if (recipientsMap.has(Blockchain.msgSender.toString())) {
+                const recipientsArr = recipientsMap.get(Blockchain.msgSender.toString());
+
+                if (sendUTXO === 'true') {
+                    if (recipientsArr) {
+                        this.internalCreateRecipientUTXOs(recipientsArr);
+                    }
+                }
+
+                if (recipientsArr) {
+                    for (const recipient of recipientsArr) {
+                        this._consumedProvider.push(recipient.providerId);
+                        Blockchain.log(`add consumed provider ${recipient.providerId}`);
+                    }
+                }
+            }
+        }
+
         const result = await this.nativeSwap.addLiquidity({
             token: token.address,
             receiver: receiver,
         });
+
+        if (recipientsMap !== undefined) {
+            if (recipientsMap.has(Blockchain.msgSender.toString())) {
+                recipientsMap.delete(Blockchain.msgSender.toString());
+            }
+        }
+
+        if (expirationsMap !== undefined) {
+            if (expirationsMap.has(Blockchain.msgSender.toString())) {
+                expirationsMap.delete(Blockchain.msgSender.toString());
+            }
+        }
 
         if (this.verbose) {
             logAddLiquidityResult(result);
@@ -1112,18 +1156,18 @@ export class ScenarioHelper {
     }
 
     public clearExpiredReservation(): void {
-        Blockchain.log(`Clearing reservations`);
+        //Blockchain.log(`Clearing reservations`);
         const toDelete: Map<string, string[]> = new Map<string, string[]>();
 
         this._reserveExpirations.forEach((map: Map<string, bigint>, tokenName: string) => {
-            Blockchain.log(`Scanning reservations for ${tokenName}`);
+            //Blockchain.log(`Scanning reservations for ${tokenName}`);
             const blockArr: string[] = [];
             toDelete.set(tokenName, blockArr);
 
             map.forEach((blockNumber: bigint, key: string): void => {
-                if (tokenName === 'LULU TOKEN') {
-                    Blockchain.log(`${key}: ${blockNumber.toString()}`);
-                }
+                //if (tokenName === 'LULU TOKEN') {
+                //    Blockchain.log(`${key}: ${blockNumber.toString()}`);
+                //}
                 if (Blockchain.blockNumber >= blockNumber) {
                     blockArr.push(key);
                 }
@@ -1132,7 +1176,7 @@ export class ScenarioHelper {
 
         toDelete.forEach((values: string[], key: string): void => {
             values.forEach((value: string): void => {
-                Blockchain.log(`Clearing reservation for ${key}:${value}`);
+                //Blockchain.log(`Clearing reservation for ${key}:${value}`);
                 const recipientsMap = this._reserveRecipients.get(key);
                 const expirationsMap = this._reserveExpirations.get(key);
                 recipientsMap?.delete(value);
