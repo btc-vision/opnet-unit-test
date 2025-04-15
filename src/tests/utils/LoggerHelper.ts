@@ -191,6 +191,11 @@ export function logAddLiquidityEvents(events: NetEvent[]): void {
                 logLiquidityAddedEvent(NativeSwapTypesCoders.decodeLiquidityAddedEvent(event.data));
                 break;
             }
+            case 'FulfilledProvider':
+                logFulfilledProviderEvent(
+                    NativeSwapTypesCoders.decodeFulfilledProviderEvent(event.data),
+                );
+                break;
             default: {
                 throw new Error(`Unknown event type: ${event.type}`);
             }

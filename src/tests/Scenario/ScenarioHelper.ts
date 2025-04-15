@@ -247,16 +247,16 @@ export class ScenarioHelper {
         }
 */
         if (op.expected.events.length === 1) {
-            /*if (this.verbose) {
+            if (this.verbose) {
                 Blockchain.log(`Validating ${op.expected.events.length} events`);
-            }*/
+            }
             const expectedEvent = parseExpectedEvent(
                 op.expected.events[0],
             ) as ExpectedApprovedEvent;
             expectedEvent.validate(event);
-            /*if (this.verbose) {
+            if (this.verbose) {
                 Blockchain.log(`Validating events completed`);
-            }*/
+            }
         }
     }
 
@@ -297,9 +297,9 @@ export class ScenarioHelper {
                 op.expected.events[0],
             ) as ExpectedTransferEvent;
             expectedEvent.validate(event);
-            /*if (this.verbose) {
+            if (this.verbose) {
                 Blockchain.log(`Validating events completed`);
-            }*/
+            }
         }
     }
 
@@ -701,7 +701,6 @@ export class ScenarioHelper {
                 if (recipientsArr) {
                     for (const recipient of recipientsArr) {
                         this._consumedProvider.push(recipient.providerId);
-                        Blockchain.log(`add consumed provider ${recipient.providerId}`);
                     }
                 }
             }
@@ -1167,18 +1166,13 @@ export class ScenarioHelper {
     }
 
     public clearExpiredReservation(): void {
-        //Blockchain.log(`Clearing reservations`);
         const toDelete: Map<string, string[]> = new Map<string, string[]>();
 
         this._reserveExpirations.forEach((map: Map<string, bigint>, tokenName: string) => {
-            //Blockchain.log(`Scanning reservations for ${tokenName}`);
             const blockArr: string[] = [];
             toDelete.set(tokenName, blockArr);
 
             map.forEach((blockNumber: bigint, key: string): void => {
-                //if (tokenName === 'LULU TOKEN') {
-                //    Blockchain.log(`${key}: ${blockNumber.toString()}`);
-                //}
                 if (Blockchain.blockNumber >= blockNumber) {
                     blockArr.push(key);
                 }
@@ -1187,7 +1181,7 @@ export class ScenarioHelper {
 
         toDelete.forEach((values: string[], key: string): void => {
             values.forEach((value: string): void => {
-                //Blockchain.log(`Clearing reservation for ${key}:${value}`);
+                Blockchain.log(`Clearing reservation for ${key}:${value}`);
                 const recipientsMap = this._reserveRecipients.get(key);
                 const expirationsMap = this._reserveExpirations.get(key);
                 recipientsMap?.delete(value);

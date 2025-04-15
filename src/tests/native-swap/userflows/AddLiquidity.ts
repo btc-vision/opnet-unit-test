@@ -67,6 +67,8 @@ await opnet('Native Swap - User flows - Add liquidity ', async (vm: OPNetUnit) =
         //await player.runScenarioFile('c:/temp/opnet/reserve_tests.json');
         //await player.runScenarioFile('c:/temp/opnet/prioritylisting.json');
         //await player.runScenarioFile('c:/temp/opnet/random_3_tokens_withprioritylisting.json');
-        await player.runScenarioFile('c:/temp/opnet/addliquidity.json');
+        //await player.runScenarioFile('c:/temp/opnet/addliquidity.json');
+        //await player.runScenarioFile('c:/temp/opnet/randomfull.json');
+        await player.runScenarioFile('c:/temp/opnet/CreateListingAndAddLiquidity.json');
     });
 });
