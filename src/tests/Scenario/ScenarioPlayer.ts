@@ -85,6 +85,8 @@ export class ScenarioPlayer {
         const rawContent = fs.readFileSync(filePath, 'utf-8');
         const scenarioData: ScenarioDefinition = JSON.parse(rawContent) as ScenarioDefinition;
 
+        Blockchain.log(`Verbose is: ${scenarioData.verbose}`);
+
         for (const test of scenarioData.tests) {
             await this.runTest(test, scenarioData.verbose);
         }
@@ -119,7 +121,7 @@ export class ScenarioPlayer {
                     }
                 }
 */
-                await this.callScenarioMethod(op, helper);
+                await this.callScenarioMethod(op, helper, verbose);
 
                 /*
                 if (
@@ -210,6 +212,7 @@ export class ScenarioPlayer {
                     events: [],
                     stateCheck: {},
                 },
+                context: '',
             });
         } catch (e) {
             console.log('Error', e);
@@ -255,6 +258,7 @@ export class ScenarioPlayer {
     private async callScenarioMethod(
         op: OperationDefinition,
         helper: ScenarioHelper,
+        verbose: boolean,
     ): Promise<void> {
         switch (op.command) {
             case 'setBlockchainInfo':
@@ -262,7 +266,9 @@ export class ScenarioPlayer {
                     await Assert.expect(() => {
                         helper.setBlockchainInfo(op);
                     }).toThrow();
-                    Blockchain.log(`setBlockchainInfo throwed as expected`);
+                    if (verbose) {
+                        Blockchain.log(`setBlockchainInfo throwed as expected`);
+                    }
                 } else {
                     helper.setBlockchainInfo(op);
                 }
@@ -272,7 +278,9 @@ export class ScenarioPlayer {
                     await Assert.expect(async () => {
                         await helper.initialize(op);
                     }).toThrow();
-                    Blockchain.log(`initialize throwed as expected`);
+                    if (verbose) {
+                        Blockchain.log(`initialize throwed as expected`);
+                    }
                 } else {
                     await helper.initialize(op);
                 }
@@ -283,7 +291,9 @@ export class ScenarioPlayer {
                     await Assert.expect(async () => {
                         await helper.createNativeSwapContract(op);
                     }).toThrow();
-                    Blockchain.log(`createNativeSwapContract throwed as expected`);
+                    if (verbose) {
+                        Blockchain.log(`createNativeSwapContract throwed as expected`);
+                    }
                 } else {
                     await helper.createNativeSwapContract(op);
                 }
@@ -295,7 +305,9 @@ export class ScenarioPlayer {
                     await Assert.expect(async () => {
                         await helper.createToken(op);
                     }).toThrow();
-                    Blockchain.log(`createToken throwed as expected`);
+                    if (verbose) {
+                        Blockchain.log(`createToken throwed as expected`);
+                    }
                 } else {
                     await helper.createToken(op);
                 }
@@ -305,7 +317,9 @@ export class ScenarioPlayer {
                     await Assert.expect(() => {
                         helper.reset(op);
                     }).toThrow();
-                    Blockchain.log(`reset throwed as expected`);
+                    if (verbose) {
+                        Blockchain.log(`reset throwed as expected`);
+                    }
                 } else {
                     helper.reset(op);
                 }
@@ -316,7 +330,9 @@ export class ScenarioPlayer {
                     await Assert.expect(async () => {
                         await helper.tokenApprove(op);
                     }).toThrow();
-                    Blockchain.log(`tokenApprove throwed as expected`);
+                    if (verbose) {
+                        Blockchain.log(`tokenApprove throwed as expected`);
+                    }
                 } else {
                     await helper.tokenApprove(op);
                 }
@@ -328,7 +344,9 @@ export class ScenarioPlayer {
                     await Assert.expect(async () => {
                         await helper.tokenTransfer(op);
                     }).toThrow();
-                    Blockchain.log(`tokenTransfer throwed as expected`);
+                    if (verbose) {
+                        Blockchain.log(`tokenTransfer throwed as expected`);
+                    }
                 } else {
                     await helper.tokenTransfer(op);
                 }
@@ -339,7 +357,9 @@ export class ScenarioPlayer {
                     await Assert.expect(async () => {
                         await helper.createPool(op);
                     }).toThrow();
-                    Blockchain.log(`createPool throwed as expected`);
+                    if (verbose) {
+                        Blockchain.log(`createPool throwed as expected`);
+                    }
                 } else {
                     await helper.createPool(op);
                 }
@@ -350,7 +370,9 @@ export class ScenarioPlayer {
                     await Assert.expect(async () => {
                         await helper.createPoolWithSignature(op);
                     }).toThrow();
-                    Blockchain.log(`createPoolWithSignature throwed as expected`);
+                    if (verbose) {
+                        Blockchain.log(`createPoolWithSignature throwed as expected`);
+                    }
                 } else {
                     await helper.createPoolWithSignature(op);
                 }
@@ -361,7 +383,9 @@ export class ScenarioPlayer {
                     await Assert.expect(async () => {
                         await helper.reserve(op);
                     }).toThrow();
-                    Blockchain.log(`reserve throwed as expected`);
+                    if (verbose) {
+                        Blockchain.log(`reserve throwed as expected`);
+                    }
                 } else {
                     await helper.reserve(op);
                 }
@@ -372,7 +396,9 @@ export class ScenarioPlayer {
                     await Assert.expect(async () => {
                         await helper.listLiquidity(op);
                     }).toThrow();
-                    Blockchain.log(`listLiquidity throwed as expected`);
+                    if (verbose) {
+                        Blockchain.log(`listLiquidity throwed as expected`);
+                    }
                 } else {
                     await helper.listLiquidity(op);
                 }
@@ -383,7 +409,9 @@ export class ScenarioPlayer {
                     await Assert.expect(async () => {
                         await helper.swap(op);
                     }).toThrow();
-                    Blockchain.log(`swap throwed as expected`);
+                    if (verbose) {
+                        Blockchain.log(`swap throwed as expected`);
+                    }
                 } else {
                     await helper.swap(op);
                 }
@@ -394,7 +422,9 @@ export class ScenarioPlayer {
                     await Assert.expect(async () => {
                         await helper.addLiquidity(op);
                     }).toThrow();
-                    Blockchain.log(`addLiquidity throwed as expected`);
+                    if (verbose) {
+                        Blockchain.log(`addLiquidity throwed as expected`);
+                    }
                 } else {
                     await helper.addLiquidity(op);
                 }
@@ -405,7 +435,9 @@ export class ScenarioPlayer {
                     await Assert.expect(async () => {
                         await helper.removeLiquidity(op);
                     }).toThrow();
-                    Blockchain.log(`removeLiquidity throwed as expected`);
+                    if (verbose) {
+                        Blockchain.log(`removeLiquidity throwed as expected`);
+                    }
                 } else {
                     await helper.removeLiquidity(op);
                 }
@@ -428,7 +460,9 @@ export class ScenarioPlayer {
                     await Assert.expect(async () => {
                         await helper.cancelListing(op);
                     }).toThrow();
-                    Blockchain.log(`cancelListing throwed as expected`);
+                    if (verbose) {
+                        Blockchain.log(`cancelListing throwed as expected`);
+                    }
                 } else {
                     await helper.cancelListing(op);
                 }
@@ -440,7 +474,9 @@ export class ScenarioPlayer {
                     await Assert.expect(async () => {
                         await helper.getReserve(op);
                     }).toThrow();
-                    Blockchain.log(`getReserve throwed as expected`);
+                    if (verbose) {
+                        Blockchain.log(`getReserve throwed as expected`);
+                    }
                 } else {
                     await helper.getReserve(op);
                 }
@@ -451,7 +487,9 @@ export class ScenarioPlayer {
                     await Assert.expect(async () => {
                         await helper.getQuote(op);
                     }).toThrow();
-                    Blockchain.log(`getQuote throwed as expected`);
+                    if (verbose) {
+                        Blockchain.log(`getQuote throwed as expected`);
+                    }
                 } else {
                     await helper.getQuote(op);
                 }
@@ -462,7 +500,9 @@ export class ScenarioPlayer {
                     await Assert.expect(async () => {
                         await helper.getProviderDetails(op);
                     }).toThrow();
-                    Blockchain.log(`getProviderDetails throwed as expected`);
+                    if (verbose) {
+                        Blockchain.log(`getProviderDetails throwed as expected`);
+                    }
                 } else {
                     await helper.getProviderDetails(op);
                 }
@@ -472,7 +512,9 @@ export class ScenarioPlayer {
                     await Assert.expect(() => {
                         helper.createRecipientUTXOs(op);
                     }).toThrow();
-                    Blockchain.log(`createRecipientUTXOs throwed as expected`);
+                    if (verbose) {
+                        Blockchain.log(`createRecipientUTXOs throwed as expected`);
+                    }
                 } else {
                     helper.createRecipientUTXOs(op);
                 }

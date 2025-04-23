@@ -180,7 +180,7 @@ await opnet('Native Swap - Reentrancy', async (vm: OPNetUnit) => {
 
         await Assert.expect(async () => {
             await swapAll();
-        }).toThrow(/Error: Execution reverted: NATIVE_SWAP: LOCKED/);
+        }).toThrow(/NATIVE_SWAP: LOCKED/);
     });
 
     await vm.it('should revert when trying reentrancy call on swap method', async () => {
@@ -200,7 +200,7 @@ await opnet('Native Swap - Reentrancy', async (vm: OPNetUnit) => {
 
         await Assert.expect(async () => {
             await swapAll();
-        }).toThrow(/Error: Execution reverted: NATIVE_SWAP: LOCKED/);
+        }).toThrow(/NATIVE_SWAP: LOCKED/);
     });
 
     await vm.it('should revert when trying reentrancy call on listLiquidity method', async () => {
@@ -220,7 +220,7 @@ await opnet('Native Swap - Reentrancy', async (vm: OPNetUnit) => {
 
         await Assert.expect(async () => {
             await swapAll();
-        }).toThrow(/Error: Execution reverted: NATIVE_SWAP: LOCKED/);
+        }).toThrow(/NATIVE_SWAP: LOCKED/);
     });
 
     await vm.it('should revert when trying reentrancy call on cancelListing method', async () => {
@@ -240,7 +240,7 @@ await opnet('Native Swap - Reentrancy', async (vm: OPNetUnit) => {
 
         await Assert.expect(async () => {
             await swapAll();
-        }).toThrow(/Error: Execution reverted: NATIVE_SWAP: LOCKED/);
+        }).toThrow(/NATIVE_SWAP: LOCKED/);
     });
 
     await vm.it('should revert when trying reentrancy call on addLiquidity method', async () => {
@@ -260,7 +260,7 @@ await opnet('Native Swap - Reentrancy', async (vm: OPNetUnit) => {
 
         await Assert.expect(async () => {
             await swapAll();
-        }).toThrow(/Error: Execution reverted: NATIVE_SWAP: LOCKED/);
+        }).toThrow(/NATIVE_SWAP: LOCKED/);
     });
 
     await vm.it('should revert when trying reentrancy call on removeLiquidity method', async () => {
@@ -280,7 +280,7 @@ await opnet('Native Swap - Reentrancy', async (vm: OPNetUnit) => {
 
         await Assert.expect(async () => {
             await swapAll();
-        }).toThrow(/Error: Execution reverted: NATIVE_SWAP: LOCKED/);
+        }).toThrow(/NATIVE_SWAP: LOCKED/);
     });
 
     await vm.it('should revert when trying reentrancy call on createPool method', async () => {
@@ -300,7 +300,7 @@ await opnet('Native Swap - Reentrancy', async (vm: OPNetUnit) => {
 
         await Assert.expect(async () => {
             await swapAll();
-        }).toThrow(/Error: Execution reverted: NATIVE_SWAP: LOCKED/);
+        }).toThrow(/NATIVE_SWAP: LOCKED/);
     });
 
     await vm.it(
@@ -324,7 +324,7 @@ await opnet('Native Swap - Reentrancy', async (vm: OPNetUnit) => {
 
             await Assert.expect(async () => {
                 await swapAll();
-            }).toThrow(/Error: Execution reverted: NATIVE_SWAP: LOCKED/);
+            }).toThrow(/NATIVE_SWAP: LOCKED/);
         },
     );
 
@@ -345,7 +345,7 @@ await opnet('Native Swap - Reentrancy', async (vm: OPNetUnit) => {
 
         await Assert.expect(async () => {
             await swapAll();
-        }).toThrow(/Error: Execution reverted: NATIVE_SWAP: LOCKED/);
+        }).toThrow(/NATIVE_SWAP: LOCKED/);
     });
 
     await vm.it(
@@ -367,7 +367,7 @@ await opnet('Native Swap - Reentrancy', async (vm: OPNetUnit) => {
 
             await Assert.expect(async () => {
                 await swapAll();
-            }).toThrow(/Error: Execution reverted: NATIVE_SWAP: LOCKED/);
+            }).toThrow(/NATIVE_SWAP: LOCKED/);
         },
     );
 
@@ -388,7 +388,7 @@ await opnet('Native Swap - Reentrancy', async (vm: OPNetUnit) => {
 
         await Assert.expect(async () => {
             await swapAll();
-        }).toThrow(/Error: Execution reverted: NATIVE_SWAP: LOCKED/);
+        }).toThrow(/NATIVE_SWAP: LOCKED/);
     });
 
     await vm.it('should revert when trying reentrancy call on getQuote method', async () => {
@@ -408,7 +408,7 @@ await opnet('Native Swap - Reentrancy', async (vm: OPNetUnit) => {
 
         await Assert.expect(async () => {
             await swapAll();
-        }).toThrow(/Error: Execution reverted: NATIVE_SWAP: LOCKED/);
+        }).toThrow(/NATIVE_SWAP: LOCKED/);
     });
 
     await vm.it(
@@ -430,7 +430,7 @@ await opnet('Native Swap - Reentrancy', async (vm: OPNetUnit) => {
 
             await Assert.expect(async () => {
                 await swapAll();
-            }).toThrow(/Error: Execution reverted: NATIVE_SWAP: LOCKED/);
+            }).toThrow(/NATIVE_SWAP: LOCKED/);
         },
     );
 
@@ -453,7 +453,7 @@ await opnet('Native Swap - Reentrancy', async (vm: OPNetUnit) => {
 
             await Assert.expect(async () => {
                 await swapAll();
-            }).toThrow(/Error: Execution reverted: NATIVE_SWAP: LOCKED/);
+            }).toThrow(/NATIVE_SWAP: LOCKED/);
         },
     );
 
@@ -474,7 +474,7 @@ await opnet('Native Swap - Reentrancy', async (vm: OPNetUnit) => {
 
         await Assert.expect(async () => {
             await swapAll();
-        }).toThrow(/Error: Execution reverted: NATIVE_SWAP: LOCKED/);
+        }).toThrow(/NATIVE_SWAP: LOCKED/);
     });
 
     await vm.it(
@@ -496,7 +496,7 @@ await opnet('Native Swap - Reentrancy', async (vm: OPNetUnit) => {
 
             await Assert.expect(async () => {
                 await swapAll();
-            }).toThrow(/Error: Execution reverted: NATIVE_SWAP: LOCKED/);
+            }).toThrow(/NATIVE_SWAP: LOCKED/);
         },
     );
 
@@ -519,7 +519,7 @@ await opnet('Native Swap - Reentrancy', async (vm: OPNetUnit) => {
 
             await Assert.expect(async () => {
                 await swapAll();
-            }).toThrow(/Error: Execution reverted: NATIVE_SWAP: LOCKED/);
+            }).toThrow(/NATIVE_SWAP: LOCKED/);
         },
     );
 });

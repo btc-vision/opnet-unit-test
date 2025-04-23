@@ -56,6 +56,7 @@ export interface OperationDefinition {
         events: JSonExpectedEvent[];
         stateCheck: Record<string, string>;
     };
+    context: string;
 }
 
 export interface TestDefinition {
@@ -223,7 +224,7 @@ export class ScenarioHelper {
         const owner = Address.fromString(op.parameters['owner']);
         const spender = Address.fromString(op.parameters['spender']);
         const amount = BigInt(op.parameters['amount']);
-        /*
+
         if (this.verbose) {
             logAction(`approve`);
             logParameter(`tokenName`, tokenName.toString());
@@ -231,7 +232,7 @@ export class ScenarioHelper {
             logParameter(`spender`, spender.toString());
             logParameter(`amount`, amount.toString());
         }
-*/
+
         const token = this.getToken(tokenName);
         const result = await token.approve(owner, spender, amount);
 
@@ -240,12 +241,12 @@ export class ScenarioHelper {
         const event = NativeSwapTypesCoders.decodeApprovedEvent(
             result.events[result.events.length - 1].data,
         );
-        /*
+
         if (this.verbose) {
             logApproveResponse(result);
             logApprovedExecutedEvent(event);
         }
-*/
+
         if (op.expected.events.length === 1) {
             if (this.verbose) {
                 Blockchain.log(`Validating ${op.expected.events.length} events`);
@@ -266,7 +267,6 @@ export class ScenarioHelper {
         const to = Address.fromString(op.parameters['to']);
         const amount = BigInt(op.parameters['amount']);
 
-        /*
         if (this.verbose) {
             logAction(`transfer`);
             logParameter(`tokenName`, tokenName.toString());
@@ -274,7 +274,7 @@ export class ScenarioHelper {
             logParameter(`to`, to.toString());
             logParameter(`amount`, amount.toString());
         }
-*/
+
         const token = this.getToken(tokenName);
         const result = await token.transfer(from, to, amount);
 
@@ -284,10 +284,10 @@ export class ScenarioHelper {
             result.events[result.events.length - 1].data,
         );
 
-        /*if (this.verbose) {
+        if (this.verbose) {
             logCallResponse(result);
             logTransferEvent(event);
-        }*/
+        }
 
         if (op.expected.events.length === 1) {
             if (this.verbose) {
@@ -779,8 +779,10 @@ export class ScenarioHelper {
             }
         }
 
-        if (op.expected.events.length > 0) {
-            Blockchain.log(`Validating events completed`);
+        if (this.verbose) {
+            if (op.expected.events.length > 0) {
+                Blockchain.log(`Validating events completed`);
+            }
         }
     }
 
@@ -813,7 +815,6 @@ export class ScenarioHelper {
                 if (recipientsArr) {
                     for (const recipient of recipientsArr) {
                         this._consumedProvider.push(recipient.providerId);
-                        Blockchain.log(`add consumed provider ${recipient.providerId}`);
                     }
                 }
             }
@@ -885,8 +886,10 @@ export class ScenarioHelper {
             }
         }
 
-        if (op.expected.events.length > 0) {
-            Blockchain.log(`Validating events completed`);
+        if (this.verbose) {
+            if (op.expected.events.length > 0) {
+                Blockchain.log(`Validating events completed`);
+            }
         }
     }
 
@@ -1181,7 +1184,10 @@ export class ScenarioHelper {
 
         toDelete.forEach((values: string[], key: string): void => {
             values.forEach((value: string): void => {
-                Blockchain.log(`Clearing reservation for ${key}:${value}`);
+                if (this.verbose) {
+                    Blockchain.log(`Clearing reservation for ${key}:${value}`);
+                }
+
                 const recipientsMap = this._reserveRecipients.get(key);
                 const expirationsMap = this._reserveExpirations.get(key);
                 recipientsMap?.delete(value);

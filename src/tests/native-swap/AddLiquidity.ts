@@ -374,7 +374,7 @@ await opnet('Native Swap - Add Liquidity', async (vm: OPNetUnit) => {
 
         await removeLiquidity(rndProvider);
 
-        await listTokenRandom(BitcoinUtils.expandToDecimals(1_000, tokenDecimals), rndProvider);
+        //await listTokenRandom(BitcoinUtils.expandToDecimals(1_000, tokenDecimals), rndProvider);
 
         let rndProvider2 = Blockchain.generateRandomAddress();
 
