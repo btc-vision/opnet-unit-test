@@ -45,7 +45,7 @@ import { ExpectedLiquidityRemovedEvent } from './Expected/ExpectedLiquidityRemov
 import { ExpectedListingCanceledEvent } from './Expected/ExpectedListingCanceledEvent.js';
 import { ExpectedFulfilledProviderEvent } from './Expected/ExpectedFulfilledProviderEvent.js';
 import { ExpectedActivateProviderEvent } from './Expected/ExpectedActivateProviderEvent.js';
-import { GetProviderDetails } from 'opnet';
+import { BitcoinUtils } from 'opnet';
 
 export interface OperationDefinition {
     command: string;
@@ -70,7 +70,13 @@ export interface ScenarioDefinition {
 }
 
 export class ScenarioHelper {
+    public _providerMap = new Map<string, string[]>();
+    public dataNative: { x: number; y: number[] }[] = [];
+
+    public open: number = 0;
+
     private _tokens: Map<string, OP_20> = new Map<string, OP_20>();
+
     private _reserveRecipients: Map<string, Map<string, Recipient[]>> = new Map<
         string,
         Map<string, Recipient[]>
@@ -79,11 +85,19 @@ export class ScenarioHelper {
         string,
         Map<string, bigint>
     >();
+
     private _fulfilledProvider: bigint[] = [];
     private _consumedProvider: string[] = [];
-    public _providerMap = new Map<string, string[]>();
+    private lastBlock: bigint = 0n;
 
-    constructor(private verbose: boolean = false) {}
+    constructor(private verbose: boolean = false) {
+        this.dataNative = [
+            {
+                x: 1,
+                y: [0, 0, 0, 0],
+            },
+        ];
+    }
 
     private _nativeSwap: NativeSwap | null = null;
 
@@ -91,7 +105,6 @@ export class ScenarioHelper {
         if (!this._nativeSwap) {
             throw new Error('NativeSwap not initialized');
         }
-
         return this._nativeSwap;
     }
 
@@ -99,7 +112,57 @@ export class ScenarioHelper {
         this._nativeSwap = nativeSwap;
     }
 
-    public setBlockchainInfo(op: OperationDefinition) {
+    /**
+     * Record a candle-style entry (OHLC in the form [open, open, close, close]).
+     * Updates `dataNative` with the new candle and sets `open` to the last close.
+     */
+    public recordCandle(blockNumber: bigint, closeFloat: number): void {
+        if (this.open !== 0) {
+            this.dataNative.push({
+                x: Number(blockNumber.toString()),
+                y: [this.open, this.open, closeFloat, closeFloat],
+            });
+        } else {
+            this.dataNative.push({
+                x: Number(blockNumber.toString()),
+                y: [closeFloat, closeFloat, closeFloat, closeFloat],
+            });
+        }
+        this.open = closeFloat; // update open to the new close
+    }
+
+    /**
+     * Invoke getQuote for 100,000,000 sats, compute reversed price, and push it as a candle.
+     */
+    public async recordQuoteCandle(tokenName: string): Promise<void> {
+        if (this.lastBlock === Blockchain.blockNumber) {
+            return;
+        }
+
+        this.lastBlock = Blockchain.blockNumber;
+
+        const token = this.getToken(tokenName);
+        const decimals = token.decimals;
+
+        const quote = await this.nativeSwap.getQuote({
+            token: token.address,
+            satoshisIn: 100_000_000n,
+        });
+
+        let { requiredSatoshis: amountIn, price, scale } = quote;
+        // Adjust if requiredSatoshis != 100,000,000
+        if (amountIn !== 100_000_000n) {
+            price = (price * 100_000_000n) / amountIn;
+        }
+
+        // In your TestHelper, you do:
+        // reversedPrice = 1 / parseFloat(BitcoinUtils.formatUnits(price / scale, tokenDecimals))
+        const reversedPrice = 1 / parseFloat(BitcoinUtils.formatUnits(price / scale, decimals));
+
+        this.recordCandle(Blockchain.blockNumber, reversedPrice);
+    }
+
+    public setBlockchainInfo(op: OperationDefinition): void {
         const blockNumber = BigInt(op.parameters['blockNumber']);
         const txOrigin = Address.fromString(op.parameters['txOrigin']);
         const msgSender = Address.fromString(op.parameters['msgSender']);
@@ -202,6 +265,16 @@ export class ScenarioHelper {
     }
 
     public reset(_op: OperationDefinition): void {
+        this.dataNative = [
+            {
+                x: 1,
+                y: [0, 0, 0, 0],
+            },
+        ];
+
+        this.lastBlock = 0n;
+        this.open = 0;
+
         if (this.verbose) {
             logAction(`reset`);
         }
@@ -372,6 +445,8 @@ export class ScenarioHelper {
                 Blockchain.log(`Validating events completed`);
             }
         }
+
+        await this.recordQuoteCandle(tokenName);
     }
 
     public async createPoolWithSignature(op: OperationDefinition): Promise<void> {
@@ -454,6 +529,8 @@ export class ScenarioHelper {
                 Blockchain.log(`Validating events completed`);
             }
         }
+
+        await this.recordQuoteCandle(tokenName);
     }
 
     public async reserve(op: OperationDefinition): Promise<ReserveData[]> {
@@ -691,13 +768,11 @@ export class ScenarioHelper {
         if (recipientsMap !== undefined) {
             if (recipientsMap.has(Blockchain.msgSender.toString())) {
                 const recipientsArr = recipientsMap.get(Blockchain.msgSender.toString());
-
                 if (sendUTXO === 'true') {
                     if (recipientsArr) {
                         this.internalCreateRecipientUTXOs(recipientsArr);
                     }
                 }
-
                 if (recipientsArr) {
                     for (const recipient of recipientsArr) {
                         this._consumedProvider.push(recipient.providerId);
@@ -715,7 +790,6 @@ export class ScenarioHelper {
                 recipientsMap.delete(Blockchain.msgSender.toString());
             }
         }
-
         if (expirationsMap !== undefined) {
             if (expirationsMap.has(Blockchain.msgSender.toString())) {
                 expirationsMap.delete(Blockchain.msgSender.toString());
@@ -732,7 +806,6 @@ export class ScenarioHelper {
                 const decoded = NativeSwapTypesCoders.decodeFulfilledProviderEvent(
                     result.response.events[i].data,
                 );
-
                 this._fulfilledProvider.push(decoded.providerId);
             }
         }
@@ -805,13 +878,11 @@ export class ScenarioHelper {
         if (recipientsMap !== undefined) {
             if (recipientsMap.has(Blockchain.msgSender.toString())) {
                 const recipientsArr = recipientsMap.get(Blockchain.msgSender.toString());
-
                 if (sendUTXO === 'true') {
                     if (recipientsArr) {
                         this.internalCreateRecipientUTXOs(recipientsArr);
                     }
                 }
-
                 if (recipientsArr) {
                     for (const recipient of recipientsArr) {
                         this._consumedProvider.push(recipient.providerId);
@@ -830,7 +901,6 @@ export class ScenarioHelper {
                 recipientsMap.delete(Blockchain.msgSender.toString());
             }
         }
-
         if (expirationsMap !== undefined) {
             if (expirationsMap.has(Blockchain.msgSender.toString())) {
                 expirationsMap.delete(Blockchain.msgSender.toString());
@@ -1135,6 +1205,8 @@ export class ScenarioHelper {
                     throw new Error('Not matching key');
             }
         }
+
+        await this.recordQuoteCandle(tokenName);
     }
 
     public async getProviderDetails(op: OperationDefinition): Promise<GetProviderDetailsResult> {
@@ -1221,7 +1293,6 @@ export class ScenarioHelper {
                             break;
                         }
                     }
-
                     if (result) {
                         break;
                     }
@@ -1234,11 +1305,9 @@ export class ScenarioHelper {
 
     private getToken(name: string): OP_20 {
         const token = this._tokens.get(name);
-
         if (token === undefined || !token) {
             throw new Error('Token not initialized');
         }
-
         return token;
     }
 
@@ -1274,9 +1343,7 @@ export class ScenarioHelper {
         if (!this._reserveRecipients.has(tokenName)) {
             this._reserveRecipients.set(tokenName, new Map<string, Recipient[]>());
         }
-
         const tokenMap = this._reserveRecipients.get(tokenName);
-
         if (tokenMap) {
             tokenMap.set(sender, recipients);
         }
@@ -1286,9 +1353,7 @@ export class ScenarioHelper {
         if (!this._reserveExpirations.has(tokenName)) {
             this._reserveExpirations.set(tokenName, new Map<string, bigint>());
         }
-
         const tokenMap = this._reserveExpirations.get(tokenName);
-
         if (tokenMap) {
             tokenMap.set(sender, blockNumber);
         }

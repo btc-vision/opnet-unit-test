@@ -15,7 +15,7 @@ await opnet('Native Swap - Reservation Process', async (vm) => {
 
         await testHelper.randomReserve(10_000n, 1n);
 
-        Blockchain.blockNumber += 1n;
+        Blockchain.blockNumber += 2n;
 
         await testHelper.swapAll(false);
 
@@ -23,7 +23,7 @@ await opnet('Native Swap - Reservation Process', async (vm) => {
 
         await Assert.expect(async () => {
             await testHelper.swapAll(false);
-        }).toThrow('No active reservation for this address.');
+        }).toThrow('No valid reservation for this address.');
 
         testHelper.startBlock = 1n;
     });
@@ -73,7 +73,7 @@ await opnet('Native Swap - Reservation Process', async (vm) => {
             await testHelper.randomReserve(10_000n, 1n);
         }
 
-        Blockchain.blockNumber += 1n;
+        Blockchain.blockNumber += 2n;
 
         const before = await testHelper.nativeSwap.getReserve({
             token: testHelper.tokenAddress,
@@ -92,7 +92,7 @@ await opnet('Native Swap - Reservation Process', async (vm) => {
             token: testHelper.tokenAddress,
         });
 
-        console.log(after.reservedLiquidity);
+        console.log(JSON.stringify(testHelper.dataNative));
 
         Assert.expect(after.reservedLiquidity).toBeLessThan(before.reservedLiquidity);
     });

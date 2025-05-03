@@ -9,9 +9,6 @@ import {
 import { Assert, Blockchain } from '@btc-vision/unit-test-framework';
 import { logBeginSection, logEndSection } from '../utils/LoggerHelper.js';
 import { Address } from '@btc-vision/transaction';
-import { GetProviderDetails } from 'opnet';
-import { GetProviderDetailsResult, Recipient } from '../../contracts/NativeSwapTypes.js';
-import { JSonExpectedEvent } from './JSonEvents.js';
 
 class ReserveInfo {
     public blockId: string;
@@ -88,7 +85,7 @@ export class ScenarioPlayer {
         Blockchain.log(`Verbose is: ${scenarioData.verbose}`);
 
         for (const test of scenarioData.tests) {
-            await this.runTest(test, scenarioData.verbose);
+            await this.runTest(test, true); //scenarioData.verbose);
         }
     }
 
@@ -173,7 +170,7 @@ export class ScenarioPlayer {
 
                 fs.writeFileSync(filePath, json, 'utf8');
             }
-            
+
  */
             Blockchain.blockNumber = Blockchain.blockNumber + 1n;
 
@@ -203,6 +200,9 @@ export class ScenarioPlayer {
             }
 
             Blockchain.log('reset');
+
+            console.log('graph', JSON.stringify(helper.dataNative));
+
             helper.reset({
                 command: 'reset',
                 parameters: {},
