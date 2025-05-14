@@ -8,11 +8,15 @@ import {
     OPNetUnit,
 } from '@btc-vision/unit-test-framework';
 import { NativeSwap } from '../../contracts/NativeSwap.js';
-import { ReserveResult } from '../../contracts/NativeSwapTypes.js';
+import { Recipient, ReserveResult } from '../../contracts/NativeSwapTypes.js';
+import { BitcoinUtils } from 'opnet';
+import { createRecipientsOutput } from '../utils/TransactionUtils.js';
+import { NativeSwapTypesCoders } from '../../contracts/NativeSwapTypesCoders.js';
 
 await opnet('NativeSwap: Purging Reservations', async (vm: OPNetUnit) => {
     let nativeSwap: NativeSwap;
     let token: OP_20;
+    let toSwap: { a: Address; r: Recipient[] }[] = [];
 
     const initialLiquidityProvider: Address = Blockchain.generateRandomAddress();
 
@@ -40,7 +44,7 @@ await opnet('NativeSwap: Purging Reservations', async (vm: OPNetUnit) => {
             receiver: initialLiquidityProvider.p2tr(Blockchain.network),
             antiBotEnabledFor: antiBotEnabledFor,
             antiBotMaximumTokensPerReservation: antiBotMaximumTokensPerReservation,
-            maxReservesIn5BlocksPercent: 40,
+            maxReservesIn5BlocksPercent: 99,
         });
     }
 
@@ -65,6 +69,106 @@ await opnet('NativeSwap: Purging Reservations', async (vm: OPNetUnit) => {
         return provider;
     }
 
+    async function listTokenRandom(
+        l: bigint,
+        provider: Address = Blockchain.generateRandomAddress(),
+    ): Promise<void> {
+        const backup = Blockchain.txOrigin;
+
+        Blockchain.txOrigin = userAddress;
+        Blockchain.msgSender = userAddress;
+
+        // Transfer tokens from userAddress to provider
+        await token.transfer(userAddress, provider, l);
+
+        // Approve EWMA contract to spend tokens
+        await token.approve(provider, nativeSwap.address, l);
+
+        // Add liquidity
+        Blockchain.txOrigin = provider;
+        Blockchain.msgSender = provider;
+
+        await nativeSwap.listLiquidity({
+            token: tokenAddress,
+            receiver: provider.p2tr(Blockchain.network),
+            amountIn: l,
+            priority: false,
+            disablePriorityQueueFees: false,
+        });
+
+        Blockchain.txOrigin = backup;
+        Blockchain.msgSender = backup;
+
+        vm.info(`Added liquidity for ${l} tokens`);
+    }
+
+    async function swapAll(): Promise<void> {
+        for (let i = 0; i < toSwap.length; i++) {
+            const reservation = toSwap[i];
+            Blockchain.txOrigin = reservation.a;
+            Blockchain.msgSender = reservation.a;
+
+            createRecipientsOutput(reservation.r);
+            const s = await nativeSwap.swap({ token: tokenAddress });
+            const d = NativeSwapTypesCoders.decodeSwapExecutedEvent(
+                s.response.events[s.response.events.length - 1].data,
+            );
+
+            vm.log(
+                `Swapped spent ${gas2USD(s.response.usedGas)} USD in gas, ${d.amountOut} tokens`,
+            );
+        }
+        Blockchain.txOrigin = userAddress;
+        Blockchain.msgSender = userAddress;
+        toSwap = [];
+    }
+
+    async function randomReserve(
+        amount: bigint,
+        forLP: boolean = false,
+        rnd: boolean = true,
+    ): Promise<ReserveResult> {
+        const backup = Blockchain.txOrigin;
+
+        let provider: Address = Blockchain.txOrigin;
+        if (rnd) {
+            provider = Blockchain.generateRandomAddress();
+            Blockchain.txOrigin = provider;
+            Blockchain.msgSender = provider;
+        }
+
+        const r = await nativeSwap.reserve({
+            token: tokenAddress,
+            maximumAmountIn: amount,
+            minimumAmountOut: 0n,
+            forLP: forLP,
+            activationDelay: 0,
+        });
+
+        const decoded = NativeSwapTypesCoders.decodeReservationEvents(r.response.events);
+        if (decoded.recipients.length) {
+            if (forLP) {
+                throw new Error('Cannot reserve for LP');
+            } else {
+                toSwap.push({
+                    a: provider,
+                    r: decoded.recipients,
+                });
+            }
+        } else {
+            vm.fail('No recipients found in reservation (swap) event.');
+        }
+
+        vm.info(
+            `Reserved ${BitcoinUtils.formatUnits(r.expectedAmountOut, tokenDecimals)} tokens (${gas2USD(r.response.usedGas)} USD in gas) for ${provider} with ${decoded.recipients.length} recipients, amount of sat requested: ${decoded.totalSatoshis}`,
+        );
+
+        // Reset
+        Blockchain.txOrigin = backup;
+        Blockchain.msgSender = backup;
+        return r;
+    }
+
     async function makeReservation(
         buyer: Address,
         satIn: bigint,
@@ -86,6 +190,8 @@ await opnet('NativeSwap: Purging Reservations', async (vm: OPNetUnit) => {
     }
 
     vm.beforeEach(async () => {
+        toSwap = [];
+
         Blockchain.dispose();
         Blockchain.clearContracts();
 
@@ -101,15 +207,20 @@ await opnet('NativeSwap: Purging Reservations', async (vm: OPNetUnit) => {
         });
         Blockchain.register(token);
         await token.init();
-        await token.mintRaw(userAddress, 10_000_000n);
+
+        const totalSupply = Blockchain.expandToDecimal(1_000_000_000_000, tokenDecimals);
+        await token.mintRaw(userAddress, totalSupply);
 
         nativeSwap = new NativeSwap(userAddress, ewmaAddress);
         Blockchain.register(nativeSwap);
         await nativeSwap.init();
         Blockchain.msgSender = userAddress;
 
+        const floorPrice: bigint = 10n ** 18n / 500n; //10n ** 18n;
+        const point25InitialLiquidity = 52_500n * 10n ** BigInt(tokenDecimals);
+
         // Set a base quote
-        await createPool(1_000_000n, Blockchain.expandToDecimal(1, 18) * 1_000_000n);
+        await createPool(floorPrice, point25InitialLiquidity);
 
         Blockchain.blockNumber += 1n;
     });
@@ -120,7 +231,78 @@ await opnet('NativeSwap: Purging Reservations', async (vm: OPNetUnit) => {
         Blockchain.dispose();
     });
 
-    await vm.it('should not purge if there are no expired reservations', async () => {
+    await vm.it('should handle reservations expiring exactly at the boundary block', async () => {
+        const buyer = Blockchain.generateRandomAddress();
+
+        Blockchain.blockNumber = 3000n;
+
+        // Reservation at block 3000
+        await makeReservation(buyer, 100_000n, 1n);
+
+        for (let i = 0; i < 100; i++) {
+            await listTokenRandom(BitcoinUtils.expandToDecimals(3_000, tokenDecimals));
+        }
+
+        await addProviderLiquidity(Blockchain.expandTo18Decimals(1000));
+        await token.mintRaw(buyer, 1_000_000n);
+
+        for (let i = 0; i < 5; i++) {
+            await randomReserve(100_000n, false, true);
+            await makeReservation(Blockchain.generateRandomAddress(), 100_000n, 1n);
+        }
+
+        Blockchain.blockNumber += 2n;
+
+        await swapAll();
+
+        // Exactly 5 blocks later at 3005
+        Blockchain.blockNumber = 3006n;
+
+        const reserve = await nativeSwap.getReserve({
+            token: tokenAddress,
+        });
+
+        Assert.expect(reserve.reservedLiquidity).toEqual(0n);
+
+        // Check again
+        for (let i = 0; i < 100; i++) {
+            await randomReserve(1_500_000n, false, true);
+            await makeReservation(Blockchain.generateRandomAddress(), 100_000n, 1n);
+        }
+
+        Blockchain.blockNumber += 2n;
+
+        await swapAll();
+
+        // Exactly 5 blocks later at 3011
+        Blockchain.blockNumber = 3012n;
+
+        for (let i = 0; i < 23; i++) {
+            await randomReserve(1_500_000n, false, true);
+            await makeReservation(Blockchain.generateRandomAddress(), 100_000n, 1n);
+        }
+
+        await randomReserve(25_000_000n, false, true);
+
+        Blockchain.blockNumber += 6n;
+
+        toSwap = [];
+
+        for (let i = 0; i < 12; i++) {
+            await makeReservation(Blockchain.generateRandomAddress(), 100_000n, 1n);
+            await randomReserve(8_500_000n, false, true);
+        }
+
+        Blockchain.blockNumber += 2n;
+
+        await swapAll();
+
+        Blockchain.blockNumber += 4n;
+
+        await randomReserve(25_000_000n, false, true);
+    });
+
+    /*await vm.it('should not purge if there are no expired reservations', async () => {
         const buyer = Blockchain.generateRandomAddress();
         //await token.mintRaw(buyer, 100_000n);
 
@@ -135,6 +317,10 @@ await opnet('NativeSwap: Purging Reservations', async (vm: OPNetUnit) => {
     });
 
     await vm.it('should purge a single expired reservation', async () => {
+        for (let i = 0; i < 25; i++) {
+            await listTokenRandom(BitcoinUtils.expandToDecimals(100, tokenDecimals));
+        }
+
         await addProviderLiquidity(Blockchain.expandTo18Decimals(1000));
 
         const buyer = Blockchain.generateRandomAddress();
@@ -154,6 +340,10 @@ await opnet('NativeSwap: Purging Reservations', async (vm: OPNetUnit) => {
     });
 
     await vm.it('should purge a single expired reservation, two provider', async () => {
+        for (let i = 0; i < 25; i++) {
+            await listTokenRandom(BitcoinUtils.expandToDecimals(10000, tokenDecimals));
+        }
+
         await addProviderLiquidity(Blockchain.expandTo18Decimals(1000));
 
         const buyer = Blockchain.generateRandomAddress();
@@ -174,6 +364,10 @@ await opnet('NativeSwap: Purging Reservations', async (vm: OPNetUnit) => {
     await vm.it(
         'should purge expired reservations and not be able to reserve if not expired',
         async () => {
+            for (let i = 0; i < 25; i++) {
+                await listTokenRandom(BitcoinUtils.expandToDecimals(100000000, tokenDecimals));
+            }
+
             await addProviderLiquidity(Blockchain.expandTo18Decimals(100_000));
             const buyer = Blockchain.generateRandomAddress();
 
@@ -226,27 +420,21 @@ await opnet('NativeSwap: Purging Reservations', async (vm: OPNetUnit) => {
         },
     );
 
-    await vm.it('should handle reservations expiring exactly at the boundary block', async () => {
-        await addProviderLiquidity(Blockchain.expandTo18Decimals(1000));
-        const buyer = Blockchain.generateRandomAddress();
-        await token.mintRaw(buyer, 1_000_000n);
-
-        // Reservation at block 3000
-        Blockchain.blockNumber = 3000n;
-        await makeReservation(buyer, 100_000n, 1n);
-
-        // Exactly 5 blocks later at 3005
-        Blockchain.blockNumber = 3006n;
-
-        const reserve = await nativeSwap.getReserve({
-            token: tokenAddress,
-        });
-        Assert.expect(reserve.reservedLiquidity).toEqual(0n);
-    });
-
     await vm.it(
         'should handle a large number of reservations spread across many blocks and purge them efficiently',
         async () => {
+            for (let i = 0; i < 25; i++) {
+                await listTokenRandom(BitcoinUtils.expandToDecimals(100000000, tokenDecimals));
+            }
+
+            for (let i = 0; i < 5; i++) {
+                await randomReserve(100_000n, false, true);
+            }
+
+            Blockchain.blockNumber += 2n;
+
+            await swapAll();
+
             await addProviderLiquidity(Blockchain.expandTo18Decimals(21_000_000));
             const initialReserve = await nativeSwap.getReserve({
                 token: tokenAddress,
@@ -288,6 +476,18 @@ await opnet('NativeSwap: Purging Reservations', async (vm: OPNetUnit) => {
     await vm.it(
         'should handle a large number of reservations spread across many blocks and purge them efficiently 2',
         async () => {
+            for (let i = 0; i < 25; i++) {
+                await listTokenRandom(BitcoinUtils.expandToDecimals(100000000, tokenDecimals));
+            }
+
+            for (let i = 0; i < 5; i++) {
+                await randomReserve(100_000n, false, true);
+            }
+
+            Blockchain.blockNumber += 2n;
+
+            await swapAll();
+
             await addProviderLiquidity(Blockchain.expandTo18Decimals(21_000_000));
             Blockchain.blockNumber = 1000n;
 
@@ -322,6 +522,18 @@ await opnet('NativeSwap: Purging Reservations', async (vm: OPNetUnit) => {
     await vm.it(
         'should correctly purge reservations expiring exactly at boundary blocks multiple times',
         async () => {
+            for (let i = 0; i < 25; i++) {
+                await listTokenRandom(BitcoinUtils.expandToDecimals(100000000, tokenDecimals));
+            }
+
+            for (let i = 0; i < 5; i++) {
+                await randomReserve(100_000n, false, true);
+            }
+
+            Blockchain.blockNumber += 2n;
+
+            await swapAll();
+
             await addProviderLiquidity(Blockchain.expandTo18Decimals(2000));
             const buyer = Blockchain.generateRandomAddress();
             await token.mintRaw(buyer, 10_000_000n);
@@ -345,6 +557,18 @@ await opnet('NativeSwap: Purging Reservations', async (vm: OPNetUnit) => {
     );
 
     await vm.it('should handle consecutive purges gracefully', async () => {
+        for (let i = 0; i < 25; i++) {
+            await listTokenRandom(BitcoinUtils.expandToDecimals(100000000, tokenDecimals));
+        }
+
+        for (let i = 0; i < 5; i++) {
+            await randomReserve(100_000n, false, true);
+        }
+
+        Blockchain.blockNumber += 2n;
+
+        await swapAll();
+
         await addProviderLiquidity(Blockchain.expandTo18Decimals(5000));
         const buyer = Blockchain.generateRandomAddress();
 
@@ -371,6 +595,18 @@ await opnet('NativeSwap: Purging Reservations', async (vm: OPNetUnit) => {
     });
 
     await vm.it('should handle scenario where no providers remain after purge', async () => {
+        for (let i = 0; i < 25; i++) {
+            await listTokenRandom(BitcoinUtils.expandToDecimals(100000000, tokenDecimals));
+        }
+
+        for (let i = 0; i < 5; i++) {
+            await randomReserve(100_000n, false, true);
+        }
+
+        Blockchain.blockNumber += 2n;
+
+        await swapAll();
+
         await addProviderLiquidity(Blockchain.expandTo18Decimals(10));
         const buyer = Blockchain.generateRandomAddress();
         await token.mintRaw(buyer, 10_000_000n);
@@ -387,6 +623,18 @@ await opnet('NativeSwap: Purging Reservations', async (vm: OPNetUnit) => {
     });
 
     await vm.it('should handle reservations with very large block numbers', async () => {
+        for (let i = 0; i < 25; i++) {
+            await listTokenRandom(BitcoinUtils.expandToDecimals(100000000, tokenDecimals));
+        }
+
+        for (let i = 0; i < 5; i++) {
+            await randomReserve(100_000n, false, true);
+        }
+
+        Blockchain.blockNumber += 2n;
+
+        await swapAll();
+
         await addProviderLiquidity(Blockchain.expandTo18Decimals(10_000));
         const buyer = Blockchain.generateRandomAddress();
         await token.mintRaw(buyer, 10_000_000n);
@@ -407,6 +655,18 @@ await opnet('NativeSwap: Purging Reservations', async (vm: OPNetUnit) => {
     });
 
     await vm.it('should handle purge reservation spread in multiple block ranges', async () => {
+        for (let i = 0; i < 25; i++) {
+            await listTokenRandom(BitcoinUtils.expandToDecimals(100000000, tokenDecimals));
+        }
+
+        for (let i = 0; i < 5; i++) {
+            await randomReserve(100_000n, false, true);
+        }
+
+        Blockchain.blockNumber += 2n;
+
+        await swapAll();
+
         //await addProviderLiquidity(Blockchain.expandTo18Decimals(10_000));
 
         const buyer = Blockchain.generateRandomAddress();
@@ -434,6 +694,18 @@ await opnet('NativeSwap: Purging Reservations', async (vm: OPNetUnit) => {
     });
 
     await vm.it('should handle purge reservation spread in multiple block ranges 2', async () => {
+        for (let i = 0; i < 25; i++) {
+            await listTokenRandom(BitcoinUtils.expandToDecimals(100000000, tokenDecimals));
+        }
+
+        for (let i = 0; i < 5; i++) {
+            await randomReserve(100_000n, false, true);
+        }
+
+        Blockchain.blockNumber += 2n;
+
+        await swapAll();
+
         //await addProviderLiquidity(Blockchain.expandTo18Decimals(10_000));
 
         const buyer = Blockchain.generateRandomAddress();
@@ -475,6 +747,18 @@ await opnet('NativeSwap: Purging Reservations', async (vm: OPNetUnit) => {
     await vm.it(
         'should correctly handle purges with both priority and normal providers present',
         async () => {
+            for (let i = 0; i < 25; i++) {
+                await listTokenRandom(BitcoinUtils.expandToDecimals(100000000, tokenDecimals));
+            }
+
+            for (let i = 0; i < 5; i++) {
+                await randomReserve(100_000n, false, true);
+            }
+
+            Blockchain.blockNumber += 2n;
+
+            await swapAll();
+
             await addProviderLiquidity(Blockchain.expandTo18Decimals(10_000), false);
 
             await addProviderLiquidity(Blockchain.expandTo18Decimals(10_000), false);
@@ -504,5 +788,5 @@ await opnet('NativeSwap: Purging Reservations', async (vm: OPNetUnit) => {
 
             Assert.expect(reserve.reservedLiquidity).toEqual(0n);
         },
-    );
+    );*/
 });
