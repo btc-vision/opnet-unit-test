@@ -215,8 +215,6 @@ export class ScenarioPlayer {
                 context: '',
             });
         } catch (e) {
-            console.log('Error', e);
-
             throw e;
         }
 
