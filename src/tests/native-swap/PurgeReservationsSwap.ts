@@ -284,6 +284,8 @@ await opnet('NativeSwap: Purging Reservations', async (vm: OPNetUnit) => {
         // Exactly 5 blocks later at 3011
         Blockchain.blockNumber = 3012n;
 
+        await randomReserve(100_000_000n, false, true);
+
         for (let i = 0; i < 23; i++) {
             await randomReserve(1_500_000n, false, true);
             await makeReservation(Blockchain.generateRandomAddress(), 100_000n, 1n);
