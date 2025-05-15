@@ -77,7 +77,7 @@ class ProviderDetailsInfo {
 }
 
 export class ScenarioPlayer {
-    public async runScenarioFile(jsonPath: string): Promise<void> {
+    public async runScenarioFile(jsonPath: string, verbose: boolean = true): Promise<void> {
         const filePath = path.resolve(jsonPath);
         const rawContent = fs.readFileSync(filePath, 'utf-8');
         const scenarioData: ScenarioDefinition = JSON.parse(rawContent) as ScenarioDefinition;
@@ -85,7 +85,7 @@ export class ScenarioPlayer {
         Blockchain.log(`Verbose is: ${scenarioData.verbose}`);
 
         for (const test of scenarioData.tests) {
-            await this.runTest(test, true); //scenarioData.verbose);
+            await this.runTest(test, verbose); //scenarioData.verbose);
         }
     }
 

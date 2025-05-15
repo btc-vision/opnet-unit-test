@@ -8,6 +8,9 @@ await opnet('Native Swap - User flows', async (vm: OPNetUnit) => {
 
     await vm.it('should run Random5TokenWithPriorityAndLiquidity correctly', async () => {
         const player = new ScenarioPlayer();
-        await player.runScenarioFile('./scenarios/Random5TokenWithPriorityAndLiquidity.json');
+        await player.runScenarioFile(
+            './scenarios/Random5TokenWithPriorityAndLiquidity.json',
+            false,
+        );
     });
 });
