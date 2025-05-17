@@ -95,128 +95,128 @@ export class ScenarioPlayer {
         const reserveMap = new Map<string, ReserveInfo[]>();
         const quoteMap = new Map<string, QuoteInfo[]>();
 
-        try {
-            let i: number = 0;
-            let lastblock: bigint = 0n;
+        //try {
+        let i: number = 0;
+        let lastblock: bigint = 0n;
 
-            Blockchain.log(`Running ${test.name}`);
-            for (const op of test.operations) {
-                if (Blockchain.blockNumber !== lastblock) {
-                    lastblock = Blockchain.blockNumber;
-                    i = 0;
-                    helper.clearExpiredReservation();
-                }
-
-                /*
-                if (op.command == 'createToken') {
-                    if (!reserveMap.has(op.parameters['tokenName'])) {
-                        reserveMap.set(op.parameters['tokenName'], []);
-                    }
-
-                    if (!quoteMap.has(op.parameters['tokenName'])) {
-                        quoteMap.set(op.parameters['tokenName'], []);
-                    }
-                }
-*/
-                await this.callScenarioMethod(op, helper, verbose);
-
-                /*
-                if (
-                    op.command == `reserve` ||
-                    op.command == `listLiquidity` ||
-                    op.command == `reserveLiquidity` ||
-                    op.command == `swap` ||
-                    op.command == `removeLiquidity` ||
-                    op.command == `addLiquidity` ||
-                    op.command == `cancelListing`
-                ) {
-                    i++;
-
-                    const reserveArr = reserveMap.get(op.parameters['tokenName']);
-                    const quoteArr = quoteMap.get(op.parameters['tokenName']);
-
-                    if (reserveArr) {
-                        reserveArr.push(
-                            await this.createReserveInfo(helper, op.parameters['tokenName'], i),
-                        );
-                    } else {
-                        throw new Error(`No reserve found for ${op.parameters['tokenName']}`);
-                    }
-
-                    if (quoteArr) {
-                        quoteArr.push(
-                            await this.createQuoteInfo(helper, op.parameters['tokenName'], i),
-                        );
-                    }
-                }
-                */
+        Blockchain.log(`Running ${test.name}`);
+        for (const op of test.operations) {
+            if (Blockchain.blockNumber !== lastblock) {
+                lastblock = Blockchain.blockNumber;
+                i = 0;
+                helper.clearExpiredReservation();
             }
 
             /*
-            if (!fs.existsSync('./results')) {
-                fs.mkdirSync('./results');
-            }
-
-            for (const [tokenName, reserves] of reserveMap.entries()) {
-                const filePath = path.join(`./results/`, `${tokenName}_reserve.json`);
-                const json = JSON.stringify(reserves, null, 2);
-
-                fs.writeFileSync(filePath, json, 'utf8');
-            }
-
-            for (const [tokenName, quotes] of quoteMap.entries()) {
-                const filePath = path.join(`./results/`, `${tokenName}_quote.json`);
-                const json = JSON.stringify(quotes, null, 2);
-
-                fs.writeFileSync(filePath, json, 'utf8');
-            }
-
- */
-            Blockchain.blockNumber = Blockchain.blockNumber + 1n;
-
-            for (const [tokenName, providers] of helper._providerMap.entries()) {
-                const filePath = path.join(`./results/`, `${tokenName}_providers.json`);
-                const details: ProviderDetailsInfo[] = [];
-
-                for (const provider of providers) {
-                    Blockchain.txOrigin = Address.fromString(provider);
-                    Blockchain.msgSender = Blockchain.txOrigin;
-
-                    const detail = await helper.getProviderDetailForReport(tokenName);
-                    details.push(
-                        new ProviderDetailsInfo(
-                            detail.liquidity.toString(),
-                            detail.reserved.toString(),
-                            detail.liquidityProvided.toString(),
-                            detail.btcReceiver,
-                            Blockchain.msgSender.toString(),
-                        ),
-                    );
+            if (op.command == 'createToken') {
+                if (!reserveMap.has(op.parameters['tokenName'])) {
+                    reserveMap.set(op.parameters['tokenName'], []);
                 }
 
-                const json = JSON.stringify(details, null, 2);
+                if (!quoteMap.has(op.parameters['tokenName'])) {
+                    quoteMap.set(op.parameters['tokenName'], []);
+                }
+            }
+*/
+            await this.callScenarioMethod(op, helper, verbose);
 
-                fs.writeFileSync(filePath, json, 'utf8');
+            /*
+            if (
+                op.command == `reserve` ||
+                op.command == `listLiquidity` ||
+                op.command == `reserveLiquidity` ||
+                op.command == `swap` ||
+                op.command == `removeLiquidity` ||
+                op.command == `addLiquidity` ||
+                op.command == `cancelListing`
+            ) {
+                i++;
+
+                const reserveArr = reserveMap.get(op.parameters['tokenName']);
+                const quoteArr = quoteMap.get(op.parameters['tokenName']);
+
+                if (reserveArr) {
+                    reserveArr.push(
+                        await this.createReserveInfo(helper, op.parameters['tokenName'], i),
+                    );
+                } else {
+                    throw new Error(`No reserve found for ${op.parameters['tokenName']}`);
+                }
+
+                if (quoteArr) {
+                    quoteArr.push(
+                        await this.createQuoteInfo(helper, op.parameters['tokenName'], i),
+                    );
+                }
+            }
+            */
+        }
+
+        /*
+        if (!fs.existsSync('./results')) {
+            fs.mkdirSync('./results');
+        }
+
+        for (const [tokenName, reserves] of reserveMap.entries()) {
+            const filePath = path.join(`./results/`, `${tokenName}_reserve.json`);
+            const json = JSON.stringify(reserves, null, 2);
+
+            fs.writeFileSync(filePath, json, 'utf8');
+        }
+
+        for (const [tokenName, quotes] of quoteMap.entries()) {
+            const filePath = path.join(`./results/`, `${tokenName}_quote.json`);
+            const json = JSON.stringify(quotes, null, 2);
+
+            fs.writeFileSync(filePath, json, 'utf8');
+        }
+
+*/
+        Blockchain.blockNumber = Blockchain.blockNumber + 1n;
+
+        for (const [tokenName, providers] of helper._providerMap.entries()) {
+            const filePath = path.join(`./results/`, `${tokenName}_providers.json`);
+            const details: ProviderDetailsInfo[] = [];
+
+            for (const provider of providers) {
+                Blockchain.txOrigin = Address.fromString(provider);
+                Blockchain.msgSender = Blockchain.txOrigin;
+
+                const detail = await helper.getProviderDetailForReport(tokenName);
+                details.push(
+                    new ProviderDetailsInfo(
+                        detail.liquidity.toString(),
+                        detail.reserved.toString(),
+                        detail.liquidityProvided.toString(),
+                        detail.btcReceiver,
+                        Blockchain.msgSender.toString(),
+                    ),
+                );
             }
 
-            Blockchain.log('reset');
+            const json = JSON.stringify(details, null, 2);
 
-            console.log('graph', JSON.stringify(helper.dataNative));
-
-            helper.reset({
-                command: 'reset',
-                parameters: {},
-                recipients: [],
-                expected: {
-                    throw: false,
-                    events: [],
-                    stateCheck: {},
-                },
-                context: '',
-            });
-        } catch (e) {
-            throw e;
+            fs.writeFileSync(filePath, json, 'utf8');
         }
+
+        Blockchain.log('reset');
+
+        console.log('graph', JSON.stringify(helper.dataNative));
+
+        helper.reset({
+            command: 'reset',
+            parameters: {},
+            recipients: [],
+            expected: {
+                throw: false,
+                events: [],
+                stateCheck: {},
+            },
+            context: '',
+        });
+        //} catch (e) {
+        //    throw e;
+        //}
 
         logEndSection(test.name);
     }
