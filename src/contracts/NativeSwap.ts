@@ -112,7 +112,7 @@ export class NativeSwap extends ContractRuntime {
     public constructor(
         deployer: Address,
         address: Address,
-        gasLimit: bigint = 1_000_000_000_000_000n,
+        gasLimit: bigint = 2_500_000_000_000n, //1_000_000_000_000_000n,
     ) {
         super({
             address: address,
