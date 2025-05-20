@@ -65,6 +65,7 @@ await opnet('NativeSwap: Purging Reservations', async (vm: OPNetUnit) => {
             priority: priority,
             disablePriorityQueueFees: false,
         });
+
         Assert.expect(resp.response.error).toBeUndefined();
         return provider;
     }
@@ -88,7 +89,7 @@ await opnet('NativeSwap: Purging Reservations', async (vm: OPNetUnit) => {
         Blockchain.txOrigin = provider;
         Blockchain.msgSender = provider;
 
-        await nativeSwap.listLiquidity({
+        const liquid = await nativeSwap.listLiquidity({
             token: tokenAddress,
             receiver: provider.p2tr(Blockchain.network),
             amountIn: l,
@@ -99,10 +100,20 @@ await opnet('NativeSwap: Purging Reservations', async (vm: OPNetUnit) => {
         Blockchain.txOrigin = backup;
         Blockchain.msgSender = backup;
 
-        vm.info(`Added liquidity for ${l} tokens`);
+        vm.info(`Added liquidity for ${l} tokens - ${gas2USD(liquid.response.usedGas)} USD`);
     }
 
+    const shuffle = <T>(array: T[]) => {
+        for (let i = array.length - 1; i > 0; i--) {
+            const j = Math.floor(Math.random() * (i + 1));
+            [array[i], array[j]] = [array[j], array[i]];
+        }
+        return array;
+    };
+
     async function swapAll(): Promise<void> {
+        toSwap = shuffle(toSwap);
+
         for (let i = 0; i < toSwap.length; i++) {
             const reservation = toSwap[i];
             Blockchain.txOrigin = reservation.a;
@@ -118,6 +129,7 @@ await opnet('NativeSwap: Purging Reservations', async (vm: OPNetUnit) => {
                 `Swapped spent ${gas2USD(s.response.usedGas)} USD in gas, ${d.amountOut} tokens`,
             );
         }
+
         Blockchain.txOrigin = userAddress;
         Blockchain.msgSender = userAddress;
         toSwap = [];
@@ -183,6 +195,10 @@ await opnet('NativeSwap: Purging Reservations', async (vm: OPNetUnit) => {
             minimumAmountOut: minOut,
             forLP: false,
         });
+
+        vm.info(
+            `Reserved ${BitcoinUtils.formatUnits(resp.expectedAmountOut, tokenDecimals)} tokens (${gas2USD(resp.response.usedGas)} USD in gas)`,
+        );
 
         Assert.expect(resp.response.error).toBeUndefined();
 

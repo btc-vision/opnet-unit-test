@@ -61,6 +61,7 @@ await opnet('NativeSwap: Purging Reservations', async (vm: OPNetUnit) => {
             priority: priority,
             disablePriorityQueueFees: false,
         });
+
         Assert.expect(resp.response.error).toBeUndefined();
         return provider;
     }
