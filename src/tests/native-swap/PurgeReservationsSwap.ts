@@ -148,7 +148,6 @@ await opnet('NativeSwap: Purging Reservations', async (vm: OPNetUnit) => {
         if (rnd) {
             if (reuse) {
                 provider = usedReservationAddresses.shift() as Address;
-                console.log(`Reusing address ${provider}`);
 
                 if (!provider) {
                     throw new Error(`No more addresses to reuse`);
