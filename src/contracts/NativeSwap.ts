@@ -91,11 +91,11 @@ export class NativeSwap extends ContractRuntime {
     );
 
     private readonly getPriorityQueueCostSelector: number = Number(
-        `0x${this.abiCoder.encodeSelector('getPriorityQueueCost')}`,
+        `0x${this.abiCoder.encodeSelector('getPriorityQueueCost()')}`,
     );
 
     private readonly getFeesSelector: number = Number(
-        `0x${this.abiCoder.encodeSelector('getFees')}`,
+        `0x${this.abiCoder.encodeSelector('getFees()')}`,
     );
 
     private readonly getAntibotSettingsSelector: number = Number(
@@ -106,7 +106,7 @@ export class NativeSwap extends ContractRuntime {
         `0x${this.abiCoder.encodeSelector('setStakingContractAddress(address)')}`,
     );
     private readonly getStakingContractAddressSelector: number = Number(
-        `0x${this.abiCoder.encodeSelector('getStakingContractAddress')}`,
+        `0x${this.abiCoder.encodeSelector('getStakingContractAddress()')}`,
     );
 
     public constructor(
