@@ -146,9 +146,9 @@ import { Address, BinaryReader, BinaryWriter } from '@btc-vision/transaction';
 import { Blockchain } from '../blockchain/Blockchain.js';
 
 export class SimpleToken extends ContractRuntime {
-    private readonly mintSelector: number = Number(`0x${this.abiCoder.encodeSelector('mint')}`);
-    private readonly transferSelector: number = Number(`0x${this.abiCoder.encodeSelector('transfer')}`);
-    private readonly balanceOfSelector: number = Number(`0x${this.abiCoder.encodeSelector('balanceOf')}`);
+    private readonly mintSelector: number = Number(`0x${this.abiCoder.encodeSelector('mint()')}`);
+    private readonly transferSelector: number = Number(`0x${this.abiCoder.encodeSelector('transfer()')}`);
+    private readonly balanceOfSelector: number = Number(`0x${this.abiCoder.encodeSelector('balanceOf()')}`);
 
     constructor(
         address: Address,
