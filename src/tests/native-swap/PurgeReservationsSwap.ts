@@ -242,7 +242,7 @@ await opnet('NativeSwap: Purging Reservations', async (vm: OPNetUnit) => {
 
         nativeSwap = new NativeSwap(userAddress, ewmaAddress);
         Blockchain.register(nativeSwap);
-        
+
         await nativeSwap.init();
         Blockchain.msgSender = userAddress;
 
@@ -264,14 +264,11 @@ await opnet('NativeSwap: Purging Reservations', async (vm: OPNetUnit) => {
     await vm.it('should handle reservations expiring exactly at the boundary block', async () => {
         const buyer = Blockchain.generateRandomAddress();
 
-        console.log('ok2');
         Blockchain.blockNumber = 3000n;
 
         // Reservation at block 3000
         await makeReservation(buyer, 100_000n, 1n);
-
-        console.log('ok');
-
+        
         for (let i = 0; i < 500; i++) {
             await listTokenRandom(BitcoinUtils.expandToDecimals(1000, tokenDecimals));
         }
