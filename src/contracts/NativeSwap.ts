@@ -380,7 +380,7 @@ export class NativeSwap extends ContractRuntime {
     }
 
     protected handleError(error: Error): Error {
-        return new Error(`(in order book: ${this.address}) OPNET: ${error.message}`);
+        return new Error(`(in nativeswap: ${this.address}) OPNET: ${error.message}`);
     }
 
     protected defineRequiredBytecodes(): void {
