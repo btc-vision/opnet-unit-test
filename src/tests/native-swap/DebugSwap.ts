@@ -16,6 +16,9 @@ import { NativeSwap } from '../../contracts/NativeSwap.js';
 import { Recipient, ReserveResult } from '../../contracts/NativeSwapTypes.js';
 import { createRecipientsOutput } from '../utils/TransactionUtils.js';
 import { NativeSwapTypesCoders } from '../../contracts/NativeSwapTypesCoders.js';
+import bitcoin from '@btc-vision/bitcoin';
+
+Blockchain.changeNetwork(bitcoin.networks.testnet);
 
 interface ParsedState {
     readonly pointer: {
@@ -82,13 +85,18 @@ function getStates(file: string): FastBigIntMap {
         const pointer = state.pointer.$binary.base64;
         const value = state.value.$binary.base64;
 
-        const pointerHex = Buffer.from(pointer, 'base64');
-        const valueHex = Buffer.from(value, 'base64');
+        const pointerHex = Uint8Array.from(Buffer.from(pointer, 'base64'));
+        const valueHex = Uint8Array.from(Buffer.from(value, 'base64'));
+        if (pointerHex.length !== 32 || valueHex.length !== 32) {
+            throw new Error(
+                `Invalid state data: Pointer and value must be 32 bytes long. Got ${pointerHex.length} and ${valueHex.length} bytes.`,
+            );
+        }
 
-        const key = BufferHelper.uint8ArrayToPointer(Uint8Array.from(pointerHex));
-        const val = BufferHelper.uint8ArrayToValue(Uint8Array.from(valueHex));
+        const key = BufferHelper.uint8ArrayToPointer(pointerHex);
+        const pointerValueBigInt = value ? BufferHelper.uint8ArrayToPointer(valueHex) : 0n;
 
-        map.set(key, val);
+        map.set(key, pointerValueBigInt);
     }
 
     return map;
@@ -333,12 +341,46 @@ await opnet('NativeSwap: Debug', async (vm: OPNetUnit) => {
         StateHandler.overrideStates(nativeAddy, nativeStates);
         StateHandler.overrideStates(tokenAddress, motoStates);
 
-        StateHandler.overrideDeployment(tokenAddress);
         StateHandler.overrideDeployment(nativeAddy);
+        StateHandler.overrideDeployment(tokenAddress);
     });
 
     vm.afterEach(() => {
         Blockchain.dispose();
         Blockchain.cleanup();
+    });
+
+    await vm.it('should debug', async () => {
+        Blockchain.blockNumber = 4503299n;
+
+        const user = Address.fromString(
+            '0x028ef79e26023ff0f717922cd299499f9d7c4decf0c5e1733737aa8ae22f0eea63',
+        );
+        
+        const sat1BTC = 100_000_000n;
+        const reservation = await makeReservation(user, sat1BTC, 0n);
+        console.log(reservation);
+
+        /*const r = await nativeSwap.getReserve({
+            token: tokenAddress,
+        });
+
+        console.log({
+            liquidity: BitcoinUtils.formatUnits(r.liquidity, tokenDecimals),
+            reservedLiquidity: BitcoinUtils.formatUnits(r.reservedLiquidity, tokenDecimals),
+            virtualBTCReserve: BitcoinUtils.formatUnits(r.virtualBTCReserve, 8),
+            virtualTokenReserve: BitcoinUtils.formatUnits(r.virtualTokenReserve, tokenDecimals),
+        });
+
+        const p = await nativeSwap.getProviderDetails({
+            token: tokenAddress,
+        });
+
+        console.log({
+            liquidity: p.liquidity,
+            liquidityProvided: p.liquidityProvided,
+            reserved: p.reserved,
+            btcReceiver: p.btcReceiver,
+        });*/
     });
 });
