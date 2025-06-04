@@ -15,7 +15,7 @@ await opnet('Native Swap - Get Quote', async (vm: OPNetUnit) => {
     let token: OP_20;
 
     const userAddress: Address = Blockchain.generateRandomAddress();
-    const ewmaAddress: Address = Blockchain.generateRandomAddress();
+    const nativeSwapAddress: Address = Blockchain.generateRandomAddress();
     let tokenAddress: Address;
 
     vm.beforeEach(async () => {
@@ -28,7 +28,7 @@ await opnet('Native Swap - Get Quote', async (vm: OPNetUnit) => {
         tokenAddress = token.address;
 
         // Instantiate and register the nativeSwap contract
-        nativeSwap = new NativeSwap(userAddress, ewmaAddress);
+        nativeSwap = new NativeSwap(userAddress, nativeSwapAddress);
         Blockchain.register(nativeSwap);
         await nativeSwap.init();
     });

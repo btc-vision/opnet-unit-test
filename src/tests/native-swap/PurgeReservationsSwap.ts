@@ -23,7 +23,7 @@ await opnet('NativeSwap: Purging Reservations', async (vm: OPNetUnit) => {
 
     const userAddress: Address = Blockchain.generateRandomAddress();
     const tokenAddress: Address = Blockchain.generateRandomAddress();
-    const ewmaAddress: Address = Blockchain.generateRandomAddress();
+    const nativeAddress: Address = Blockchain.generateRandomAddress();
     const tokenDecimals = 18;
 
     async function createPool(
@@ -45,7 +45,7 @@ await opnet('NativeSwap: Purging Reservations', async (vm: OPNetUnit) => {
             receiver: initialLiquidityProvider.p2tr(Blockchain.network),
             antiBotEnabledFor: antiBotEnabledFor,
             antiBotMaximumTokensPerReservation: antiBotMaximumTokensPerReservation,
-            maxReservesIn5BlocksPercent: 100,
+            maxReservesIn5BlocksPercent: 15,
         });
     }
 
@@ -84,7 +84,7 @@ await opnet('NativeSwap: Purging Reservations', async (vm: OPNetUnit) => {
         // Transfer tokens from userAddress to provider
         await token.transfer(userAddress, provider, l);
 
-        // Approve EWMA contract to spend tokens
+        // Approve NativeSwap contract to spend tokens
         await token.approve(provider, nativeSwap.address, l);
 
         // Add liquidity
@@ -241,7 +241,7 @@ await opnet('NativeSwap: Purging Reservations', async (vm: OPNetUnit) => {
         const totalSupply = Blockchain.expandToDecimal(1_000_000_000_000, tokenDecimals);
         await token.mintRaw(userAddress, totalSupply);
 
-        nativeSwap = new NativeSwap(userAddress, ewmaAddress);
+        nativeSwap = new NativeSwap(userAddress, nativeAddress);
         Blockchain.register(nativeSwap);
 
         await nativeSwap.init();

@@ -6,7 +6,7 @@ await opnet('Native Swap - Get/Set Fees', async (vm: OPNetUnit) => {
     let nativeSwap: NativeSwap;
 
     const userAddress: Address = Blockchain.generateRandomAddress();
-    const ewmaAddress: Address = Blockchain.generateRandomAddress();
+    const nativeSwapAddress: Address = Blockchain.generateRandomAddress();
 
     vm.beforeEach(async () => {
         // Reset blockchain state
@@ -14,7 +14,7 @@ await opnet('Native Swap - Get/Set Fees', async (vm: OPNetUnit) => {
         Blockchain.clearContracts();
         await Blockchain.init();
 
-        nativeSwap = new NativeSwap(userAddress, ewmaAddress);
+        nativeSwap = new NativeSwap(userAddress, nativeSwapAddress);
         Blockchain.register(nativeSwap);
         await nativeSwap.init();
 

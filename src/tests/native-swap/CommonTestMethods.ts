@@ -274,7 +274,7 @@ export class NativeSwapTestHelper {
         // Transfer tokens from userAddress to provider
         await this.token.transfer(this.userAddress, provider, l);
 
-        // Approve EWMA contract to spend tokens
+        // Approve NativeSwap contract to spend tokens
         await this.token.approve(provider, this.nativeSwap.address, l);
 
         // Add liquidity
@@ -335,7 +335,7 @@ export class NativeSwapTestHelper {
         Blockchain.msgSender = this.userAddress;
         await this.token.transfer(this.userAddress, provider, l);
 
-        // Approve EWMA contract to spend tokens
+        // Approve NativeSwap contract to spend tokens
         await this.token.approve(provider, this.nativeSwap.address, l);
 
         // Add liquidity

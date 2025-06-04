@@ -9,7 +9,7 @@ await opnet('Native Swap - Get Reserve', async (vm: OPNetUnit) => {
 
     const tokenDecimals = 18;
     const userAddress: Address = Blockchain.generateRandomAddress();
-    const ewmaAddress: Address = Blockchain.generateRandomAddress();
+    const nativeSwapAddress: Address = Blockchain.generateRandomAddress();
 
     async function createDefaultLiquidityPool(): Promise<void> {
         const initialLiquidityProvider: Address = Blockchain.generateRandomAddress();
@@ -65,7 +65,7 @@ await opnet('Native Swap - Get Reserve', async (vm: OPNetUnit) => {
 
         token = await helper_createToken(userAddress, tokenDecimals, 10_000_000);
 
-        nativeSwap = new NativeSwap(userAddress, ewmaAddress);
+        nativeSwap = new NativeSwap(userAddress, nativeSwapAddress);
         Blockchain.register(nativeSwap);
         await nativeSwap.init();
     });

@@ -6,7 +6,7 @@ await opnet('Native Swap - Onlyowner tests', async (vm: OPNetUnit) => {
     let nativeSwap: NativeSwap;
 
     const userAddress: Address = Blockchain.generateRandomAddress();
-    const ewmaAddress: Address = Blockchain.generateRandomAddress();
+    const nativeSwapAddress: Address = Blockchain.generateRandomAddress();
     const stakingContractAddress: Address = Blockchain.generateRandomAddress();
 
     vm.beforeEach(async () => {
@@ -14,7 +14,7 @@ await opnet('Native Swap - Onlyowner tests', async (vm: OPNetUnit) => {
         Blockchain.clearContracts();
         await Blockchain.init();
 
-        nativeSwap = new NativeSwap(userAddress, ewmaAddress);
+        nativeSwap = new NativeSwap(userAddress, nativeSwapAddress);
         Blockchain.register(nativeSwap);
         await nativeSwap.init();
 

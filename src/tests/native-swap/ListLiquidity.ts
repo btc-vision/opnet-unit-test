@@ -22,7 +22,7 @@ await opnet('NativeSwap: Priority and Normal Queue listLiquidity', async (vm: OP
 
     const userAddress: Address = receiver;
     const tokenAddress: Address = Blockchain.generateRandomAddress();
-    const ewmaAddress: Address = Blockchain.generateRandomAddress();
+    const nativeSwapAddress: Address = Blockchain.generateRandomAddress();
 
     const liquidityOwner: Address = Blockchain.generateRandomAddress();
     const initialLiquidityAddress: string = liquidityOwner.p2tr(Blockchain.network);
@@ -45,12 +45,12 @@ await opnet('NativeSwap: Priority and Normal Queue listLiquidity', async (vm: OP
     /**
      * Creates a pool by:
      *  1) Minting the initialLiquidity amount of tokens to userAddress
-     *  2) Approving that amount for EWMA contract
+     *  2) Approving that amount for NativeSwap contract
      *  3) Calling nativeSwap.createPool(...)
      *
      * In other words, this replaces the old "setQuote" usage,
      * but now we also deposit 'initialLiquidity' as a direct addition
-     * into the EWMA contract, designating userAddress as the initial provider.
+     * into the NativeSwap contract, designating userAddress as the initial provider.
      */
     async function createPool(
         floorPrice: bigint,
@@ -103,7 +103,7 @@ await opnet('NativeSwap: Priority and Normal Queue listLiquidity', async (vm: OP
         // (depending on your test logic).
         await token.mint(userAddress, 10_000_000);
 
-        nativeSwap = new NativeSwap(userAddress, ewmaAddress);
+        nativeSwap = new NativeSwap(userAddress, nativeSwapAddress);
         Blockchain.register(nativeSwap);
         await nativeSwap.init();
 
@@ -347,7 +347,7 @@ await opnet('NativeSwap: Priority and Normal Queue listLiquidity', async (vm: OP
         await token.init();
         await token.mint(userAddress, 10_000_000);
 
-        nativeSwap = new NativeSwap(userAddress, ewmaAddress);
+        nativeSwap = new NativeSwap(userAddress, nativeSwapAddress);
         Blockchain.register(nativeSwap);
         await nativeSwap.init();
         Blockchain.msgSender = userAddress;
@@ -384,7 +384,7 @@ await opnet('NativeSwap: Priority and Normal Queue listLiquidity', async (vm: OP
         await token.init();
         await token.mint(userAddress, 10_000_000);
 
-        nativeSwap = new NativeSwap(liquidityOwner, ewmaAddress);
+        nativeSwap = new NativeSwap(liquidityOwner, nativeSwapAddress);
         Blockchain.register(nativeSwap);
         await nativeSwap.init();
 

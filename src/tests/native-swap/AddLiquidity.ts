@@ -24,7 +24,7 @@ await opnet('Native Swap - Add Liquidity', async (vm: OPNetUnit) => {
 
     const userAddress: Address = Blockchain.generateRandomAddress();
     const tokenAddress: Address = Blockchain.generateRandomAddress();
-    const ewmaAddress: Address = Blockchain.generateRandomAddress();
+    const nativeSwapAddress: Address = Blockchain.generateRandomAddress();
 
     const initialLiquidityProvider: Address = Blockchain.generateRandomAddress();
 
@@ -93,7 +93,7 @@ await opnet('Native Swap - Add Liquidity', async (vm: OPNetUnit) => {
         // Transfer tokens from userAddress to provider
         await token.transfer(userAddress, provider, l);
 
-        // Approve EWMA contract to spend tokens
+        // Approve NativeSwap contract to spend tokens
         await token.approve(provider, nativeSwap.address, l);
 
         // Add liquidity
@@ -154,7 +154,7 @@ await opnet('Native Swap - Add Liquidity', async (vm: OPNetUnit) => {
         // Transfer tokens from userAddress to provider
         await token.transfer(userAddress, provider, l);
 
-        // Approve EWMA contract to spend tokens
+        // Approve NativeSwap contract to spend tokens
         await token.approve(provider, nativeSwap.address, l);
 
         // Add liquidity
@@ -322,7 +322,7 @@ await opnet('Native Swap - Add Liquidity', async (vm: OPNetUnit) => {
         await token.mintRaw(userAddress, totalSupply);
 
         // Instantiate and register the nativeSwap contract
-        nativeSwap = new NativeSwap(userAddress, ewmaAddress);
+        nativeSwap = new NativeSwap(userAddress, nativeSwapAddress);
         Blockchain.register(nativeSwap);
         await nativeSwap.init();
 

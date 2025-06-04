@@ -18,7 +18,7 @@ await opnet('NativeSwap: Purging Reservations', async (vm: OPNetUnit) => {
 
     const userAddress: Address = Blockchain.generateRandomAddress();
     const tokenAddress: Address = Blockchain.generateRandomAddress();
-    const ewmaAddress: Address = Blockchain.generateRandomAddress();
+    const nativeSwapAddress: Address = Blockchain.generateRandomAddress();
     const tokenDecimals = 18;
 
     async function createPool(
@@ -104,7 +104,7 @@ await opnet('NativeSwap: Purging Reservations', async (vm: OPNetUnit) => {
         await token.init();
         await token.mintRaw(userAddress, 10_000_000n);
 
-        nativeSwap = new NativeSwap(userAddress, ewmaAddress);
+        nativeSwap = new NativeSwap(userAddress, nativeSwapAddress);
         Blockchain.register(nativeSwap);
         await nativeSwap.init();
         Blockchain.msgSender = userAddress;

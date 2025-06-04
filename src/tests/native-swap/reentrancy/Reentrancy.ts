@@ -21,7 +21,7 @@ await opnet('Native Swap - Reentrancy', async (vm: OPNetUnit) => {
     const tokenAddress: Address = Address.fromString(
         '0x2aa01777299ad13481fa067374fc369ace93b3c87da319934a6817c6c162a23e',
     );
-    const ewmaAddress: Address = Address.fromString(
+    const nativeSwapAddress: Address = Address.fromString(
         '0x1aa01777299ad13481fa067374fc369ace93b3c87da319934a6817c6c162a23f',
     );
 
@@ -39,7 +39,7 @@ await opnet('Native Swap - Reentrancy', async (vm: OPNetUnit) => {
         // Transfer tokens from userAddress to provider
         await token.transfer(userAddress, provider, l);
 
-        // Approve EWMA contract to spend tokens
+        // Approve NativeSwap contract to spend tokens
         await token.approve(provider, nativeSwap.address, l);
 
         // Add liquidity
@@ -149,7 +149,7 @@ await opnet('Native Swap - Reentrancy', async (vm: OPNetUnit) => {
         const totalSupply = Blockchain.expandToDecimal(1_000_000_000_000, tokenDecimals);
         await token.mintRaw(userAddress, totalSupply);
 
-        nativeSwap = new NativeSwap(userAddress, ewmaAddress);
+        nativeSwap = new NativeSwap(userAddress, nativeSwapAddress);
         Blockchain.register(nativeSwap);
         await nativeSwap.init();
 
