@@ -45,7 +45,7 @@ await opnet('NativeSwap: Purging Reservations', async (vm: OPNetUnit) => {
             receiver: initialLiquidityProvider.p2tr(Blockchain.network),
             antiBotEnabledFor: antiBotEnabledFor,
             antiBotMaximumTokensPerReservation: antiBotMaximumTokensPerReservation,
-            maxReservesIn5BlocksPercent: 99,
+            maxReservesIn5BlocksPercent: 100,
         });
     }
 
@@ -74,6 +74,7 @@ await opnet('NativeSwap: Purging Reservations', async (vm: OPNetUnit) => {
     async function listTokenRandom(
         l: bigint,
         provider: Address = Blockchain.generateRandomAddress(),
+        priority: boolean = false,
     ): Promise<void> {
         const backup = Blockchain.txOrigin;
 
@@ -94,7 +95,7 @@ await opnet('NativeSwap: Purging Reservations', async (vm: OPNetUnit) => {
             token: tokenAddress,
             receiver: provider.p2tr(Blockchain.network),
             amountIn: l,
-            priority: false,
+            priority: priority,
             disablePriorityQueueFees: false,
         });
 
@@ -268,10 +269,18 @@ await opnet('NativeSwap: Purging Reservations', async (vm: OPNetUnit) => {
 
         // Reservation at block 3000
         await makeReservation(buyer, 100_000n, 1n);
-        
+
+        await listTokenRandom(BitcoinUtils.expandToDecimals(10000, tokenDecimals), undefined, true);
+
         for (let i = 0; i < 500; i++) {
-            await listTokenRandom(BitcoinUtils.expandToDecimals(1000, tokenDecimals));
+            await listTokenRandom(
+                BitcoinUtils.expandToDecimals(1000, tokenDecimals),
+                undefined,
+                false,
+            );
         }
+
+        await listTokenRandom(BitcoinUtils.expandToDecimals(10000, tokenDecimals), undefined, true);
 
         await addProviderLiquidity(Blockchain.expandTo18Decimals(1000));
         await token.mintRaw(buyer, 1_000_000n);
