@@ -327,13 +327,14 @@ await opnet('Native Swap - User flows - Create a new pool ', async (vm: OPNetUni
         Blockchain.txOrigin = wallet.address;
         Blockchain.msgSender = wallet.address;
 
+        const tempToken = await helper_createToken(wallet.address, 18, 10_000_000);
+
         const writer = new BinaryWriter();
         writer.writeAddress(Blockchain.txOrigin);
         writer.writeAddress(nativeSwap.address);
         writer.writeU256(1000000n * 10n ** 18n);
         writer.writeU256(0n);
-
-        const tempToken = await helper_createToken(wallet.address, 18, 10_000_000);
+        writer.writeAddress(tempToken.address);
 
         const signature = MessageSigner.tweakAndSignMessage(
             wallet.keypair,
