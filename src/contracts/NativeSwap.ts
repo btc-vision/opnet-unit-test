@@ -35,6 +35,9 @@ import {
 import { NativeSwapTypesCoders } from './NativeSwapTypesCoders.js';
 
 export class NativeSwap extends ContractRuntime {
+    public static RESERVATION_EXPIRE_AFTER: number = 5;
+    public static PURGE_AT_LEAST_X_PROVIDERS: number = 150;
+
     public static feeRecipient: string =
         'bcrt1plz0svv3wl05qrrv0dx8hvh5mgqc7jf3mhqgtw8jnj3l3d3cs6lzsfc3mxh';
 
@@ -112,6 +115,18 @@ export class NativeSwap extends ContractRuntime {
         `0x${this.abiCoder.encodeSelector('getStakingContractAddress()')}`,
     );
 
+    private readonly getLastPurgedBlockSelector: number = Number(
+        `0x${this.abiCoder.encodeSelector('getLastPurgedBlock(address)')}`,
+    );
+
+    private readonly getBlocksWithReservationsLengthSelector: number = Number(
+        `0x${this.abiCoder.encodeSelector('getBlocksWithReservationsLength(address)')}`,
+    );
+
+    private readonly purgeReservationsAndRestoreProvidersSelector: number = Number(
+        `0x${this.abiCoder.encodeSelector('purgeReservationsAndRestoreProviders(address)')}`,
+    );
+
     public constructor(
         deployer: Address,
         address: Address,
@@ -122,6 +137,57 @@ export class NativeSwap extends ContractRuntime {
             deployer: deployer,
             gasLimit,
         });
+    }
+
+    public async getLastPurgedBlock(params: Address): Promise<bigint> {
+        const calldata = NativeSwapTypesCoders.encodeGetLastPurgedBlockParams(
+            this.getLastPurgedBlockSelector,
+            {
+                token: params,
+            },
+        );
+
+        const result = await this.execute({
+            calldata: calldata.getBuffer(),
+            saveStates: false,
+        });
+
+        if (result.error) throw this.handleError(result.error);
+
+        return NativeSwapTypesCoders.decodeGetLastPurgedBlockResult(result);
+    }
+
+    public async purgeReservationsAndRestoreProviders(token: Address): Promise<void> {
+        const calldata = NativeSwapTypesCoders.encodeGetLastPurgedBlockParams(
+            this.purgeReservationsAndRestoreProvidersSelector,
+            {
+                token: token,
+            },
+        );
+
+        const result = await this.execute({
+            calldata: calldata.getBuffer(),
+        });
+
+        if (result.error) throw this.handleError(result.error);
+    }
+
+    public async getBlocksWithReservationsLength(params: Address): Promise<number> {
+        const calldata = NativeSwapTypesCoders.encodeGetLastPurgedBlockParams(
+            this.getBlocksWithReservationsLengthSelector,
+            {
+                token: params,
+            },
+        );
+
+        const result = await this.execute({
+            calldata: calldata.getBuffer(),
+            saveStates: false,
+        });
+
+        if (result.error) throw this.handleError(result.error);
+
+        return NativeSwapTypesCoders.decodeBlocksWithReservationsLength(result);
     }
 
     public async getFees(): Promise<GetFeesResult> {

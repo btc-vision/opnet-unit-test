@@ -1,4 +1,4 @@
-import { BinaryReader, BinaryWriter, NetEvent } from '@btc-vision/transaction';
+import { Address, BinaryReader, BinaryWriter, NetEvent } from '@btc-vision/transaction';
 import { CallResponse } from '@btc-vision/unit-test-framework';
 import {
     AddLiquidityParams,
@@ -45,6 +45,35 @@ import {
 } from './NativeSwapTypes.js';
 
 export class NativeSwapTypesCoders {
+    public static decodeGetLastPurgedBlockResult(response: CallResponse): bigint {
+        if (!response.response) {
+            throw new Error('No response to decode from getLastPurgedBlock');
+        }
+
+        const reader = new BinaryReader(response.response);
+        return reader.readU64();
+    }
+
+    public static decodeBlocksWithReservationsLength(response: CallResponse): number {
+        if (!response.response) {
+            throw new Error('No response to decode from blocksWithReservationsLength');
+        }
+
+        const reader = new BinaryReader(response.response);
+        return reader.readU32();
+    }
+
+    public static encodeGetLastPurgedBlockParams(
+        selector: number,
+        params: { token: Address },
+    ): BinaryWriter {
+        const calldata = new BinaryWriter();
+        calldata.writeSelector(selector);
+        calldata.writeAddress(params.token);
+
+        return calldata;
+    }
+
     public static decodeActivateProviderEvent(data: Uint8Array): IActivateProviderEvent {
         const reader = new BinaryReader(data);
         const providerId = reader.readU256();

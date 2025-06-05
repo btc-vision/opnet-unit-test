@@ -38,6 +38,7 @@
         "test:userflows": "npm-run-all test:userflows:*",
         "test:logic": "tsx src/tests/native-swap/Logic.ts",
         "test:swap": "tsx src/tests/native-swap/SwapProblem.ts",
+        "test:purgeInvar": "tsx src/tests/native-swap/PurgeInvariant.ts",
         "test": "npm-run-all test:*"
     },
     "author": "OP_NET",

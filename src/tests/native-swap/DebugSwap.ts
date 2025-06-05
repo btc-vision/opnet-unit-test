@@ -16,9 +16,6 @@ import { NativeSwap } from '../../contracts/NativeSwap.js';
 import { Recipient, ReserveResult } from '../../contracts/NativeSwapTypes.js';
 import { createRecipientsOutput, tokensToSatoshis } from '../utils/TransactionUtils.js';
 import { NativeSwapTypesCoders } from '../../contracts/NativeSwapTypesCoders.js';
-import bitcoin from '@btc-vision/bitcoin';
-
-Blockchain.changeNetwork(bitcoin.networks.testnet);
 
 interface ParsedState {
     readonly pointer: {
@@ -38,8 +35,8 @@ interface ParsedState {
 
 type ParsedStates = ParsedState[];
 
-const nativeStatesFile = './states/NativeSwapStates.json';
-const motoStatesFile = './states/MotoStates.json';
+const nativeStatesFile = './states/NativeSwapStates2.json';
+const motoStatesFile = './states/MotoStates2.json';
 
 function getStates(file: string): FastBigIntMap {
     const data = fs.readFileSync(file, 'utf8');
@@ -336,7 +333,7 @@ await opnet('NativeSwap: Debug', async (vm: OPNetUnit) => {
 
         await Blockchain.init();
 
-        Blockchain.blockNumber = 4503298n;
+        Blockchain.blockNumber = 4503298n + 65n;
 
         StateHandler.overrideStates(nativeAddy, nativeStates);
         StateHandler.overrideStates(tokenAddress, motoStates);
@@ -352,7 +349,7 @@ await opnet('NativeSwap: Debug', async (vm: OPNetUnit) => {
 
     await vm.it('should debug', async () => {
         //Blockchain.blockNumber = 4503299n;
-        Blockchain.blockNumber = 4503299n + 60n;
+        Blockchain.blockNumber = 4503329n; //4503299n + 60n;
 
         const user = Address.fromString(
             '0x028ef79e26023ff0f717922cd299499f9d7c4decf0c5e1733737aa8ae22f0eea63',
