@@ -7,7 +7,7 @@ export function createFeeOutput(value: bigint, recipient: string = NativeSwap.fe
     if (Blockchain.network.bech32 === networks.testnet.bech32) {
         recipient = NativeSwap.feeRecipientTestnet;
     }
-    
+
     const tx: Transaction = generateEmptyTransaction();
     tx.addOutput(value, recipient);
 
@@ -22,4 +22,10 @@ export function createRecipientsOutput(recipients: Recipient[]): void {
     }
 
     Blockchain.transaction = tx;
+}
+
+const QUOTE_SCALE = 100_000_000n;
+
+export function tokensToSatoshis(tokenAmount: bigint, scaledPrice: bigint): bigint {
+    return ((tokenAmount + 1n) * QUOTE_SCALE) / scaledPrice;
 }

@@ -14,7 +14,7 @@ import fs from 'fs';
 import { BitcoinUtils } from 'opnet';
 import { NativeSwap } from '../../contracts/NativeSwap.js';
 import { Recipient, ReserveResult } from '../../contracts/NativeSwapTypes.js';
-import { createRecipientsOutput } from '../utils/TransactionUtils.js';
+import { createRecipientsOutput, tokensToSatoshis } from '../utils/TransactionUtils.js';
 import { NativeSwapTypesCoders } from '../../contracts/NativeSwapTypesCoders.js';
 import bitcoin from '@btc-vision/bitcoin';
 
@@ -356,14 +356,33 @@ await opnet('NativeSwap: Debug', async (vm: OPNetUnit) => {
         const user = Address.fromString(
             '0x028ef79e26023ff0f717922cd299499f9d7c4decf0c5e1733737aa8ae22f0eea63',
         );
-        
-        const sat1BTC = 100_000_000n;
-        const reservation = await makeReservation(user, sat1BTC, 0n);
-        console.log(reservation);
 
-        /*const r = await nativeSwap.getReserve({
+        const r = await nativeSwap.getReserve({
             token: tokenAddress,
         });
+
+        const maxLeftInPool = r.liquidity - r.reservedLiquidity;
+        vm.info(
+            `Current reserve: ${BitcoinUtils.formatUnits(r.liquidity, tokenDecimals)} tokens, reserved: ${BitcoinUtils.formatUnits(r.reservedLiquidity, tokenDecimals)} tokens, max left in pool: ${BitcoinUtils.formatUnits(maxLeftInPool, tokenDecimals)} tokens`,
+        );
+
+        const currentQuote = await nativeSwap.getQuote({
+            token: tokenAddress,
+            satoshisIn: 100_000_000n, // 1 BTC
+        });
+
+        const maxCostSatoshis = tokensToSatoshis(maxLeftInPool, currentQuote.price);
+        vm.info(
+            `Current quote for 1 BTC: ${BitcoinUtils.formatUnits(currentQuote.tokensOut, tokenDecimals)} tokens, cost in satoshis: ${currentQuote.requiredSatoshis}, max cost in satoshis: ${maxCostSatoshis} (${BitcoinUtils.formatUnits(maxCostSatoshis, 8)} BTC)`,
+        );
+
+        const reservation = await makeReservation(user, maxCostSatoshis, 0n);
+        const reservedMax = BitcoinUtils.formatUnits(reservation.totalSatoshis, 8);
+        Blockchain.info(
+            `Reserved ${reservedMax} BTC for user ${user} with ${reservation.expectedAmountOut} tokens expected out.`,
+        );
+
+        /*
 
         console.log({
             liquidity: BitcoinUtils.formatUnits(r.liquidity, tokenDecimals),
