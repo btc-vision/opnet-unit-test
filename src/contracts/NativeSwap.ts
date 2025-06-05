@@ -38,6 +38,9 @@ export class NativeSwap extends ContractRuntime {
     public static feeRecipient: string =
         'bcrt1plz0svv3wl05qrrv0dx8hvh5mgqc7jf3mhqgtw8jnj3l3d3cs6lzsfc3mxh';
 
+    public static feeRecipientTestnet: string =
+        'bcrt1plz0svv3wl05qrrv0dx8hvh5mgqc7jf3mhqgtw8jnj3l3d3cs6lzsfc3mxh';
+
     public static reservationFees: bigint = 10_000n; // The fixed fee rate per tick consumed.
     public static priorityQueueFees: bigint = 50_000n; // The fixed fee rate per tick consumed.
 

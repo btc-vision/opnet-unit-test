@@ -1,8 +1,15 @@
 import { Blockchain, generateEmptyTransaction, Transaction } from '@btc-vision/unit-test-framework';
 import { NativeSwap } from '../../contracts/NativeSwap.js';
 import { Recipient } from '../../contracts/NativeSwapTypes.js';
+import { networks } from '@btc-vision/bitcoin';
 
 export function createFeeOutput(value: bigint, recipient: string = NativeSwap.feeRecipient): void {
+    if (Blockchain.network.bech32 === networks.testnet.bech32) {
+        recipient = NativeSwap.feeRecipientTestnet;
+    }
+
+    console.log(recipient);
+
     const tx: Transaction = generateEmptyTransaction();
     tx.addOutput(value, recipient);
 
