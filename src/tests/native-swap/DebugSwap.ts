@@ -351,7 +351,8 @@ await opnet('NativeSwap: Debug', async (vm: OPNetUnit) => {
     });
 
     await vm.it('should debug', async () => {
-        Blockchain.blockNumber = 4503299n;
+        //Blockchain.blockNumber = 4503299n;
+        Blockchain.blockNumber = 4503299n + 60n;
 
         const user = Address.fromString(
             '0x028ef79e26023ff0f717922cd299499f9d7c4decf0c5e1733737aa8ae22f0eea63',
