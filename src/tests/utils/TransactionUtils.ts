@@ -7,9 +7,7 @@ export function createFeeOutput(value: bigint, recipient: string = NativeSwap.fe
     if (Blockchain.network.bech32 === networks.testnet.bech32) {
         recipient = NativeSwap.feeRecipientTestnet;
     }
-
-    console.log(recipient);
-
+    
     const tx: Transaction = generateEmptyTransaction();
     tx.addOutput(value, recipient);
 
