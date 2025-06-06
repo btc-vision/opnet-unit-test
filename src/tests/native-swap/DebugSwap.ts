@@ -135,7 +135,9 @@ const nativeAddy: Address = Address.fromString(
     '0xec8ad18b56eb682755fdf8196698e18fcd872c8e53dbcfe5d183ba43c1ace061',
 );
 
-const userAddress: Address = Blockchain.generateRandomAddress();
+const userAddress: Address = Address.fromString(
+    '0x02729c84e0174d1a2c1f089dd685bdaf507581762c85bfcf69c7ec90cf2ba596b9',
+); //Blockchain.generateRandomAddress();
 const tokenDecimals = 18;
 
 let toSwap: { a: Address; r: Recipient[] }[] = [];
@@ -333,7 +335,7 @@ await opnet('NativeSwap: Debug', async (vm: OPNetUnit) => {
 
         await Blockchain.init();
 
-        Blockchain.blockNumber = 4503298n + 65n;
+        Blockchain.blockNumber = 4503799n;
 
         StateHandler.overrideStates(nativeAddy, nativeStates);
         StateHandler.overrideStates(tokenAddress, motoStates);
@@ -349,11 +351,23 @@ await opnet('NativeSwap: Debug', async (vm: OPNetUnit) => {
 
     await vm.it('should debug', async () => {
         //Blockchain.blockNumber = 4503299n;
-        Blockchain.blockNumber = 4503329n; //4503299n + 60n;
+        Blockchain.blockNumber = 4503801n;
 
-        const user = Address.fromString(
-            '0x028ef79e26023ff0f717922cd299499f9d7c4decf0c5e1733737aa8ae22f0eea63',
-        );
+        const balance = await token.balanceOf(userAddress);
+        vm.info(`User balance: ${BitcoinUtils.formatUnits(balance, tokenDecimals)} tokens`);
+
+        //await listTokenRandom(
+        //    BitcoinUtils.expandToDecimals(100_000_000, tokenDecimals),
+        //    user,
+        //    true,
+        //);
+
+        for (let i = 0; i < 100; i++) {
+            const user = Blockchain.generateRandomAddress();
+            await listTokenRandom(BitcoinUtils.expandToDecimals(1_000, tokenDecimals), user, true);
+
+            Blockchain.blockNumber++;
+        }
 
         const r = await nativeSwap.getReserve({
             token: tokenAddress,
@@ -374,6 +388,7 @@ await opnet('NativeSwap: Debug', async (vm: OPNetUnit) => {
             `Current quote for 1 BTC: ${BitcoinUtils.formatUnits(currentQuote.tokensOut, tokenDecimals)} tokens, cost in satoshis: ${currentQuote.requiredSatoshis}, max cost in satoshis: ${maxCostSatoshis} (${BitcoinUtils.formatUnits(maxCostSatoshis, 8)} BTC)`,
         );
 
+        const user = Blockchain.generateRandomAddress();
         const reservation = await makeReservation(user, maxCostSatoshis, 0n);
         const reservedMax = BitcoinUtils.formatUnits(reservation.totalSatoshis, 8);
         Blockchain.info(
