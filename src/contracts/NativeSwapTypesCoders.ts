@@ -15,6 +15,7 @@ import {
     GetPriorityQueueCostResult,
     GetProviderDetailsParams,
     GetProviderDetailsResult,
+    GetQueueDetailsResult,
     GetQuoteParams,
     GetQuoteResult,
     GetReserveParams,
@@ -351,6 +352,34 @@ export class NativeSwapTypesCoders {
             liquidityProvided: reader.readU256(),
             btcReceiver: reader.readStringWithLength(),
             response: response,
+
+            indexedAt: reader.readU32(),
+            isPriority: reader.readBoolean(),
+        };
+    }
+
+    public static decodeGetQueueDetailsResult(response: CallResponse): GetQueueDetailsResult {
+        if (!response.response) {
+            throw new Error('No response to decode from getQueueDetails');
+        }
+
+        const reader = new BinaryReader(response.response);
+        return {
+            lastPurgedBlock: reader.readU32(),
+            blockWithReservationsLength: reader.readU32(),
+
+            removalQueueLength: reader.readU32(),
+            removalQueueStartingIndex: reader.readU32(),
+
+            priorityQueueLength: reader.readU32(),
+            priorityQueueStartingIndex: reader.readU32(),
+
+            standardQueueLength: reader.readU32(),
+            standardQueueStartingIndex: reader.readU32(),
+
+            priorityPurgeQueueLength: reader.readU32(),
+            standardPurgeQueueLength: reader.readU32(),
+            removePurgeQueueLength: reader.readU32(),
         };
     }
 

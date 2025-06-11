@@ -132,6 +132,23 @@ export interface GetProviderDetailsResult {
     readonly liquidityProvided: bigint;
     readonly btcReceiver: string;
     readonly response: CallResponse;
+
+    readonly indexedAt: number;
+    readonly isPriority: boolean;
+}
+
+export interface GetQueueDetailsResult {
+    readonly lastPurgedBlock: number;
+    readonly blockWithReservationsLength: number;
+    readonly removalQueueLength: number;
+    readonly removalQueueStartingIndex: number;
+    readonly priorityQueueLength: number;
+    readonly priorityQueueStartingIndex: number;
+    readonly standardQueueLength: number;
+    readonly standardQueueStartingIndex: number;
+    readonly priorityPurgeQueueLength: number;
+    readonly standardPurgeQueueLength: number;
+    readonly removePurgeQueueLength: number;
 }
 
 export interface GetPriorityQueueCostResult {

@@ -248,7 +248,7 @@ await opnet('NativeSwap: Purging Reservations', async (vm: OPNetUnit) => {
         Blockchain.msgSender = userAddress;
 
         const floorPrice: bigint = 10n ** 18n / 500n; //10n ** 18n;
-        const point25InitialLiquidity = 52_500n * 10n ** BigInt(tokenDecimals);
+        const point25InitialLiquidity = 2052_500n * 10n ** BigInt(tokenDecimals);
 
         // Set a base quote
         await createPool(floorPrice, point25InitialLiquidity);

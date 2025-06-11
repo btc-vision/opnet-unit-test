@@ -15,6 +15,7 @@ import {
     GetPriorityQueueCostResult,
     GetProviderDetailsParams,
     GetProviderDetailsResult,
+    GetQueueDetailsResult,
     GetQuoteParams,
     GetQuoteResult,
     GetReserveParams,
@@ -94,6 +95,10 @@ export class NativeSwap extends ContractRuntime {
 
     private readonly getProviderDetailsSelector: number = Number(
         `0x${this.abiCoder.encodeSelector('getProviderDetails(address)')}`,
+    );
+
+    private readonly getQueueDetailsSelector: number = Number(
+        `0x${this.abiCoder.encodeSelector('getQueueDetails(address)')}`,
     );
 
     private readonly getPriorityQueueCostSelector: number = Number(
@@ -280,6 +285,22 @@ export class NativeSwap extends ContractRuntime {
         if (result.error) throw this.handleError(result.error);
 
         return NativeSwapTypesCoders.decodeGetProviderDetailsResult(result);
+    }
+
+    public async getQueueDetails(params: GetProviderDetailsParams): Promise<GetQueueDetailsResult> {
+        const calldata = NativeSwapTypesCoders.encodeGetProviderDetailsParams(
+            this.getQueueDetailsSelector,
+            params,
+        );
+
+        const result = await this.execute({
+            calldata: calldata.getBuffer(),
+            saveStates: false,
+        });
+
+        if (result.error) throw this.handleError(result.error);
+
+        return NativeSwapTypesCoders.decodeGetQueueDetailsResult(result);
     }
 
     public async getPriorityQueueCost(): Promise<GetPriorityQueueCostResult> {
