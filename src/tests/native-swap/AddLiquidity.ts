@@ -220,7 +220,7 @@ await opnet('Native Swap - Add Liquidity', async (vm: OPNetUnit) => {
         );
 
         vm.log(
-            `Removed liquidity! Spent ${gas2USD(r.response.usedGas)} USD in gas, btcOwed: ${d.btcOwed} sat, tokenAmount: ${d.tokenAmount} tokens`,
+            `Removed liquidity! Spent ${gas2USD(r.response.usedGas)} USD in gas, btcOwed: ${d.satoshisOwed} sat, tokenAmount: ${d.tokenAmount} tokens`,
         );
 
         Blockchain.txOrigin = rn;

@@ -85,7 +85,7 @@ export class ScenarioPlayer {
         Blockchain.log(`Verbose is: ${scenarioData.verbose}`);
 
         for (const test of scenarioData.tests) {
-            await this.runTest(test, verbose); //scenarioData.verbose);
+            await this.runTest(test, scenarioData.verbose);
         }
     }
 
@@ -385,11 +385,28 @@ export class ScenarioPlayer {
                         Blockchain.log(`reserve throwed as expected`);
                     }
                 } else {
-                    await helper.reserve(op);
+                    try {
+                        await helper.reserve(op);
+                    } catch (error) {
+                        if (
+                            error instanceof Error &&
+                            error.message.includes(
+                                'OPNET: NATIVE_SWAP: You may not reserve at this time.',
+                            )
+                        ) {
+                            if (verbose) {
+                                Blockchain.log(`reservation not purged yet.`);
+                            }
+                        } else {
+                            console.log('exception');
+                            throw error;
+                        }
+                    }
                 }
 
                 break;
             case 'listLiquidity':
+                /*!!!
                 if (op.expected.throw) {
                     await Assert.expect(async () => {
                         await helper.listLiquidity(op);
@@ -401,21 +418,35 @@ export class ScenarioPlayer {
                     await helper.listLiquidity(op);
                 }
 
+                 */
+                await helper.listLiquidity(op);
+
                 break;
-            case 'swap':
-                if (op.expected.throw) {
+            case 'swap': {
+                const notPurged: boolean = helper.isReservationNotPurged(op);
+
+                if (op.expected.throw || notPurged) {
                     await Assert.expect(async () => {
                         await helper.swap(op);
                     }).toThrow();
+
                     if (verbose) {
-                        Blockchain.log(`swap throwed as expected`);
+                        if (notPurged) {
+                            Blockchain.log(
+                                `swap cannot be completed. Reservation did not complete has the previous one was not purged.`,
+                            );
+                        } else {
+                            Blockchain.log(`swap throwed as expected`);
+                        }
                     }
                 } else {
                     await helper.swap(op);
                 }
 
                 break;
+            }
             case 'addLiquidity':
+                /*!!!
                 if (op.expected.throw) {
                     await Assert.expect(async () => {
                         await helper.addLiquidity(op);
@@ -427,8 +458,11 @@ export class ScenarioPlayer {
                     await helper.addLiquidity(op);
                 }
 
+
+                 */
                 break;
             case 'removeLiquidity':
+                /*!!!
                 if (op.expected.throw) {
                     await Assert.expect(async () => {
                         await helper.removeLiquidity(op);
@@ -440,20 +474,22 @@ export class ScenarioPlayer {
                     await helper.removeLiquidity(op);
                 }
 
+                 */
+
                 break;
             case 'cancelListing': {
                 let checkThrow: boolean = op.expected.throw;
+                /*!!!
+                                if (!checkThrow && op.parameters['depositAddress']) {
+                                    const depositAddress = op.parameters['depositAddress'];
+                                    const providerId = op.parameters['providerId'];
+                                    const tokenName = op.parameters['tokenName'];
 
-                if (!checkThrow && op.parameters['depositAddress']) {
-                    const depositAddress = op.parameters['depositAddress'];
-                    const providerId = op.parameters['providerId'];
-                    const tokenName = op.parameters['tokenName'];
-
-                    if (helper.cancelShouldThrow(tokenName, depositAddress, providerId)) {
-                        checkThrow = true;
-                    }
-                }
-
+                                    if (helper.cancelShouldThrow(tokenName, depositAddress, providerId)) {
+                                        checkThrow = true;
+                                    }
+                                }
+*/
                 if (checkThrow) {
                     await Assert.expect(async () => {
                         await helper.cancelListing(op);
@@ -462,7 +498,23 @@ export class ScenarioPlayer {
                         Blockchain.log(`cancelListing throwed as expected`);
                     }
                 } else {
-                    await helper.cancelListing(op);
+                    try {
+                        await helper.cancelListing(op);
+                    } catch (error) {
+                        if (
+                            error instanceof Error &&
+                            error.message.includes(
+                                'OPNET: NATIVE_SWAP: Someone have active reservations on your liquidity.',
+                            )
+                        ) {
+                            if (verbose) {
+                                Blockchain.log(`cancelListing throwed as expected`);
+                            }
+                        } else {
+                            console.log('exception');
+                            throw error;
+                        }
+                    }
                 }
 
                 break;

@@ -29,6 +29,7 @@ import {
     ILiquidityReservedEvent,
     IListingCanceledEvent,
     IReservationCreatedEvent,
+    IReservationPurgedEvent,
     ISwapExecutedEvent,
     ITransferEvent,
     ListLiquidityParams,
@@ -78,13 +79,31 @@ export class NativeSwapTypesCoders {
         const reader = new BinaryReader(data);
         const providerId = reader.readU256();
         const listingAmount = reader.readU128();
-        const btcToRemove = reader.readU128();
+        const btcToRemove = reader.readU64();
 
         return {
             name: 'ActivateProviderEvent',
             providerId,
             listingAmount,
             btcToRemove,
+        };
+    }
+
+    public static decodeReservationPurgedEvent(data: Uint8Array): IReservationPurgedEvent {
+        const reader = new BinaryReader(data);
+        const reservationId = reader.readU128();
+        const currentBlock = reader.readU64();
+        const purgingBlock = reader.readU64();
+        const purgeIndex = reader.readU32();
+        const providerCount = reader.readU32();
+
+        return {
+            name: 'ReservationPurgedEvent',
+            reservationId,
+            currentBlock,
+            purgingBlock,
+            purgeIndex,
+            providerCount,
         };
     }
 
@@ -106,7 +125,7 @@ export class NativeSwapTypesCoders {
         const reader = new BinaryReader(data);
         const totalTokensContributed = reader.readU256();
         const virtualTokenExchanged = reader.readU256();
-        const totalSatoshisSpent = reader.readU256();
+        const totalSatoshisSpent = reader.readU64();
         return {
             name: 'LiquidityAddedEvent',
             totalTokensContributed,
@@ -125,16 +144,16 @@ export class NativeSwapTypesCoders {
     public static decodeLiquidityRemovedEvent(data: Uint8Array): ILiquidityRemovedEvent {
         const reader = new BinaryReader(data);
         const providerId = reader.readU256();
-        const btcOwed = reader.readU256();
+        const satoshisOwed = reader.readU64();
         const tokenAmount = reader.readU256();
 
-        return { name: 'LiquidityRemovedEvent', providerId, btcOwed, tokenAmount };
+        return { name: 'LiquidityRemovedEvent', providerId, satoshisOwed, tokenAmount };
     }
 
     public static decodeLiquidityReservedEvent(data: Uint8Array): ILiquidityReservedEvent {
         const reader = new BinaryReader(data);
         const depositAddress = reader.readStringWithLength();
-        const amount = reader.readU128();
+        const amount = reader.readU64();
         const providerId = reader.readU256();
         return { name: 'LiquidityReservedEvent', depositAddress, amount, providerId };
     }
@@ -148,14 +167,14 @@ export class NativeSwapTypesCoders {
     public static decodeReservationCreatedEvent(data: Uint8Array): IReservationCreatedEvent {
         const reader = new BinaryReader(data);
         const expectedAmountOut = reader.readU256();
-        const totalSatoshis = reader.readU256();
+        const totalSatoshis = reader.readU64();
         return { name: 'ReservationCreatedEvent', expectedAmountOut, totalSatoshis };
     }
 
     public static decodeSwapExecutedEvent(data: Uint8Array): ISwapExecutedEvent {
         const reader = new BinaryReader(data);
         const buyer = reader.readAddress();
-        const amountIn = reader.readU256();
+        const amountIn = reader.readU64();
         const amountOut = reader.readU256();
         return { name: 'SwapExecutedEvent', buyer, amountIn, amountOut };
     }
@@ -182,6 +201,10 @@ export class NativeSwapTypesCoders {
                 }
                 case 'ReservationCreated': {
                     reservation.reservation = this.decodeReservationCreatedEvent(event.data);
+                    break;
+                }
+                case 'ReservationPurged': {
+                    // Do nothing
                     break;
                 }
                 default: {
@@ -348,7 +371,7 @@ export class NativeSwapTypesCoders {
         return {
             liquidity: reader.readU128(),
             reserved: reader.readU128(),
-            liquidityProvided: reader.readU256(),
+            liquidityProvided: reader.readU128(),
             btcReceiver: reader.readStringWithLength(),
             response: response,
         };
@@ -410,7 +433,6 @@ export class NativeSwapTypesCoders {
 
         calldata.writeSelector(selector);
         calldata.writeAddress(params.token);
-        calldata.writeU256(0n);
 
         return calldata;
     }
@@ -519,7 +541,7 @@ export class NativeSwapTypesCoders {
 
         calldata.writeSelector(selector);
         calldata.writeAddress(params.token);
-        calldata.writeU256(params.maximumAmountIn);
+        calldata.writeU64(params.maximumAmountIn);
         calldata.writeU256(params.minimumAmountOut);
         calldata.writeBoolean(params.forLP);
         calldata.writeU8(params.activationDelay ?? 2);
@@ -616,7 +638,7 @@ export class NativeSwapTypesCoders {
         return {
             liquidity: reader.readU256(),
             reservedLiquidity: reader.readU256(),
-            virtualBTCReserve: reader.readU256(),
+            virtualBTCReserve: reader.readU64(),
             virtualTokenReserve: reader.readU256(),
             response: response,
         };
@@ -627,7 +649,7 @@ export class NativeSwapTypesCoders {
 
         calldata.writeSelector(selector);
         calldata.writeAddress(params.token);
-        calldata.writeU256(params.satoshisIn);
+        calldata.writeU64(params.satoshisIn);
 
         return calldata;
     }
@@ -641,7 +663,7 @@ export class NativeSwapTypesCoders {
 
         return {
             tokensOut: reader.readU256(),
-            requiredSatoshis: reader.readU256(),
+            requiredSatoshis: reader.readU64(),
             price: reader.readU256(),
             scale: reader.readU64(),
             response: response,

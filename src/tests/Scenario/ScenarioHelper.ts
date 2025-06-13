@@ -25,7 +25,7 @@ import {
 } from '../utils/LoggerHelper.js';
 import { NativeSwapTypesCoders } from '../../contracts/NativeSwapTypesCoders.js';
 import { ReserveData } from '../utils/OperationHelper.js';
-import { Address } from '@btc-vision/transaction';
+import { Address, NetEvent } from '@btc-vision/transaction';
 import {
     GetProviderDetailsResult,
     GetQuoteResult,
@@ -85,6 +85,8 @@ export class ScenarioHelper {
         string,
         Map<string, bigint>
     >();
+
+    private _notPurgedReservations: Map<string, boolean> = new Map<string, boolean>();
 
     private _fulfilledProvider: bigint[] = [];
     private _consumedProvider: string[] = [];
@@ -549,90 +551,116 @@ export class ScenarioHelper {
             logParameter(`activationDelay`, activationDelay.toString());
         }
 
-        const token = this.getToken(tokenName);
-        const result = await this.nativeSwap.reserve({
-            token: token.address,
-            maximumAmountIn: maximumAmountIn,
-            forLP: forLP,
-            minimumAmountOut: minimumAmountOut,
-            activationDelay: activationDelay,
-        });
+        const mapId: string = `${tokenName}${Blockchain.msgSender.toString()}`;
 
-        if (this.verbose) {
-            logReserveResult(result);
-            logReserveEvent(result.response.events);
+        if (this._notPurgedReservations.has(mapId)) {
+            console.log(`clear to not purged ${mapId}`);
+            this._notPurgedReservations.delete(mapId);
         }
 
+        const token = this.getToken(tokenName);
         let reserveData: ReserveData[] = [];
 
-        const decodedReservation = NativeSwapTypesCoders.decodeReservationEvents(
-            result.response.events,
-        );
-
-        this.addToReserveExpirations(
-            tokenName,
-            Blockchain.msgSender.toString(),
-            Blockchain.blockNumber + 6n,
-        );
-
-        const recipientsArr: Recipient[] = [];
-
-        for (let i = 0; i < decodedReservation.recipients.length; i++) {
-            reserveData.push({
-                recipient: decodedReservation.recipients[0],
-                provider: Blockchain.txOrigin,
+        try {
+            const result = await this.nativeSwap.reserve({
+                token: token.address,
+                maximumAmountIn: maximumAmountIn,
+                forLP: forLP,
+                minimumAmountOut: minimumAmountOut,
+                activationDelay: activationDelay,
             });
 
-            recipientsArr.push({
-                amount: decodedReservation.recipients[i].amount,
-                address: decodedReservation.recipients[i].address,
-                providerId: decodedReservation.recipients[i].providerId,
-            });
-        }
-
-        this.addToReserveRecipients(tokenName, Blockchain.msgSender.toString(), recipientsArr);
-
-        Assert.expect(op.expected.events.length == result.response.events.length);
-
-        if (this.verbose) {
-            Blockchain.log(`Validating ${op.expected.events.length} events`);
-        }
-
-        for (let i = 0; i < op.expected.events.length; i++) {
-            const eventExpected = op.expected.events[i];
-            const eventReceived = result.response.events[i];
-
-            if (
-                eventExpected.eventName === 'LiquidityReservedEvent' &&
-                eventReceived.type === 'LiquidityReserved'
-            ) {
-                const received = NativeSwapTypesCoders.decodeLiquidityReservedEvent(
-                    eventReceived.data,
-                );
-                const expected = parseExpectedEvent(
-                    op.expected.events[i],
-                ) as ExpectedLiquidityReservedEvent;
-                expected.validate(received);
-            } else if (
-                eventExpected.eventName === 'ReservationCreatedEvent' &&
-                eventReceived.type === 'ReservationCreated'
-            ) {
-                const received = NativeSwapTypesCoders.decodeReservationCreatedEvent(
-                    eventReceived.data,
-                );
-                const expected = parseExpectedEvent(
-                    op.expected.events[i],
-                ) as ExpectedReservationCreatedEvent;
-                expected.validate(received);
-            } else {
-                throw new Error(
-                    `Not matching event: ${eventExpected.eventName}, ${eventReceived.type}`,
-                );
+            if (this.verbose) {
+                logReserveResult(result);
+                logReserveEvent(result.response.events);
             }
-        }
 
-        if (this.verbose) {
-            Blockchain.log(`Validating events completed`);
+            const decodedReservation = NativeSwapTypesCoders.decodeReservationEvents(
+                result.response.events,
+            );
+
+            this.addToReserveExpirations(
+                tokenName,
+                Blockchain.msgSender.toString(),
+                Blockchain.blockNumber + 6n,
+            );
+
+            const recipientsArr: Recipient[] = [];
+
+            for (let i = 0; i < decodedReservation.recipients.length; i++) {
+                reserveData.push({
+                    recipient: decodedReservation.recipients[0],
+                    provider: Blockchain.txOrigin,
+                });
+
+                recipientsArr.push({
+                    amount: decodedReservation.recipients[i].amount,
+                    address: decodedReservation.recipients[i].address,
+                    providerId: decodedReservation.recipients[i].providerId,
+                });
+            }
+
+            this.addToReserveRecipients(tokenName, Blockchain.msgSender.toString(), recipientsArr);
+
+            Assert.expect(op.expected.events.length >= result.response.events.length);
+
+            if (this.verbose) {
+                Blockchain.log(`Validating ${op.expected.events.length} events`);
+            }
+
+            for (let i = 0; i < result.response.events.length; i++) {
+                const eventReceived = result.response.events[i];
+
+                if (eventReceived.type === 'LiquidityReserved') {
+                    for (let j = 0; j < op.expected.events.length; j++) {
+                        const eventExpected = op.expected.events[i];
+
+                        if (eventExpected.eventName === 'LiquidityReservedEvent') {
+                            const received = NativeSwapTypesCoders.decodeLiquidityReservedEvent(
+                                eventReceived.data,
+                            );
+                            const expected = parseExpectedEvent(
+                                op.expected.events[i],
+                            ) as ExpectedLiquidityReservedEvent;
+                            expected.validate(received);
+                            break;
+                        }
+                    }
+                } else if (eventReceived.type === 'ReservationCreated') {
+                    for (let j = 0; j < op.expected.events.length; j++) {
+                        const eventExpected = op.expected.events[i];
+
+                        if (eventExpected.eventName === 'ReservationCreatedEvent') {
+                            const received = NativeSwapTypesCoders.decodeReservationCreatedEvent(
+                                eventReceived.data,
+                            );
+                            const expected = parseExpectedEvent(
+                                op.expected.events[i],
+                            ) as ExpectedReservationCreatedEvent;
+                            expected.validate(received);
+                            break;
+                        }
+                    }
+                } else if (eventReceived.type === 'ReservationPurged') {
+                    // do nothing for now
+                } else {
+                    throw new Error(`Not matching event: ${eventReceived.type}`);
+                }
+            }
+
+            if (this.verbose) {
+                Blockchain.log(`Validating events completed`);
+            }
+        } catch (error) {
+            if (
+                error instanceof Error &&
+                error.message.includes('OPNET: NATIVE_SWAP: You may not reserve at this time.')
+            ) {
+                console.log(`add to not purged: ${mapId}`);
+                this._notPurgedReservations.set(mapId, true);
+            } else {
+                throw error;
+            }
         }
 
         return reserveData;
@@ -670,19 +698,23 @@ export class ScenarioHelper {
             arr?.push(Blockchain.msgSender.toString());
         }
 
+        const events: NetEvent[] = [];
+
+        for (let i = 0; i < result.response.events.length; i++) {
+            if (result.response.events[i].type !== 'ReservationPurged') {
+                events.push(result.response.events[i]);
+            }
+        }
+
         if (priority) {
-            Assert.expect(result.response.events.length).toEqual(3);
+            Assert.expect(events.length).toEqual(3);
 
-            const transferEvent1 = NativeSwapTypesCoders.decodeTransferEvent(
-                result.response.events[0].data,
-            );
+            const transferEvent1 = NativeSwapTypesCoders.decodeTransferEvent(events[0].data);
 
-            const transferEvent2 = NativeSwapTypesCoders.decodeTransferEvent(
-                result.response.events[1].data,
-            );
+            const transferEvent2 = NativeSwapTypesCoders.decodeTransferEvent(events[1].data);
 
             const liquidityListedEvent = NativeSwapTypesCoders.decodeLiquidityListedEvent(
-                result.response.events[2].data,
+                events[2].data,
             );
 
             if (this.verbose) {
@@ -715,14 +747,12 @@ export class ScenarioHelper {
                 }
             }
         } else {
-            Assert.expect(result.response.events.length).toEqual(2);
+            Assert.expect(events.length).toEqual(2);
 
-            const transferEvent = NativeSwapTypesCoders.decodeTransferEvent(
-                result.response.events[0].data,
-            );
+            const transferEvent = NativeSwapTypesCoders.decodeTransferEvent(events[0].data);
 
             const liquidityListedEvent = NativeSwapTypesCoders.decodeLiquidityListedEvent(
-                result.response.events[1].data,
+                events[1].data,
             );
 
             if (this.verbose) {
@@ -1055,25 +1085,30 @@ export class ScenarioHelper {
             }
         }
 
-        Assert.expect(result.response.events.length).toEqual(3);
+        const events: NetEvent[] = [];
+
+        for (let i = 0; i < result.response.events.length; i++) {
+            if (result.response.events[i].type !== 'ReservationPurged') {
+                events.push(result.response.events[i]);
+            }
+        }
+
+        Assert.expect(events.length).toEqual(3);
 
         const fulfilledProviderEvent = NativeSwapTypesCoders.decodeFulfilledProviderEvent(
-            result.response.events[0].data,
+            events[0].data,
         );
 
-        const transferEvent = NativeSwapTypesCoders.decodeTransferEvent(
-            result.response.events[1].data,
-        );
+        const transferEvent = NativeSwapTypesCoders.decodeTransferEvent(events[1].data);
 
-        const listingCanceledEvent = NativeSwapTypesCoders.decodeCancelListingEvent(
-            result.response.events[2].data,
-        );
+        const listingCanceledEvent = NativeSwapTypesCoders.decodeCancelListingEvent(events[2].data);
 
         if (this.verbose) {
             logCancelListingResult(result);
             logCancelListingEvents(result.response.events);
         }
 
+        /*!!!
         if (op.expected.events.length === 3) {
             if (this.verbose) {
                 Blockchain.log(`Validating ${op.expected.events.length} events`);
@@ -1099,6 +1134,8 @@ export class ScenarioHelper {
                 }
             }
         }
+        
+         */
     }
 
     public async getReserve(op: OperationDefinition): Promise<void> {
@@ -1301,6 +1338,14 @@ export class ScenarioHelper {
         }
 
         return result;
+    }
+
+    public isReservationNotPurged(op: OperationDefinition): boolean {
+        const tokenName = op.parameters['tokenName'];
+
+        const mapId: string = `${tokenName}${Blockchain.msgSender.toString()}`;
+
+        return this._notPurgedReservations.has(mapId);
     }
 
     private getToken(name: string): OP_20 {

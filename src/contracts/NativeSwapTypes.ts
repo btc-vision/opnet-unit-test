@@ -31,7 +31,7 @@ export interface ILiquidityListedEvent {
 export interface ILiquidityRemovedEvent {
     readonly name: string;
     readonly providerId: bigint;
-    readonly btcOwed: bigint;
+    readonly satoshisOwed: bigint;
     readonly tokenAmount: bigint;
 }
 
@@ -74,6 +74,15 @@ export interface ITransferEvent {
     readonly amount: bigint;
 }
 
+export interface IReservationPurgedEvent {
+    readonly name: string;
+    readonly reservationId: bigint;
+    readonly currentBlock: bigint;
+    readonly purgingBlock: bigint;
+    readonly purgeIndex: number;
+    readonly providerCount: number;
+}
+
 export type AllEvent =
     | ILiquidityAddedEvent
     | ILiquidityListedEvent
@@ -85,7 +94,8 @@ export type AllEvent =
     | ITransferEvent
     | IListingCanceledEvent
     | IActivateProviderEvent
-    | IFulfilledProviderEvent;
+    | IFulfilledProviderEvent
+    | IReservationPurgedEvent;
 
 export interface SetFeesParams {
     readonly reservationBaseFee: bigint;
