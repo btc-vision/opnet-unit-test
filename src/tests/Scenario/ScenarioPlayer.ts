@@ -209,6 +209,7 @@ export class ScenarioPlayer {
             recipients: [],
             expected: {
                 throw: false,
+                canthrow: false,
                 events: [],
                 stateCheck: {},
             },
@@ -266,6 +267,20 @@ export class ScenarioPlayer {
                     }).toThrow();
                     if (verbose) {
                         Blockchain.log(`setBlockchainInfo throwed as expected`);
+                    }
+                } else if (op.expected.canthrow) {
+                    try {
+                        helper.setBlockchainInfo(op);
+                    } catch (error) {
+                        if (verbose) {
+                            if (error instanceof Error) {
+                                Blockchain.log(
+                                    `setBlockchainInfo throwed an it was possible: Error: ${error.message}`,
+                                );
+                            } else {
+                                Blockchain.log(`setBlockchainInfo throwed an it was possible.`);
+                            }
+                        }
                     }
                 } else {
                     helper.setBlockchainInfo(op);
@@ -358,6 +373,20 @@ export class ScenarioPlayer {
                     if (verbose) {
                         Blockchain.log(`createPool throwed as expected`);
                     }
+                } else if (op.expected.canthrow) {
+                    try {
+                        await helper.createPool(op);
+                    } catch (error) {
+                        if (verbose) {
+                            if (error instanceof Error) {
+                                Blockchain.log(
+                                    `createPool throwed an it was possible: Error: ${error.message}`,
+                                );
+                            } else {
+                                Blockchain.log(`createPool throwed an it was possible.`);
+                            }
+                        }
+                    }
                 } else {
                     await helper.createPool(op);
                 }
@@ -370,6 +399,22 @@ export class ScenarioPlayer {
                     }).toThrow();
                     if (verbose) {
                         Blockchain.log(`createPoolWithSignature throwed as expected`);
+                    }
+                } else if (op.expected.canthrow) {
+                    try {
+                        await helper.createPoolWithSignature(op);
+                    } catch (error) {
+                        if (verbose) {
+                            if (error instanceof Error) {
+                                Blockchain.log(
+                                    `createPoolWithSignature throwed an it was possible: Error: ${error.message}`,
+                                );
+                            } else {
+                                Blockchain.log(
+                                    `createPoolWithSignature throwed an it was possible.`,
+                                );
+                            }
+                        }
                     }
                 } else {
                     await helper.createPoolWithSignature(op);
@@ -384,24 +429,22 @@ export class ScenarioPlayer {
                     if (verbose) {
                         Blockchain.log(`reserve throwed as expected`);
                     }
-                } else {
+                } else if (op.expected.canthrow) {
                     try {
                         await helper.reserve(op);
                     } catch (error) {
-                        if (
-                            error instanceof Error &&
-                            error.message.includes(
-                                'OPNET: NATIVE_SWAP: You may not reserve at this time.',
-                            )
-                        ) {
-                            if (verbose) {
-                                Blockchain.log(`reservation not purged yet.`);
+                        if (verbose) {
+                            if (error instanceof Error) {
+                                Blockchain.log(
+                                    `reserve throwed an it was possible: Error: ${error.message}`,
+                                );
+                            } else {
+                                Blockchain.log(`reserve throwed an it was possible.`);
                             }
-                        } else {
-                            console.log('exception');
-                            throw error;
                         }
                     }
+                } else {
+                    await helper.reserve(op);
                 }
 
                 break;
@@ -423,20 +466,26 @@ export class ScenarioPlayer {
 
                 break;
             case 'swap': {
-                const notPurged: boolean = helper.isReservationNotPurged(op);
-
-                if (op.expected.throw || notPurged) {
+                if (op.expected.throw) {
                     await Assert.expect(async () => {
                         await helper.swap(op);
                     }).toThrow();
 
                     if (verbose) {
-                        if (notPurged) {
-                            Blockchain.log(
-                                `swap cannot be completed. Reservation did not complete has the previous one was not purged.`,
-                            );
-                        } else {
-                            Blockchain.log(`swap throwed as expected`);
+                        Blockchain.log(`swap throwed as expected`);
+                    }
+                } else if (op.expected.canthrow) {
+                    try {
+                        await helper.swap(op);
+                    } catch (error) {
+                        if (verbose) {
+                            if (error instanceof Error) {
+                                Blockchain.log(
+                                    `swap throwed an it was possible: Error: ${error.message}`,
+                                );
+                            } else {
+                                Blockchain.log(`swap throwed an it was possible.`);
+                            }
                         }
                     }
                 } else {
@@ -497,24 +546,22 @@ export class ScenarioPlayer {
                     if (verbose) {
                         Blockchain.log(`cancelListing throwed as expected`);
                     }
-                } else {
+                } else if (op.expected.canthrow) {
                     try {
                         await helper.cancelListing(op);
                     } catch (error) {
-                        if (
-                            error instanceof Error &&
-                            error.message.includes(
-                                'OPNET: NATIVE_SWAP: Someone have active reservations on your liquidity.',
-                            )
-                        ) {
-                            if (verbose) {
-                                Blockchain.log(`cancelListing throwed as expected`);
+                        if (verbose) {
+                            if (error instanceof Error) {
+                                Blockchain.log(
+                                    `cancelListing throwed an it was possible: Error: ${error.message}`,
+                                );
+                            } else {
+                                Blockchain.log(`cancelListing throwed an it was possible.`);
                             }
-                        } else {
-                            console.log('exception');
-                            throw error;
                         }
                     }
+                } else {
+                    await helper.cancelListing(op);
                 }
 
                 break;

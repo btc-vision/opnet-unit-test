@@ -53,6 +53,7 @@ export interface OperationDefinition {
     recipients: Recipient[];
     expected: {
         throw: boolean;
+        canthrow: boolean;
         events: JSonExpectedEvent[];
         stateCheck: Record<string, string>;
     };

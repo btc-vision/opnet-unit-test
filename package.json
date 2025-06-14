@@ -35,6 +35,7 @@
         "test:userflows:PriorityListingReserve": "tsx src/tests/native-swap/userflows/PriorityListingReserve.ts",
         "test:userflows:Random3TokensWithPriority": "tsx src/tests/native-swap/userflows/Random3TokensWithPriority.ts",
         "test:userflows:Random5TokenWithPriorityAndLiquidity": "tsx src/tests/native-swap/userflows/Random5TokenWithPriorityAndLiquidity.ts",
+        "test:userflows:NewRandom3Token": "tsx src/tests/native-swap/userflows/NewRandom3Token.ts",
         "test:userflows": "npm-run-all test:userflows:*",
         "test:logic": "tsx src/tests/native-swap/Logic.ts",
         "test:swap": "tsx src/tests/native-swap/SwapProblem.ts",
