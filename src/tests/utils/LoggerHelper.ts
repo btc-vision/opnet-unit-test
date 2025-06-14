@@ -14,6 +14,7 @@ import {
     ILiquidityReservedEvent,
     IListingCanceledEvent,
     IReservationCreatedEvent,
+    IReservationPurgedEvent,
     ISwapExecutedEvent,
     ITransferEvent,
     ListLiquidityResult,
@@ -126,7 +127,7 @@ export function logLiquidityRemovedEvent(event: ILiquidityRemovedEvent): void {
     Blockchain.log(``);
     Blockchain.log(`LiquidityRemovedEvent`);
     Blockchain.log(`-----------------`);
-    Blockchain.log(`btcOwed: ${event.btcOwed}`);
+    Blockchain.log(`satoshisOwed: ${event.satoshisOwed}`);
     Blockchain.log(`tokenAmount: ${event.tokenAmount}`);
     Blockchain.log(`providerId: ${event.providerId}`);
     Blockchain.log(``);
@@ -255,6 +256,11 @@ export function logCancelListingEvents(events: NetEvent[]): void {
                 logListingCanceledEvent(NativeSwapTypesCoders.decodeCancelListingEvent(event.data));
                 break;
             }
+            case 'ReservationPurged':
+                logReservationPurgedEvent(
+                    NativeSwapTypesCoders.decodeReservationPurgedEvent(event.data),
+                );
+                break;
             default: {
                 throw new Error(`Unknown event type: ${event.type}`);
             }
@@ -289,6 +295,18 @@ export function logReservationCreatedEvent(event: IReservationCreatedEvent): voi
     Blockchain.log(`-----------------`);
     Blockchain.log(`expectedAmountOut: ${event.expectedAmountOut}`);
     Blockchain.log(`totalSatoshis: ${event.totalSatoshis}`);
+    Blockchain.log(``);
+}
+
+export function logReservationPurgedEvent(event: IReservationPurgedEvent): void {
+    Blockchain.log(``);
+    Blockchain.log(`ReservationPurgedEvent`);
+    Blockchain.log(`-----------------`);
+    Blockchain.log(`reservationId: ${event.reservationId}`);
+    Blockchain.log(`currentBlock: ${event.currentBlock}`);
+    Blockchain.log(`purgingBlock: ${event.purgingBlock}`);
+    Blockchain.log(`purgeIndex: ${event.purgeIndex}`);
+    Blockchain.log(`providerCount: ${event.providerCount}`);
     Blockchain.log(``);
 }
 
@@ -350,6 +368,11 @@ export function logReserveEvent(events: NetEvent[]): void {
                 );
                 break;
             }
+            case 'ReservationPurged':
+                logReservationPurgedEvent(
+                    NativeSwapTypesCoders.decodeReservationPurgedEvent(event.data),
+                );
+                break;
             default: {
                 throw new Error(`Unknown event type: ${event.type}`);
             }

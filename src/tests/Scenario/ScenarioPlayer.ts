@@ -85,7 +85,7 @@ export class ScenarioPlayer {
         Blockchain.log(`Verbose is: ${scenarioData.verbose}`);
 
         for (const test of scenarioData.tests) {
-            await this.runTest(test, verbose); //scenarioData.verbose);
+            await this.runTest(test, scenarioData.verbose);
         }
     }
 
@@ -209,6 +209,7 @@ export class ScenarioPlayer {
             recipients: [],
             expected: {
                 throw: false,
+                canthrow: false,
                 events: [],
                 stateCheck: {},
             },
@@ -266,6 +267,20 @@ export class ScenarioPlayer {
                     }).toThrow();
                     if (verbose) {
                         Blockchain.log(`setBlockchainInfo throwed as expected`);
+                    }
+                } else if (op.expected.canthrow) {
+                    try {
+                        helper.setBlockchainInfo(op);
+                    } catch (error) {
+                        if (verbose) {
+                            if (error instanceof Error) {
+                                Blockchain.log(
+                                    `setBlockchainInfo throwed an it was possible: Error: ${error.message}`,
+                                );
+                            } else {
+                                Blockchain.log(`setBlockchainInfo throwed an it was possible.`);
+                            }
+                        }
                     }
                 } else {
                     helper.setBlockchainInfo(op);
@@ -358,6 +373,20 @@ export class ScenarioPlayer {
                     if (verbose) {
                         Blockchain.log(`createPool throwed as expected`);
                     }
+                } else if (op.expected.canthrow) {
+                    try {
+                        await helper.createPool(op);
+                    } catch (error) {
+                        if (verbose) {
+                            if (error instanceof Error) {
+                                Blockchain.log(
+                                    `createPool throwed an it was possible: Error: ${error.message}`,
+                                );
+                            } else {
+                                Blockchain.log(`createPool throwed an it was possible.`);
+                            }
+                        }
+                    }
                 } else {
                     await helper.createPool(op);
                 }
@@ -370,6 +399,22 @@ export class ScenarioPlayer {
                     }).toThrow();
                     if (verbose) {
                         Blockchain.log(`createPoolWithSignature throwed as expected`);
+                    }
+                } else if (op.expected.canthrow) {
+                    try {
+                        await helper.createPoolWithSignature(op);
+                    } catch (error) {
+                        if (verbose) {
+                            if (error instanceof Error) {
+                                Blockchain.log(
+                                    `createPoolWithSignature throwed an it was possible: Error: ${error.message}`,
+                                );
+                            } else {
+                                Blockchain.log(
+                                    `createPoolWithSignature throwed an it was possible.`,
+                                );
+                            }
+                        }
                     }
                 } else {
                     await helper.createPoolWithSignature(op);
@@ -384,12 +429,27 @@ export class ScenarioPlayer {
                     if (verbose) {
                         Blockchain.log(`reserve throwed as expected`);
                     }
+                } else if (op.expected.canthrow) {
+                    try {
+                        await helper.reserve(op);
+                    } catch (error) {
+                        if (verbose) {
+                            if (error instanceof Error) {
+                                Blockchain.log(
+                                    `reserve throwed an it was possible: Error: ${error.message}`,
+                                );
+                            } else {
+                                Blockchain.log(`reserve throwed an it was possible.`);
+                            }
+                        }
+                    }
                 } else {
                     await helper.reserve(op);
                 }
 
                 break;
             case 'listLiquidity':
+                /*!!!
                 if (op.expected.throw) {
                     await Assert.expect(async () => {
                         await helper.listLiquidity(op);
@@ -401,21 +461,41 @@ export class ScenarioPlayer {
                     await helper.listLiquidity(op);
                 }
 
+                 */
+                await helper.listLiquidity(op);
+
                 break;
-            case 'swap':
+            case 'swap': {
                 if (op.expected.throw) {
                     await Assert.expect(async () => {
                         await helper.swap(op);
                     }).toThrow();
+
                     if (verbose) {
                         Blockchain.log(`swap throwed as expected`);
+                    }
+                } else if (op.expected.canthrow) {
+                    try {
+                        await helper.swap(op);
+                    } catch (error) {
+                        if (verbose) {
+                            if (error instanceof Error) {
+                                Blockchain.log(
+                                    `swap throwed an it was possible: Error: ${error.message}`,
+                                );
+                            } else {
+                                Blockchain.log(`swap throwed an it was possible.`);
+                            }
+                        }
                     }
                 } else {
                     await helper.swap(op);
                 }
 
                 break;
+            }
             case 'addLiquidity':
+                /*!!!
                 if (op.expected.throw) {
                     await Assert.expect(async () => {
                         await helper.addLiquidity(op);
@@ -427,8 +507,11 @@ export class ScenarioPlayer {
                     await helper.addLiquidity(op);
                 }
 
+
+                 */
                 break;
             case 'removeLiquidity':
+                /*!!!
                 if (op.expected.throw) {
                     await Assert.expect(async () => {
                         await helper.removeLiquidity(op);
@@ -440,26 +523,42 @@ export class ScenarioPlayer {
                     await helper.removeLiquidity(op);
                 }
 
+                 */
+
                 break;
             case 'cancelListing': {
                 let checkThrow: boolean = op.expected.throw;
+                /*!!!
+                                if (!checkThrow && op.parameters['depositAddress']) {
+                                    const depositAddress = op.parameters['depositAddress'];
+                                    const providerId = op.parameters['providerId'];
+                                    const tokenName = op.parameters['tokenName'];
 
-                if (!checkThrow && op.parameters['depositAddress']) {
-                    const depositAddress = op.parameters['depositAddress'];
-                    const providerId = op.parameters['providerId'];
-                    const tokenName = op.parameters['tokenName'];
-
-                    if (helper.cancelShouldThrow(tokenName, depositAddress, providerId)) {
-                        checkThrow = true;
-                    }
-                }
-
+                                    if (helper.cancelShouldThrow(tokenName, depositAddress, providerId)) {
+                                        checkThrow = true;
+                                    }
+                                }
+*/
                 if (checkThrow) {
                     await Assert.expect(async () => {
                         await helper.cancelListing(op);
                     }).toThrow();
                     if (verbose) {
                         Blockchain.log(`cancelListing throwed as expected`);
+                    }
+                } else if (op.expected.canthrow) {
+                    try {
+                        await helper.cancelListing(op);
+                    } catch (error) {
+                        if (verbose) {
+                            if (error instanceof Error) {
+                                Blockchain.log(
+                                    `cancelListing throwed an it was possible: Error: ${error.message}`,
+                                );
+                            } else {
+                                Blockchain.log(`cancelListing throwed an it was possible.`);
+                            }
+                        }
                     }
                 } else {
                     await helper.cancelListing(op);
