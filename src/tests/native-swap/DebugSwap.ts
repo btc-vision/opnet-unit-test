@@ -13,7 +13,7 @@ import {
 import fs from 'fs';
 import { BitcoinUtils } from 'opnet';
 import { NativeSwap } from '../../contracts/NativeSwap.js';
-import { Recipient, ReserveResult } from '../../contracts/NativeSwapTypes.js';
+import { Recipient, ReserveResult, SwapParams } from '../../contracts/NativeSwapTypes.js';
 import { createRecipientsOutput } from '../utils/TransactionUtils.js';
 import { NativeSwapTypesCoders } from '../../contracts/NativeSwapTypesCoders.js';
 
@@ -351,18 +351,49 @@ await opnet('NativeSwap: Debug', async (vm: OPNetUnit) => {
 
     await vm.it('should debug', async () => {
         //Blockchain.blockNumber = 4503299n;
-        Blockchain.blockNumber = 4505555n;
+        Blockchain.blockNumber = 4505805n;
 
         const addy = Address.fromString(
-            '0x02d83197d7f2c411f29d27894919af2bc4c1644ecc681db3c025d302f6beefcb83',
+            '0x2e027a0ffabb7b348048004a22f65727fc9903249640fbfdca4b08d12e22fd99',
         );
+
+        console.log(addy.toHex());
 
         Blockchain.msgSender = addy;
         Blockchain.txOrigin = addy;
 
-        const r = await nativeSwap.getProviderDetails({
+        const r = await nativeSwap.getReserve({
             token: tokenAddress,
         });
+
+        console.log(r);
+
+        const swapParams: SwapParams = {
+            token: tokenAddress,
+        };
+
+        createRecipientsOutput([
+            {
+                address: 'tb1pe0slk2klsxckhf90hvu8g0688rxt9qts6thuxk3u4ymxeejw53gszlcezf',
+                amount: 10001n,
+                providerId: '',
+            },
+            {
+                address: 'tb1pe0slk2klsxckhf90hvu8g0688rxt9qts6thuxk3u4ymxeejw53gszlcezf',
+                amount: 10001n,
+                providerId: '',
+            },
+            {
+                address: 'tb1pe0slk2klsxckhf90hvu8g0688rxt9qts6thuxk3u4ymxeejw53gszlcezf',
+                amount: 10001n,
+                providerId: '',
+            },
+        ]);
+
+        const t = await nativeSwap.swap(swapParams);
+        console.log(t);
+
+        /*
 
         const f = await nativeSwap.getQueueDetails({
             token: tokenAddress,
@@ -372,7 +403,7 @@ await opnet('NativeSwap: Debug', async (vm: OPNetUnit) => {
             token: tokenAddress,
         });
 
-        console.log(r, f, d);
+        console.log(r, f, d);*/
     });
 
     /*await vm.it('should debug', async () => {
