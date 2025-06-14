@@ -14,7 +14,7 @@ import fs from 'fs';
 import { BitcoinUtils } from 'opnet';
 import { NativeSwap } from '../../contracts/NativeSwap.js';
 import { Recipient, ReserveResult } from '../../contracts/NativeSwapTypes.js';
-import { createRecipientsOutput, tokensToSatoshis } from '../utils/TransactionUtils.js';
+import { createRecipientsOutput } from '../utils/TransactionUtils.js';
 import { NativeSwapTypesCoders } from '../../contracts/NativeSwapTypesCoders.js';
 
 interface ParsedState {
@@ -351,6 +351,32 @@ await opnet('NativeSwap: Debug', async (vm: OPNetUnit) => {
 
     await vm.it('should debug', async () => {
         //Blockchain.blockNumber = 4503299n;
+        Blockchain.blockNumber = 4505555n;
+
+        const addy = Address.fromString(
+            '0x02d83197d7f2c411f29d27894919af2bc4c1644ecc681db3c025d302f6beefcb83',
+        );
+
+        Blockchain.msgSender = addy;
+        Blockchain.txOrigin = addy;
+
+        const r = await nativeSwap.getProviderDetails({
+            token: tokenAddress,
+        });
+
+        const f = await nativeSwap.getQueueDetails({
+            token: tokenAddress,
+        });
+
+        const d = await nativeSwap.getReserve({
+            token: tokenAddress,
+        });
+
+        console.log(r, f, d);
+    });
+
+    /*await vm.it('should debug', async () => {
+        //Blockchain.blockNumber = 4503299n;
         Blockchain.blockNumber = 4503801n;
 
         const balance = await token.balanceOf(userAddress);
@@ -394,25 +420,5 @@ await opnet('NativeSwap: Debug', async (vm: OPNetUnit) => {
         Blockchain.info(
             `Reserved ${reservedMax} BTC for user ${user} with ${reservation.expectedAmountOut} tokens expected out.`,
         );
-
-        /*
-
-        console.log({
-            liquidity: BitcoinUtils.formatUnits(r.liquidity, tokenDecimals),
-            reservedLiquidity: BitcoinUtils.formatUnits(r.reservedLiquidity, tokenDecimals),
-            virtualBTCReserve: BitcoinUtils.formatUnits(r.virtualBTCReserve, 8),
-            virtualTokenReserve: BitcoinUtils.formatUnits(r.virtualTokenReserve, tokenDecimals),
-        });
-
-        const p = await nativeSwap.getProviderDetails({
-            token: tokenAddress,
-        });
-
-        console.log({
-            liquidity: p.liquidity,
-            liquidityProvided: p.liquidityProvided,
-            reserved: p.reserved,
-            btcReceiver: p.btcReceiver,
-        });*/
-    });
+    });*/
 });
