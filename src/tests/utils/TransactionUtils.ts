@@ -3,8 +3,6 @@ import { NativeSwap } from '../../contracts/NativeSwap.js';
 import { Recipient } from '../../contracts/NativeSwapTypes.js';
 import bitcoin, { networks } from '@btc-vision/bitcoin';
 
-Blockchain.changeNetwork(bitcoin.networks.regtest);
-
 export function createFeeOutput(value: bigint, recipient: string = NativeSwap.feeRecipient): void {
     if (Blockchain.network.bech32 === networks.testnet.bech32) {
         recipient = NativeSwap.feeRecipientTestnet;
