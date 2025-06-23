@@ -142,9 +142,10 @@ export interface GetProviderDetailsResult {
     readonly liquidityProvided: bigint;
     readonly btcReceiver: string;
     readonly response: CallResponse;
-
-    readonly indexedAt: number;
+    readonly queueIndex: number;
     readonly isPriority: boolean;
+    readonly purgeIndex: number;
+    readonly isActive: boolean;
 }
 
 export interface GetQueueDetailsResult {

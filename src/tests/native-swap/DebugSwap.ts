@@ -13,9 +13,16 @@ import {
 import fs from 'fs';
 import { BitcoinUtils } from 'opnet';
 import { NativeSwap } from '../../contracts/NativeSwap.js';
-import { Recipient, ReserveResult, SwapParams } from '../../contracts/NativeSwapTypes.js';
+import {
+    GetProviderParams,
+    Recipient,
+    ReserveParams,
+    ReserveResult,
+    SwapParams,
+} from '../../contracts/NativeSwapTypes.js';
 import { createRecipientsOutput } from '../utils/TransactionUtils.js';
 import { NativeSwapTypesCoders } from '../../contracts/NativeSwapTypesCoders.js';
+import { Network, networks } from '@btc-vision/bitcoin';
 
 interface ParsedState {
     readonly pointer: {
@@ -38,6 +45,7 @@ type ParsedStates = ParsedState[];
 const nativeStatesFile = './states/NativeSwapStates2.json';
 const motoStatesFile = './states/MotoStates2.json';
 
+const SEARCHED_BLOCK: bigint = 4507160n; //4507421n; //4507170n; // 4507420n; //4507653n;
 function getStates(file: string): FastBigIntMap {
     const data = fs.readFileSync(file, 'utf8');
     const parsedData = JSON.parse(data) as ParsedStates;
@@ -48,6 +56,10 @@ function getStates(file: string): FastBigIntMap {
         const pointer = state.pointer.$binary.base64;
         const at = Number(state.lastSeenAt.$numberLong);
         const value = state.value.$binary.base64;
+
+        if (BigInt(state.lastSeenAt.$numberLong) > SEARCHED_BLOCK) {
+            continue;
+        }
 
         const existing = seenAtPointers.get(pointer);
         if (existing) {
@@ -335,7 +347,7 @@ await opnet('NativeSwap: Debug', async (vm: OPNetUnit) => {
 
         await Blockchain.init();
 
-        Blockchain.blockNumber = 4503799n;
+        Blockchain.blockNumber = SEARCHED_BLOCK + 1n;
 
         StateHandler.overrideStates(nativeAddy, nativeStates);
         StateHandler.overrideStates(tokenAddress, motoStates);
@@ -350,29 +362,71 @@ await opnet('NativeSwap: Debug', async (vm: OPNetUnit) => {
     });
 
     await vm.it('should debug', async () => {
-        //Blockchain.blockNumber = 4503299n;
-        Blockchain.blockNumber = 4505805n;
+        Blockchain.blockNumber = SEARCHED_BLOCK + 1n;
+        Blockchain.network = networks.testnet;
 
         const addy = Address.fromString(
-            '0x2e027a0ffabb7b348048004a22f65727fc9903249640fbfdca4b08d12e22fd99',
+            '0x029e2442eb84c859eb18251d76ec57b3e2fb0862a8fd23f015584fe734e26e5916',
         );
-
-        console.log(addy.toHex());
 
         Blockchain.msgSender = addy;
         Blockchain.txOrigin = addy;
 
+        const p: GetProviderParams = {
+            id: '94908803407722062086681605501108586973228523051813144866620921196490994450521',
+            token: tokenAddress,
+        };
+
+        const b = await token.balanceOf(addy);
+
+        await token.approve(addy, nativeSwap.address, b);
+
+        const r = await nativeSwap.getProvider(p);
+        console.log(r);
+
+        createRecipientsOutput([
+            {
+                address: NativeSwap.feeRecipientTestnet,
+                amount: 50000n,
+                providerId: '',
+            },
+        ]);
+
+        const liquid = await nativeSwap.listLiquidity({
+            token: tokenAddress,
+            receiver: `tb1pazh3qsg4xm54wyk6g347u4e2vwvff73sj62f7l8r7aajrlj4sdzs8kga5m`,
+            amountIn: b,
+            priority: true,
+            disablePriorityQueueFees: false,
+        });
+
+        const r2 = await nativeSwap.getProvider(p);
+        console.log(r2);
+
+        /*
         const r = await nativeSwap.getReserve({
             token: tokenAddress,
         });
 
-        console.log(r);
-
-        const swapParams: SwapParams = {
+        const swapParams: ReserveParams = {
             token: tokenAddress,
+            maximumAmountIn: 100000n,
+            minimumAmountOut: 0n,
+            forLP: false,
+            activationDelay: 2,
         };
 
         createRecipientsOutput([
+            {
+                address: NativeSwap.feeRecipientTestnet,
+                amount: NativeSwap.reservationFees,
+                providerId: '',
+            },
+        ]);
+
+        const t = await nativeSwap.reserve(swapParams);
+*/
+        /*createRecipientsOutput([
             {
                 address: 'tb1pe0slk2klsxckhf90hvu8g0688rxt9qts6thuxk3u4ymxeejw53gszlcezf',
                 amount: 10001n,
@@ -392,7 +446,7 @@ await opnet('NativeSwap: Debug', async (vm: OPNetUnit) => {
 
         const t = await nativeSwap.swap(swapParams);
         console.log(t);
-
+*/
         /*
 
         const f = await nativeSwap.getQueueDetails({

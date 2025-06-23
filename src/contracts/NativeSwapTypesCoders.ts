@@ -375,9 +375,10 @@ export class NativeSwapTypesCoders {
             liquidityProvided: reader.readU128(),
             btcReceiver: reader.readStringWithLength(),
             response: response,
-
-            indexedAt: reader.readU32(),
+            queueIndex: reader.readU32(),
             isPriority: reader.readBoolean(),
+            purgeIndex: reader.readU32(),
+            isActive: reader.readBoolean(),
         };
     }
 

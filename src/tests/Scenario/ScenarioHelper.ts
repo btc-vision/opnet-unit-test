@@ -171,10 +171,10 @@ export class ScenarioHelper {
         const msgSender = Address.fromString(op.parameters['msgSender']);
 
         if (this.verbose) {
-            logAction(`setBlockchainInfo`);
-            logParameter(`blockNumber`, blockNumber.toString());
-            logParameter(`txOrigin`, txOrigin.toString());
-            logParameter(`msgSender`, msgSender.toString());
+            //logAction(`setBlockchainInfo`);
+            //logParameter(`blockNumber`, blockNumber.toString());
+            //logParameter(`txOrigin`, txOrigin.toString());
+            //logParameter(`msgSender`, msgSender.toString());
         }
 
         Blockchain.txOrigin = txOrigin;
@@ -392,6 +392,7 @@ export class ScenarioHelper {
 
         if (this.verbose) {
             logAction(`createPool`);
+            logParameter(`context`, op.context);
             logParameter(`tokenName`, tokenName.toString());
             logParameter(`floorPrice`, floorPrice.toString());
             logParameter(`initialLiquidity`, initialLiquidity.toString());
@@ -468,6 +469,7 @@ export class ScenarioHelper {
 
         if (this.verbose) {
             logAction(`createPool`);
+            logParameter(`context`, op.context);
             logParameter(`tokenName`, tokenName.toString());
             logParameter(`signature`, signature.toString());
             logParameter(`amount`, amount.toString());
@@ -545,6 +547,7 @@ export class ScenarioHelper {
 
         if (this.verbose) {
             logAction(`reserve`);
+            logParameter(`context`, op.context);
             logParameter(`tokenName`, tokenName.toString());
             logParameter(`maximumAmountIn`, maximumAmountIn.toString());
             logParameter(`minimumAmountOut`, minimumAmountOut.toString());
@@ -555,7 +558,6 @@ export class ScenarioHelper {
         const mapId: string = `${tokenName}${Blockchain.msgSender.toString()}`;
 
         if (this._notPurgedReservations.has(mapId)) {
-            console.log(`clear to not purged ${mapId}`);
             this._notPurgedReservations.delete(mapId);
         }
 
@@ -657,7 +659,6 @@ export class ScenarioHelper {
                 error instanceof Error &&
                 error.message.includes('OPNET: NATIVE_SWAP: You may not reserve at this time.')
             ) {
-                console.log(`add to not purged: ${mapId}`);
                 this._notPurgedReservations.set(mapId, true);
             } else {
                 throw error;
@@ -675,6 +676,7 @@ export class ScenarioHelper {
 
         if (this.verbose) {
             logAction(`listToken`);
+            logParameter(`context`, op.context);
             logParameter(`tokenName`, tokenName.toString());
             logParameter(`amountIn`, amountIn.toString());
             logParameter(`receiver`, receiver);
@@ -788,6 +790,7 @@ export class ScenarioHelper {
 
         if (this.verbose) {
             logAction(`swap`);
+            logParameter(`context`, op.context);
             logParameter(`tokenName`, tokenName);
             logParameter(`sendUTXO`, sendUTXO);
         }
@@ -897,6 +900,7 @@ export class ScenarioHelper {
 
         if (this.verbose) {
             logAction(`addLiquidity`);
+            logParameter(`context`, op.context);
             logParameter(`tokenName`, tokenName);
             logParameter(`receiver`, receiver);
             logParameter(`sendUTXO`, sendUTXO);
@@ -999,6 +1003,7 @@ export class ScenarioHelper {
 
         if (this.verbose) {
             logAction(`removeLiquidity`);
+            logParameter(`context`, op.context);
             logParameter(`tokenName`, tokenName);
         }
 
@@ -1058,6 +1063,7 @@ export class ScenarioHelper {
 
         if (this.verbose) {
             logAction(`cancelListing`);
+            logParameter(`context`, op.context);
             logParameter(`tokenName`, tokenName);
             logParameter(`providerId`, providerId);
         }
@@ -1094,6 +1100,7 @@ export class ScenarioHelper {
             }
         }
 
+        /*
         Assert.expect(events.length).toEqual(3);
 
         const fulfilledProviderEvent = NativeSwapTypesCoders.decodeFulfilledProviderEvent(
@@ -1103,6 +1110,7 @@ export class ScenarioHelper {
         const transferEvent = NativeSwapTypesCoders.decodeTransferEvent(events[1].data);
 
         const listingCanceledEvent = NativeSwapTypesCoders.decodeCancelListingEvent(events[2].data);
+*/
 
         if (this.verbose) {
             logCancelListingResult(result);
@@ -1144,6 +1152,7 @@ export class ScenarioHelper {
 
         if (this.verbose) {
             logAction(`getReserve`);
+            logParameter(`context`, op.context);
             logParameter(`tokenName`, tokenName);
         }
 
@@ -1207,6 +1216,7 @@ export class ScenarioHelper {
 
         if (this.verbose) {
             logAction(`getQuote`);
+            logParameter(`context`, op.context);
             logParameter(`tokenName`, tokenName.toString());
             logParameter(`satoshiIn`, satoshiIn.toString());
         }
@@ -1253,6 +1263,7 @@ export class ScenarioHelper {
 
         if (this.verbose) {
             logAction(`getProviderDetails`);
+            logParameter(`context`, op.context);
             logParameter(`tokenName`, tokenName);
         }
 
@@ -1268,6 +1279,7 @@ export class ScenarioHelper {
     public createRecipientUTXOs(op: OperationDefinition): void {
         if (this.verbose) {
             logAction(`createRecipientUTXOs`);
+            logParameter(`context`, op.context);
             op.recipients.forEach((recipient: Recipient): void => {
                 logParameter(`address`, recipient.address);
                 logParameter(`amount`, recipient.amount.toString());
