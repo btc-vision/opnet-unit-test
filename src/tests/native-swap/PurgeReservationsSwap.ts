@@ -12,6 +12,7 @@ import { Recipient, ReserveResult } from '../../contracts/NativeSwapTypes.js';
 import { BitcoinUtils } from 'opnet';
 import { createRecipientsOutput } from '../utils/TransactionUtils.js';
 import { NativeSwapTypesCoders } from '../../contracts/NativeSwapTypesCoders.js';
+import bitcoin from '@btc-vision/bitcoin';
 
 await opnet('NativeSwap: Purging Reservations', async (vm: OPNetUnit) => {
     let nativeSwap: NativeSwap;
@@ -25,6 +26,8 @@ await opnet('NativeSwap: Purging Reservations', async (vm: OPNetUnit) => {
     const tokenAddress: Address = Blockchain.generateRandomAddress();
     const nativeAddress: Address = Blockchain.generateRandomAddress();
     const tokenDecimals = 18;
+
+    Blockchain.changeNetwork(bitcoin.networks.regtest);
 
     async function createPool(
         floorPrice: bigint,
