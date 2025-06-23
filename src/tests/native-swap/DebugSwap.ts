@@ -14,7 +14,6 @@ import fs from 'fs';
 import { BitcoinUtils } from 'opnet';
 import { NativeSwap } from '../../contracts/NativeSwap.js';
 import {
-    GetProviderParams,
     Recipient,
     ReserveParams,
     ReserveResult,
@@ -372,17 +371,9 @@ await opnet('NativeSwap: Debug', async (vm: OPNetUnit) => {
         Blockchain.msgSender = addy;
         Blockchain.txOrigin = addy;
 
-        const p: GetProviderParams = {
-            id: '94908803407722062086681605501108586973228523051813144866620921196490994450521',
-            token: tokenAddress,
-        };
-
         const b = await token.balanceOf(addy);
 
         await token.approve(addy, nativeSwap.address, b);
-
-        const r = await nativeSwap.getProvider(p);
-        console.log(r);
 
         createRecipientsOutput([
             {
@@ -399,9 +390,6 @@ await opnet('NativeSwap: Debug', async (vm: OPNetUnit) => {
             priority: true,
             disablePriorityQueueFees: false,
         });
-
-        const r2 = await nativeSwap.getProvider(p);
-        console.log(r2);
 
         /*
         const r = await nativeSwap.getReserve({

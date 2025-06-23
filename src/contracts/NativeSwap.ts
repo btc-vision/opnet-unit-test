@@ -50,7 +50,7 @@ export class NativeSwap extends ContractRuntime {
 
     // Define selectors for contract methods
     private readonly reserveSelector: number = Number(
-        `0x${this.abiCoder.encodeSelector('reserve(address,uint256,uint256,bool,uint8)')}`,
+        `0x${this.abiCoder.encodeSelector('reserve(address,uint64,uint256,bool,uint8)')}`,
     );
 
     private readonly swapSelector: number = Number(
@@ -90,7 +90,7 @@ export class NativeSwap extends ContractRuntime {
     );
 
     private readonly getQuoteSelector: number = Number(
-        `0x${this.abiCoder.encodeSelector('getQuote(address,uint256)')}`,
+        `0x${this.abiCoder.encodeSelector('getQuote(address,uint64)')}`,
     );
 
     private readonly getProviderDetailsSelector: number = Number(

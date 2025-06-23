@@ -5,9 +5,11 @@ import {
     gas2BTC,
     gas2Sat,
     gas2USD,
+    generateEmptyTransaction,
     OP_20,
     opnet,
     OPNetUnit,
+    Transaction,
 } from '@btc-vision/unit-test-framework';
 import { NativeSwap } from '../../contracts/NativeSwap.js';
 import { createRecipientUTXOs } from '../utils/UTXOSimulator.js';
@@ -221,6 +223,33 @@ await opnet('NativeSwap: Priority and Normal Queue listLiquidity', async (vm: OP
     );
 
     await vm.it(
+        'should fail to add liquidity to the priority queue when not enough priority fees sent',
+        async () => {
+            const amountIn = Blockchain.expandTo18Decimals(1000);
+            await token.approve(userAddress, nativeSwap.address, amountIn);
+
+            await nativeSwap.setStakingContractAddress({
+                stakingContractAddress: stakingContractAddress,
+            });
+
+            const tx: Transaction = generateEmptyTransaction();
+            tx.addOutput(100n, 'random');
+
+            Blockchain.transaction = tx;
+
+            await Assert.expect(async () => {
+                await nativeSwap.listLiquidity({
+                    token: tokenAddress,
+                    receiver: userAddress.p2tr(Blockchain.network),
+                    amountIn: amountIn,
+                    priority: true,
+                    disablePriorityQueueFees: true,
+                });
+            }).toThrow('NATIVE_SWAP: Not enough fees for priority queue.');
+        },
+    );
+
+    await vm.it(
         'should allow multiple additions to priority queue for the same provider',
         async () => {
             const amountIn = Blockchain.expandTo18Decimals(500);
@@ -296,7 +325,63 @@ await opnet('NativeSwap: Priority and Normal Queue listLiquidity', async (vm: OP
         },
     );
 
-    //!!! Change index if provider has been used and purged
+    await vm.it('should change queue index when provider relist after being purged', async () => {
+        Blockchain.blockNumber = 100n;
+        const amountIn = Blockchain.expandTo18Decimals(500);
+
+        const provider = Blockchain.generateRandomAddress();
+        await token.mintRaw(provider, amountIn * 2n);
+        Blockchain.msgSender = provider;
+        Blockchain.txOrigin = provider;
+        await token.approve(provider, nativeSwap.address, amountIn * 2n);
+        await nativeSwap.listLiquidity({
+            token: tokenAddress,
+            receiver: provider.p2tr(Blockchain.network),
+            amountIn: amountIn,
+            priority: false,
+            disablePriorityQueueFees: false,
+        });
+
+        const providerDetail1 = await nativeSwap.getProviderDetails({ token: tokenAddress });
+
+        const buyer = Blockchain.generateRandomAddress();
+        Blockchain.msgSender = buyer;
+        Blockchain.txOrigin = buyer;
+
+        const satIn = 100_000_000n;
+        const minOut = 1n;
+        const reservation = await nativeSwap.reserve({
+            token: tokenAddress,
+            maximumAmountIn: satIn,
+            minimumAmountOut: minOut,
+            forLP: false,
+        });
+
+        const decodedReservation2 = NativeSwapTypesCoders.decodeReservationEvents(
+            reservation.response.events,
+        );
+
+        createRecipientUTXOs(decodedReservation2.recipients);
+        Blockchain.blockNumber = Blockchain.blockNumber + 2n;
+
+        await nativeSwap.swap({
+            token: tokenAddress,
+        });
+
+        Blockchain.msgSender = provider;
+        Blockchain.txOrigin = provider;
+        await nativeSwap.listLiquidity({
+            token: tokenAddress,
+            receiver: provider.p2tr(Blockchain.network),
+            amountIn: amountIn,
+            priority: false,
+            disablePriorityQueueFees: false,
+        });
+
+        const providerDetail2 = await nativeSwap.getProviderDetails({ token: tokenAddress });
+
+        Assert.expect(providerDetail1.queueIndex).toNotEqual(providerDetail2.queueIndex);
+    });
 
     await vm.it(
         'should not allow adding normal queue liquidity if provider is already priority',
@@ -562,6 +647,61 @@ await opnet('NativeSwap: Priority and Normal Queue listLiquidity', async (vm: OP
         },
     );
 
+    await vm.it('should allow changing provider receiver address after swap', async () => {
+        const amountIn = Blockchain.expandTo18Decimals(500);
+        // Setup a single provider with normal liquidity
+        const provider = Blockchain.generateRandomAddress();
+        await token.mintRaw(provider, amountIn * 2n);
+        Blockchain.msgSender = provider;
+        Blockchain.txOrigin = provider;
+        await token.approve(provider, nativeSwap.address, amountIn * 2n);
+        await nativeSwap.listLiquidity({
+            token: tokenAddress,
+            receiver: provider.p2tr(Blockchain.network),
+            amountIn: amountIn,
+            priority: false,
+            disablePriorityQueueFees: false,
+        });
+
+        // Make a reservation from a different user
+        const buyer = Blockchain.generateRandomAddress();
+        Blockchain.msgSender = buyer;
+        Blockchain.txOrigin = buyer;
+
+        const satIn = 100_000_000n;
+        const minOut = 1n;
+        const reservation = await nativeSwap.reserve({
+            token: tokenAddress,
+            maximumAmountIn: satIn,
+            minimumAmountOut: minOut,
+            forLP: false,
+        });
+
+        const decodedReservation2 = NativeSwapTypesCoders.decodeReservationEvents(
+            reservation.response.events,
+        );
+
+        createRecipientUTXOs(decodedReservation2.recipients);
+        Blockchain.blockNumber = Blockchain.blockNumber + 2n;
+
+        await nativeSwap.swap({
+            token: tokenAddress,
+        });
+
+        // Now the provider tries to add more liquidity with a different receiver
+        const newReceiver = Blockchain.generateRandomAddress().p2tr(Blockchain.network);
+        Blockchain.msgSender = provider;
+
+        // Should NOT revert
+        await nativeSwap.listLiquidity({
+            token: tokenAddress,
+            receiver: newReceiver,
+            amountIn: amountIn,
+            priority: false,
+            disablePriorityQueueFees: false,
+        });
+    });
+
     /*
     await vm.it('should reserve liquidity from priority providers first', async () => {
         const provider1 = Blockchain.generateRandomAddress();
@@ -625,60 +765,6 @@ await opnet('NativeSwap: Priority and Normal Queue listLiquidity', async (vm: OP
         );
     });
 
-    await vm.it('should not prevent changing provider receiver address after swap', async () => {
-        const amountIn = Blockchain.expandTo18Decimals(500);
-        // Setup a single provider with normal liquidity
-        const provider = Blockchain.generateRandomAddress();
-        await token.mintRaw(provider, amountIn * 2n);
-        Blockchain.msgSender = provider;
-        Blockchain.txOrigin = provider;
-        await token.approve(provider, nativeSwap.address, amountIn * 2n);
-        await nativeSwap.listLiquidity({
-            token: tokenAddress,
-            receiver: provider.p2tr(Blockchain.network),
-            amountIn: amountIn,
-            priority: false,
-            disablePriorityQueueFees: false,
-        });
-
-        // Make a reservation from a different user
-        const buyer = Blockchain.generateRandomAddress();
-        Blockchain.msgSender = buyer;
-        Blockchain.txOrigin = buyer;
-
-        const satIn = 100_000_000n;
-        const minOut = 1n;
-        const reservation = await nativeSwap.reserve({
-            token: tokenAddress,
-            maximumAmountIn: satIn,
-            minimumAmountOut: minOut,
-            forLP: false,
-        });
-
-        const decodedReservation2 = NativeSwapTypesCoders.decodeReservationEvents(
-            reservation.response.events,
-        );
-
-        createRecipientUTXOs(decodedReservation2.recipients);
-        Blockchain.blockNumber = Blockchain.blockNumber + 2n;
-
-        await nativeSwap.swap({
-            token: tokenAddress,
-        });
-
-        // Now the provider tries to add more liquidity with a different receiver
-        const newReceiver = Blockchain.generateRandomAddress().p2tr(Blockchain.network);
-        Blockchain.msgSender = provider;
-
-        // Should NOT revert
-        await nativeSwap.listLiquidity({
-            token: tokenAddress,
-            receiver: newReceiver,
-            amountIn: amountIn,
-            priority: false,
-            disablePriorityQueueFees: false,
-        });
-    });
 
     await vm.it('should restore liquidity after reservation expiration', async () => {
         // Setup a provider and make a reservation that won't be completed
