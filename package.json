@@ -9,6 +9,7 @@
         "test:native:onlyowner": "tsx src/tests/native-swap/onlyowner/OnlyOwner.ts",
         "test:native:reentrancy": "tsx src/tests/native-swap/reentrancy/Reentrancy.ts",
         "test:native:listtoken": "tsx src/tests/native-swap/ListLiquidity.ts",
+        "test:native:canceltoken": "tsx src/tests/native-swap/CancelLiquidity.ts",
         "test:native:purgeSwap": "tsx src/tests/native-swap/PurgeReservationsSwap.ts",
         "test:native:purge": "tsx src/tests/native-swap/PurgeReservations.ts",
         "test:native:addliquidity": "tsx src/tests/native-swap/AddLiquidity.ts",

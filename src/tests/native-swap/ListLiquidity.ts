@@ -110,6 +110,7 @@ await opnet('NativeSwap: Priority and Normal Queue listLiquidity', async (vm: OP
     });
 
     await vm.it('should add liquidity to the normal queue successfully', async () => {
+        Blockchain.blockNumber = 1000n;
         const amountIn = Blockchain.expandTo18Decimals(500);
         await token.approve(userAddress, nativeSwap.address, amountIn);
 
@@ -157,11 +158,16 @@ await opnet('NativeSwap: Priority and Normal Queue listLiquidity', async (vm: OP
         Assert.expect(reserveAfter.virtualTokenReserve).toEqual(
             reserveBefore.virtualTokenReserve + amountIn / 2n,
         );
+
+        const providerDetail = await nativeSwap.getProviderDetails({ token: tokenAddress });
+
+        Assert.expect(providerDetail.listedTokenAt).toEqual(1000n);
     });
 
     await vm.it(
         'should add liquidity to the priority queue successfully and apply fee',
         async () => {
+            Blockchain.blockNumber = 1000n;
             const amountIn = Blockchain.expandTo18Decimals(1000);
             await token.approve(userAddress, nativeSwap.address, amountIn);
 
@@ -219,6 +225,10 @@ await opnet('NativeSwap: Priority and Normal Queue listLiquidity', async (vm: OP
             Assert.expect(reserveAfter.virtualTokenReserve).toEqual(
                 reserveBefore.virtualTokenReserve + feeAmount + amountIn / 2n,
             );
+
+            const providerDetail = await nativeSwap.getProviderDetails({ token: tokenAddress });
+
+            Assert.expect(providerDetail.listedTokenAt).toEqual(1000n);
         },
     );
 
@@ -232,11 +242,6 @@ await opnet('NativeSwap: Priority and Normal Queue listLiquidity', async (vm: OP
                 stakingContractAddress: stakingContractAddress,
             });
 
-            const tx: Transaction = generateEmptyTransaction();
-            tx.addOutput(100n, 'random');
-
-            Blockchain.transaction = tx;
-
             await Assert.expect(async () => {
                 await nativeSwap.listLiquidity({
                     token: tokenAddress,
@@ -248,6 +253,44 @@ await opnet('NativeSwap: Priority and Normal Queue listLiquidity', async (vm: OP
             }).toThrow('NATIVE_SWAP: Not enough fees for priority queue.');
         },
     );
+
+    await vm.it('should fail to add liquidity if amount to list is 0', async () => {
+        const amountIn = Blockchain.expandTo18Decimals(1000);
+        await token.approve(userAddress, nativeSwap.address, amountIn);
+
+        await nativeSwap.setStakingContractAddress({
+            stakingContractAddress: stakingContractAddress,
+        });
+
+        await Assert.expect(async () => {
+            await nativeSwap.listLiquidity({
+                token: tokenAddress,
+                receiver: userAddress.p2tr(Blockchain.network),
+                amountIn: 0n,
+                priority: false,
+                disablePriorityQueueFees: false,
+            });
+        }).toThrow('NATIVE_SWAP: Amount in cannot be zero.');
+    });
+
+    await vm.it('should fail when trying to add more liquidity than supported', async () => {
+        const amountIn = Blockchain.expandTo18Decimals(1000);
+        await token.approve(userAddress, nativeSwap.address, amountIn);
+
+        await nativeSwap.setStakingContractAddress({
+            stakingContractAddress: stakingContractAddress,
+        });
+
+        await Assert.expect(async () => {
+            await nativeSwap.listLiquidity({
+                token: tokenAddress,
+                receiver: userAddress.p2tr(Blockchain.network),
+                amountIn: 340282366920938463463374607431768211455n,
+                priority: false,
+                disablePriorityQueueFees: false,
+            });
+        }).toThrow('NATIVE_SWAP: Liquidity overflow. Please add a smaller amount.');
+    });
 
     await vm.it(
         'should allow multiple additions to priority queue for the same provider',
@@ -700,6 +743,62 @@ await opnet('NativeSwap: Priority and Normal Queue listLiquidity', async (vm: OP
             priority: false,
             disablePriorityQueueFees: false,
         });
+    });
+
+    await vm.it('should fail to add liquidity when provider have active reservation', async () => {
+        const amountIn = Blockchain.expandTo18Decimals(500);
+        // Setup a single provider with normal liquidity
+        const provider = Blockchain.generateRandomAddress();
+        await token.mintRaw(provider, amountIn * 2n);
+        Blockchain.msgSender = provider;
+        Blockchain.txOrigin = provider;
+        await token.approve(provider, nativeSwap.address, amountIn * 2n);
+        await nativeSwap.listLiquidity({
+            token: tokenAddress,
+            receiver: provider.p2tr(Blockchain.network),
+            amountIn: amountIn,
+            priority: false,
+            disablePriorityQueueFees: false,
+        });
+
+        // Make a reservation from a different user
+        const buyer = Blockchain.generateRandomAddress();
+        Blockchain.msgSender = buyer;
+        Blockchain.txOrigin = buyer;
+
+        const satIn = 10000n;
+        const minOut = 1n;
+        const reservation = await nativeSwap.reserve({
+            token: tokenAddress,
+            maximumAmountIn: satIn,
+            minimumAmountOut: minOut,
+            forLP: false,
+        });
+
+        const decodedReservation2 = NativeSwapTypesCoders.decodeReservationEvents(
+            reservation.response.events,
+        );
+
+        createRecipientUTXOs(decodedReservation2.recipients);
+        Blockchain.blockNumber = Blockchain.blockNumber + 2n;
+
+        await nativeSwap.swap({
+            token: tokenAddress,
+        });
+
+        Blockchain.msgSender = provider;
+        Blockchain.txOrigin = provider;
+        await Assert.expect(async () => {
+            await nativeSwap.listLiquidity({
+                token: tokenAddress,
+                receiver: provider.p2tr(Blockchain.network),
+                amountIn: amountIn,
+                priority: false,
+                disablePriorityQueueFees: false,
+            });
+        }).toThrow(
+            'NATIVE_SWAP: You have an active position partially fulfilled. You must wait until it is fully fulfilled.',
+        );
     });
 
     /*

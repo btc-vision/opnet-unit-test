@@ -146,6 +146,7 @@ export interface GetProviderDetailsResult {
     readonly isPriority: boolean;
     readonly purgeIndex: number;
     readonly isActive: boolean;
+    readonly listedTokenAt: bigint;
 }
 
 export interface GetQueueDetailsResult {

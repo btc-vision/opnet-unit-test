@@ -379,6 +379,7 @@ export class NativeSwapTypesCoders {
             isPriority: reader.readBoolean(),
             purgeIndex: reader.readU32(),
             isActive: reader.readBoolean(),
+            listedTokenAt: reader.readU64(),
         };
     }
 
