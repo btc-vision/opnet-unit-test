@@ -162,7 +162,8 @@ export class NativeSwapTypesCoders {
     public static decodeCancelListingEvent(data: Uint8Array): IListingCanceledEvent {
         const reader = new BinaryReader(data);
         const amount = reader.readU128();
-        return { name: 'ListingCanceledEvent', amount };
+        const penalty = reader.readU128();
+        return { name: 'ListingCanceledEvent', amount, penalty };
     }
 
     public static decodeReservationCreatedEvent(data: Uint8Array): IReservationCreatedEvent {

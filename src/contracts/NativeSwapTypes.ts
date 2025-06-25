@@ -45,6 +45,7 @@ export interface ILiquidityReservedEvent {
 export interface IListingCanceledEvent {
     readonly name: string;
     readonly amount: bigint;
+    readonly penalty: bigint;
 }
 
 export interface IReservationCreatedEvent {

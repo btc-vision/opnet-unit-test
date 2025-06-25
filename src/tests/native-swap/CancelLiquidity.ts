@@ -12,9 +12,15 @@ import {
     Transaction,
 } from '@btc-vision/unit-test-framework';
 import { NativeSwap } from '../../contracts/NativeSwap.js';
-import { createRecipientUTXOs } from '../utils/UTXOSimulator.js';
+
 import { NativeSwapTypesCoders } from '../../contracts/NativeSwapTypesCoders.js';
-import { ListLiquidityResult, Recipient } from '../../contracts/NativeSwapTypes.js';
+
+import {
+    helper_createPool,
+    helper_listLiquidity,
+    helper_reserve,
+    helper_swap,
+} from '../utils/OperationHelper.js';
 
 const receiver: Address = Blockchain.generateRandomAddress();
 
@@ -28,55 +34,11 @@ await opnet('NativeSwap: Priority and Normal Queue cancelliquidity', async (vm: 
     const nativeSwapAddress: Address = Blockchain.generateRandomAddress();
 
     const liquidityOwner: Address = Blockchain.generateRandomAddress();
-    const initialLiquidityAddress: string = liquidityOwner.p2tr(Blockchain.network);
-    const initialLiquidityAmount: bigint = Blockchain.expandTo18Decimals(1_000_000);
 
-    async function mintAndApprove(amount: bigint, to: Address): Promise<void> {
-        const addyBefore = Blockchain.msgSender;
-
-        Blockchain.txOrigin = liquidityOwner;
-        Blockchain.msgSender = liquidityOwner;
-
-        await token.mintRaw(to, amount);
-
-        Blockchain.txOrigin = addyBefore;
-        Blockchain.msgSender = addyBefore;
-
-        await token.approve(addyBefore, nativeSwap.address, amount);
-    }
-
-    /**
-     * Creates a pool by:
-     *  1) Minting the initialLiquidity amount of tokens to userAddress
-     *  2) Approving that amount for NativeSwap contract
-     *  3) Calling nativeSwap.createPool(...)
-     */
-    async function createPool(floorPrice: bigint, initialLiquidity: bigint): Promise<void> {
-        Blockchain.txOrigin = liquidityOwner;
-        Blockchain.msgSender = liquidityOwner;
-
-        await mintAndApprove(initialLiquidity, liquidityOwner);
-
-        // Create the pool
-        const result = await nativeSwap.createPool({
-            token: tokenAddress,
-            floorPrice: floorPrice,
-            initialLiquidity: initialLiquidity,
-            receiver: initialLiquidityAddress,
-            antiBotEnabledFor: 0,
-            antiBotMaximumTokensPerReservation: 0n,
-            maxReservesIn5BlocksPercent: 40,
-        });
-
-        vm.debug(
-            `Pool created! Gas cost: ${gas2Sat(result.response.usedGas)} sat (${gas2BTC(
-                result.response.usedGas,
-            )} BTC, $${gas2USD(result.response.usedGas)})`,
-        );
-
-        Blockchain.txOrigin = userAddress;
-        Blockchain.msgSender = userAddress;
-    }
+    const initialLiquidityAmount: number = 1_000_000;
+    const initialLiquidityAmountExpanded: bigint =
+        Blockchain.expandTo18Decimals(initialLiquidityAmount);
+    const floorPrice: bigint = 100000000000000n;
 
     async function listToken(
         amountIn: number,
@@ -87,42 +49,35 @@ await opnet('NativeSwap: Priority and Normal Queue cancelliquidity', async (vm: 
         await token.mintRaw(providerAddress, realAmountIn);
         await token.approve(providerAddress, nativeSwap.address, realAmountIn);
 
-        await nativeSwap.listLiquidity({
-            token: tokenAddress,
-            receiver: providerAddress.p2tr(Blockchain.network),
-            amountIn: realAmountIn,
-            priority: priority,
-            disablePriorityQueueFees: false,
-        });
-    }
-
-    async function reserve(satIn: bigint): Promise<Recipient[]> {
-        const reservation = await nativeSwap.reserve({
-            token: tokenAddress,
-            maximumAmountIn: satIn,
-            minimumAmountOut: 1n,
-            forLP: false,
-        });
-
-        const decodedReservation2 = NativeSwapTypesCoders.decodeReservationEvents(
-            reservation.response.events,
+        await helper_listLiquidity(
+            nativeSwap,
+            tokenAddress,
+            providerAddress,
+            realAmountIn,
+            priority,
+            providerAddress,
+            false,
+            false,
         );
-
-        return decodedReservation2.recipients;
     }
 
-    async function swap(recipient: Recipient[]): Promise<void> {
-        createRecipientUTXOs(recipient);
-
-        await nativeSwap.swap({
-            token: tokenAddress,
-        });
+    async function reserve(satIn: bigint): Promise<void> {
+        await helper_reserve(
+            nativeSwap,
+            tokenAddress,
+            Blockchain.msgSender,
+            satIn,
+            1n,
+            false,
+            false,
+            true,
+        );
     }
 
     async function reserveSwap(satIn: bigint): Promise<void> {
-        const recipient = await reserve(satIn);
+        await reserve(satIn);
         Blockchain.blockNumber += 3n;
-        await swap(recipient);
+        await helper_swap(nativeSwap, tokenAddress, Blockchain.msgSender, false);
     }
 
     vm.beforeEach(async () => {
@@ -147,7 +102,23 @@ await opnet('NativeSwap: Priority and Normal Queue cancelliquidity', async (vm: 
         Blockchain.register(nativeSwap);
         await nativeSwap.init();
 
-        await createPool(100000000000000n, initialLiquidityAmount);
+        await helper_createPool(
+            nativeSwap,
+            token,
+            liquidityOwner,
+            liquidityOwner,
+            initialLiquidityAmount,
+            floorPrice,
+            initialLiquidityAmountExpanded,
+            40,
+            false,
+            true,
+        );
+
+        Blockchain.txOrigin = userAddress;
+        Blockchain.msgSender = userAddress;
+
+        await nativeSwap.setStakingContractAddress({ stakingContractAddress });
     });
 
     vm.afterEach(() => {
@@ -222,4 +193,237 @@ await opnet('NativeSwap: Priority and Normal Queue cancelliquidity', async (vm: 
             );
         },
     );
+
+    await vm.it(
+        'should fail to cancel liquidity when provider has active reservation',
+        async () => {
+            Blockchain.blockNumber = 1000n;
+            const provider = Blockchain.generateRandomAddress();
+            Blockchain.msgSender = provider;
+            Blockchain.txOrigin = provider;
+            await listToken(10000, false, provider);
+
+            Blockchain.blockNumber += 2n;
+            const buyer = Blockchain.generateRandomAddress();
+            Blockchain.msgSender = buyer;
+            Blockchain.txOrigin = buyer;
+            await reserve(10000n);
+
+            await Assert.expect(async () => {
+                Blockchain.blockNumber += 1n;
+                Blockchain.msgSender = provider;
+                Blockchain.txOrigin = provider;
+                await nativeSwap.cancelListing({
+                    token: tokenAddress,
+                });
+            }).toThrow(
+                'NATIVE_SWAP: You can no longer cancel this listing. Someone have active reservations on your liquidity.',
+            );
+        },
+    );
+
+    await vm.it(
+        'should fail to cancel liquidity when provider is initial liquidity provider',
+        async () => {
+            Blockchain.blockNumber = 1000n;
+            const provider = Blockchain.generateRandomAddress();
+            Blockchain.msgSender = provider;
+            Blockchain.txOrigin = provider;
+            await listToken(10000, false, provider);
+
+            Blockchain.blockNumber += 2n;
+            const buyer = Blockchain.generateRandomAddress();
+            Blockchain.msgSender = buyer;
+            Blockchain.txOrigin = buyer;
+            await reserve(10000n);
+
+            await Assert.expect(async () => {
+                Blockchain.blockNumber += 1n;
+                Blockchain.msgSender = liquidityOwner;
+                Blockchain.txOrigin = liquidityOwner;
+                await nativeSwap.cancelListing({
+                    token: tokenAddress,
+                });
+            }).toThrow('NATIVE_SWAP: Initial provider cannot cancel listing.');
+        },
+    );
+
+    await vm.it(
+        'should apply penalty, refund provider and update balance when cancellisting within a small time frame',
+        async () => {
+            Blockchain.blockNumber = 1000n;
+            const provider = Blockchain.generateRandomAddress();
+            Blockchain.msgSender = provider;
+            Blockchain.txOrigin = provider;
+            await listToken(10000, false, provider);
+
+            Blockchain.blockNumber += 1n;
+            Blockchain.msgSender = provider;
+            Blockchain.txOrigin = provider;
+            const result = await nativeSwap.cancelListing({
+                token: tokenAddress,
+            });
+
+            const cancelEvts = result.response.events.filter((e) => e.type === 'ListingCanceled');
+            const transferEvts = result.response.events.filter((e) => e.type === 'Transfer');
+
+            Assert.expect(cancelEvts.length).toEqual(1);
+            Assert.expect(transferEvts.length).toEqual(2);
+
+            const cancelEvt = NativeSwapTypesCoders.decodeCancelListingEvent(cancelEvts[0].data);
+            Assert.expect(cancelEvt.penalty).toEqual(5000000000000000000000n);
+
+            const transferEvt1 = NativeSwapTypesCoders.decodeTransferEvent(transferEvts[0].data);
+            const transferEvt2 = NativeSwapTypesCoders.decodeTransferEvent(transferEvts[1].data);
+
+            Assert.expect(transferEvt1.from.toString()).toEqual(nativeSwapAddress.toString());
+            Assert.expect(transferEvt1.to.toString()).toEqual(provider.toString());
+            Assert.expect(transferEvt1.amount).toEqual(cancelEvt.amount - cancelEvt.penalty);
+
+            Assert.expect(transferEvt2.from.toString()).toEqual(nativeSwapAddress.toString());
+            Assert.expect(transferEvt2.to.toString()).toEqual(stakingContractAddress.toString());
+            Assert.expect(transferEvt2.amount).toEqual(cancelEvt.penalty);
+
+            const providerDetail = await nativeSwap.getProviderDetails({ token: tokenAddress });
+            Assert.expect(providerDetail.isActive).toEqual(false);
+            Assert.expect(providerDetail.liquidity).toEqual(0n);
+        },
+    );
+
+    await vm.it(
+        'should apply penalty, refund provider and update balance when cancellisting with max penalty',
+        async () => {
+            Blockchain.blockNumber = 1000n;
+            const provider = Blockchain.generateRandomAddress();
+            Blockchain.msgSender = provider;
+            Blockchain.txOrigin = provider;
+            await listToken(10000, false, provider);
+
+            Blockchain.blockNumber += 2020n;
+            Blockchain.msgSender = provider;
+            Blockchain.txOrigin = provider;
+            const result = await nativeSwap.cancelListing({
+                token: tokenAddress,
+            });
+
+            const cancelEvts = result.response.events.filter((e) => e.type === 'ListingCanceled');
+            const transferEvts = result.response.events.filter((e) => e.type === 'Transfer');
+
+            Assert.expect(cancelEvts.length).toEqual(1);
+            Assert.expect(transferEvts.length).toEqual(2);
+
+            const cancelEvt = NativeSwapTypesCoders.decodeCancelListingEvent(cancelEvts[0].data);
+            Assert.expect(cancelEvt.penalty).toEqual(9000000000000000000000n);
+
+            const transferEvt1 = NativeSwapTypesCoders.decodeTransferEvent(transferEvts[0].data);
+            const transferEvt2 = NativeSwapTypesCoders.decodeTransferEvent(transferEvts[1].data);
+
+            Assert.expect(transferEvt1.from.toString()).toEqual(nativeSwapAddress.toString());
+            Assert.expect(transferEvt1.to.toString()).toEqual(provider.toString());
+            Assert.expect(transferEvt1.amount).toEqual(cancelEvt.amount - cancelEvt.penalty);
+
+            Assert.expect(transferEvt2.from.toString()).toEqual(nativeSwapAddress.toString());
+            Assert.expect(transferEvt2.to.toString()).toEqual(stakingContractAddress.toString());
+            Assert.expect(transferEvt2.amount).toEqual(cancelEvt.penalty);
+
+            const providerDetail = await nativeSwap.getProviderDetails({ token: tokenAddress });
+            Assert.expect(providerDetail.isActive).toEqual(false);
+            Assert.expect(providerDetail.liquidity).toEqual(0n);
+        },
+    );
+
+    await vm.it(
+        'should apply penalty, refund provider and update balance when cancellisting with ramp up',
+        async () => {
+            Blockchain.blockNumber = 1000n;
+            const provider = Blockchain.generateRandomAddress();
+            Blockchain.msgSender = provider;
+            Blockchain.txOrigin = provider;
+            await listToken(10000, false, provider);
+
+            Blockchain.blockNumber += 10n;
+            Blockchain.msgSender = provider;
+            Blockchain.txOrigin = provider;
+            const result = await nativeSwap.cancelListing({
+                token: tokenAddress,
+            });
+
+            const cancelEvts = result.response.events.filter((e) => e.type === 'ListingCanceled');
+            const transferEvts = result.response.events.filter((e) => e.type === 'Transfer');
+
+            Assert.expect(cancelEvts.length).toEqual(1);
+            Assert.expect(transferEvts.length).toEqual(2);
+
+            const cancelEvt = NativeSwapTypesCoders.decodeCancelListingEvent(cancelEvts[0].data);
+            Assert.expect(cancelEvt.penalty).toEqual(5011000000000000000000n);
+
+            const transferEvt1 = NativeSwapTypesCoders.decodeTransferEvent(transferEvts[0].data);
+            const transferEvt2 = NativeSwapTypesCoders.decodeTransferEvent(transferEvts[1].data);
+
+            Assert.expect(transferEvt1.from.toString()).toEqual(nativeSwapAddress.toString());
+            Assert.expect(transferEvt1.to.toString()).toEqual(provider.toString());
+            Assert.expect(transferEvt1.amount).toEqual(cancelEvt.amount - cancelEvt.penalty);
+
+            Assert.expect(transferEvt2.from.toString()).toEqual(nativeSwapAddress.toString());
+            Assert.expect(transferEvt2.to.toString()).toEqual(stakingContractAddress.toString());
+            Assert.expect(transferEvt2.amount).toEqual(cancelEvt.penalty);
+
+            const providerDetail = await nativeSwap.getProviderDetails({ token: tokenAddress });
+            Assert.expect(providerDetail.isActive).toEqual(false);
+            Assert.expect(providerDetail.liquidity).toEqual(0n);
+        },
+    );
+
+    await vm.it('should fail to cancel liquidity if invalid token address', async () => {
+        const provider = Blockchain.generateRandomAddress();
+        Blockchain.blockNumber = 1000n;
+        Blockchain.txOrigin = provider;
+        Blockchain.msgSender = provider;
+
+        await Assert.expect(async () => {
+            await nativeSwap.cancelListing({
+                token: new Address(),
+            });
+        }).toThrow(`Invalid token address`);
+
+        await Assert.expect(async () => {
+            await nativeSwap.cancelListing({
+                token: Address.dead(),
+            });
+        }).toThrow(`Invalid token address`);
+    });
+
+    await vm.it('should fail to cancel liquidity if no pool created', async () => {
+        nativeSwap.dispose();
+        token.dispose();
+        Blockchain.dispose();
+        Blockchain.clearContracts();
+        await Blockchain.init();
+
+        token = new OP_20({
+            file: 'MyToken',
+            deployer: liquidityOwner,
+            address: tokenAddress,
+            decimals: 18,
+        });
+        Blockchain.register(token);
+        await token.init();
+        await token.mint(userAddress, 10_000_000);
+
+        nativeSwap = new NativeSwap(liquidityOwner, nativeSwapAddress);
+        Blockchain.register(nativeSwap);
+        await nativeSwap.init();
+
+        Blockchain.txOrigin = userAddress;
+        Blockchain.msgSender = userAddress;
+
+        const amount = 100000n;
+        await token.approve(userAddress, nativeSwap.address, 100000n);
+
+        await Assert.expect(async () => {
+            await nativeSwap.cancelListing({
+                token: tokenAddress,
+            });
+        }).toThrow('NATIVE_SWAP: Pool does not exist for token.');
+    });
 });

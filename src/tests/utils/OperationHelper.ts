@@ -5,6 +5,8 @@ import {
     logCreatePoolResult,
     logGetQuoteResult,
     logGetReserveResult,
+    logLiquidityListedEvent,
+    logListLiquidityResult,
     logRecipient,
     logReserveResult,
     logSwapExecutedEvent,
@@ -17,6 +19,7 @@ import {
     CreatePoolResult,
     GetQuoteResult,
     GetReserveResult,
+    ListLiquidityResult,
     Recipient,
     ReserveResult,
     SwapResult,
@@ -37,6 +40,7 @@ export async function helper_createPool(
     poolInitialLiquidity: bigint,
     maxReservesIn5BlocksPercent: number = 60,
     log: boolean = true,
+    mint: boolean = false,
 ): Promise<CreatePoolResult> {
     if (log) {
         logAction('createPool');
@@ -49,6 +53,10 @@ export async function helper_createPool(
 
     Blockchain.txOrigin = owner;
     Blockchain.msgSender = owner;
+
+    if (mint) {
+        await token.mintRaw(owner, liquidityAmount);
+    }
 
     await token.approve(owner, nativeSwap.address, liquidityAmount);
 
@@ -78,6 +86,7 @@ export async function helper_reserve(
     forLP = false,
     log: boolean = true,
     sendUTXO: boolean = false,
+    activationDelay: number = 2,
 ): Promise<ReserveResult> {
     if (log) {
         logAction(`reserve`);
@@ -92,6 +101,7 @@ export async function helper_reserve(
         maximumAmountIn: maximumAmountIn,
         minimumAmountOut: minimumAmountOut,
         forLP: forLP,
+        activationDelay: activationDelay,
     });
 
     if (log) {
@@ -147,6 +157,53 @@ export async function helper_swap(
 
     if (log) {
         logSwapExecutedEvent(swapEvent);
+    }
+
+    // Reset
+    Blockchain.txOrigin = backup;
+    Blockchain.msgSender = backup;
+
+    return result;
+}
+
+export async function helper_listLiquidity(
+    nativeSwap: NativeSwap,
+    tokenAddress: Address,
+    caller: Address,
+    amountIn: bigint,
+    priority: boolean,
+    providerAddress: Address,
+    disablePriorityQueueFees: boolean,
+    log: boolean = true,
+): Promise<ListLiquidityResult> {
+    if (log) {
+        logAction('listLiquidity');
+    }
+    const backup = Blockchain.txOrigin;
+
+    Blockchain.txOrigin = caller;
+    Blockchain.msgSender = caller;
+
+    const result = await nativeSwap.listLiquidity({
+        token: tokenAddress,
+        receiver: providerAddress.p2tr(Blockchain.network),
+        amountIn: amountIn,
+        priority: priority,
+        disablePriorityQueueFees: disablePriorityQueueFees,
+    });
+
+    if (log) {
+        logListLiquidityResult(result);
+    }
+
+    const evt = result.response.events.find((e) => e.type === 'LiquidityListed');
+
+    if (evt) {
+        const listLiquidityEvent = NativeSwapTypesCoders.decodeLiquidityListedEvent(evt.data);
+
+        if (log) {
+            logLiquidityListedEvent(listLiquidityEvent);
+        }
     }
 
     // Reset

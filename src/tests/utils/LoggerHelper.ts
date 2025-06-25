@@ -1,4 +1,10 @@
-import { Blockchain, CallResponse } from '@btc-vision/unit-test-framework';
+import {
+    Blockchain,
+    CallResponse,
+    gas2BTC,
+    gas2Sat,
+    gas2USD,
+} from '@btc-vision/unit-test-framework';
 import {
     AddLiquidityResult,
     CancelListingResult,
@@ -43,6 +49,7 @@ export function logReserveResult(result: ReserveResult): void {
     Blockchain.log(`-------------`);
     Blockchain.log(`totalSatoshis: ${result.totalSatoshis}`);
     Blockchain.log(`expectedAmountOut: ${result.expectedAmountOut}`);
+    logGas(result.response);
     Blockchain.log(``);
 }
 
@@ -51,6 +58,7 @@ export function logSwapResult(result: SwapResult): void {
     Blockchain.log(`SwapResult`);
     Blockchain.log(`----------`);
     Blockchain.log(`result: ${result.result}`);
+    logGas(result.response);
     Blockchain.log(``);
 }
 
@@ -67,6 +75,7 @@ export function logCreatePoolResult(result: CreatePoolResult): void {
     Blockchain.log(`CreatePoolResult`);
     Blockchain.log(`----------`);
     Blockchain.log(`result: ${result.result}`);
+    logGas(result.response);
     Blockchain.log(``);
 }
 
@@ -90,6 +99,7 @@ export function logCancelListingResult(result: CancelListingResult): void {
     Blockchain.log(``);
     Blockchain.log(`CancelListingResult`);
     Blockchain.log(`----------`);
+    logGas(result.response);
     Blockchain.log(``);
 }
 
@@ -110,6 +120,7 @@ export function logSwapExecutedEvent(event: ISwapExecutedEvent): void {
     Blockchain.log(`amountIn: ${event.amountIn}`);
     Blockchain.log(`amountOut: ${event.amountOut}`);
     Blockchain.log(`buyer: ${event.buyer}`);
+
     Blockchain.log(``);
 }
 
@@ -138,6 +149,7 @@ export function logListingCanceledEvent(event: IListingCanceledEvent): void {
     Blockchain.log(`ListingCanceledEvent`);
     Blockchain.log(`-----------------`);
     Blockchain.log(`amount: ${event.amount}`);
+
     Blockchain.log(``);
 }
 
@@ -174,6 +186,7 @@ export function logSwapEvents(events: NetEvent[]): void {
             }
         }
     }
+
     Blockchain.log(``);
 }
 
@@ -440,4 +453,12 @@ export function logApproveResponse(result: CallResponse): void {
     Blockchain.log(`status: ${result.status}`);
 
     Blockchain.log(``);
+}
+
+export function logGas(response: CallResponse): void {
+    Blockchain.log(
+        `Gas cost: ${gas2Sat(response.usedGas)} sat (${gas2BTC(
+            response.usedGas,
+        )} BTC, $${gas2USD(response.usedGas)})`,
+    );
 }
