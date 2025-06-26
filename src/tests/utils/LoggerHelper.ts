@@ -362,6 +362,37 @@ export function logLiquidityReservedEvent(event: ILiquidityReservedEvent): void 
     Blockchain.log(``);
 }
 
+export function logListLiquidityEvent(events: NetEvent[]): void {
+    Blockchain.log(``);
+    Blockchain.log(`ListLiquidityEvents`);
+    Blockchain.log(`-------------------`);
+    for (let i = 0; i < events.length; i++) {
+        const event = events[i];
+        switch (event.type) {
+            case 'LiquidityListed': {
+                logLiquidityListedEvent(
+                    NativeSwapTypesCoders.decodeLiquidityListedEvent(event.data),
+                );
+                break;
+            }
+            case 'LiquidityReserved': {
+                logLiquidityReservedEvent(
+                    NativeSwapTypesCoders.decodeLiquidityReservedEvent(event.data),
+                );
+                break;
+            }
+            case 'Transfer': {
+                logTransferEvent(NativeSwapTypesCoders.decodeTransferEvent(event.data));
+                break;
+            }
+            default: {
+                throw new Error(`Unknown event type: ${event.type}`);
+            }
+        }
+    }
+    Blockchain.log(``);
+}
+
 export function logReserveEvent(events: NetEvent[]): void {
     Blockchain.log(``);
     Blockchain.log(`ReserveEvents`);

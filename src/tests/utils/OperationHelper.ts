@@ -41,6 +41,8 @@ export async function helper_createPool(
     maxReservesIn5BlocksPercent: number = 60,
     log: boolean = true,
     mint: boolean = false,
+    antiBotEnabledFor: number = 0,
+    antiBotMaximumTokensPerReservation: bigint = 0n,
 ): Promise<CreatePoolResult> {
     if (log) {
         logAction('createPool');
@@ -65,8 +67,8 @@ export async function helper_createPool(
         floorPrice: floorPrice,
         initialLiquidity: poolInitialLiquidity,
         receiver: receiver.p2tr(Blockchain.network),
-        antiBotEnabledFor: 0,
-        antiBotMaximumTokensPerReservation: 0n,
+        antiBotEnabledFor: antiBotEnabledFor,
+        antiBotMaximumTokensPerReservation: antiBotMaximumTokensPerReservation,
         maxReservesIn5BlocksPercent: maxReservesIn5BlocksPercent,
     });
 
