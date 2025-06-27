@@ -22,6 +22,11 @@ import {
 import { createRecipientsOutput } from '../utils/TransactionUtils.js';
 import { NativeSwapTypesCoders } from '../../contracts/NativeSwapTypesCoders.js';
 import { Network, networks } from '@btc-vision/bitcoin';
+import {
+    logCancelListingEvents,
+    logCancelListingResult,
+    logLiquidityListedEvent,
+} from '../utils/LoggerHelper.js';
 
 interface ParsedState {
     readonly pointer: {
@@ -44,7 +49,11 @@ type ParsedStates = ParsedState[];
 const nativeStatesFile = './states/NativeSwapStates2.json';
 const motoStatesFile = './states/MotoStates2.json';
 
-const SEARCHED_BLOCK: bigint = 4507160n; //4507421n; //4507170n; // 4507420n; //4507653n;
+// listed at:13826n
+// add to purge at: 13838n???
+// purged at:13907n
+
+const SEARCHED_BLOCK: bigint = 13838n; //13826n;13836n;13907n
 function getStates(file: string): FastBigIntMap {
     const data = fs.readFileSync(file, 'utf8');
     const parsedData = JSON.parse(data) as ParsedStates;
@@ -139,11 +148,11 @@ const admin: Address = Address.fromString(
 );
 
 const tokenAddress: Address = Address.fromString(
-    '0xdb944e78cada1d705af892bb0560a4a9c4b9896d64ef23dfd3870ffd5004f4f2',
+    `0x5fbbe156d169583b52fde0b819df0a135ca01534f86fe557a9cd9487bba599e0`, //'0xdb944e78cada1d705af892bb0560a4a9c4b9896d64ef23dfd3870ffd5004f4f2',
 );
 
 const nativeAddy: Address = Address.fromString(
-    '0xec8ad18b56eb682755fdf8196698e18fcd872c8e53dbcfe5d183ba43c1ace061',
+    '0x2a207fb02a5938b463ae8f43d0dde11581e0ca520b206b6ba3eff4ca8245eca2',
 );
 
 const userAddress: Address = Address.fromString(
@@ -165,7 +174,7 @@ await opnet('NativeSwap: Debug', async (vm: OPNetUnit) => {
     Blockchain.register(nativeSwap);
 
     const token: OP_20 = new OP_20({
-        file: 'moto',
+        file: 'MyToken',
         deployer: userAddress,
         address: tokenAddress,
         decimals: tokenDecimals,
@@ -362,15 +371,134 @@ await opnet('NativeSwap: Debug', async (vm: OPNetUnit) => {
 
     await vm.it('should debug', async () => {
         Blockchain.blockNumber = SEARCHED_BLOCK + 1n;
-        Blockchain.network = networks.testnet;
+        Blockchain.network = networks.regtest;
 
         const addy = Address.fromString(
-            '0x029e2442eb84c859eb18251d76ec57b3e2fb0862a8fd23f015584fe734e26e5916',
+            '0x02338f02fd8f3575f00e81f4c39b88b8ceb0adfb99c116facd1b770554262066af',
         );
 
         Blockchain.msgSender = addy;
         Blockchain.txOrigin = addy;
 
+        let details = await nativeSwap.getProviderDetails({ token: tokenAddress });
+        console.log(`Block: ${Blockchain.blockNumber}`);
+        console.log(`Provider details`);
+        console.log(`---------------------`);
+        console.log(`id: ${details.id}`);
+        console.log(`liquidity: ${details.liquidity}`);
+        console.log(`isPurged: ${details.isPurged}`);
+        console.log(`purgeIndex: ${details.purgeIndex}`);
+        console.log(`reserved: ${details.reserved}`);
+        console.log(`listedTokenAt: ${details.listedTokenAt}`);
+        console.log(`isActive: ${details.isActive}`);
+        console.log(`queueIndex: ${details.queueIndex}`);
+        console.log(`btcReceiver: ${details.btcReceiver}`);
+        console.log(`isPriority: ${details.isPriority}`);
+
+        let qd = await nativeSwap.getQueueDetails({ token: tokenAddress });
+
+        console.log(qd);
+        /*
+        const r = await nativeSwap.getReserve({
+            token: tokenAddress,
+        });
+
+        const addr = Blockchain.generateRandomAddress();
+        Blockchain.msgSender = addr;
+        Blockchain.txOrigin = addr;
+        const swapParams: ReserveParams = {
+            token: tokenAddress,
+            maximumAmountIn: 100000n,
+            minimumAmountOut: 0n,
+            forLP: false,
+            activationDelay: 2,
+        };
+
+        createRecipientsOutput([
+            {
+                address: NativeSwap.feeRecipientTestnet,
+                amount: NativeSwap.reservationFees,
+                providerId: '',
+            },
+        ]);
+
+        const t = await nativeSwap.reserve(swapParams);
+
+        Blockchain.msgSender = addy;
+        Blockchain.txOrigin = addy;
+
+        details = await nativeSwap.getProviderDetails({ token: tokenAddress });
+        console.log(`Block: ${Blockchain.blockNumber}`);
+        console.log(`Provider details`);
+        console.log(`---------------------`);
+        console.log(`id: ${details.id}`);
+        console.log(`liquidity: ${details.liquidity}`);
+        console.log(`isPurged: ${details.isPurged}`);
+        console.log(`purgeIndex: ${details.purgeIndex}`);
+        console.log(`reserved: ${details.reserved}`);
+        console.log(`listedTokenAt: ${details.listedTokenAt}`);
+        console.log(`isActive: ${details.isActive}`);
+        console.log(`queueIndex: ${details.queueIndex}`);
+        console.log(`btcReceiver: ${details.btcReceiver}`);
+        console.log(`isPriority: ${details.isPriority}`);
+
+        qd = await nativeSwap.getQueueDetails({ token: tokenAddress });
+        console.log(qd);
+*/
+        /*
+        let detailPool = await nativeSwap.getReserve({ token: tokenAddress });
+        console.log('');
+        console.log(`Pool details`);
+        console.log(`--------------------`);
+        console.log(`liquidity: ${detailPool.liquidity}`);
+        console.log(`reserved: ${detailPool.reservedLiquidity}`);
+        console.log(`virtualTokenReserve: ${detailPool.virtualTokenReserve}`);
+
+        let b = await token.balanceOf(nativeSwap.address);
+        console.log('');
+        console.log(`balanceOf`);
+        console.log(`--------------------`);
+        console.log(b);
+        
+ */
+        /*
+        console.log('cancel');
+        console.log(`--------------------`);
+        const r = await nativeSwap.cancelListing({ token: tokenAddress });
+        logCancelListingResult(r);
+        logCancelListingEvents(r.response.events);
+        console.log('');
+        */
+
+        /*
+        details = await nativeSwap.getProviderDetails({ token: tokenAddress });
+        console.log(`Block: ${Blockchain.blockNumber}`);
+        console.log(`Provider details`);
+        console.log(`---------------------`);
+        console.log(`liquidity: ${details.liquidity}`);
+        console.log(`purgeIndex: ${details.purgeIndex}`);
+        console.log(`reserved: ${details.reserved}`);
+        console.log(`listedTokenAt: ${details.listedTokenAt}`);
+        console.log(`isActive: ${details.isActive}`);
+        console.log(`queueIndex: ${details.queueIndex}`);
+        console.log(`btcReceiver: ${details.btcReceiver}`);
+        console.log(`isPriority: ${details.isPriority}`);
+
+        detailPool = await nativeSwap.getReserve({ token: tokenAddress });
+        console.log('');
+        console.log(`Pool details`);
+        console.log(`--------------------`);
+        console.log(`liquidity: ${detailPool.liquidity}`);
+        console.log(`reserved: ${detailPool.reservedLiquidity}`);
+        console.log(`virtualTokenReserve: ${detailPool.virtualTokenReserve}`);
+
+        b = await token.balanceOf(nativeSwap.address);
+        console.log('');
+        console.log(`balanceOf`);
+        console.log(`--------------------`);
+        console.log(b);
+*/
+        /*
         const b = await token.balanceOf(addy);
 
         await token.approve(addy, nativeSwap.address, b);
@@ -390,7 +518,7 @@ await opnet('NativeSwap: Debug', async (vm: OPNetUnit) => {
             priority: true,
             disablePriorityQueueFees: false,
         });
-
+*/
         /*
         const r = await nativeSwap.getReserve({
             token: tokenAddress,

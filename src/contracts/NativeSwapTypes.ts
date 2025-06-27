@@ -138,6 +138,7 @@ export interface GetProviderDetailsParams {
 }
 
 export interface GetProviderDetailsResult {
+    readonly id: bigint;
     readonly liquidity: bigint;
     readonly reserved: bigint;
     readonly liquidityProvided: bigint;
@@ -148,10 +149,11 @@ export interface GetProviderDetailsResult {
     readonly purgeIndex: number;
     readonly isActive: boolean;
     readonly listedTokenAt: bigint;
+    readonly isPurged: boolean;
 }
 
 export interface GetQueueDetailsResult {
-    readonly lastPurgedBlock: number;
+    readonly lastPurgedBlock: bigint;
     readonly blockWithReservationsLength: number;
     readonly removalQueueLength: number;
     readonly removalQueueStartingIndex: number;
@@ -161,7 +163,11 @@ export interface GetQueueDetailsResult {
     readonly standardQueueStartingIndex: number;
     readonly priorityPurgeQueueLength: number;
     readonly standardPurgeQueueLength: number;
-    readonly removePurgeQueueLength: number;
+    readonly removalPurgeQueueLength: number;
+    readonly priorityPurgeQueue: number[];
+    readonly normalPurgeQueue: number[];
+    readonly priorityQueue: bigint[];
+    readonly normalQueue: bigint[];
 }
 
 export interface GetPriorityQueueCostResult {

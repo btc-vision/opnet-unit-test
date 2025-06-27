@@ -45,6 +45,8 @@ import {
     SwapParams,
     SwapResult,
 } from './NativeSwapTypes.js';
+import { NativeSwap } from './NativeSwap.js';
+import { read } from 'fs';
 
 export class NativeSwapTypesCoders {
     public static decodeGetLastPurgedBlockResult(response: CallResponse): bigint {
@@ -371,6 +373,7 @@ export class NativeSwapTypesCoders {
         const reader = new BinaryReader(response.response);
 
         return {
+            id: reader.readU256(),
             liquidity: reader.readU128(),
             reserved: reader.readU128(),
             liquidityProvided: reader.readU128(),
@@ -381,7 +384,28 @@ export class NativeSwapTypesCoders {
             purgeIndex: reader.readU32(),
             isActive: reader.readBoolean(),
             listedTokenAt: reader.readU64(),
+            isPurged: reader.readBoolean(),
         };
+    }
+
+    private static decodePurgeQueue(reader: BinaryReader, length: number): number[] {
+        const result: number[] = [];
+
+        for (let i: number = 0; i < length; i++) {
+            result.push(reader.readU32());
+        }
+
+        return result;
+    }
+
+    private static decodeQueue(reader: BinaryReader, length: number): bigint[] {
+        const result: bigint[] = [];
+
+        for (let i: number = 0; i < length; i++) {
+            result.push(reader.readU256());
+        }
+
+        return result;
     }
 
     public static decodeGetQueueDetailsResult(response: CallResponse): GetQueueDetailsResult {
@@ -390,22 +414,40 @@ export class NativeSwapTypesCoders {
         }
 
         const reader = new BinaryReader(response.response);
+        const lastPurgedBlock = reader.readU64();
+        const blockWithReservationsLength = reader.readU32();
+        const removalQueueLength = reader.readU32();
+        const removalQueueStartingIndex = reader.readU32();
+        const priorityQueueLength = reader.readU32();
+        const priorityQueueStartingIndex = reader.readU32();
+        const standardQueueLength = reader.readU32();
+        const standardQueueStartingIndex = reader.readU32();
+        const priorityPurgeQueueLength = reader.readU32();
+        const standardPurgeQueueLength = reader.readU32();
+        const removalPurgeQueueLength = reader.readU32();
+
         return {
-            lastPurgedBlock: reader.readU32(),
-            blockWithReservationsLength: reader.readU32(),
-
-            removalQueueLength: reader.readU32(),
-            removalQueueStartingIndex: reader.readU32(),
-
-            priorityQueueLength: reader.readU32(),
-            priorityQueueStartingIndex: reader.readU32(),
-
-            standardQueueLength: reader.readU32(),
-            standardQueueStartingIndex: reader.readU32(),
-
-            priorityPurgeQueueLength: reader.readU32(),
-            standardPurgeQueueLength: reader.readU32(),
-            removePurgeQueueLength: reader.readU32(),
+            lastPurgedBlock: lastPurgedBlock,
+            blockWithReservationsLength: blockWithReservationsLength,
+            removalQueueLength: removalQueueLength,
+            removalQueueStartingIndex: removalQueueStartingIndex,
+            priorityQueueLength: priorityQueueLength,
+            priorityQueueStartingIndex: priorityQueueStartingIndex,
+            standardQueueLength: standardQueueLength,
+            standardQueueStartingIndex: standardQueueStartingIndex,
+            priorityPurgeQueueLength: priorityPurgeQueueLength,
+            standardPurgeQueueLength: standardPurgeQueueLength,
+            removalPurgeQueueLength: removalPurgeQueueLength,
+            priorityPurgeQueue: NativeSwapTypesCoders.decodePurgeQueue(
+                reader,
+                priorityPurgeQueueLength,
+            ),
+            normalPurgeQueue: NativeSwapTypesCoders.decodePurgeQueue(
+                reader,
+                standardPurgeQueueLength,
+            ),
+            priorityQueue: NativeSwapTypesCoders.decodeQueue(reader, priorityQueueLength),
+            normalQueue: NativeSwapTypesCoders.decodeQueue(reader, standardQueueLength),
         };
     }
 
