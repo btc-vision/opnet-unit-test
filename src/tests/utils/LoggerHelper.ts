@@ -57,7 +57,7 @@ export function logSwapResult(result: SwapResult): void {
     Blockchain.log(``);
     Blockchain.log(`SwapResult`);
     Blockchain.log(`----------`);
-    Blockchain.log(`result: ${result.result}`);
+    Blockchain.log(`status: ${result.response.status}`);
     logGas(result.response);
     Blockchain.log(``);
 }
@@ -66,7 +66,7 @@ export function logListLiquidityResult(result: ListLiquidityResult): void {
     Blockchain.log(``);
     Blockchain.log(`ListLiquidityResult`);
     Blockchain.log(`----------`);
-    Blockchain.log(`result: ${result.result}`);
+    Blockchain.log(`status: ${result.response.status}`);
     Blockchain.log(``);
 }
 
@@ -74,7 +74,7 @@ export function logCreatePoolResult(result: CreatePoolResult): void {
     Blockchain.log(``);
     Blockchain.log(`CreatePoolResult`);
     Blockchain.log(`----------`);
-    Blockchain.log(`result: ${result.result}`);
+    Blockchain.log(`status: ${result.response.status}`);
     logGas(result.response);
     Blockchain.log(``);
 }
@@ -83,7 +83,7 @@ export function logAddLiquidityResult(result: AddLiquidityResult): void {
     Blockchain.log(``);
     Blockchain.log(`AddLiquidityResult`);
     Blockchain.log(`----------`);
-    Blockchain.log(`result: ${result.result}`);
+    Blockchain.log(`status: ${result.response.status}`);
     Blockchain.log(``);
 }
 
@@ -91,7 +91,7 @@ export function logRemoveLiquidityResult(result: RemoveLiquidityResult): void {
     Blockchain.log(``);
     Blockchain.log(`RemoveLiquidityResult`);
     Blockchain.log(`----------`);
-    Blockchain.log(`result: ${result.result}`);
+    Blockchain.log(`status: ${result.response.status}`);
     Blockchain.log(``);
 }
 

@@ -1,5 +1,5 @@
 import { Address } from '@btc-vision/transaction';
-import { Assert, Blockchain, OP_20, opnet, OPNetUnit } from '@btc-vision/unit-test-framework';
+import { Assert, Blockchain, OP20, opnet, OPNetUnit } from '@btc-vision/unit-test-framework';
 import { NativeSwap } from '../../contracts/NativeSwap.js';
 import {
     helper_createPool,
@@ -12,7 +12,7 @@ import {
 
 await opnet('Native Swap - Get Quote', async (vm: OPNetUnit) => {
     let nativeSwap: NativeSwap;
-    let token: OP_20;
+    let token: OP20;
 
     const userAddress: Address = Blockchain.generateRandomAddress();
     const nativeSwapAddress: Address = Blockchain.generateRandomAddress();

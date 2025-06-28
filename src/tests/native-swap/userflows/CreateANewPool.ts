@@ -1,4 +1,4 @@
-import { Assert, Blockchain, OP_20, opnet, OPNetUnit } from '@btc-vision/unit-test-framework';
+import { Assert, Blockchain, OP20, opnet, OPNetUnit } from '@btc-vision/unit-test-framework';
 import { NativeSwap } from '../../../contracts/NativeSwap.js';
 import { Address, BinaryWriter, EcKeyPair, MessageSigner, Wallet } from '@btc-vision/transaction';
 import { helper_createToken } from '../../utils/OperationHelper.js';
@@ -7,7 +7,7 @@ import { ILiquidityListedEvent } from '../../../contracts/NativeSwapTypes.js';
 
 await opnet('Native Swap - User flows - Create a new pool ', async (vm: OPNetUnit) => {
     let nativeSwap: NativeSwap;
-    let token: OP_20;
+    let token: OP20;
 
     const userAddress: Address = Blockchain.generateRandomAddress();
     const contractAddress: Address = Blockchain.generateRandomAddress();
@@ -36,7 +36,7 @@ await opnet('Native Swap - User flows - Create a new pool ', async (vm: OPNetUni
     });
 
     await vm.it('should create a pool with no antibot settings and emit events', async () => {
-        await token.approve(
+        await token.increaseAllowance(
             userAddress,
             nativeSwap.address,
             Blockchain.expandToDecimal(1000000, 18),
@@ -66,7 +66,7 @@ await opnet('Native Swap - User flows - Create a new pool ', async (vm: OPNetUni
     });
 
     await vm.it('should create a pool with antibot settings and emit events', async () => {
-        await token.approve(
+        await token.increaseAllowance(
             userAddress,
             nativeSwap.address,
             Blockchain.expandToDecimal(1000000, 18),
@@ -96,7 +96,7 @@ await opnet('Native Swap - User flows - Create a new pool ', async (vm: OPNetUni
     });
 
     await vm.it('should revert when insufficient allowance', async () => {
-        await token.approve(
+        await token.increaseAllowance(
             userAddress,
             nativeSwap.address,
             Blockchain.expandToDecimal(100000, 18),
@@ -116,7 +116,7 @@ await opnet('Native Swap - User flows - Create a new pool ', async (vm: OPNetUni
     });
 
     await vm.it('should revert when trying to create a pool when already exists', async () => {
-        await token.approve(
+        await token.increaseAllowance(
             userAddress,
             nativeSwap.address,
             Blockchain.expandToDecimal(1000000, 18),

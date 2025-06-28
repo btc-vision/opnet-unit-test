@@ -1,5 +1,5 @@
 import { Address } from '@btc-vision/transaction';
-import { Blockchain, gas2USD, OP_20, opnet, OPNetUnit } from '@btc-vision/unit-test-framework';
+import { Blockchain, gas2USD, OP20, opnet, OPNetUnit } from '@btc-vision/unit-test-framework';
 import { NativeSwap } from '../../contracts/NativeSwap.js';
 import { Recipient, ReserveResult } from '../../contracts/NativeSwapTypes.js';
 import { NativeSwapTypesCoders } from '../../contracts/NativeSwapTypesCoders.js';
@@ -16,7 +16,7 @@ let open = 0;
 
 await opnet('Native Swap - Add Liquidity', async (vm: OPNetUnit) => {
     let nativeSwap: NativeSwap;
-    let token: OP_20;
+    let token: OP20;
 
     const tokenDecimals = 18;
     const point25InitialLiquidity = 52_500n * 10n ** BigInt(tokenDecimals);
@@ -90,11 +90,11 @@ await opnet('Native Swap - Add Liquidity', async (vm: OPNetUnit) => {
         Blockchain.txOrigin = userAddress;
         Blockchain.msgSender = userAddress;
 
-        // Transfer tokens from userAddress to provider
-        await token.transfer(userAddress, provider, l);
+        // safeTransfer tokens from userAddress to provider
+        await token.safeTransfer(userAddress, provider, l);
 
-        // Approve NativeSwap contract to spend tokens
-        await token.approve(provider, nativeSwap.address, l);
+        // increaseAllowance NativeSwap contract to spend tokens
+        await token.increaseAllowance(provider, nativeSwap.address, l);
 
         // Add liquidity
         Blockchain.txOrigin = provider;
@@ -151,11 +151,11 @@ await opnet('Native Swap - Add Liquidity', async (vm: OPNetUnit) => {
         Blockchain.txOrigin = userAddress;
         Blockchain.msgSender = userAddress;
 
-        // Transfer tokens from userAddress to provider
-        await token.transfer(userAddress, provider, l);
+        // safeTransfer tokens from userAddress to provider
+        await token.safeTransfer(userAddress, provider, l);
 
-        // Approve NativeSwap contract to spend tokens
-        await token.approve(provider, nativeSwap.address, l);
+        // increaseAllowance NativeSwap contract to spend tokens
+        await token.increaseAllowance(provider, nativeSwap.address, l);
 
         // Add liquidity
         Blockchain.txOrigin = provider;
@@ -184,7 +184,7 @@ await opnet('Native Swap - Add Liquidity', async (vm: OPNetUnit) => {
 
             createRecipientsOutput(reservation.r);
 
-            await token.approve(
+            await token.increaseAllowance(
                 reservation.a,
                 nativeSwap.address,
                 BitcoinUtils.expandToDecimals(1_000_000_000_000, tokenDecimals),
@@ -231,10 +231,10 @@ await opnet('Native Swap - Add Liquidity', async (vm: OPNetUnit) => {
      * Helper: Create the NativeSwap pool with initial liquidity
      */
     async function createNativeSwapPool(floorPrice: bigint, initLiquidity: bigint): Promise<void> {
-        // Approve NativeSwap to take tokens
+        // increaseAllowance NativeSwap to take tokens
         Blockchain.txOrigin = userAddress;
         Blockchain.msgSender = userAddress;
-        await token.approve(userAddress, nativeSwap.address, initLiquidity);
+        await token.increaseAllowance(userAddress, nativeSwap.address, initLiquidity);
 
         // Create the pool
         await nativeSwap.createPool({
@@ -307,7 +307,7 @@ await opnet('Native Swap - Add Liquidity', async (vm: OPNetUnit) => {
         await Blockchain.init();
 
         // Instantiate and register the OP_20 token
-        token = new OP_20({
+        token = new OP20({
             file: 'MyToken',
             deployer: userAddress,
             address: tokenAddress,
@@ -344,7 +344,7 @@ await opnet('Native Swap - Add Liquidity', async (vm: OPNetUnit) => {
 
         const rndProvider = Blockchain.generateRandomAddress();
 
-        await token.transfer(
+        await token.safeTransfer(
             userAddress,
             rndProvider,
             BitcoinUtils.expandToDecimals(100_000_000_000, tokenDecimals),
@@ -378,7 +378,7 @@ await opnet('Native Swap - Add Liquidity', async (vm: OPNetUnit) => {
 
         let rndProvider2 = Blockchain.generateRandomAddress();
 
-        await token.transfer(
+        await token.safeTransfer(
             rndProvider,
             rndProvider2,
             BitcoinUtils.expandToDecimals(100_000_000, tokenDecimals),
@@ -398,7 +398,7 @@ await opnet('Native Swap - Add Liquidity', async (vm: OPNetUnit) => {
 
         rndProvider2 = Blockchain.generateRandomAddress();
 
-        await token.transfer(
+        await token.safeTransfer(
             userAddress,
             rndProvider2,
             BitcoinUtils.expandToDecimals(100_000_000, tokenDecimals),
@@ -442,7 +442,7 @@ await opnet('Native Swap - Add Liquidity', async (vm: OPNetUnit) => {
         for (let i = 0; i < 20; i++) {
             const rndProvider = Blockchain.generateRandomAddress();
 
-            await token.transfer(
+            await token.safeTransfer(
                 userAddress,
                 rndProvider,
                 BitcoinUtils.expandToDecimals(100_000_000, tokenDecimals),
@@ -484,7 +484,7 @@ await opnet('Native Swap - Add Liquidity', async (vm: OPNetUnit) => {
         for (let i = 0; i < 20; i++) {
             const rndProvider = Blockchain.generateRandomAddress();
 
-            await token.transfer(
+            await token.safeTransfer(
                 userAddress,
                 rndProvider,
                 BitcoinUtils.expandToDecimals(100_000_000, tokenDecimals),

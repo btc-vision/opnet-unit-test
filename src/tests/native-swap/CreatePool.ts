@@ -6,7 +6,7 @@ import {
     gas2Sat,
     gas2USD,
     generateEmptyTransaction,
-    OP_20,
+    OP20,
     opnet,
     OPNetUnit,
     Transaction,
@@ -20,7 +20,7 @@ const receiver: Address = Blockchain.generateRandomAddress();
 
 await opnet('NativeSwap: createPool', async (vm: OPNetUnit) => {
     let nativeSwap: NativeSwap;
-    let token: OP_20;
+    let token: OP20;
 
     const userAddress: Address = receiver;
     const stakingContractAddress: Address = Blockchain.generateRandomAddress();
@@ -42,7 +42,7 @@ await opnet('NativeSwap: createPool', async (vm: OPNetUnit) => {
         Blockchain.txOrigin = addyBefore;
         Blockchain.msgSender = addyBefore;
 
-        await token.approve(addyBefore, nativeSwap.address, amount);
+        await token.increaseAllowance(addyBefore, nativeSwap.address, amount);
     }
 
     vm.beforeEach(async () => {
@@ -50,7 +50,7 @@ await opnet('NativeSwap: createPool', async (vm: OPNetUnit) => {
         Blockchain.clearContracts();
         await Blockchain.init();
 
-        token = new OP_20({
+        token = new OP20({
             file: 'MyToken',
             deployer: liquidityOwner,
             address: tokenAddress,

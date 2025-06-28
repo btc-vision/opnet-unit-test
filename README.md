@@ -270,7 +270,7 @@ await opnet('SimpleToken Contract', async (vm: OPNetUnit) => {
         await token.mint(deployer, totalSupply);
 
         const transferAmount = 100000n * (10n ** BigInt(decimals));
-        await token.transfer(deployer, receiver, transferAmount);
+        await token.safeTransfer(deployer, receiver, transferAmount);
 
         const balanceDeployer = await token.balanceOf(deployer);
         const balanceReceiver = await token.balanceOf(receiver);

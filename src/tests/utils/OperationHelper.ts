@@ -1,5 +1,5 @@
 import { Address } from '@btc-vision/transaction';
-import { Blockchain, OP_20 } from '@btc-vision/unit-test-framework';
+import { Blockchain, OP20 } from '@btc-vision/unit-test-framework';
 import {
     logAction,
     logCreatePoolResult,
@@ -32,7 +32,7 @@ export interface ReserveData {
 
 export async function helper_createPool(
     nativeSwap: NativeSwap,
-    token: OP_20,
+    token: OP20,
     owner: Address,
     receiver: Address,
     tokenLiquidityToApprove: number,
@@ -60,7 +60,7 @@ export async function helper_createPool(
         await token.mintRaw(owner, liquidityAmount);
     }
 
-    await token.approve(owner, nativeSwap.address, liquidityAmount);
+    await token.increaseAllowance(owner, nativeSwap.address, liquidityAmount);
 
     const result = await nativeSwap.createPool({
         token: token.address,
@@ -219,9 +219,9 @@ export async function helper_createToken(
     deployer: Address,
     tokenDecimals: number,
     initialMintCount: number,
-): Promise<OP_20> {
+): Promise<OP20> {
     // Instantiate and register the OP_20 token
-    let token = new OP_20({
+    let token = new OP20({
         file: 'MyToken',
         deployer: deployer,
         address: Blockchain.generateRandomAddress(),
@@ -239,7 +239,7 @@ export async function helper_createToken(
 
 export async function helper_getReserve(
     nativeSwap: NativeSwap,
-    token: OP_20,
+    token: OP20,
     log: boolean = true,
 ): Promise<GetReserveResult> {
     if (log) {
@@ -259,7 +259,7 @@ export async function helper_getReserve(
 
 export async function helper_getQuote(
     nativeSwap: NativeSwap,
-    token: OP_20,
+    token: OP20,
     satoshisIn: bigint,
     log: boolean = true,
 ): Promise<GetQuoteResult> {

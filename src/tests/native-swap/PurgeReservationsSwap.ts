@@ -3,7 +3,7 @@ import {
     Assert,
     Blockchain,
     gas2USD,
-    OP_20,
+    OP20,
     opnet,
     OPNetUnit,
 } from '@btc-vision/unit-test-framework';
@@ -16,7 +16,7 @@ import bitcoin from '@btc-vision/bitcoin';
 
 await opnet('NativeSwap: Purging Reservations', async (vm: OPNetUnit) => {
     let nativeSwap: NativeSwap;
-    let token: OP_20;
+    let token: OP20;
     let toSwap: { a: Address; r: Recipient[] }[] = [];
     let usedReservationAddresses: Address[] = [];
 
@@ -39,7 +39,7 @@ await opnet('NativeSwap: Purging Reservations', async (vm: OPNetUnit) => {
         Blockchain.msgSender = userAddress;
 
         await token.mintRaw(userAddress, initialLiquidity);
-        await token.approve(userAddress, nativeSwap.address, initialLiquidity);
+        await token.increaseAllowance(userAddress, nativeSwap.address, initialLiquidity);
 
         await nativeSwap.createPool({
             token: tokenAddress,
@@ -61,7 +61,7 @@ await opnet('NativeSwap: Purging Reservations', async (vm: OPNetUnit) => {
         Blockchain.msgSender = provider;
         Blockchain.txOrigin = provider;
 
-        await token.approve(provider, nativeSwap.address, amountIn);
+        await token.increaseAllowance(provider, nativeSwap.address, amountIn);
         const resp = await nativeSwap.listLiquidity({
             token: tokenAddress,
             receiver: provider.p2tr(Blockchain.network),
@@ -85,10 +85,10 @@ await opnet('NativeSwap: Purging Reservations', async (vm: OPNetUnit) => {
         Blockchain.msgSender = userAddress;
 
         // Transfer tokens from userAddress to provider
-        await token.transfer(userAddress, provider, l);
+        await token.safeTransfer(userAddress, provider, l);
 
         // Approve NativeSwap contract to spend tokens
-        await token.approve(provider, nativeSwap.address, l);
+        await token.increaseAllowance(provider, nativeSwap.address, l);
 
         // Add liquidity
         Blockchain.txOrigin = provider;
@@ -232,7 +232,7 @@ await opnet('NativeSwap: Purging Reservations', async (vm: OPNetUnit) => {
 
         Blockchain.blockNumber = 1n;
 
-        token = new OP_20({
+        token = new OP20({
             file: 'MyToken',
             deployer: userAddress,
             address: tokenAddress,
