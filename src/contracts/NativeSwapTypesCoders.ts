@@ -294,10 +294,7 @@ export class NativeSwapTypesCoders {
             throw new Error('No response to decode from setFees');
         }
 
-        const reader = new BinaryReader(response.response);
-
         return {
-            result: reader.readBoolean(),
             response: response,
         };
     }
@@ -319,10 +316,7 @@ export class NativeSwapTypesCoders {
             throw new Error('No response to decode from setContractAddress');
         }
 
-        const reader = new BinaryReader(response.response);
-
         return {
-            result: reader.readBoolean(),
             response: response,
         };
     }
@@ -492,9 +486,7 @@ export class NativeSwapTypesCoders {
             throw new Error('No response to decode from addLiquidity');
         }
 
-        const reader = new BinaryReader(response.response);
         return {
-            result: reader.readBoolean(),
             response: response,
         };
     }
@@ -516,9 +508,7 @@ export class NativeSwapTypesCoders {
             throw new Error('No response to decode from removeLiquidity');
         }
 
-        const reader = new BinaryReader(response.response);
         return {
-            result: reader.readBoolean(),
             response: response,
         };
     }
@@ -564,9 +554,7 @@ export class NativeSwapTypesCoders {
             throw new Error('No response to decode from createPool');
         }
 
-        const reader = new BinaryReader(response.response);
         return {
-            result: reader.readBoolean(),
             response: response,
         };
     }
@@ -576,9 +564,7 @@ export class NativeSwapTypesCoders {
             throw new Error('No response to decode from createPoolWithSignature');
         }
 
-        const reader = new BinaryReader(response.response);
         return {
-            result: reader.readBoolean(),
             response: response,
         };
     }
@@ -603,9 +589,7 @@ export class NativeSwapTypesCoders {
             throw new Error('No response to decode from listLiquidity');
         }
 
-        const reader = new BinaryReader(response.response);
         return {
-            result: reader.readBoolean(),
             response: response,
         };
     }
@@ -663,10 +647,7 @@ export class NativeSwapTypesCoders {
             throw new Error('No response to decode from cancel listing');
         }
 
-        const reader = new BinaryReader(response.response);
-
         return {
-            result: reader.readBoolean(),
             response: response,
         };
     }
@@ -685,10 +666,7 @@ export class NativeSwapTypesCoders {
             throw new Error('No response to decode from swap');
         }
 
-        const reader = new BinaryReader(response.response);
-
         return {
-            result: reader.readBoolean(),
             response: response,
         };
     }

@@ -104,7 +104,6 @@ export interface SetFeesParams {
 }
 
 export interface SetFeesResult {
-    readonly result: boolean;
     readonly response: CallResponse;
 }
 
@@ -181,7 +180,6 @@ export interface AddLiquidityParams {
 }
 
 export interface AddLiquidityResult {
-    readonly result: boolean;
     readonly response: CallResponse;
 }
 
@@ -190,7 +188,6 @@ export interface RemoveLiquidityParams {
 }
 
 export interface RemoveLiquidityResult {
-    readonly result: boolean;
     readonly response: CallResponse;
 }
 
@@ -205,7 +202,6 @@ export interface CreatePoolParams {
 }
 
 export interface CreatePoolResult {
-    readonly result: boolean;
     readonly response: CallResponse;
 }
 
@@ -231,7 +227,6 @@ export interface ListLiquidityParams {
 }
 
 export interface ListLiquidityResult {
-    readonly result: boolean;
     readonly response: CallResponse;
 }
 
@@ -254,7 +249,6 @@ export interface CancelListingParams {
 }
 
 export interface CancelListingResult {
-    readonly result: boolean;
     readonly response: CallResponse;
 }
 
@@ -263,7 +257,6 @@ export interface SwapParams {
 }
 
 export interface SwapResult {
-    readonly result: boolean;
     readonly response: CallResponse;
 }
 

@@ -1,4 +1,4 @@
-import { Assert, Blockchain, OP_20 } from '@btc-vision/unit-test-framework';
+import { Assert, Blockchain, OP20 } from '@btc-vision/unit-test-framework';
 import { NativeSwap } from '../../contracts/NativeSwap.js';
 import {
     logAction,
@@ -76,7 +76,7 @@ export class ScenarioHelper {
 
     public open: number = 0;
 
-    private _tokens: Map<string, OP_20> = new Map<string, OP_20>();
+    private _tokens: Map<string, OP20> = new Map<string, OP20>();
 
     private _reserveRecipients: Map<string, Map<string, Recipient[]>> = new Map<
         string,
@@ -249,7 +249,7 @@ export class ScenarioHelper {
 
         Assert.expect(this._tokens.has(tokenName)).toEqual(false);
 
-        const token = new OP_20({
+        const token = new OP20({
             file: tokenFileName,
             deployer: deployerAddress,
             address: tokenAddress,
@@ -286,7 +286,7 @@ export class ScenarioHelper {
             this.nativeSwap.dispose();
         }
 
-        this._tokens.forEach((token: OP_20) => {
+        this._tokens.forEach((token: OP20) => {
             token.dispose();
         });
 
@@ -310,7 +310,7 @@ export class ScenarioHelper {
         }
 
         const token = this.getToken(tokenName);
-        const result = await token.approve(owner, spender, amount);
+        const result = await token.increaseAllowance(owner, spender, amount);
 
         Assert.expect(result.events.length).toEqual(1);
 
@@ -352,7 +352,7 @@ export class ScenarioHelper {
         }
 
         const token = this.getToken(tokenName);
-        const result = await token.transfer(from, to, amount);
+        const result = await token.safeTransfer(from, to, amount);
 
         Assert.expect(result.events.length).toEqual(1);
 
@@ -692,14 +692,12 @@ export class ScenarioHelper {
             disablePriorityQueueFees: false,
         });
 
-        if (result.result) {
-            if (!this._providerMap.has(tokenName)) {
-                this._providerMap.set(tokenName, []);
-            }
-
-            const arr = this._providerMap.get(tokenName);
-            arr?.push(Blockchain.msgSender.toString());
+        if (!this._providerMap.has(tokenName)) {
+            this._providerMap.set(tokenName, []);
         }
+
+        const arr = this._providerMap.get(tokenName);
+        arr?.push(Blockchain.msgSender.toString());
 
         const events: NetEvent[] = [];
 
@@ -1080,14 +1078,12 @@ export class ScenarioHelper {
         const token = this.getToken(tokenName);
         const result = await this.nativeSwap.cancelListing({ token: token.address });
 
-        if (result.result) {
-            if (this._providerMap.has(tokenName)) {
-                const arr = this._providerMap.get(tokenName);
-                if (arr) {
-                    const index = arr.indexOf(Blockchain.msgSender.toString());
-                    if (index !== -1) {
-                        arr.splice(index, 1);
-                    }
+        if (this._providerMap.has(tokenName)) {
+            const arr = this._providerMap.get(tokenName);
+            if (arr) {
+                const index = arr.indexOf(Blockchain.msgSender.toString());
+                if (index !== -1) {
+                    arr.splice(index, 1);
                 }
             }
         }
@@ -1143,7 +1139,7 @@ export class ScenarioHelper {
                 }
             }
         }
-        
+
          */
     }
 
@@ -1361,7 +1357,7 @@ export class ScenarioHelper {
         return this._notPurgedReservations.has(mapId);
     }
 
-    private getToken(name: string): OP_20 {
+    private getToken(name: string): OP20 {
         const token = this._tokens.get(name);
         if (token === undefined || !token) {
             throw new Error('Token not initialized');

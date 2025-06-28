@@ -37,10 +37,10 @@ await opnet('Native Swap - Reentrancy', async (vm: OPNetUnit) => {
         Blockchain.msgSender = userAddress;
 
         // Transfer tokens from userAddress to provider
-        await token.transfer(userAddress, provider, l);
+        await token.safeTransfer(userAddress, provider, l);
 
         // Approve NativeSwap contract to spend tokens
-        await token.approve(provider, nativeSwap.address, l);
+        await token.increaseAllowance(provider, nativeSwap.address, l);
 
         // Add liquidity
         Blockchain.txOrigin = provider;
@@ -109,7 +109,7 @@ await opnet('Native Swap - Reentrancy', async (vm: OPNetUnit) => {
         // Approve NativeSwap to take tokens
         Blockchain.txOrigin = userAddress;
         Blockchain.msgSender = userAddress;
-        await token.approve(userAddress, nativeSwap.address, initLiquidity);
+        await token.increaseAllowance(userAddress, nativeSwap.address, initLiquidity);
 
         // Create the pool
         await nativeSwap.createPool({

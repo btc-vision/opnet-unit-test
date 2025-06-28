@@ -20,10 +20,14 @@ await opnet('Native Swap - Reservation Process', async (vm) => {
         Blockchain.msgSender = testHelper.userAddress;
 
         const tokensToList = testHelper.tokenAmountFor10kSat;
-        await testHelper.token.transfer(testHelper.userAddress, newUser, tokensToList);
+        await testHelper.token.safeTransfer(testHelper.userAddress, newUser, tokensToList);
 
         // Approve NativeSwap so newUser can list liquidity
-        await testHelper.token.approve(newUser, testHelper.nativeSwap.address, tokensToList);
+        await testHelper.token.increaseAllowance(
+            newUser,
+            testHelper.nativeSwap.address,
+            tokensToList,
+        );
 
         // Now list liquidity from newUser
         Blockchain.txOrigin = newUser;
@@ -338,12 +342,16 @@ await opnet('Native Swap - Reservation Process', async (vm) => {
         Blockchain.txOrigin = testHelper.userAddress;
         Blockchain.msgSender = testHelper.userAddress;
         const depositAmount = 10_000n;
-        await testHelper.token.transfer(testHelper.userAddress, newLpUser, depositAmount);
+        await testHelper.token.safeTransfer(testHelper.userAddress, newLpUser, depositAmount);
 
         // Approve from newLpUser side
         Blockchain.txOrigin = newLpUser;
         Blockchain.msgSender = newLpUser;
-        await testHelper.token.approve(newLpUser, testHelper.nativeSwap.address, depositAmount);
+        await testHelper.token.increaseAllowance(
+            newLpUser,
+            testHelper.nativeSwap.address,
+            depositAmount,
+        );
 
         // Reserve with forLP
         const r = await testHelper.nativeSwap.reserve({
