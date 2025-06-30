@@ -17,6 +17,8 @@ import { createReadStream } from 'fs';
 import { chain } from 'stream-chain';
 import streamJson from 'stream-json';
 import streamArrayJson from 'stream-json/streamers/StreamArray';
+import path from 'path';
+import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 
 const streamArray = streamArrayJson.streamArray;
 const parser = streamJson.parser;
@@ -254,94 +256,82 @@ interface ParsedState {
     };
 }
 
-type ParsedStates = ParsedState[];
+const CACHE_DIR = path.resolve('cache');
+mkdirSync(CACHE_DIR, { recursive: true });
+
+type Latest = Map<string, { seenAt: bigint; valueB64: string | null }>;
 
 export async function getStates(file: string, SEARCHED_BLOCK: bigint): Promise<FastBigIntMap> {
-    console.log(`Loading states from ${file} at block ${SEARCHED_BLOCK}...`);
+    const baseName = path.basename(file).replaceAll(path.sep, '_');
+    const cachePath = path.join(CACHE_DIR, `cache-${baseName}-${SEARCHED_BLOCK.toString()}.json`);
 
-    const parsedData: ParsedStates = [];
-    await new Promise<void>((resolve, reject) => {
-        const pipeline = chain([
-            createReadStream(file, { encoding: 'utf8' }),
-            parser({ jsonStreaming: true }),
-            streamArray(),
-        ]);
+    if (existsSync(cachePath)) {
+        console.log(`Cache hit -> ${cachePath}`);
+        const raw = readFileSync(cachePath, 'utf8');
+        const array: [string, string][] = JSON.parse(raw) as [string, string][];
 
-        let count = 0;
-        pipeline.on('data', (data: { value: unknown }) => {
-            count++;
-
-            const value = data.value as ParsedState;
-            parsedData.push(value);
-        });
-
-        pipeline.on('error', reject);
-        pipeline.on('end', () => {
-            console.log(`Parsed ${count} states from ${file}.`);
-
-            resolve();
-        });
-    });
-
-    let parsedDeduped: ParsedStates = [];
-    const seenAtPointers = new Map<string, { seenAt: number; value: string }>();
-    for (const state of parsedData) {
-        const pointer = state.pointer.$binary.base64;
-        const at = Number(state.lastSeenAt.$numberLong);
-        const value = state.value.$binary.base64;
-
-        if (BigInt(state.lastSeenAt.$numberLong) > SEARCHED_BLOCK) {
-            continue;
+        const map = new FastBigIntMap();
+        for (const [kHex, vHex] of array) {
+            map.set(BigInt(`0x${kHex}`), BigInt(`0x${vHex}`));
         }
+        console.log(`Loaded ${map.size} pointers from cache`);
+        return map;
+    }
 
-        const existing = seenAtPointers.get(pointer);
-        if (existing) {
-            if (at > existing.seenAt) {
-                seenAtPointers.set(pointer, { seenAt: at, value });
+    console.log(`Cache miss - loading states from ${file} at block ${SEARCHED_BLOCK} …`);
+
+    const latest: Latest = new Map();
+
+    const stream = chain([
+        createReadStream(file, { encoding: 'utf8' }),
+        parser({ jsonStreaming: true }),
+        streamArray(),
+    ]);
+
+    for await (const data of stream as AsyncIterable<{ value: ParsedState }>) {
+        const value = data.value;
+        const ptrB64 = value.pointer.$binary.base64;
+        const seenAt = BigInt(value.lastSeenAt.$numberLong);
+        if (seenAt > SEARCHED_BLOCK) continue;
+
+        const prev = latest.get(ptrB64);
+        if (!prev || seenAt > prev.seenAt) {
+            latest.set(ptrB64, {
+                seenAt,
+                valueB64: value.value?.$binary.base64 ?? null,
+            });
+        }
+    }
+
+    const map = new FastBigIntMap();
+    for (const [ptrB64, { valueB64 }] of latest) {
+        const ptrArr = Uint8Array.from(Buffer.from(ptrB64, 'base64'));
+        if (ptrArr.length !== 32) {
+            throw new Error(`Pointer must be 32 bytes, got ${ptrArr.length}.`);
+        }
+        const keyBig = BufferHelper.uint8ArrayToPointer(ptrArr);
+
+        let valBig = 0n;
+        if (valueB64) {
+            const valArr = Uint8Array.from(Buffer.from(valueB64, 'base64'));
+            if (valArr.length !== 32) {
+                throw new Error(`Value must be 32 bytes, got ${valArr.length}.`);
             }
-        } else {
-            seenAtPointers.set(pointer, { seenAt: at, value });
-        }
-    }
-
-    for (const [pointer, { seenAt, value }] of seenAtPointers.entries()) {
-        parsedDeduped.push({
-            pointer: {
-                $binary: {
-                    base64: pointer,
-                },
-            },
-            value: {
-                $binary: {
-                    base64: value,
-                },
-            },
-            lastSeenAt: {
-                $numberLong: seenAt.toString(),
-            },
-        });
-    }
-
-    const map: FastBigIntMap = new FastBigIntMap();
-    for (const state of parsedDeduped) {
-        const pointer = state.pointer.$binary.base64;
-        const value = state.value.$binary.base64;
-
-        const pointerHex = Uint8Array.from(Buffer.from(pointer, 'base64'));
-        const valueHex = Uint8Array.from(Buffer.from(value, 'base64'));
-        if (pointerHex.length !== 32 || valueHex.length !== 32) {
-            throw new Error(
-                `Invalid state data: Pointer and value must be 32 bytes long. Got ${pointerHex.length} and ${valueHex.length} bytes.,`,
-            );
+            valBig = BufferHelper.uint8ArrayToPointer(valArr);
         }
 
-        const key = BufferHelper.uint8ArrayToPointer(pointerHex);
-        const pointerValueBigInt = value ? BufferHelper.uint8ArrayToPointer(valueHex) : 0n;
-
-        map.set(key, pointerValueBigInt);
+        map.set(keyBig, valBig);
     }
 
-    console.log(`Loaded ${map.size} states from ${file} at block ${SEARCHED_BLOCK}.`);
+    const serialised: [string, string][] = [];
+    for (const [k, v] of map) {
+        const kHex = k.toString(16).padStart(64, '0');
+        const vHex = v.toString(16).padStart(64, '0');
+        serialised.push([kHex, vHex]);
+    }
+
+    writeFileSync(cachePath, JSON.stringify(serialised));
+    console.log(`Cached ${map.size} pointers -> ${cachePath}`);
 
     return map;
 }

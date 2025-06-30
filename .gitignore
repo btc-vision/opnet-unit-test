@@ -142,3 +142,5 @@ states
 
 blocks
 blocks/*.json
+cache
+cache/*.json
