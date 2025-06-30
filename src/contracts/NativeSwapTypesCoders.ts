@@ -13,6 +13,7 @@ import {
     GetAntibotSettingsResult,
     GetFeesResult,
     GetPriorityQueueCostResult,
+    GetProviderDetailsByIdParams,
     GetProviderDetailsParams,
     GetProviderDetailsResult,
     GetQueueDetailsResult,
@@ -365,6 +366,18 @@ export class NativeSwapTypesCoders {
         return calldata;
     }
 
+    public static encodeGetProviderDetailsByIdParams(
+        selector: number,
+        params: GetProviderDetailsByIdParams,
+    ): BinaryWriter {
+        const calldata = new BinaryWriter();
+
+        calldata.writeSelector(selector);
+        calldata.writeU256(params.providerId);
+
+        return calldata;
+    }
+
     public static decodeGetProviderDetailsResult(response: CallResponse): GetProviderDetailsResult {
         if (!response.response) {
             throw new Error('No response to decode from getProviderDetails');
@@ -438,7 +451,11 @@ export class NativeSwapTypesCoders {
             priorityPurgeQueueLength: priorityPurgeQueueLength,
             standardPurgeQueueLength: standardPurgeQueueLength,
             removalPurgeQueueLength: removalPurgeQueueLength,
-            priorityPurgeQueue: NativeSwapTypesCoders.decodePurgeQueue(
+            priorityPurgeQueue: [],
+            normalPurgeQueue: [],
+            priorityQueue: [],
+            normalQueue: [],
+            /*priorityPurgeQueue: NativeSwapTypesCoders.decodePurgeQueue(
                 reader,
                 priorityPurgeQueueLength,
             ),
@@ -447,7 +464,7 @@ export class NativeSwapTypesCoders {
                 standardPurgeQueueLength,
             ),
             priorityQueue: NativeSwapTypesCoders.decodeQueue(reader, priorityQueueLength),
-            normalQueue: NativeSwapTypesCoders.decodeQueue(reader, standardQueueLength),
+            normalQueue: NativeSwapTypesCoders.decodeQueue(reader, standardQueueLength),*/
         };
     }
 

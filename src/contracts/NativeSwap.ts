@@ -13,6 +13,7 @@ import {
     GetAntibotSettingsResult,
     GetFeesResult,
     GetPriorityQueueCostResult,
+    GetProviderDetailsByIdParams,
     GetProviderDetailsParams,
     GetProviderDetailsResult,
     GetQueueDetailsResult,
@@ -95,6 +96,10 @@ export class NativeSwap extends ContractRuntime {
 
     private readonly getProviderDetailsSelector: number = Number(
         `0x${this.abiCoder.encodeSelector('getProviderDetails(address)')}`,
+    );
+
+    private readonly getProviderDetailsByIdSelector: number = Number(
+        `0x${this.abiCoder.encodeSelector('getProviderDetailsById(u256)')}`,
     );
 
     private readonly getQueueDetailsSelector: number = Number(
@@ -274,6 +279,24 @@ export class NativeSwap extends ContractRuntime {
     ): Promise<GetProviderDetailsResult> {
         const calldata = NativeSwapTypesCoders.encodeGetProviderDetailsParams(
             this.getProviderDetailsSelector,
+            params,
+        );
+
+        const result = await this.execute({
+            calldata: calldata.getBuffer(),
+            saveStates: false,
+        });
+
+        if (result.error) throw this.handleError(result.error);
+
+        return NativeSwapTypesCoders.decodeGetProviderDetailsResult(result);
+    }
+
+    public async getProviderDetailsById(
+        params: GetProviderDetailsByIdParams,
+    ): Promise<GetProviderDetailsResult> {
+        const calldata = NativeSwapTypesCoders.encodeGetProviderDetailsByIdParams(
+            this.getProviderDetailsByIdSelector,
             params,
         );
 

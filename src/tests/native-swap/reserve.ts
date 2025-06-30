@@ -777,7 +777,6 @@ await opnet('Native Swap - Reserve', async (vm: OPNetUnit) => {
             token: tokenAddress,
             maximumAmountIn: satIn,
             minimumAmountOut: minOut,
-            forLP: false,
         });
 
         Assert.expect(reservationResponse.response.error).toBeUndefined();
@@ -826,7 +825,6 @@ await opnet('Native Swap - Reserve', async (vm: OPNetUnit) => {
             token: tokenAddress,
             maximumAmountIn: satIn,
             minimumAmountOut: minOut,
-            forLP: false,
         });
 
         Assert.expect(reservation.response.error).toBeUndefined();
@@ -845,7 +843,6 @@ await opnet('Native Swap - Reserve', async (vm: OPNetUnit) => {
             token: tokenAddress,
             maximumAmountIn: 10_000_000n,
             minimumAmountOut: minOut,
-            forLP: false,
         });
 
         Assert.expect(reservation2.response.error).toBeUndefined();

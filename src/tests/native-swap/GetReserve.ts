@@ -12,6 +12,7 @@ await opnet('Native Swap - Get Reserve', async (vm: OPNetUnit) => {
     const nativeSwapAddress: Address = Blockchain.generateRandomAddress();
 
     async function createDefaultLiquidityPool(): Promise<void> {
+        Blockchain.blockNumber = 1000n;
         const initialLiquidityProvider: Address = Blockchain.generateRandomAddress();
         const liquidityAmount: bigint = Blockchain.expandToDecimal(1000, tokenDecimals);
 
@@ -33,11 +34,7 @@ await opnet('Native Swap - Get Reserve', async (vm: OPNetUnit) => {
         Assert.expect(quote.result).toEqual(true);
     }
 
-    async function randomReserve(
-        amount: bigint,
-        forLP: boolean = false,
-        rnd: boolean = true,
-    ): Promise<void> {
+    async function randomReserve(amount: bigint, rnd: boolean = true): Promise<void> {
         const backup = Blockchain.txOrigin;
 
         let provider: Address = Blockchain.txOrigin;
@@ -51,7 +48,6 @@ await opnet('Native Swap - Get Reserve', async (vm: OPNetUnit) => {
             token: token.address,
             maximumAmountIn: amount,
             minimumAmountOut: 0n,
-            forLP: forLP,
         });
 
         Blockchain.txOrigin = backup;

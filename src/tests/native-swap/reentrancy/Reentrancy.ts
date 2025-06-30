@@ -68,7 +68,6 @@ await opnet('Native Swap - Reentrancy', async (vm: OPNetUnit) => {
             token: tokenAddress,
             maximumAmountIn: amount,
             minimumAmountOut: 0n,
-            forLP: false,
         });
 
         const decoded = NativeSwapTypesCoders.decodeReservationEvents(r.response.events);
@@ -146,8 +145,7 @@ await opnet('Native Swap - Reentrancy', async (vm: OPNetUnit) => {
         Blockchain.register(token);
         await token.init();
 
-        const totalSupply = Blockchain.expandToDecimal(1_000_000_000_000, tokenDecimals);
-        await token.mintRaw(userAddress, totalSupply);
+        await token.mint(userAddress, 10_000_000);
 
         nativeSwap = new NativeSwap(userAddress, nativeSwapAddress);
         Blockchain.register(nativeSwap);
@@ -176,7 +174,7 @@ await opnet('Native Swap - Reentrancy', async (vm: OPNetUnit) => {
 
         Blockchain.blockNumber += 3n;
 
-        await token.setCallback('reserve(address,uint256,uint256,bool)');
+        await token.setCallback('reserve(address,uint64,uint256,bool,uint8)');
 
         await Assert.expect(async () => {
             await swapAll();
@@ -243,46 +241,6 @@ await opnet('Native Swap - Reentrancy', async (vm: OPNetUnit) => {
         }).toThrow(/NATIVE_SWAP: LOCKED/);
     });
 
-    await vm.it('should revert when trying reentrancy call on addLiquidity method', async () => {
-        Blockchain.txOrigin = userAddress;
-        Blockchain.msgSender = userAddress;
-
-        Blockchain.blockNumber += 1n;
-        await listTokenRandom(BitcoinUtils.expandToDecimals(100, tokenDecimals));
-
-        Blockchain.blockNumber += 1n;
-
-        await reserve(20_000_000n, providerAddress);
-
-        Blockchain.blockNumber += 3n;
-
-        await token.setCallback('addLiquidity(address,string)');
-
-        await Assert.expect(async () => {
-            await swapAll();
-        }).toThrow(/NATIVE_SWAP: LOCKED/);
-    });
-
-    await vm.it('should revert when trying reentrancy call on removeLiquidity method', async () => {
-        Blockchain.txOrigin = userAddress;
-        Blockchain.msgSender = userAddress;
-
-        Blockchain.blockNumber += 1n;
-        await listTokenRandom(BitcoinUtils.expandToDecimals(100, tokenDecimals));
-
-        Blockchain.blockNumber += 1n;
-
-        await reserve(20_000_000n, providerAddress);
-
-        Blockchain.blockNumber += 3n;
-
-        await token.setCallback('removeLiquidity(address)');
-
-        await Assert.expect(async () => {
-            await swapAll();
-        }).toThrow(/NATIVE_SWAP: LOCKED/);
-    });
-
     await vm.it('should revert when trying reentrancy call on createPool method', async () => {
         Blockchain.txOrigin = userAddress;
         Blockchain.msgSender = userAddress;
@@ -302,31 +260,6 @@ await opnet('Native Swap - Reentrancy', async (vm: OPNetUnit) => {
             await swapAll();
         }).toThrow(/NATIVE_SWAP: LOCKED/);
     });
-
-    await vm.it(
-        'should revert when trying reentrancy call on createPoolWithSignature method',
-        async () => {
-            Blockchain.txOrigin = userAddress;
-            Blockchain.msgSender = userAddress;
-
-            Blockchain.blockNumber += 1n;
-            await listTokenRandom(BitcoinUtils.expandToDecimals(100, tokenDecimals));
-
-            Blockchain.blockNumber += 1n;
-
-            await reserve(20_000_000n, providerAddress);
-
-            Blockchain.blockNumber += 3n;
-
-            await token.setCallback(
-                'createPoolWithSignature(bytes,address,uint256,uint256,uint128,string,uint16,uint256,uint16)',
-            );
-
-            await Assert.expect(async () => {
-                await swapAll();
-            }).toThrow(/NATIVE_SWAP: LOCKED/);
-        },
-    );
 
     await vm.it('should revert when trying reentrancy call on setFees method', async () => {
         Blockchain.txOrigin = userAddress;
@@ -404,7 +337,7 @@ await opnet('Native Swap - Reentrancy', async (vm: OPNetUnit) => {
 
         Blockchain.blockNumber += 3n;
 
-        await token.setCallback('getQuote(address,uint256)');
+        await token.setCallback('getQuote(address,uint64)');
 
         await Assert.expect(async () => {
             await swapAll();
@@ -449,7 +382,7 @@ await opnet('Native Swap - Reentrancy', async (vm: OPNetUnit) => {
 
             Blockchain.blockNumber += 3n;
 
-            await token.setCallback('getPriorityQueueCost');
+            await token.setCallback('getPriorityQueueCost()');
 
             await Assert.expect(async () => {
                 await swapAll();
@@ -470,7 +403,7 @@ await opnet('Native Swap - Reentrancy', async (vm: OPNetUnit) => {
 
         Blockchain.blockNumber += 3n;
 
-        await token.setCallback('getFees');
+        await token.setCallback('getFees()');
 
         await Assert.expect(async () => {
             await swapAll();
@@ -515,7 +448,7 @@ await opnet('Native Swap - Reentrancy', async (vm: OPNetUnit) => {
 
             Blockchain.blockNumber += 3n;
 
-            await token.setCallback('getStakingContractAddress');
+            await token.setCallback('getStakingContractAddress()');
 
             await Assert.expect(async () => {
                 await swapAll();

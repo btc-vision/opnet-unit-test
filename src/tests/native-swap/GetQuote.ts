@@ -83,6 +83,7 @@ await opnet('Native Swap - Get Quote', async (vm: OPNetUnit) => {
     });
 
     await vm.it('should scale token price correctly', async () => {
+        Blockchain.blockNumber = 1000n;
         const initialLiquidityProvider: Address = Blockchain.generateRandomAddress();
         const provider: Address = Blockchain.generateRandomAddress();
 
@@ -113,6 +114,7 @@ await opnet('Native Swap - Get Quote', async (vm: OPNetUnit) => {
     await vm.it(
         'should return the values when liquidity is greater than the number of tokens for the given amount',
         async () => {
+            Blockchain.blockNumber = 1000n;
             await helper_createPool(
                 nativeSwap,
                 token,
@@ -139,6 +141,7 @@ await opnet('Native Swap - Get Quote', async (vm: OPNetUnit) => {
     await vm.it(
         'should return a capped values when liquidity is smaller than the number of tokens for the given amount',
         async () => {
+            Blockchain.blockNumber = 1000n;
             await helper_createPool(
                 nativeSwap,
                 token,
@@ -165,6 +168,7 @@ await opnet('Native Swap - Get Quote', async (vm: OPNetUnit) => {
     await vm.it(
         'should return a capped values when liquidity is smaller than the number of tokens and there is reservation for the given amount',
         async () => {
+            Blockchain.blockNumber = 1000n;
             await helper_createPool(
                 nativeSwap,
                 token,

@@ -137,6 +137,10 @@ export interface GetProviderDetailsParams {
     readonly token: Address;
 }
 
+export interface GetProviderDetailsByIdParams {
+    readonly providerId: bigint;
+}
+
 export interface GetProviderDetailsResult {
     readonly id: bigint;
     readonly liquidity: bigint;
