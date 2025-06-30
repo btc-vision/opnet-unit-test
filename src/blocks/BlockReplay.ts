@@ -41,7 +41,7 @@ export class BlockReplay extends Logger {
 
         for (const tx of this.transactions) {
             if (this.settings.ignoreUnknownContracts) {
-                if (Blockchain.isContract(tx.contractTweakedPublicKey)) {
+                if (!Blockchain.isContract(tx.contractTweakedPublicKey)) {
                     this.info(`Ignored unknown contract ${tx.contractAddress}`);
                     continue;
                 }
@@ -67,13 +67,13 @@ export class BlockReplay extends Logger {
             }
             contracts.add(tx.contractTweakedPublicKey);
 
-            try {
-                Blockchain.getContract(tx.contractTweakedPublicKey);
-            } catch (e) {
+            if (
+                !Blockchain.isContract(tx.contractTweakedPublicKey) &&
+                !this.settings.ignoreUnknownContracts
+            ) {
                 this.fail(
-                    `Contract ${tx.contractTweakedPublicKey} not found in block ${this.blockHeight} -> ${e}`,
+                    `Block ${this.blockHeight} transaction ${tx.id} requires contract ${tx.contractTweakedPublicKey} to be present, but it is not registered.`,
                 );
-
                 return false;
             }
         }
