@@ -195,8 +195,6 @@ export class Transaction extends Logger {
                     `Original error for ${txId}: ${RustContract.decodeRevertData(this.revert)}`,
                 );
             } else {
-                console.log(tx);
-
                 this.logTransactionDetails();
 
                 throw new Error(
