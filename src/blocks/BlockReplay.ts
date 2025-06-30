@@ -5,17 +5,25 @@ import { TransactionDocument } from './interfaces/RawTransaction.js';
 import { AddressSet } from '@btc-vision/transaction';
 import { Blockchain } from '@btc-vision/unit-test-framework';
 
+export interface BlockSettings {
+    readonly blockHeight: bigint;
+    readonly ignoreUnknownContracts: boolean;
+}
+
 export class BlockReplay extends Logger {
     public readonly logColor: string = '#0077ff';
 
+    private readonly blockHeight: bigint;
     private readonly transactions: Transaction[] = [];
 
-    constructor(private readonly blockHeight: bigint) {
+    constructor(private readonly settings: BlockSettings) {
         super();
+
+        this.blockHeight = settings.blockHeight;
 
         this.loadTransactions();
     }
-    
+
     public async replayBlock(): Promise<void> {
         const ready = this.verifyIfAllRequiredContractsArePresent();
         if (!ready) {
@@ -32,6 +40,13 @@ export class BlockReplay extends Logger {
         Blockchain.blockNumber = this.blockHeight;
 
         for (const tx of this.transactions) {
+            if (this.settings.ignoreUnknownContracts) {
+                if (Blockchain.isContract(tx.contractTweakedPublicKey)) {
+                    this.info(`Ignored unknown contract ${tx.contractAddress}`);
+                    continue;
+                }
+            }
+
             try {
                 await tx.execute();
             } catch (e) {
