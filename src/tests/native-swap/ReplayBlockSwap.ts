@@ -16,7 +16,7 @@ const admin: Address = Address.fromString(
 );
 
 const motoAddress: Address = Address.fromString(
-    `0xdb944e78cada1d705af892bb0560a4a9c4b9896d64ef23dfd3870ffd5004f4f2`, //'0xdb944e78cada1d705af892bb0560a4a9c4b9896d64ef23dfd3870ffd5004f4f2',
+    `0xdb944e78cada1d705af892bb0560a4a9c4b9896d64ef23dfd3870ffd5004f4f2`,
 );
 
 const pillAddress: Address = Address.fromString(
@@ -29,10 +29,6 @@ const bt1Address: Address = Address.fromString(
 
 const nativeAddy: Address = Address.fromString(
     '0xd0e91f6aafa36407a1325a13e73d9b59a14874fc5dde10b4219c3e13d42d4175',
-);
-
-const userAddress: Address = Address.fromString(
-    '0x02729c84e0174d1a2c1f089dd685bdaf507581762c85bfcf69c7ec90cf2ba596b9',
 );
 
 const ICHXAddress: Address = Address.fromString(
@@ -60,7 +56,9 @@ await opnet('NativeSwap: Debug', async (vm: OPNetUnit) => {
 
     const moto: OP_20 = new OP_20({
         file: 'MyToken',
-        deployer: userAddress,
+        deployer: Address.fromString(
+            '0x02729c84e0174d1a2c1f089dd685bdaf507581762c85bfcf69c7ec90cf2ba596b9',
+        ),
         address: motoAddress,
         decimals: tokenDecimals,
     });
@@ -68,8 +66,10 @@ await opnet('NativeSwap: Debug', async (vm: OPNetUnit) => {
     Blockchain.register(moto);
 
     const pill: OP_20 = new OP_20({
-        file: 'MyToken',
-        deployer: userAddress,
+        file: 'pill',
+        deployer: Address.fromString(
+            '0x02729c84e0174d1a2c1f089dd685bdaf507581762c85bfcf69c7ec90cf2ba596b9',
+        ),
         address: pillAddress,
         decimals: tokenDecimals,
     });
@@ -78,7 +78,9 @@ await opnet('NativeSwap: Debug', async (vm: OPNetUnit) => {
 
     const b1t: OP_20 = new OP_20({
         file: 'MyToken',
-        deployer: userAddress,
+        deployer: Address.fromString(
+            '0x02729c84e0174d1a2c1f089dd685bdaf507581762c85bfcf69c7ec90cf2ba596b9',
+        ),
         address: bt1Address,
         decimals: tokenDecimals,
     });
@@ -87,7 +89,9 @@ await opnet('NativeSwap: Debug', async (vm: OPNetUnit) => {
 
     const ICHX: OP_20 = new OP_20({
         file: 'MyToken',
-        deployer: userAddress,
+        deployer: Address.fromString(
+            '0x02bc0f338bb90e546ef42826d8e4d9f272d145ca3a077af2d33d61487b2b0e7934',
+        ),
         address: ICHXAddress,
         decimals: tokenDecimals,
     });
@@ -129,7 +133,7 @@ await opnet('NativeSwap: Debug', async (vm: OPNetUnit) => {
             blockHeight: Blockchain.blockNumber,
             ignoreUnknownContracts: true,
         });
-        
+
         await block.replayBlock();
     });
 });
