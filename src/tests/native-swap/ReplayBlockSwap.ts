@@ -55,7 +55,7 @@ await opnet('NativeSwap: Debug', async (vm: OPNetUnit) => {
     Blockchain.register(nativeSwap);
 
     const moto: OP_20 = new OP_20({
-        file: 'MyToken',
+        file: 'moto2',
         deployer: Address.fromString(
             '0x02729c84e0174d1a2c1f089dd685bdaf507581762c85bfcf69c7ec90cf2ba596b9',
         ),
@@ -77,7 +77,7 @@ await opnet('NativeSwap: Debug', async (vm: OPNetUnit) => {
     Blockchain.register(pill);
 
     const b1t: OP_20 = new OP_20({
-        file: 'MyToken',
+        file: 'pill',
         deployer: Address.fromString(
             '0x02729c84e0174d1a2c1f089dd685bdaf507581762c85bfcf69c7ec90cf2ba596b9',
         ),
