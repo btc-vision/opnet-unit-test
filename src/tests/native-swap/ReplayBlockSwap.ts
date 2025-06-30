@@ -40,6 +40,7 @@ const ICHXAddress: Address = Address.fromString(
 // at 4548543n => isActive = false
 
 const SEARCHED_BLOCK: bigint = 4548511n; //4548543n;
+const MAX_BLOCK_TO_REPLAY: number = 1; // replay one block from SEARCHED_BLOCK
 
 await opnet('NativeSwap: Debug', async (vm: OPNetUnit) => {
     Blockchain.msgSender = admin;
@@ -126,14 +127,20 @@ await opnet('NativeSwap: Debug', async (vm: OPNetUnit) => {
     await vm.it('should debug', async () => {
         await Promise.resolve();
 
-        Blockchain.blockNumber = SEARCHED_BLOCK + 1n;
+        Blockchain.blockNumber = SEARCHED_BLOCK;
         Blockchain.network = networks.testnet;
 
-        const block = new BlockReplay({
-            blockHeight: Blockchain.blockNumber,
-            ignoreUnknownContracts: true,
-        });
+        for (let i = 0; i < MAX_BLOCK_TO_REPLAY; i++) {
+            Blockchain.blockNumber += 1n;
 
-        await block.replayBlock();
+            vm.info(`Replaying block ${Blockchain.blockNumber}...`);
+
+            const block = new BlockReplay({
+                blockHeight: Blockchain.blockNumber,
+                ignoreUnknownContracts: true,
+            });
+
+            await block.replayBlock();
+        }
     });
 });

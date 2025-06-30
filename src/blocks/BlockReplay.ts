@@ -42,7 +42,7 @@ export class BlockReplay extends Logger {
         for (const tx of this.transactions) {
             if (this.settings.ignoreUnknownContracts) {
                 if (!Blockchain.isContract(tx.contractTweakedPublicKey)) {
-                    this.info(`Ignored unknown contract ${tx.contractAddress}`);
+                    //this.info(`Ignored unknown contract ${tx.contractAddress}`);
                     continue;
                 }
             }
