@@ -170,9 +170,6 @@ export class Transaction extends Logger {
 
     public async execute(): Promise<void> {
         const txId = this.txId.toString('hex');
-
-        //this.debugBright(`Executing transaction ${txId}.`);
-
         const contract = Blockchain.getContract(this.contractTweakedPublicKey);
 
         const tx: BitcoinTransaction = generateEmptyTransaction(false);
@@ -198,6 +195,8 @@ export class Transaction extends Logger {
                     `Original error for ${txId}: ${RustContract.decodeRevertData(this.revert)}`,
                 );
             } else {
+                console.log(tx);
+
                 this.logTransactionDetails();
 
                 throw new Error(
@@ -253,21 +252,27 @@ export class Transaction extends Logger {
                 } / sequence=${i.sequenceId}`,
             );
         });
+
         if (this.inputs.length === 0) out.push('  <none>');
         out.push('');
 
         out.push(`outputs (${this.outputs.length})`);
+
         this.outputs.forEach((o, idx) => {
-            const addrPart =
-                o.scriptPubKey.addresses?.length === 1
+            const addrPart: string =
+                o.scriptPubKey.address ||
+                (o.scriptPubKey.addresses && o.scriptPubKey.addresses?.length === 1
                     ? o.scriptPubKey.addresses[0]
-                    : o.scriptPubKey.addresses;
+                    : o.scriptPubKey.addresses?.join(',') || '<no-address>') ||
+                '<no-address>';
+
             out.push(
                 `  [${idx}] value=${toBig(o.value)} / index=${
                     o.index
                 } / script=${o.scriptPubKey.hex} / address=${addrPart}`,
             );
         });
+
         if (this.outputs.length === 0) out.push('  <none>');
         out.push('');
 
@@ -351,11 +356,7 @@ export class Transaction extends Logger {
 
     private createOutputs(tx: BitcoinTransaction): void {
         for (const output of this.outputs) {
-            tx.addOutput(
-                output.value,
-                output.scriptPubKey.address,
-                Uint8Array.from(Buffer.from(output.scriptPubKey.hex || '', 'hex')),
-            );
+            tx.addOutput(output.value, output.scriptPubKey.address);
         }
     }
 }
