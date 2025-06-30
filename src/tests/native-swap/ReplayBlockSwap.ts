@@ -88,7 +88,7 @@ await opnet('NativeSwap: Debug', async (vm: OPNetUnit) => {
 
         StateHandler.overrideStates(nativeAddy, nativeStates);
         StateHandler.overrideStates(motoAddress, motoStates);
-        StateHandler.overrideStates(bt1Address, bt1States);
+        StateHandler.overrideStates(bt1Address, b1tStates);
         StateHandler.overrideStates(pillAddress, pillStates);
 
         StateHandler.overrideDeployment(nativeAddy);
