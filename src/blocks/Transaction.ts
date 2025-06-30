@@ -198,6 +198,8 @@ export class Transaction extends Logger {
                     `Original error for ${txId}: ${RustContract.decodeRevertData(this.revert)}`,
                 );
             } else {
+                this.logTransactionDetails();
+
                 throw new Error(
                     `This transaction has no revert in the block you are replaying. This transaction should have passed but it reverted.`,
                 );
@@ -207,6 +209,83 @@ export class Transaction extends Logger {
                 `Executed transaction ${txId} for contract ${this.contractAddress}. (Took ${Date.now() - t}ms to execute, ${result.usedGas} gas used)`,
             );
         }
+    }
+
+    public logTransactionDetails(): void {
+        const toHex = (v: Buffer | null): string => (v ? `0x${v.toString('hex')}` : 'null');
+
+        const toBig = (v: bigint | null | undefined): string =>
+            v === null || v === undefined ? 'null' : v.toString();
+
+        const out: string[] = [];
+
+        out.push('---- Replayed Transaction Dump ----');
+        out.push(`id                       : ${this.id}`);
+        out.push(`blockHeight              : ${this.blockHeight}`);
+        out.push(`hash                     : ${toHex(this.hash)}`);
+        out.push(`opNetType                : ${this.opNetType}`);
+        out.push(`burnedBitcoin            : ${toBig(this.burnedBitcoin)}`);
+        out.push(`calldata                 : ${toHex(this.calldata)}`);
+        out.push(`contractAddress          : ${this.contractAddress}`);
+        out.push(`contractSecret           : ${toHex(this.contractSecret)}`);
+        out.push(`contractTweakedPublicKey : ${this.contractTweakedPublicKey.toString()}`);
+        out.push(`from                     : ${this.from.toString()}`);
+        out.push(`gasUsed                  : ${toBig(this.gasUsed)}`);
+        out.push(`txId                     : ${toHex(this.txId)}`);
+        out.push(`index                    : ${this.index}`);
+        out.push(`interactionPubKey        : ${toHex(this.interactionPubKey)}`);
+        out.push(`preimage                 : ${toHex(this.preimage)}`);
+        out.push(`priorityFee              : ${toBig(this.priorityFee)}`);
+        out.push(`raw                      : ${toHex(this.raw)}`);
+        out.push(`receipt                  : ${toHex(this.receipt)}`);
+        out.push(`revert                   : ${this.revert ? toHex(this.revert) : 'no-revert'}`);
+        out.push(`reward                   : ${toBig(this.reward)}`);
+        out.push(`senderPubKeyHash         : ${toHex(this.senderPubKeyHash)}`);
+        out.push(`specialGasUsed           : ${toBig(this.specialGasUsed)}`);
+        out.push(`wasCompressed            : ${this.wasCompressed}`);
+        out.push('');
+
+        out.push(`inputs (${this.inputs.length})`);
+        this.inputs.forEach((i, idx) => {
+            out.push(
+                `  [${idx}] tx=${toHex(i.originalTransactionId)} / vout=${
+                    i.outputTransactionIndex
+                } / sequence=${i.sequenceId}`,
+            );
+        });
+        if (this.inputs.length === 0) out.push('  <none>');
+        out.push('');
+
+        out.push(`outputs (${this.outputs.length})`);
+        this.outputs.forEach((o, idx) => {
+            const addrPart =
+                o.scriptPubKey.addresses?.length === 1
+                    ? o.scriptPubKey.addresses[0]
+                    : o.scriptPubKey.addresses;
+            out.push(
+                `  [${idx}] value=${toBig(o.value)} / index=${
+                    o.index
+                } / script=${o.scriptPubKey.hex} / address=${addrPart}`,
+            );
+        });
+        if (this.outputs.length === 0) out.push('  <none>');
+        out.push('');
+
+        out.push(`events (${this.events.length})`);
+        this.events.forEach((e, idx) => {
+            out.push(
+                `  [${idx}] contract=${e.contractAddress.toString()} / type=${e.type.toString()} / data=${toHex(e.data)}`,
+            );
+        });
+        if (this.events.length === 0) out.push('  <none>');
+        out.push('');
+
+        out.push(`receiptProofs (${this.receiptProofs.length})`);
+        this.receiptProofs.forEach((r, idx) => out.push(`  [${idx}] ${r}`));
+        if (this.receiptProofs.length === 0) out.push('  <none>');
+        out.push('---- End Dump ----\n');
+
+        this.debugBright(out.join('\n'));
     }
 
     public toRaw(): TransactionDocument {

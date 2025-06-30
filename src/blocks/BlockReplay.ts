@@ -15,11 +15,7 @@ export class BlockReplay extends Logger {
 
         this.loadTransactions();
     }
-
-    public getBlockHeight(): bigint {
-        return this.blockHeight;
-    }
-
+    
     public async replayBlock(): Promise<void> {
         const ready = this.verifyIfAllRequiredContractsArePresent();
         if (!ready) {
@@ -39,7 +35,7 @@ export class BlockReplay extends Logger {
             try {
                 await tx.execute();
             } catch (e) {
-                this.fail(
+                this.panic(
                     `Block ${this.blockHeight} transaction ${tx.id} execution failed -> ${e}`,
                 );
                 return;
