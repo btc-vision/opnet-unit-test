@@ -46,12 +46,6 @@ await opnet('NativeSwap: Debug', async (vm: OPNetUnit) => {
     Blockchain.msgSender = admin;
     Blockchain.txOrigin = admin;
 
-    const nativeStates = await getStates(nativeStatesFile, SEARCHED_BLOCK);
-    const motoStates = await getStates(motoStatesFile, SEARCHED_BLOCK);
-    const pillStates = await getStates(pillStatesFile, SEARCHED_BLOCK);
-    const b1tStates = await getStates(b1tStatesFile, SEARCHED_BLOCK);
-    const ICHXStates = await getStates(ICHXFile, SEARCHED_BLOCK);
-
     const nativeSwap: NativeSwap = new NativeSwap(admin, nativeAddy, 2_500_000_000_000_000_000n);
     Blockchain.register(nativeSwap);
 
@@ -99,12 +93,12 @@ await opnet('NativeSwap: Debug', async (vm: OPNetUnit) => {
 
     Blockchain.register(ICHX);
 
-    vm.beforeEach(async () => {
-        cleanupSwap();
-
-        await Blockchain.init();
-
-        Blockchain.blockNumber = SEARCHED_BLOCK + 1n;
+    async function loadStates(): Promise<void> {
+        const nativeStates = await getStates(nativeStatesFile, SEARCHED_BLOCK);
+        const motoStates = await getStates(motoStatesFile, SEARCHED_BLOCK);
+        const pillStates = await getStates(pillStatesFile, SEARCHED_BLOCK);
+        const b1tStates = await getStates(b1tStatesFile, SEARCHED_BLOCK);
+        const ICHXStates = await getStates(ICHXFile, SEARCHED_BLOCK);
 
         StateHandler.overrideStates(nativeAddy, nativeStates);
         StateHandler.overrideStates(motoAddress, motoStates);
@@ -117,6 +111,14 @@ await opnet('NativeSwap: Debug', async (vm: OPNetUnit) => {
         StateHandler.overrideDeployment(bt1Address);
         StateHandler.overrideDeployment(pillAddress);
         StateHandler.overrideDeployment(ICHXAddress);
+    }
+
+    vm.beforeEach(async () => {
+        cleanupSwap();
+
+        await Blockchain.init();
+
+        Blockchain.blockNumber = SEARCHED_BLOCK + 1n;
     });
 
     vm.afterEach(() => {
@@ -132,6 +134,10 @@ await opnet('NativeSwap: Debug', async (vm: OPNetUnit) => {
 
         for (let i = 0; i < MAX_BLOCK_TO_REPLAY; i++) {
             Blockchain.blockNumber += 1n;
+
+            vm.info(`Loading block ${Blockchain.blockNumber}... Loading states...`);
+
+            await loadStates();
 
             vm.info(`Replaying block ${Blockchain.blockNumber}...`);
 
