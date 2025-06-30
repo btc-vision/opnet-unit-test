@@ -1,16 +1,23 @@
 import { Logger } from '@btc-vision/logger';
 import {
-    TransactionDocument,
-    ObjectId,
     BinaryData,
     Decimal128,
-    Int64,
     Event,
     Input,
+    Int64,
+    ObjectId,
     Output,
     ScriptPubKey,
+    TransactionDocument,
 } from './interfaces/RawTransaction.js';
 import { Address } from '@btc-vision/transaction';
+
+import {
+    Blockchain,
+    generateEmptyTransaction,
+    RustContract,
+    Transaction as BitcoinTransaction,
+} from '@btc-vision/unit-test-framework';
 
 export interface ParsedEvent {
     contractAddress: Address;
@@ -36,7 +43,7 @@ export interface ParsedOutput {
 }
 
 export class Transaction extends Logger {
-    readonly logColor = '#0077ff';
+    readonly logColor = '#fde084';
 
     readonly id: string;
     readonly blockHeight: bigint;
@@ -49,7 +56,7 @@ export class Transaction extends Logger {
     readonly contractTweakedPublicKey: Address;
 
     readonly events: ParsedEvent[];
-    readonly from: Buffer;
+    readonly from: Address;
     readonly gasUsed: bigint;
     readonly txId: Buffer;
     readonly index: number;
@@ -82,7 +89,7 @@ export class Transaction extends Logger {
             Transaction.binaryToBuffer(raw.contractTweakedPublicKey),
         );
 
-        this.from = Transaction.binaryToBuffer(raw.from);
+        this.from = new Address(Transaction.binaryToBuffer(raw.from));
         this.gasUsed = Transaction.decimal128ToBigint(raw.gasUsed);
         this.txId = Transaction.binaryToBuffer(raw.id);
         this.index = raw.index;
@@ -152,6 +159,56 @@ export class Transaction extends Logger {
         };
     }
 
+    private static bufferToBinary(buf: Buffer): BinaryData {
+        return {
+            $binary: {
+                base64: buf.toString('base64'),
+                subType: '00',
+            },
+        };
+    }
+
+    public async execute(): Promise<void> {
+        const txId = this.txId.toString('hex');
+
+        //this.debugBright(`Executing transaction ${txId}.`);
+
+        const contract = Blockchain.getContract(this.contractTweakedPublicKey);
+
+        const tx: BitcoinTransaction = generateEmptyTransaction(false);
+        this.createInputs(tx);
+        this.createOutputs(tx);
+
+        Blockchain.transaction = tx;
+
+        const t = Date.now();
+        const result = await contract.execute({
+            calldata: this.calldata,
+            sender: this.from,
+            txOrigin: this.from,
+        });
+
+        if (result.error) {
+            this.fail(
+                `Executed transaction ${txId} for contract ${this.contractAddress}. (Took ${Date.now() - t}ms to execute, ${result.usedGas} gas used)\n\n${result.error.message}\n`,
+            );
+
+            if (this.revert) {
+                this.fail(
+                    `Original error for ${txId}: ${RustContract.decodeRevertData(this.revert)}`,
+                );
+            } else {
+                throw new Error(
+                    `This transaction has no revert in the block you are replaying. This transaction should have passed but it reverted.`,
+                );
+            }
+        } else {
+            this.debug(
+                `Executed transaction ${txId} for contract ${this.contractAddress}. (Took ${Date.now() - t}ms to execute, ${result.usedGas} gas used)`,
+            );
+        }
+    }
+
     public toRaw(): TransactionDocument {
         return {
             _id: { $oid: this.id },
@@ -170,7 +227,7 @@ export class Transaction extends Logger {
                 data: Transaction.bufferToBinary(e.data),
                 type: Transaction.bufferToBinary(e.type),
             })),
-            from: Transaction.bufferToBinary(this.from),
+            from: Transaction.bufferToBinary(this.from.toBuffer()),
             gasUsed: { $numberDecimal: this.gasUsed.toString() },
             id: Transaction.bufferToBinary(this.txId),
             index: this.index,
@@ -203,12 +260,23 @@ export class Transaction extends Logger {
         };
     }
 
-    private static bufferToBinary(buf: Buffer): BinaryData {
-        return {
-            $binary: {
-                base64: buf.toString('base64'),
-                subType: '00',
-            },
-        };
+    private createInputs(tx: BitcoinTransaction): void {
+        for (const input of this.inputs) {
+            tx.addInput(
+                Uint8Array.from(input.originalTransactionId),
+                input.outputTransactionIndex,
+                input.scriptSignature ?? Uint8Array.from([]),
+            );
+        }
+    }
+
+    private createOutputs(tx: BitcoinTransaction): void {
+        for (const output of this.outputs) {
+            tx.addOutput(
+                output.value,
+                output.scriptPubKey.address,
+                Uint8Array.from(Buffer.from(output.scriptPubKey.hex || '', 'hex')),
+            );
+        }
     }
 }

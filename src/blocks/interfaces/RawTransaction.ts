@@ -41,6 +41,7 @@ export interface Output {
     index: number;
     scriptPubKey: ScriptPubKey;
 }
+
 export interface TransactionDocument {
     _id: ObjectId;
     blockHeight: Decimal128;

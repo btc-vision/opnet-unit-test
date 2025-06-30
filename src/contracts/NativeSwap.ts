@@ -426,7 +426,6 @@ export class NativeSwap extends ContractRuntime {
         createFeeOutput(NativeSwap.reservationFees);
 
         const calldata = NativeSwapTypesCoders.encodeReserveParams(this.reserveSelector, params);
-
         const result = await this.execute({
             calldata: calldata.getBuffer(),
         });

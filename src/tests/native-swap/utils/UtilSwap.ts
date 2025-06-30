@@ -8,7 +8,7 @@ import {
     OP_20,
     OPNetUnit,
     StateHandler,
-} from '../../../../../unit-test-framework';
+} from '@btc-vision/unit-test-framework';
 import { createRecipientsOutput } from '../../utils/TransactionUtils.js';
 import { NativeSwapTypesCoders } from '../../../contracts/NativeSwapTypesCoders.js';
 import { BitcoinUtils } from 'opnet';

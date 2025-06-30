@@ -1,8 +1,9 @@
 import { Address } from '@btc-vision/transaction';
-import { Blockchain, OP_20, opnet, OPNetUnit, StateHandler } from '@btc-vision/unit-test-framework';
+import { Blockchain, OP_20, opnet, OPNetUnit } from '@btc-vision/unit-test-framework';
 import { NativeSwap } from '../../contracts/NativeSwap.js';
 import { networks } from '@btc-vision/bitcoin';
-import { cleanupSwap, getStates, tokenDecimals } from './utils/UtilSwap.js';
+import { cleanupSwap, tokenDecimals } from './utils/UtilSwap.js';
+import { BlockReplay } from '../../blocks/BlockReplay.js';
 
 const nativeStatesFile = './states/NativeSwapStates2.json';
 const motoStatesFile = './states/MotoStates2.json';
@@ -33,8 +34,8 @@ await opnet('NativeSwap: Debug', async (vm: OPNetUnit) => {
     Blockchain.msgSender = admin;
     Blockchain.txOrigin = admin;
 
-    const nativeStates = getStates(nativeStatesFile, SEARCHED_BLOCK);
-    const motoStates = getStates(motoStatesFile, SEARCHED_BLOCK);
+    //const nativeStates = getStates(nativeStatesFile, SEARCHED_BLOCK);
+    //const motoStates = getStates(motoStatesFile, SEARCHED_BLOCK);
 
     const nativeSwap: NativeSwap = new NativeSwap(admin, nativeAddy, 2_500_000_000_000_000_000n);
     Blockchain.register(nativeSwap);
@@ -54,11 +55,11 @@ await opnet('NativeSwap: Debug', async (vm: OPNetUnit) => {
 
         Blockchain.blockNumber = SEARCHED_BLOCK + 1n;
 
-        StateHandler.overrideStates(nativeAddy, nativeStates);
+        /*StateHandler.overrideStates(nativeAddy, nativeStates);
         StateHandler.overrideStates(tokenAddress, motoStates);
 
         StateHandler.overrideDeployment(nativeAddy);
-        StateHandler.overrideDeployment(tokenAddress);
+        StateHandler.overrideDeployment(tokenAddress);*/
     });
 
     vm.afterEach(() => {
@@ -71,5 +72,8 @@ await opnet('NativeSwap: Debug', async (vm: OPNetUnit) => {
 
         Blockchain.blockNumber = SEARCHED_BLOCK + 1n;
         Blockchain.network = networks.testnet;
+
+        const block = new BlockReplay(Blockchain.blockNumber);
+        await block.replayBlock();
     });
 });

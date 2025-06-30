@@ -22,13 +22,29 @@ export class BlockReplay extends Logger {
 
     public async replayBlock(): Promise<void> {
         const ready = this.verifyIfAllRequiredContractsArePresent();
-
         if (!ready) {
             this.fail(`Block ${this.blockHeight} replay failed due to missing contracts.`);
             return;
         }
 
         await Promise.resolve();
+
+        this.log(
+            `Block ${this.blockHeight} replay started with ${this.transactions.length} transactions.`,
+        );
+
+        Blockchain.blockNumber = this.blockHeight;
+
+        for (const tx of this.transactions) {
+            try {
+                await tx.execute();
+            } catch (e) {
+                this.fail(
+                    `Block ${this.blockHeight} transaction ${tx.id} execution failed -> ${e}`,
+                );
+                return;
+            }
+        }
     }
 
     private verifyIfAllRequiredContractsArePresent(): boolean {
@@ -55,7 +71,7 @@ export class BlockReplay extends Logger {
     }
 
     private loadTransactions(): void {
-        const json = `./block/${this.blockHeight}.json`;
+        const json = `./blocks/${this.blockHeight}.json`;
         try {
             const data = fs.readFileSync(json, 'utf8');
             const txs = JSON.parse(data) as TransactionDocument[];
