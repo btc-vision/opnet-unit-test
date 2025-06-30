@@ -50,10 +50,11 @@ type ParsedStates = ParsedState[];
 const nativeStatesFile = './states/NativeSwapStates2.json';
 const motoStatesFile = './states/MotoStates2.json';
 
-// listed at:4548512n
-// last valid: 4548533n
+// at 4548512=>queueIndex: 3534 (4548511n ici)
+// at 4548514n => queueIndex: 8644 (4548513n ici)
+// at 4548543n => isActive = false
 
-const SEARCHED_BLOCK: bigint = 4548512n; //4548543n;
+const SEARCHED_BLOCK: bigint = 4548543n; //4548543n;
 function getStates(file: string): FastBigIntMap {
     const data = fs.readFileSync(file, 'utf8');
     const parsedData = JSON.parse(data) as ParsedStates;
