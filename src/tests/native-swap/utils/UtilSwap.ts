@@ -278,7 +278,7 @@ export async function getStates(file: string, SEARCHED_BLOCK: bigint): Promise<F
         return map;
     }
 
-    console.log(`Cache miss - loading states from ${file} at block ${SEARCHED_BLOCK} …`);
+    console.log(`Cache miss - loading states from ${file} at block ${SEARCHED_BLOCK}...`);
 
     const latest: Latest = new Map();
 
