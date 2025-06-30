@@ -13,7 +13,13 @@ import { createRecipientsOutput } from '../../utils/TransactionUtils.js';
 import { NativeSwapTypesCoders } from '../../../contracts/NativeSwapTypesCoders.js';
 import { BitcoinUtils } from 'opnet';
 import { NativeSwap } from '../../../contracts/NativeSwap.js';
-import fs from 'fs';
+import { createReadStream } from 'fs';
+import { chain } from 'stream-chain';
+import streamJson from 'stream-json';
+import streamArrayJson from 'stream-json/streamers/StreamArray';
+
+const streamArray = streamArrayJson.streamArray;
+const parser = streamJson.parser;
 
 export const tokenDecimals = 18;
 
@@ -250,9 +256,32 @@ interface ParsedState {
 
 type ParsedStates = ParsedState[];
 
-export function getStates(file: string, SEARCHED_BLOCK: bigint): FastBigIntMap {
-    const data = fs.readFileSync(file, 'utf8');
-    const parsedData = JSON.parse(data) as ParsedStates;
+export async function getStates(file: string, SEARCHED_BLOCK: bigint): Promise<FastBigIntMap> {
+    console.log(`Loading states from ${file} at block ${SEARCHED_BLOCK}...`);
+
+    const parsedData: ParsedStates = [];
+    await new Promise<void>((resolve, reject) => {
+        const pipeline = chain([
+            createReadStream(file, { encoding: 'utf8' }),
+            parser({ jsonStreaming: true }),
+            streamArray(),
+        ]);
+
+        let count = 0;
+        pipeline.on('data', (data: { value: unknown }) => {
+            count++;
+
+            const value = data.value as ParsedState;
+            parsedData.push(value);
+        });
+
+        pipeline.on('error', reject);
+        pipeline.on('end', () => {
+            console.log(`Parsed ${count} states from ${file}.`);
+
+            resolve();
+        });
+    });
 
     let parsedDeduped: ParsedStates = [];
     const seenAtPointers = new Map<string, { seenAt: number; value: string }>();
@@ -302,7 +331,7 @@ export function getStates(file: string, SEARCHED_BLOCK: bigint): FastBigIntMap {
         const valueHex = Uint8Array.from(Buffer.from(value, 'base64'));
         if (pointerHex.length !== 32 || valueHex.length !== 32) {
             throw new Error(
-                `Invalid state data: Pointer and value must be 32 bytes long. Got ${pointerHex.length} and ${valueHex.length} bytes.`,
+                `Invalid state data: Pointer and value must be 32 bytes long. Got ${pointerHex.length} and ${valueHex.length} bytes.,`,
             );
         }
 
@@ -311,6 +340,8 @@ export function getStates(file: string, SEARCHED_BLOCK: bigint): FastBigIntMap {
 
         map.set(key, pointerValueBigInt);
     }
+
+    console.log(`Loaded ${map.size} states from ${file} at block ${SEARCHED_BLOCK}.`);
 
     return map;
 }

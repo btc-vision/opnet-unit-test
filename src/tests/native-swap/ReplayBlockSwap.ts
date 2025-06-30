@@ -45,11 +45,11 @@ await opnet('NativeSwap: Debug', async (vm: OPNetUnit) => {
     Blockchain.msgSender = admin;
     Blockchain.txOrigin = admin;
 
-    const nativeStates = getStates(nativeStatesFile, SEARCHED_BLOCK);
-    const motoStates = getStates(motoStatesFile, SEARCHED_BLOCK);
-    const pillStates = getStates(pillStatesFile, SEARCHED_BLOCK);
-    const b1tStates = getStates(b1tStatesFile, SEARCHED_BLOCK);
-    const ICHXStates = getStates(ICHXFile, SEARCHED_BLOCK);
+    const nativeStates = await getStates(nativeStatesFile, SEARCHED_BLOCK);
+    const motoStates = await getStates(motoStatesFile, SEARCHED_BLOCK);
+    const pillStates = await getStates(pillStatesFile, SEARCHED_BLOCK);
+    const b1tStates = await getStates(b1tStatesFile, SEARCHED_BLOCK);
+    const ICHXStates = await getStates(ICHXFile, SEARCHED_BLOCK);
 
     const nativeSwap: NativeSwap = new NativeSwap(admin, nativeAddy, 2_500_000_000_000_000_000n);
     Blockchain.register(nativeSwap);
@@ -88,7 +88,7 @@ await opnet('NativeSwap: Debug', async (vm: OPNetUnit) => {
     Blockchain.register(b1t);
 
     const ICHX: OP_20 = new OP_20({
-        file: 'MyToken',
+        file: 'moto2',
         deployer: Address.fromString(
             '0x02bc0f338bb90e546ef42826d8e4d9f272d145ca3a077af2d33d61487b2b0e7934',
         ),
