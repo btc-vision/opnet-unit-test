@@ -139,3 +139,6 @@ out.txt
 scenarios/*.json
 states/*.json
 states
+
+blocks
+blocks/*.json

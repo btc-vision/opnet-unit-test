@@ -54,7 +54,7 @@ const motoStatesFile = './states/MotoStates2.json';
 // at 4548514n => queueIndex: 8644 (4548513n ici)
 // at 4548543n => isActive = false
 
-const SEARCHED_BLOCK: bigint = 4548543n; //4548543n;
+const SEARCHED_BLOCK: bigint = 4548511n; //4548543n;
 function getStates(file: string): FastBigIntMap {
     const data = fs.readFileSync(file, 'utf8');
     const parsedData = JSON.parse(data) as ParsedStates;

@@ -21,6 +21,7 @@
         "test:native:getreserve": "tsx src/tests/native-swap/GetReserve.ts",
         "test:native:reserve": "tsx src/tests/native-swap/Reserve.ts",
         "debug": "tsx src/tests/native-swap/DebugSwap.ts",
+        "replay": "tsx src/tests/native-swap/ReplayBlockSwap.ts",
         "test:native": "npm-run-all test:native:onlyowner test:native:reentrancy test:native:listtoken test:native:purge test:native:addliquidity test:native:fee test:native:getsetfees test:native:getquote test:native:getreserve test:native:reserve",
         "test:userflows:createanewpool": "tsx src/tests/native-swap/userflows/CreateANewPool.ts",
         "test:userflows:Create1000PriorityListingAndReserve": "tsx src/tests/native-swap/userflows/Create1000PriorityListingAndReserve.ts",
