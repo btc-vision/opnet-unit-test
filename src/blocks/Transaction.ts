@@ -187,7 +187,7 @@ export class Transaction extends Logger {
 
         if (result.error) {
             this.fail(
-                `Executed transaction ${txId} for contract ${this.contractAddress}. (Took ${Date.now() - t}ms to execute, ${result.usedGas} gas used)\n\nSIMULATED ERROR:\n${result.error.message}\n\nERROR FROM BLOCK:\n\n${this.revert ? RustContract.decodeRevertData(this.revert) : 'no-revert'}`,
+                `Executed transaction ${txId} for contract ${this.contractAddress}. (Took ${Date.now() - t}ms to execute, ${result.usedGas} gas used)\n\n------ SIMULATED ERROR: ------\n\n${result.error.message}\n\n------ ERROR FROM BLOCK: ------\n\n${this.revert ? RustContract.decodeRevertData(this.revert) : 'no-revert'}\n`,
             );
 
             if (!this.revert) {
