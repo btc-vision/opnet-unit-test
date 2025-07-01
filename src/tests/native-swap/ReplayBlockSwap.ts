@@ -41,6 +41,7 @@ const ICHXAddress: Address = Address.fromString(
 
 const SEARCHED_BLOCK: bigint = 4548511n; //4548543n;
 const MAX_BLOCK_TO_REPLAY: number = 10; // replay one block from SEARCHED_BLOCK
+const KEEP_NEW_STATES: boolean = false; // if true, it won't clear and load the states from the file, it will keep the new computed one.
 
 await opnet('NativeSwap: Debug', async (vm: OPNetUnit) => {
     Blockchain.msgSender = admin;
@@ -93,7 +94,7 @@ await opnet('NativeSwap: Debug', async (vm: OPNetUnit) => {
 
     Blockchain.register(ICHX);
 
-    async function loadStates(): Promise<void> {
+    async function loadStates(block: bigint): Promise<void> {
         StateHandler.purgeAll();
 
         Blockchain.dispose();
@@ -103,13 +104,11 @@ await opnet('NativeSwap: Debug', async (vm: OPNetUnit) => {
 
         await Blockchain.init();
 
-        Blockchain.blockNumber = SEARCHED_BLOCK + 1n;
-
-        const nativeStates = await getStates(nativeStatesFile, SEARCHED_BLOCK);
-        const motoStates = await getStates(motoStatesFile, SEARCHED_BLOCK);
-        const pillStates = await getStates(pillStatesFile, SEARCHED_BLOCK);
-        const b1tStates = await getStates(b1tStatesFile, SEARCHED_BLOCK);
-        const ICHXStates = await getStates(ICHXFile, SEARCHED_BLOCK);
+        const nativeStates = await getStates(nativeStatesFile, block);
+        const motoStates = await getStates(motoStatesFile, block);
+        const pillStates = await getStates(pillStatesFile, block);
+        const b1tStates = await getStates(b1tStatesFile, block);
+        const ICHXStates = await getStates(ICHXFile, block);
 
         StateHandler.overrideStates(nativeAddy, nativeStates);
         StateHandler.overrideStates(motoAddress, motoStates);
@@ -148,7 +147,9 @@ await opnet('NativeSwap: Debug', async (vm: OPNetUnit) => {
 
             vm.info(`Loading block ${Blockchain.blockNumber}... Loading states...`);
 
-            await loadStates();
+            if ((i !== 0 && !KEEP_NEW_STATES) || i === 0) {
+                await loadStates(Blockchain.blockNumber - 1n);
+            }
 
             vm.info(`Replaying block ${Blockchain.blockNumber}...`);
 
@@ -157,7 +158,19 @@ await opnet('NativeSwap: Debug', async (vm: OPNetUnit) => {
                 ignoreUnknownContracts: true,
             });
 
-            await block.replayBlock();
+            const ok = await block.replayBlock();
+            if (!ok) {
+                vm.panic(`Block ${Blockchain.blockNumber} replay failed.`);
+
+                return;
+            }
+
+            // Simulate something at the end of the block.
+
+            const test = await nativeSwap.getReserve({
+                token: motoAddress,
+            });
+            console.log(test);
         }
     });
 });

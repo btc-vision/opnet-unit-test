@@ -24,11 +24,11 @@ export class BlockReplay extends Logger {
         this.loadTransactions();
     }
 
-    public async replayBlock(): Promise<void> {
+    public async replayBlock(): Promise<boolean> {
         const ready = this.verifyIfAllRequiredContractsArePresent();
         if (!ready) {
             this.fail(`Block ${this.blockHeight} replay failed due to missing contracts.`);
-            return;
+            return false;
         }
 
         await Promise.resolve();
@@ -53,9 +53,11 @@ export class BlockReplay extends Logger {
                 this.panic(
                     `Block ${this.blockHeight} transaction ${tx.id} execution failed -> ${e}`,
                 );
-                return;
+                return false;
             }
         }
+
+        return true;
     }
 
     private verifyIfAllRequiredContractsArePresent(): boolean {
