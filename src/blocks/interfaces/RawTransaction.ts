@@ -2,20 +2,13 @@ export interface ObjectId {
     $oid: string;
 }
 
-export interface BinaryData {
-    $binary: {
-        base64: string;
-        subType: string;
-    };
-}
+export type BinaryData = string;
 
 export interface Decimal128 {
     $numberDecimal: string;
 }
 
-export interface Int64 {
-    $numberLong: string;
-}
+export type Int64 = string;
 
 export interface Event {
     contractAddress: BinaryData;

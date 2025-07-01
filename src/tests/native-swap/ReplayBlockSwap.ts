@@ -40,7 +40,7 @@ const ICHXAddress: Address = Address.fromString(
 // at 4548543n => isActive = false
 
 const SEARCHED_BLOCK: bigint = 4548511n; //4548543n;
-const MAX_BLOCK_TO_REPLAY: number = 2; // replay one block from SEARCHED_BLOCK
+const MAX_BLOCK_TO_REPLAY: number = 10; // replay one block from SEARCHED_BLOCK
 
 await opnet('NativeSwap: Debug', async (vm: OPNetUnit) => {
     Blockchain.msgSender = admin;
@@ -94,6 +94,17 @@ await opnet('NativeSwap: Debug', async (vm: OPNetUnit) => {
     Blockchain.register(ICHX);
 
     async function loadStates(): Promise<void> {
+        StateHandler.purgeAll();
+
+        Blockchain.dispose();
+        Blockchain.cleanup();
+
+        cleanupSwap();
+
+        await Blockchain.init();
+
+        Blockchain.blockNumber = SEARCHED_BLOCK + 1n;
+
         const nativeStates = await getStates(nativeStatesFile, SEARCHED_BLOCK);
         const motoStates = await getStates(motoStatesFile, SEARCHED_BLOCK);
         const pillStates = await getStates(pillStatesFile, SEARCHED_BLOCK);

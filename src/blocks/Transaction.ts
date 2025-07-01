@@ -115,7 +115,7 @@ export class Transaction extends Logger {
     }
 
     private static binaryToBuffer(data: BinaryData): Buffer {
-        return Buffer.from(data.$binary.base64, 'base64');
+        return Buffer.from(data, 'base64');
     }
 
     private static decimal128ToBigint(d: Decimal128): bigint {
@@ -123,7 +123,7 @@ export class Transaction extends Logger {
     }
 
     private static int64ToBigint(i: Int64): bigint {
-        return BigInt(i.$numberLong);
+        return BigInt(i);
     }
 
     private static parseEvent(evt: Event): ParsedEvent {
@@ -160,12 +160,7 @@ export class Transaction extends Logger {
     }
 
     private static bufferToBinary(buf: Buffer): BinaryData {
-        return {
-            $binary: {
-                base64: buf.toString('base64'),
-                subType: '00',
-            },
-        };
+        return buf.toString('base64');
     }
 
     public async execute(): Promise<void> {
@@ -331,7 +326,7 @@ export class Transaction extends Logger {
             receipt: Transaction.bufferToBinary(this.receipt),
             receiptProofs: [...this.receiptProofs],
             revert: this.revert ? Transaction.bufferToBinary(this.revert) : null,
-            reward: { $numberLong: this.reward.toString() },
+            reward: this.reward.toString(),
             senderPubKeyHash: Transaction.bufferToBinary(this.senderPubKeyHash),
             specialGasUsed: { $numberDecimal: this.specialGasUsed.toString() },
             wasCompressed: this.wasCompressed,
