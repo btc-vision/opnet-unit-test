@@ -13,7 +13,6 @@ import {
     GetAntibotSettingsResult,
     GetFeesResult,
     GetPriorityQueueCostResult,
-    GetProviderDetailsByIdParams,
     GetProviderDetailsParams,
     GetProviderDetailsResult,
     GetQueueDetailsResult,
@@ -22,8 +21,10 @@ import {
     GetReserveParams,
     GetReserveResult,
     GetStakingContractAddressResult,
+    IsPausedResult,
     ListLiquidityParams,
     ListLiquidityResult,
+    PauseResult,
     RemoveLiquidityParams,
     RemoveLiquidityResult,
     ReserveParams,
@@ -33,6 +34,7 @@ import {
     SetStakingContractAddressParams,
     SwapParams,
     SwapResult,
+    UnpauseResult,
 } from './NativeSwapTypes.js';
 import { NativeSwapTypesCoders } from './NativeSwapTypesCoders.js';
 
@@ -137,6 +139,16 @@ export class NativeSwap extends ContractRuntime {
         `0x${this.abiCoder.encodeSelector('purgeReservationsAndRestoreProviders(address)')}`,
     );
 
+    private readonly pauseSelector: number = Number(`0x${this.abiCoder.encodeSelector('pause()')}`);
+
+    private readonly unpauseSelector: number = Number(
+        `0x${this.abiCoder.encodeSelector('unpause()')}`,
+    );
+
+    private readonly isPausedSelector: number = Number(
+        `0x${this.abiCoder.encodeSelector('isPaused()')}`,
+    );
+
     public constructor(
         deployer: Address,
         address: Address,
@@ -147,6 +159,43 @@ export class NativeSwap extends ContractRuntime {
             deployer: deployer,
             gasLimit,
         });
+    }
+
+    public async pause(): Promise<PauseResult> {
+        const calldata = NativeSwapTypesCoders.encodeDefault(this.pauseSelector);
+
+        const result = await this.execute({
+            calldata: calldata.getBuffer(),
+        });
+
+        if (result.error) throw this.handleError(result.error);
+
+        return NativeSwapTypesCoders.decodePauseResult(result);
+    }
+
+    public async unpause(): Promise<UnpauseResult> {
+        const calldata = NativeSwapTypesCoders.encodeDefault(this.unpauseSelector);
+
+        const result = await this.execute({
+            calldata: calldata.getBuffer(),
+        });
+
+        if (result.error) throw this.handleError(result.error);
+
+        return NativeSwapTypesCoders.decodeUnpauseResult(result);
+    }
+
+    public async isPaused(): Promise<IsPausedResult> {
+        const calldata = NativeSwapTypesCoders.encodeDefault(this.isPausedSelector);
+
+        const result = await this.execute({
+            calldata: calldata.getBuffer(),
+            saveStates: false,
+        });
+
+        if (result.error) throw this.handleError(result.error);
+
+        return NativeSwapTypesCoders.decodeIsPausedResult(result);
     }
 
     public async getLastPurgedBlock(params: Address): Promise<bigint> {
@@ -279,24 +328,6 @@ export class NativeSwap extends ContractRuntime {
     ): Promise<GetProviderDetailsResult> {
         const calldata = NativeSwapTypesCoders.encodeGetProviderDetailsParams(
             this.getProviderDetailsSelector,
-            params,
-        );
-
-        const result = await this.execute({
-            calldata: calldata.getBuffer(),
-            saveStates: false,
-        });
-
-        if (result.error) throw this.handleError(result.error);
-
-        return NativeSwapTypesCoders.decodeGetProviderDetailsResult(result);
-    }
-
-    public async getProviderDetailsById(
-        params: GetProviderDetailsByIdParams,
-    ): Promise<GetProviderDetailsResult> {
-        const calldata = NativeSwapTypesCoders.encodeGetProviderDetailsByIdParams(
-            this.getProviderDetailsByIdSelector,
             params,
         );
 

@@ -1,20 +1,8 @@
 import { Address } from '@btc-vision/transaction';
-import {
-    Assert,
-    Blockchain,
-    gas2BTC,
-    gas2Sat,
-    gas2USD,
-    generateEmptyTransaction,
-    OP_20,
-    opnet,
-    OPNetUnit,
-    Transaction,
-} from '@btc-vision/unit-test-framework';
+import { Assert, Blockchain, OP_20, opnet, OPNetUnit } from '@btc-vision/unit-test-framework';
 import { NativeSwap } from '../../contracts/NativeSwap.js';
 import { networks } from '@btc-vision/bitcoin';
 import { NativeSwapTypesCoders } from '../../contracts/NativeSwapTypesCoders.js';
-import { logLiquidityListedEvent, logTransferEvent } from '../utils/LoggerHelper.js';
 
 const receiver: Address = Blockchain.generateRandomAddress();
 

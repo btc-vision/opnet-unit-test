@@ -20,9 +20,10 @@
         "test:native:getquote": "tsx src/tests/native-swap/GetQuote.ts",
         "test:native:getreserve": "tsx src/tests/native-swap/GetReserve.ts",
         "test:native:reserve": "tsx src/tests/native-swap/Reserve.ts",
+        "test:native:pause": "tsx src/tests/native-swap/Pause.ts",
         "debug": "tsx src/tests/native-swap/DebugSwap.ts --max-old-space-size=8192",
         "replay": "tsx src/tests/native-swap/ReplayBlockSwap.ts --max-old-space-size=8192",
-        "test:native": "npm-run-all test:native:onlyowner test:native:reentrancy test:native:listtoken test:native:purge test:native:addliquidity test:native:fee test:native:getsetfees test:native:getquote test:native:getreserve test:native:reserve",
+        "test:native": "npm-run-all test:native:pause test:native:onlyowner test:native:reentrancy test:native:listtoken test:native:purge test:native:addliquidity test:native:fee test:native:getsetfees test:native:getquote test:native:getreserve test:native:reserve",
         "test:userflows:createanewpool": "tsx src/tests/native-swap/userflows/CreateANewPool.ts",
         "test:userflows:Create1000PriorityListingAndReserve": "tsx src/tests/native-swap/userflows/Create1000PriorityListingAndReserve.ts",
         "test:userflows:CreateAddLiquidity": "tsx src/tests/native-swap/userflows/CreateAddLiquidity.ts",
@@ -44,7 +45,8 @@
         "test:logic": "tsx src/tests/native-swap/Logic.ts",
         "test:swap": "tsx src/tests/native-swap/SwapProblem.ts",
         "test:purgeInvar": "tsx src/tests/native-swap/PurgeInvariant.ts",
-        "test": "npm-run-all test:*"
+        "test": "npm-run-all test:*",
+        "bug": "tsx src/tests/native-swap/ListTokenChangeIndexBug.ts"
     },
     "author": "OP_NET",
     "license": "MIT",

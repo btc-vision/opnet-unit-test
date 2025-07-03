@@ -9,6 +9,7 @@ import {
     AddLiquidityResult,
     CancelListingResult,
     CreatePoolResult,
+    GetProviderDetailsResult,
     GetQuoteResult,
     GetReserveResult,
     IActivateProviderEvent,
@@ -492,4 +493,20 @@ export function logGas(response: CallResponse): void {
             response.usedGas,
         )} BTC, $${gas2USD(response.usedGas)})`,
     );
+}
+
+export function logProviderDetailsResult(result: GetProviderDetailsResult): void {
+    Blockchain.log(``);
+    console.log(`Provider details result`);
+    console.log(`---------------------`);
+    console.log(`id: ${result.id}`);
+    console.log(`liquidity: ${result.liquidity}`);
+    console.log(`isPurged: ${result.isPurged}`);
+    console.log(`purgeIndex: ${result.purgeIndex}`);
+    console.log(`reserved: ${result.reserved}`);
+    console.log(`listedTokenAt: ${result.listedTokenAt}`);
+    console.log(`isActive: ${result.isActive}`);
+    console.log(`queueIndex: ${result.queueIndex}`);
+    console.log(`btcReceiver: ${result.btcReceiver}`);
+    console.log(`isPriority: ${result.isPriority}`);
 }
