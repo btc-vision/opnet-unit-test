@@ -27,7 +27,7 @@ await opnet('NativeSwap: Purging Reservations', async (vm: OPNetUnit) => {
     const nativeAddress: Address = Blockchain.generateRandomAddress();
     const tokenDecimals = 18;
 
-    Blockchain.changeNetwork(bitcoin.networks.regtest);
+    Blockchain.changeNetwork(bitcoin.networks.testnet);
 
     async function createPool(
         floorPrice: bigint,
