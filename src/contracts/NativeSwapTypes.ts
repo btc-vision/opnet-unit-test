@@ -114,6 +114,20 @@ export interface GetFeesResult {
     readonly response: CallResponse;
 }
 
+export interface SetFeesAddressParams {
+    readonly feesAddress: string;
+}
+
+export interface SetFeesAddressResult {
+    readonly result: boolean;
+    readonly response: CallResponse;
+}
+
+export interface GetFeesAddressResult {
+    readonly feesAddress: string;
+    readonly response: CallResponse;
+}
+
 export interface SetStakingContractAddressParams {
     readonly stakingContractAddress: Address;
 }

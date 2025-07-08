@@ -11,6 +11,7 @@ import {
     DecodedReservationEvents,
     GetAntibotSettingsParams,
     GetAntibotSettingsResult,
+    GetFeesAddressResult,
     GetFeesResult,
     GetPriorityQueueCostResult,
     GetProviderDetailsParams,
@@ -41,6 +42,8 @@ import {
     RemoveLiquidityResult,
     ReserveParams,
     ReserveResult,
+    SetFeesAddressParams,
+    SetFeesAddressResult,
     SetFeesParams,
     SetFeesResult,
     SetStakingContractAddressParams,
@@ -300,6 +303,26 @@ export class NativeSwapTypesCoders {
         };
     }
 
+    public static encodeGetFeesAddressParams(selector: number): BinaryWriter {
+        const calldata = new BinaryWriter();
+
+        calldata.writeSelector(selector);
+
+        return calldata;
+    }
+
+    public static decodeGetFeesAddressResult(response: CallResponse): GetFeesAddressResult {
+        if (!response.response) {
+            throw new Error('No response to decode from getFeesAddress');
+        }
+
+        const reader = new BinaryReader(response.response);
+        return {
+            feesAddress: reader.readStringWithLength(),
+            response: response,
+        };
+    }
+
     public static encodeGetStakingContractAddressParams(selector: number): BinaryWriter {
         const calldata = new BinaryWriter();
 
@@ -335,6 +358,31 @@ export class NativeSwapTypesCoders {
     public static decodeSetFeesResult(response: CallResponse): SetFeesResult {
         if (!response.response) {
             throw new Error('No response to decode from setFees');
+        }
+
+        const reader = new BinaryReader(response.response);
+
+        return {
+            result: reader.readBoolean(),
+            response: response,
+        };
+    }
+
+    public static encodeSetFeesAddressParams(
+        selector: number,
+        params: SetFeesAddressParams,
+    ): BinaryWriter {
+        const calldata = new BinaryWriter();
+
+        calldata.writeSelector(selector);
+        calldata.writeStringWithLength(params.feesAddress);
+
+        return calldata;
+    }
+
+    public static decodeSetFeesAddressResult(response: CallResponse): SetFeesAddressResult {
+        if (!response.response) {
+            throw new Error('No response to decode from setFeesAddress');
         }
 
         const reader = new BinaryReader(response.response);

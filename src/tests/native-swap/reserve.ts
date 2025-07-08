@@ -725,6 +725,42 @@ await opnet('Native Swap - Reserve', async (vm: OPNetUnit) => {
         Assert.expect(liquidityReservedEvent.length).toEqual(1);
     });
 
+    await vm.it('should allow a user to reserve and send fees to correct address', async () => {
+        const feesAddress = Blockchain.generateRandomAddress().p2tr(Blockchain.network);
+
+        Blockchain.blockNumber = 999n;
+        await nativeSwap.setFeesAddress({ feesAddress: feesAddress });
+
+        Blockchain.blockNumber = 1000n;
+
+        const result = await helper_reserve(
+            nativeSwap,
+            tokenAddress,
+            userAddress,
+            100000n,
+            0n,
+            false,
+            false,
+            false,
+            2,
+            feesAddress,
+        );
+
+        Assert.expect(result.expectedAmountOut).toEqual(10000000000000000000n);
+        Assert.expect(result.totalSatoshis).toEqual(100000n);
+
+        const reservationCreatedEvent = result.response.events.filter(
+            (e) => e.type === 'ReservationCreated',
+        );
+
+        const liquidityReservedEvent = result.response.events.filter(
+            (e) => e.type === 'LiquidityReserved',
+        );
+
+        Assert.expect(reservationCreatedEvent.length).toEqual(1);
+        Assert.expect(liquidityReservedEvent.length).toEqual(1);
+    });
+
     await vm.it('should reserve liquidity from priority providers first', async () => {
         const provider1 = Blockchain.generateRandomAddress();
         const provider2 = Blockchain.generateRandomAddress();

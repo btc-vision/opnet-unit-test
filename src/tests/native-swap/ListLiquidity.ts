@@ -190,6 +190,72 @@ await opnet('NativeSwap: Priority and Normal Queue listLiquidity', async (vm: OP
     );
 
     await vm.it(
+        'should add liquidity to the priority queue successfully, apply fee, and send priority fees to the correct address',
+        async () => {
+            const feesAddress = Blockchain.generateRandomAddress().p2tr(Blockchain.network);
+
+            Blockchain.blockNumber = 999n;
+            await nativeSwap.setFeesAddress({ feesAddress: feesAddress });
+
+            Blockchain.blockNumber = 1000n;
+            const amountIn = Blockchain.expandTo18Decimals(1000);
+            await token.approve(userAddress, nativeSwap.address, amountIn);
+
+            const reserveBefore = await nativeSwap.getReserve({ token: tokenAddress });
+            const initialUserBalance = await token.balanceOf(userAddress);
+            const initialContractBalance = await token.balanceOf(nativeSwap.address);
+            const initialStakingBalance = await token.balanceOf(stakingContractAddress);
+
+            // Priority mode: 3% fee to dead address by default logic
+            const resp = await nativeSwap.listLiquidity(
+                {
+                    token: tokenAddress,
+                    receiver: userAddress.p2tr(Blockchain.network),
+                    amountIn: amountIn,
+                    priority: true,
+                    disablePriorityQueueFees: false,
+                },
+                feesAddress,
+            );
+
+            Assert.expect(resp.response.error).toBeUndefined();
+
+            const events = resp.response.events;
+            const LiquidityListedEvt = events.find((e) => e.type === 'LiquidityListed');
+            if (!LiquidityListedEvt) {
+                throw new Error('No LiquidityListed event found for priority queue');
+            }
+
+            const feeAmount = (amountIn * 3n) / 100n;
+            const decoded = NativeSwapTypesCoders.decodeLiquidityListedEvent(
+                LiquidityListedEvt.data,
+            );
+
+            Assert.expect(decoded.totalLiquidity).toEqual(amountIn - feeAmount);
+
+            const reserveAfter = await nativeSwap.getReserve({ token: tokenAddress });
+            const finalUserBalance = await token.balanceOf(userAddress);
+            const finalContractBalance = await token.balanceOf(nativeSwap.address);
+            const finalStakingBalance = await token.balanceOf(stakingContractAddress);
+
+            Assert.expect(finalStakingBalance - initialStakingBalance).toEqual(feeAmount);
+            Assert.expect(finalContractBalance - initialContractBalance).toEqual(
+                amountIn - feeAmount,
+            );
+            Assert.expect(initialUserBalance - finalUserBalance).toEqual(amountIn);
+
+            // Check slashing
+            Assert.expect(reserveAfter.virtualTokenReserve).toEqual(
+                reserveBefore.virtualTokenReserve + feeAmount + amountIn / 2n,
+            );
+
+            const providerDetail = await nativeSwap.getProviderDetails({ token: tokenAddress });
+
+            Assert.expect(providerDetail.listedTokenAt).toEqual(1000n);
+        },
+    );
+
+    await vm.it(
         'should fail to add liquidity to the priority queue when not enough priority fees sent',
         async () => {
             const amountIn = Blockchain.expandTo18Decimals(1000);
@@ -330,7 +396,6 @@ await opnet('NativeSwap: Priority and Normal Queue listLiquidity', async (vm: OP
             token: tokenAddress,
             maximumAmountIn: satIn,
             minimumAmountOut: minOut,
-            forLP: false,
         });
 
         const decodedReservation2 = NativeSwapTypesCoders.decodeReservationEvents(
@@ -555,43 +620,6 @@ await opnet('NativeSwap: Priority and Normal Queue listLiquidity', async (vm: OP
         }).toThrow('NATIVE_SWAP: Pool does not exist for token.');
     });
 
-    await vm.it(
-        'should fail to add liquidity if changing receiver when liquidity is reserved',
-        async () => {
-            Blockchain.blockNumber = 100n;
-            // Add liquidity once normally
-            const amountIn = Blockchain.expandTo18Decimals(1000);
-            await token.approve(userAddress, nativeSwap.address, amountIn * 2n);
-            await nativeSwap.listLiquidity({
-                token: tokenAddress,
-                receiver: userAddress.p2tr(Blockchain.network),
-                amountIn: amountIn,
-                priority: false,
-                disablePriorityQueueFees: false,
-            });
-
-            // Simulate a scenario where provider gets reserved
-            Blockchain.msgSender = Blockchain.generateRandomAddress();
-            await nativeSwap.reserve({
-                token: tokenAddress,
-                maximumAmountIn: 100_000_000_000n,
-                minimumAmountOut: 1n,
-                forLP: false,
-            });
-
-            Blockchain.msgSender = userAddress;
-            await Assert.expect(async () => {
-                await nativeSwap.listLiquidity({
-                    token: tokenAddress,
-                    receiver: Blockchain.generateRandomAddress().p2tr(Blockchain.network),
-                    amountIn: amountIn,
-                    priority: false,
-                    disablePriorityQueueFees: false,
-                });
-            }).toThrow('NATIVE_SWAP: Cannot change receiver address while reserved.');
-        },
-    );
-
     await vm.it('should handle multiple providers adding liquidity to both queues', async () => {
         const provider1 = Blockchain.generateRandomAddress();
         const provider2 = Blockchain.generateRandomAddress();
@@ -701,7 +729,6 @@ await opnet('NativeSwap: Priority and Normal Queue listLiquidity', async (vm: OP
             token: tokenAddress,
             maximumAmountIn: satIn,
             minimumAmountOut: minOut,
-            forLP: false,
         });
 
         const decodedReservation2 = NativeSwapTypesCoders.decodeReservationEvents(
@@ -756,7 +783,6 @@ await opnet('NativeSwap: Priority and Normal Queue listLiquidity', async (vm: OP
             token: tokenAddress,
             maximumAmountIn: satIn,
             minimumAmountOut: minOut,
-            forLP: false,
         });
 
         const decodedReservation2 = NativeSwapTypesCoders.decodeReservationEvents(

@@ -89,6 +89,7 @@ export async function helper_reserve(
     log: boolean = true,
     sendUTXO: boolean = false,
     activationDelay: number = 2,
+    feesAddress: string = '',
 ): Promise<ReserveResult> {
     if (log) {
         logAction(`reserve`);
@@ -98,13 +99,15 @@ export async function helper_reserve(
     Blockchain.txOrigin = caller;
     Blockchain.msgSender = caller;
 
-    const result = await nativeSwap.reserve({
-        token: tokenAddress,
-        maximumAmountIn: maximumAmountIn,
-        minimumAmountOut: minimumAmountOut,
-        forLP: forLP,
-        activationDelay: activationDelay,
-    });
+    const result = await nativeSwap.reserve(
+        {
+            token: tokenAddress,
+            maximumAmountIn: maximumAmountIn,
+            minimumAmountOut: minimumAmountOut,
+            activationDelay: activationDelay,
+        },
+        feesAddress,
+    );
 
     if (log) {
         logReserveResult(result);

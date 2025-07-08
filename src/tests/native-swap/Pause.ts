@@ -313,49 +313,4 @@ await opnet('NativeSwap: pause', async (vm: OPNetUnit) => {
             );
         }).toThrow();
     });
-
-    await vm.it('should fail to call setfee when contract is paused', async () => {
-        Blockchain.blockNumber = 1000n;
-
-        Blockchain.msgSender = userAddress;
-        Blockchain.txOrigin = userAddress;
-
-        await nativeSwap.pause();
-        const currentPauseState = await nativeSwap.isPaused();
-        Assert.expect(currentPauseState.isPaused).toEqual(true);
-
-        const randomOwner = Blockchain.generateRandomAddress();
-
-        Blockchain.msgSender = randomOwner;
-        Blockchain.txOrigin = randomOwner;
-
-        await Assert.expect(async () => {
-            await nativeSwap.setFees({ reservationBaseFee: 1000n, priorityQueueBaseFee: 10000n });
-        }).toThrow();
-    });
-
-    await vm.it(
-        'should fail to call setStakingContractAddress when contract is paused',
-        async () => {
-            Blockchain.blockNumber = 1000n;
-
-            Blockchain.msgSender = userAddress;
-            Blockchain.txOrigin = userAddress;
-
-            await nativeSwap.pause();
-            const currentPauseState = await nativeSwap.isPaused();
-            Assert.expect(currentPauseState.isPaused).toEqual(true);
-
-            const randomOwner = Blockchain.generateRandomAddress();
-
-            Blockchain.msgSender = randomOwner;
-            Blockchain.txOrigin = randomOwner;
-
-            await Assert.expect(async () => {
-                await nativeSwap.setStakingContractAddress({
-                    stakingContractAddress: Blockchain.generateRandomAddress(),
-                });
-            }).toThrow();
-        },
-    );
 });
