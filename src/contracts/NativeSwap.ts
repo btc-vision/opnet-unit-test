@@ -14,6 +14,7 @@ import {
     GetFeesAddressResult,
     GetFeesResult,
     GetPriorityQueueCostResult,
+    GetProviderDetailsByIdParams,
     GetProviderDetailsParams,
     GetProviderDetailsResult,
     GetQueueDetailsResult,
@@ -370,6 +371,24 @@ export class NativeSwap extends ContractRuntime {
         params: GetProviderDetailsParams,
     ): Promise<GetProviderDetailsResult> {
         const calldata = NativeSwapTypesCoders.encodeGetProviderDetailsParams(
+            this.getProviderDetailsSelector,
+            params,
+        );
+
+        const result = await this.execute({
+            calldata: calldata.getBuffer(),
+            saveStates: false,
+        });
+
+        if (result.error) throw this.handleError(result.error);
+
+        return NativeSwapTypesCoders.decodeGetProviderDetailsResult(result);
+    }
+
+    public async getProviderDetailsById(
+        params: GetProviderDetailsByIdParams,
+    ): Promise<GetProviderDetailsResult> {
+        const calldata = NativeSwapTypesCoders.encodeGetProviderDetailsByIdParams(
             this.getProviderDetailsSelector,
             params,
         );

@@ -233,7 +233,6 @@ export class NativeSwapTestHelper {
             token: this.tokenAddress,
             maximumAmountIn: amount,
             minimumAmountOut: minimumAmountOut,
-            forLP,
         });
 
         const decoded = NativeSwapTypesCoders.decodeReservationEvents(r.response.events);

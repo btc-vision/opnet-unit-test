@@ -9,6 +9,7 @@ import {
     AddLiquidityResult,
     CancelListingResult,
     CreatePoolResult,
+    GetProviderDetailsParams,
     GetProviderDetailsResult,
     GetQuoteResult,
     GetReserveResult,
@@ -32,6 +33,23 @@ import {
 } from '../../contracts/NativeSwapTypes.js';
 import { NetEvent } from '@btc-vision/transaction';
 import { NativeSwapTypesCoders } from '../../contracts/NativeSwapTypesCoders.js';
+
+export function logGetProviderDetailsResult(result: GetProviderDetailsResult): void {
+    Blockchain.log(``);
+    Blockchain.log(`GetProviderDetailsResult`);
+    Blockchain.log(`----------------`);
+    Blockchain.log(`id: ${result.id}`);
+    Blockchain.log(`liquidity: ${result.liquidity}`);
+    Blockchain.log(`reserved: ${result.reserved}`);
+    Blockchain.log(`isPurged: ${result.isPurged}`);
+    Blockchain.log(`isPriority: ${result.isPriority}`);
+    Blockchain.log(`btcReceiver: ${result.btcReceiver}`);
+    Blockchain.log(`queueIndex: ${result.queueIndex}`);
+    Blockchain.log(`purgeIndex: ${result.purgeIndex}`);
+    Blockchain.log(`isActive: ${result.isActive}`);
+    Blockchain.log(`listedTokenAt: ${result.listedTokenAt}`);
+    Blockchain.log(``);
+}
 
 export function logGetReserveResult(result: GetReserveResult): void {
     Blockchain.log(``);

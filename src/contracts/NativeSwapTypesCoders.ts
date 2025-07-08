@@ -14,6 +14,7 @@ import {
     GetFeesAddressResult,
     GetFeesResult,
     GetPriorityQueueCostResult,
+    GetProviderDetailsByIdParams,
     GetProviderDetailsParams,
     GetProviderDetailsResult,
     GetQueueDetailsResult,
@@ -452,6 +453,18 @@ export class NativeSwapTypesCoders {
 
         calldata.writeSelector(selector);
         calldata.writeAddress(params.token);
+
+        return calldata;
+    }
+
+    public static encodeGetProviderDetailsByIdParams(
+        selector: number,
+        params: GetProviderDetailsByIdParams,
+    ): BinaryWriter {
+        const calldata = new BinaryWriter();
+
+        calldata.writeSelector(selector);
+        calldata.writeU256(params.providerId);
 
         return calldata;
     }
