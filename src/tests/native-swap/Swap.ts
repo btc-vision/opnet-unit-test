@@ -29,49 +29,6 @@ await opnet('Native Swap - Swap', async (vm: OPNetUnit) => {
     const stakingContractAddress: Address = Blockchain.generateRandomAddress();
     let tokenAddress: Address;
 
-    async function flushAndReCreatePool(
-        maxReserve: number,
-        antiBotEnabledFor: number = 0,
-        antiBotMaximumTokensPerReservation: bigint = 0n,
-    ): Promise<void> {
-        nativeSwap.dispose();
-        token.dispose();
-        Blockchain.dispose();
-
-        Blockchain.clearContracts();
-        await Blockchain.init();
-
-        token = await helper_createToken(liquidityOwner, 18, 10_000_000);
-        tokenAddress = token.address;
-
-        await token.mint(userAddress, 10_000_000);
-
-        // Instantiate and register the nativeSwap contract
-        nativeSwap = new NativeSwap(userAddress, nativeSwapAddress);
-        Blockchain.register(nativeSwap);
-        await nativeSwap.init();
-
-        await helper_createPool(
-            nativeSwap,
-            token,
-            liquidityOwner,
-            liquidityOwner,
-            initialLiquidityAmount,
-            floorPrice,
-            initialLiquidityAmountExpanded,
-            maxReserve,
-            false,
-            true,
-            antiBotEnabledFor,
-            antiBotMaximumTokensPerReservation,
-        );
-
-        Blockchain.txOrigin = userAddress;
-        Blockchain.msgSender = userAddress;
-
-        await nativeSwap.setStakingContractAddress({ stakingContractAddress });
-    }
-
     vm.beforeEach(async () => {
         // Reset blockchain state
         Blockchain.dispose();

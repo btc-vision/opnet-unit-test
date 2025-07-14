@@ -2,6 +2,7 @@ import { Address } from '@btc-vision/transaction';
 import { Blockchain, BytecodeManager, ContractRuntime } from '@btc-vision/unit-test-framework';
 import { createFeeOutput } from '../tests/utils/TransactionUtils.js';
 import {
+    ActivateWithdrawModeResult,
     AddLiquidityParams,
     AddLiquidityResult,
     CancelListingParams,
@@ -24,6 +25,7 @@ import {
     GetReserveResult,
     GetStakingContractAddressResult,
     IsPausedResult,
+    IsWithdrawModeActiveResult,
     ListLiquidityParams,
     ListLiquidityResult,
     PauseResult,
@@ -39,6 +41,8 @@ import {
     SwapParams,
     SwapResult,
     UnpauseResult,
+    WithdrawListingParams,
+    WithdrawListingResult,
 } from './NativeSwapTypes.js';
 import { NativeSwapTypesCoders } from './NativeSwapTypesCoders.js';
 import { GetFees } from 'opnet';
@@ -163,6 +167,18 @@ export class NativeSwap extends ContractRuntime {
         `0x${this.abiCoder.encodeSelector('isPaused()')}`,
     );
 
+    private readonly activateWithdrawModeSelector: number = Number(
+        `0x${this.abiCoder.encodeSelector('activateWithdrawMode()')}`,
+    );
+
+    private readonly isWithdrawModeActiveSelector: number = Number(
+        `0x${this.abiCoder.encodeSelector('isWithdrawModeActive()')}`,
+    );
+
+    private readonly withdrawListingSelector: number = Number(
+        `0x${this.abiCoder.encodeSelector('withdrawListing(address)')}`,
+    );
+
     public constructor(
         deployer: Address,
         address: Address,
@@ -210,6 +226,46 @@ export class NativeSwap extends ContractRuntime {
         if (result.error) throw this.handleError(result.error);
 
         return NativeSwapTypesCoders.decodeIsPausedResult(result);
+    }
+
+    public async activateWithdrawMode(): Promise<ActivateWithdrawModeResult> {
+        const calldata = NativeSwapTypesCoders.encodeDefault(this.activateWithdrawModeSelector);
+
+        const result = await this.execute({
+            calldata: calldata.getBuffer(),
+        });
+
+        if (result.error) throw this.handleError(result.error);
+
+        return NativeSwapTypesCoders.decodeActivateWithdrawModeResult(result);
+    }
+
+    public async isWithdrawModeActive(): Promise<IsWithdrawModeActiveResult> {
+        const calldata = NativeSwapTypesCoders.encodeDefault(this.isWithdrawModeActiveSelector);
+
+        const result = await this.execute({
+            calldata: calldata.getBuffer(),
+            saveStates: false,
+        });
+
+        if (result.error) throw this.handleError(result.error);
+
+        return NativeSwapTypesCoders.decodeIsWithdrawModeActiveResult(result);
+    }
+
+    public async withdrawListing(params: WithdrawListingParams): Promise<WithdrawListingResult> {
+        const calldata = NativeSwapTypesCoders.encodeWithdrawListingParams(
+            this.withdrawListingSelector,
+            params,
+        );
+
+        const result = await this.execute({
+            calldata: calldata.getBuffer(),
+        });
+
+        if (result.error) throw this.handleError(result.error);
+
+        return NativeSwapTypesCoders.decodeWithdrawListingResult(result);
     }
 
     public async getLastPurgedBlock(params: Address): Promise<bigint> {

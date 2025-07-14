@@ -1,5 +1,6 @@
 import { Address } from '@btc-vision/transaction';
 import { CallResponse } from '@btc-vision/unit-test-framework';
+import { Add } from 'opnet';
 
 export interface IActivateProviderEvent {
     readonly name: string;
@@ -84,6 +85,14 @@ export interface IReservationPurgedEvent {
     readonly providerCount: number;
 }
 
+export interface IWithdrawListingEvent {
+    readonly name: string;
+    readonly amount: bigint;
+    readonly tokenAddress: Address;
+    readonly providerId: bigint;
+    readonly providerAddress: Address;
+}
+
 export type AllEvent =
     | ILiquidityAddedEvent
     | ILiquidityListedEvent
@@ -96,7 +105,8 @@ export type AllEvent =
     | IListingCanceledEvent
     | IActivateProviderEvent
     | IFulfilledProviderEvent
-    | IReservationPurgedEvent;
+    | IReservationPurgedEvent
+    | IWithdrawListingEvent;
 
 export interface SetFeesParams {
     readonly reservationBaseFee: bigint;
@@ -323,5 +333,22 @@ export interface UnpauseResult {
 
 export interface IsPausedResult {
     readonly isPaused: boolean;
+    readonly response: CallResponse;
+}
+
+export interface ActivateWithdrawModeResult {
+    readonly response: CallResponse;
+}
+
+export interface IsWithdrawModeActiveResult {
+    readonly isWithdrawModeActive: boolean;
+    readonly response: CallResponse;
+}
+
+export interface WithdrawListingParams {
+    readonly token: Address;
+}
+
+export interface WithdrawListingResult {
     readonly response: CallResponse;
 }

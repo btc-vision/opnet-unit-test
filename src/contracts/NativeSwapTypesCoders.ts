@@ -35,7 +35,9 @@ import {
     IReservationPurgedEvent,
     IsPausedResult,
     ISwapExecutedEvent,
+    IsWithdrawModeActiveResult,
     ITransferEvent,
+    IWithdrawListingEvent,
     ListLiquidityParams,
     ListLiquidityResult,
     PauseResult,
@@ -51,6 +53,8 @@ import {
     SwapParams,
     SwapResult,
     UnpauseResult,
+    WithdrawListingParams,
+    WithdrawListingResult,
 } from './NativeSwapTypes.js';
 import { NativeSwap } from './NativeSwap.js';
 import { read } from 'fs';
@@ -61,6 +65,53 @@ export class NativeSwapTypesCoders {
         calldata.writeSelector(selector);
 
         return calldata;
+    }
+
+    public static decodeActivateWithdrawModeResult(response: CallResponse): PauseResult {
+        if (!response.response) {
+            throw new Error('No response to decode from activateWithdrawMode');
+        }
+
+        return {
+            response: response,
+        };
+    }
+
+    public static encodeWithdrawListingParams(
+        selector: number,
+        params: WithdrawListingParams,
+    ): BinaryWriter {
+        const calldata = new BinaryWriter();
+
+        calldata.writeSelector(selector);
+        calldata.writeAddress(params.token);
+
+        return calldata;
+    }
+
+    public static decodeIsWithdrawModeActiveResult(
+        response: CallResponse,
+    ): IsWithdrawModeActiveResult {
+        if (!response.response) {
+            throw new Error('No response to decode from isWithdrawModeActive');
+        }
+
+        const reader = new BinaryReader(response.response);
+
+        return {
+            isWithdrawModeActive: reader.readBoolean(),
+            response: response,
+        };
+    }
+
+    public static decodeWithdrawListingResult(response: CallResponse): WithdrawListingResult {
+        if (!response.response) {
+            throw new Error('No response to decode from withdrawListing');
+        }
+
+        return {
+            response: response,
+        };
     }
 
     public static decodePauseResult(response: CallResponse): PauseResult {
@@ -281,6 +332,15 @@ export class NativeSwapTypesCoders {
         const to = reader.readAddress();
         const amount = reader.readU256();
         return { name: 'TransferEvent', from, to, amount };
+    }
+
+    public static decodeWithdrawListingEvent(data: Uint8Array): IWithdrawListingEvent {
+        const reader = new BinaryReader(data);
+        const amount = reader.readU128();
+        const tokenAddress = reader.readAddress();
+        const providerId = reader.readU256();
+        const providerAddress = reader.readAddress();
+        return { name: 'WithdrawListingEvent', amount, tokenAddress, providerId, providerAddress };
     }
 
     public static encodeGetFeesParams(selector: number): BinaryWriter {
