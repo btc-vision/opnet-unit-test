@@ -94,7 +94,6 @@ await opnet('Native Swap - Staking Pool Fee Collection', async (vm: OPNetUnit) =
             token: tokenAddress,
             maximumAmountIn: swapAmount,
             minimumAmountOut: 1n,
-            forLP: false,
         });
         const preBalance = await token.balanceOf(userAddress);
 

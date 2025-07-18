@@ -1,3 +1,4 @@
+/*
 import { Address } from '@btc-vision/transaction';
 import { Blockchain, gas2USD, OP_20, opnet, OPNetUnit } from '@btc-vision/unit-test-framework';
 import { NativeSwap } from '../../contracts/NativeSwap.js';
@@ -6,10 +7,6 @@ import { NativeSwapTypesCoders } from '../../contracts/NativeSwapTypesCoders.js'
 import { createRecipientsOutput } from '../utils/TransactionUtils.js';
 import { BitcoinUtils } from 'opnet';
 
-/**
- * Here is our candle-chart style data,
- * using the same structure you provided: { x: number; y: number[] }.
- */
 let dataNative: { x: number; y: number[] }[] = [];
 
 let open = 0;
@@ -227,9 +224,6 @@ await opnet('Native Swap - Add Liquidity', async (vm: OPNetUnit) => {
         Blockchain.msgSender = rn;
     }
 
-    /**
-     * Helper: Create the NativeSwap pool with initial liquidity
-     */
     async function createNativeSwapPool(floorPrice: bigint, initLiquidity: bigint): Promise<void> {
         // Approve NativeSwap to take tokens
         Blockchain.txOrigin = userAddress;
@@ -506,11 +500,6 @@ await opnet('Native Swap - Add Liquidity', async (vm: OPNetUnit) => {
         console.log(`Data 3: ${JSON.stringify(dataNative)}`);
     });
 
-    /**
-     * Candle-style logger. Mimics your "logPrice()" example,
-     * pushing data into the global `data` array with shape
-     * { x: blockNumber, y: [-open, -open, -close, -close] }.
-     */
     function recordCandle(
         blockNumber: bigint,
         closeFloat: number,
@@ -532,3 +521,4 @@ await opnet('Native Swap - Add Liquidity', async (vm: OPNetUnit) => {
         open = closeFloat;
     }
 });
+*/

@@ -183,7 +183,6 @@ async function randomReserve(
         token: token.address,
         maximumAmountIn: amount,
         minimumAmountOut: 0n,
-        forLP: forLP,
         activationDelay: 0,
     });
 
@@ -228,7 +227,6 @@ export async function makeReservation(
         token: token.address,
         maximumAmountIn: satIn,
         minimumAmountOut: minOut,
-        forLP: false,
     });
 
     vm.info(

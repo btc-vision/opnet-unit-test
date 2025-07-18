@@ -151,6 +151,7 @@ await opnet('Native Swap - Reentrancy', async (vm: OPNetUnit) => {
         Blockchain.register(nativeSwap);
         await nativeSwap.init();
 
+        Blockchain.blockNumber = 100n;
         await createNativeSwapPool(floorPrice, point25InitialLiquidity);
     });
 
@@ -178,7 +179,7 @@ await opnet('Native Swap - Reentrancy', async (vm: OPNetUnit) => {
 
         await Assert.expect(async () => {
             await swapAll();
-        }).toThrow(/NATIVE_SWAP: LOCKED/);
+        }).toThrow(/OPNET: ReentrancyGuard: LOCKED/);
     });
 
     await vm.it('should revert when trying reentrancy call on swap method', async () => {
@@ -198,7 +199,7 @@ await opnet('Native Swap - Reentrancy', async (vm: OPNetUnit) => {
 
         await Assert.expect(async () => {
             await swapAll();
-        }).toThrow(/NATIVE_SWAP: LOCKED/);
+        }).toThrow(/OPNET: ReentrancyGuard: LOCKED/);
     });
 
     await vm.it('should revert when trying reentrancy call on listLiquidity method', async () => {
@@ -218,7 +219,7 @@ await opnet('Native Swap - Reentrancy', async (vm: OPNetUnit) => {
 
         await Assert.expect(async () => {
             await swapAll();
-        }).toThrow(/NATIVE_SWAP: LOCKED/);
+        }).toThrow(/OPNET: ReentrancyGuard: LOCKED/);
     });
 
     await vm.it('should revert when trying reentrancy call on cancelListing method', async () => {
@@ -238,7 +239,7 @@ await opnet('Native Swap - Reentrancy', async (vm: OPNetUnit) => {
 
         await Assert.expect(async () => {
             await swapAll();
-        }).toThrow(/NATIVE_SWAP: LOCKED/);
+        }).toThrow(/OPNET: ReentrancyGuard: LOCKED/);
     });
 
     await vm.it('should revert when trying reentrancy call on createPool method', async () => {
@@ -258,7 +259,7 @@ await opnet('Native Swap - Reentrancy', async (vm: OPNetUnit) => {
 
         await Assert.expect(async () => {
             await swapAll();
-        }).toThrow(/NATIVE_SWAP: LOCKED/);
+        }).toThrow(/OPNET: ReentrancyGuard: LOCKED/);
     });
 
     await vm.it('should revert when trying reentrancy call on setFees method', async () => {
@@ -278,7 +279,7 @@ await opnet('Native Swap - Reentrancy', async (vm: OPNetUnit) => {
 
         await Assert.expect(async () => {
             await swapAll();
-        }).toThrow(/NATIVE_SWAP: LOCKED/);
+        }).toThrow(/OPNET: ReentrancyGuard: LOCKED/);
     });
 
     await vm.it(
@@ -300,7 +301,7 @@ await opnet('Native Swap - Reentrancy', async (vm: OPNetUnit) => {
 
             await Assert.expect(async () => {
                 await swapAll();
-            }).toThrow(/NATIVE_SWAP: LOCKED/);
+            }).toThrow(/OPNET: ReentrancyGuard: LOCKED/);
         },
     );
 
@@ -321,7 +322,7 @@ await opnet('Native Swap - Reentrancy', async (vm: OPNetUnit) => {
 
         await Assert.expect(async () => {
             await swapAll();
-        }).toThrow(/NATIVE_SWAP: LOCKED/);
+        }).toThrow(/OPNET: ReentrancyGuard: LOCKED/);
     });
 
     await vm.it('should revert when trying reentrancy call on getQuote method', async () => {
@@ -341,7 +342,7 @@ await opnet('Native Swap - Reentrancy', async (vm: OPNetUnit) => {
 
         await Assert.expect(async () => {
             await swapAll();
-        }).toThrow(/NATIVE_SWAP: LOCKED/);
+        }).toThrow(/OPNET: ReentrancyGuard: LOCKED/);
     });
 
     await vm.it(
@@ -363,7 +364,7 @@ await opnet('Native Swap - Reentrancy', async (vm: OPNetUnit) => {
 
             await Assert.expect(async () => {
                 await swapAll();
-            }).toThrow(/NATIVE_SWAP: LOCKED/);
+            }).toThrow(/OPNET: ReentrancyGuard: LOCKED/);
         },
     );
 
@@ -386,7 +387,7 @@ await opnet('Native Swap - Reentrancy', async (vm: OPNetUnit) => {
 
             await Assert.expect(async () => {
                 await swapAll();
-            }).toThrow(/NATIVE_SWAP: LOCKED/);
+            }).toThrow(/OPNET: ReentrancyGuard: LOCKED/);
         },
     );
 
@@ -407,7 +408,7 @@ await opnet('Native Swap - Reentrancy', async (vm: OPNetUnit) => {
 
         await Assert.expect(async () => {
             await swapAll();
-        }).toThrow(/NATIVE_SWAP: LOCKED/);
+        }).toThrow(/OPNET: ReentrancyGuard: LOCKED/);
     });
 
     await vm.it(
@@ -429,7 +430,7 @@ await opnet('Native Swap - Reentrancy', async (vm: OPNetUnit) => {
 
             await Assert.expect(async () => {
                 await swapAll();
-            }).toThrow(/NATIVE_SWAP: LOCKED/);
+            }).toThrow(/OPNET: ReentrancyGuard: LOCKED/);
         },
     );
 
@@ -452,7 +453,7 @@ await opnet('Native Swap - Reentrancy', async (vm: OPNetUnit) => {
 
             await Assert.expect(async () => {
                 await swapAll();
-            }).toThrow(/NATIVE_SWAP: LOCKED/);
+            }).toThrow(/OPNET: ReentrancyGuard: LOCKED/);
         },
     );
 });

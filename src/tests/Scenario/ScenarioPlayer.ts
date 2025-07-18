@@ -187,7 +187,7 @@ export class ScenarioPlayer {
                     new ProviderDetailsInfo(
                         detail.liquidity.toString(),
                         detail.reserved.toString(),
-                        detail.liquidityProvided.toString(),
+                        '0',
                         detail.btcReceiver,
                         Blockchain.msgSender.toString(),
                     ),

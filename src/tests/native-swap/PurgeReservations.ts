@@ -78,7 +78,6 @@ await opnet('NativeSwap: Purging Reservations', async (vm: OPNetUnit) => {
             token: tokenAddress,
             maximumAmountIn: satIn,
             minimumAmountOut: minOut,
-            forLP: false,
         });
 
         Assert.expect(resp.response.error).toBeUndefined();

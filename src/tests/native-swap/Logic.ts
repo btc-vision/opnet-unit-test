@@ -49,7 +49,6 @@ await opnet('Native Swap - Reservation Process', async (vm) => {
             token: testHelper.tokenAddress,
             maximumAmountIn: 100_000_000n,
             minimumAmountOut: 0n,
-            forLP: false,
         });
 
         // Confirm the contract call was successful
@@ -83,7 +82,6 @@ await opnet('Native Swap - Reservation Process', async (vm) => {
                 token: deadTokenAddr, // invalid token
                 maximumAmountIn: 200_000_000n,
                 minimumAmountOut: 0n,
-                forLP: false,
             });
         }, /Invalid token address/i);
     });
@@ -99,7 +97,6 @@ await opnet('Native Swap - Reservation Process', async (vm) => {
                 token: testHelper.tokenAddress,
                 maximumAmountIn: 0n,
                 minimumAmountOut: testHelper.scaleToken(10n),
-                forLP: false,
             });
         }, /Maximum amount in cannot be zero/i);
     });
@@ -116,7 +113,6 @@ await opnet('Native Swap - Reservation Process', async (vm) => {
                 token: testHelper.tokenAddress,
                 maximumAmountIn: 5000n,
                 minimumAmountOut: 0n,
-                forLP: false,
             });
         }, /Requested amount is below minimum trade size/i);
     });
@@ -145,7 +141,6 @@ await opnet('Native Swap - Reservation Process', async (vm) => {
                 token: testHelper.tokenAddress,
                 maximumAmountIn: 200_000_000n,
                 minimumAmountOut: testHelper.scaleToken(1000n),
-                forLP: false,
             });
         }, /Insufficient fees collected/i);
 
@@ -170,7 +165,6 @@ await opnet('Native Swap - Reservation Process', async (vm) => {
                 token: testHelper.tokenAddress,
                 maximumAmountIn: 200_000_000n,
                 minimumAmountOut: testHelper.scaleToken(1000n),
-                forLP: false,
             });
 
             // 2nd reservation should fail
@@ -179,7 +173,6 @@ await opnet('Native Swap - Reservation Process', async (vm) => {
                     token: testHelper.tokenAddress,
                     maximumAmountIn: 300_000_000n,
                     minimumAmountOut: testHelper.scaleToken(1000n),
-                    forLP: false,
                 });
             }, /You already have an active reservation/i);
         },
@@ -196,7 +189,6 @@ await opnet('Native Swap - Reservation Process', async (vm) => {
                 token: testHelper.tokenAddress,
                 maximumAmountIn: 200_000_000n,
                 minimumAmountOut: testHelper.scaleToken(1000n),
-                forLP: false,
             });
 
             // Move blocks so reservation is old
@@ -209,7 +201,6 @@ await opnet('Native Swap - Reservation Process', async (vm) => {
                     token: testHelper.tokenAddress,
                     maximumAmountIn: 300_000_000n,
                     minimumAmountOut: testHelper.scaleToken(1000n),
-                    forLP: false,
                 });
             }, /User is timed out/i);
         });
@@ -228,7 +219,6 @@ await opnet('Native Swap - Reservation Process', async (vm) => {
                 token: testHelper.tokenAddress,
                 maximumAmountIn: 100_000_000n,
                 minimumAmountOut: 999_999_999_999_999_999_999_999_999n, // huge min
-                forLP: false,
             });
         }, /Not enough liquidity reserved/i);
     });
@@ -253,7 +243,6 @@ await opnet('Native Swap - Reservation Process', async (vm) => {
             token: testHelper.tokenAddress,
             maximumAmountIn: 100_000_000n, // 1 BTC
             minimumAmountOut: testHelper.scaleToken(10n), // just ask for 10 tokens min
-            forLP: false,
         });
 
         // That should partially fill from providers A, B, C in normal queue order.
@@ -329,7 +318,7 @@ await opnet('Native Swap - Reservation Process', async (vm) => {
             // TODO: Verify the events for the new reservation
         },
     );
-
+    /*
     await vm.it('should allow forLP reservations and not revert', async () => {
         // The user who will become an LP
         const newLpUser = Blockchain.generateRandomAddress();
@@ -357,5 +346,5 @@ await opnet('Native Swap - Reservation Process', async (vm) => {
         Assert.toBeGreaterThan(decoded.reservation?.expectedAmountOut || 0n, 4_999n);
 
         // TODO: Verify in detail the events data
-    });
+    });*/
 });

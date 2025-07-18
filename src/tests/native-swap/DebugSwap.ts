@@ -297,7 +297,6 @@ await opnet('NativeSwap: Debug', async (vm: OPNetUnit) => {
             token: tokenAddress,
             maximumAmountIn: amount,
             minimumAmountOut: 0n,
-            forLP: forLP,
             activationDelay: 0,
         });
 
@@ -339,7 +338,6 @@ await opnet('NativeSwap: Debug', async (vm: OPNetUnit) => {
             token: tokenAddress,
             maximumAmountIn: satIn,
             minimumAmountOut: minOut,
-            forLP: false,
         });
 
         vm.info(
