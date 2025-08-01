@@ -56,8 +56,6 @@ import {
     WithdrawListingParams,
     WithdrawListingResult,
 } from './NativeSwapTypes.js';
-import { NativeSwap } from './NativeSwap.js';
-import { read } from 'fs';
 
 export class NativeSwapTypesCoders {
     public static encodeDefault(selector: number): BinaryWriter {
@@ -307,6 +305,14 @@ export class NativeSwapTypesCoders {
                 }
                 case 'ReservationPurged': {
                     // Do nothing
+                    break;
+                }
+                case 'Transfer': {
+                    console.log('Purged a provider?', event);
+                    break;
+                }
+                case 'FulfilledProvider': {
+                    console.log('Fulfilled a provider in the reserve?', event);
                     break;
                 }
                 default: {
