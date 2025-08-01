@@ -110,30 +110,33 @@ await opnet('Native Swap - Swap', async (vm: OPNetUnit) => {
 
         await Assert.expect(async () => {
             await helper_swap(nativeSwap, tokenAddress, Blockchain.generateRandomAddress(), false);
-        }).toThrow(`No valid reservation for this address.`);
+        }).toThrow(`NATIVE_SWAP: Reservation does not have any providers.`);
     });
 
-    await vm.it('should fail to swap when reservation is expired for a user', async () => {
-        Blockchain.blockNumber = 1000n;
-        const reserveAddress = Blockchain.generateRandomAddress();
+    await vm.it(
+        'should fail to swap when reservation is expired for a user and no utxo sent to provider',
+        async () => {
+            Blockchain.blockNumber = 1000n;
+            const reserveAddress = Blockchain.generateRandomAddress();
 
-        const result = await helper_reserve(
-            nativeSwap,
-            tokenAddress,
-            reserveAddress,
-            100000n,
-            0n,
-            false,
-            false,
-            false,
-            2,
-        );
+            const result = await helper_reserve(
+                nativeSwap,
+                tokenAddress,
+                reserveAddress,
+                100000n,
+                0n,
+                false,
+                false,
+                false,
+                2,
+            );
 
-        Blockchain.blockNumber = 1011n;
-        await Assert.expect(async () => {
-            await helper_swap(nativeSwap, tokenAddress, reserveAddress, false);
-        }).toThrow(`No valid reservation for this address.`);
-    });
+            Blockchain.blockNumber = 1011n;
+            await Assert.expect(async () => {
+                await helper_swap(nativeSwap, tokenAddress, reserveAddress, false);
+            }).toThrow(`NATIVE_SWAP: Not able to fulfill expired reservation.`);
+        },
+    );
 
     await vm.it('should fail to swap when reservation is consumed in the same block', async () => {
         Blockchain.blockNumber = 1000n;
@@ -203,7 +206,7 @@ await opnet('Native Swap - Swap', async (vm: OPNetUnit) => {
         Blockchain.blockNumber = 1003n;
         await Assert.expect(async () => {
             await helper_swap(nativeSwap, tokenAddress, reserveAddress, false);
-        }).toThrow(`No valid reservation for this address.`);
+        }).toThrow(`NATIVE_SWAP: Reservation already swapped.`);
     });
 
     await vm.it(
@@ -639,4 +642,111 @@ await opnet('Native Swap - Swap', async (vm: OPNetUnit) => {
         const reserverBalance = await token.balanceOf(reserveAddress);
         Assert.expect(reserverBalance).toEqual(expectedAmount - expectedFees);
     });
+
+    await vm.it(
+        'should complete swap successfully with the initial provider and expired reservation',
+        async () => {
+            Blockchain.blockNumber = 1000n;
+            const reserveAddress = Blockchain.generateRandomAddress();
+
+            // Get initial reserve and provider values
+            const getReserveResult1 = await helper_getReserve(nativeSwap, token, false);
+            Assert.expect(getReserveResult1.reservedLiquidity).toEqual(0n);
+
+            Blockchain.msgSender = liquidityOwner;
+            Blockchain.txOrigin = liquidityOwner;
+            const getProviderDetailsResult1 = await helper_getProviderDetails(
+                nativeSwap,
+                tokenAddress,
+                false,
+            );
+            Assert.expect(getProviderDetailsResult1.liquidity).toEqual(1000000000000000000000000n);
+            Assert.expect(getProviderDetailsResult1.reserved).toEqual(0n);
+
+            // Reserve from initial provider
+            const reserveResult = await helper_reserve(
+                nativeSwap,
+                tokenAddress,
+                reserveAddress,
+                100000n,
+                0n,
+                false,
+                false,
+                true,
+                0,
+            );
+            Assert.expect(reserveResult.expectedAmountOut).toEqual(10000000000000000000n);
+            const expectedAmount = reserveResult.expectedAmountOut;
+
+            const decodedReservation = NativeSwapTypesCoders.decodeReservationEvents(
+                reserveResult.response.events,
+            );
+
+            Assert.expect(decodedReservation.recipients.length).toEqual(1);
+            Assert.expect(decodedReservation.recipients[0].address).toEqual(
+                liquidityOwner.p2tr(Blockchain.network),
+            );
+            Assert.expect(decodedReservation.recipients[0].amount).toEqual(100000n);
+
+            const getReserveResult2 = await helper_getReserve(nativeSwap, token, false);
+            Assert.expect(getReserveResult2.reservedLiquidity).toEqual(10000000000000000000n);
+
+            Blockchain.msgSender = liquidityOwner;
+            Blockchain.txOrigin = liquidityOwner;
+            const getProviderDetailsResult2 = await helper_getProviderDetails(
+                nativeSwap,
+                tokenAddress,
+                false,
+            );
+
+            Assert.expect(getProviderDetailsResult2.liquidity).toEqual(1000000000000000000000000n);
+            Assert.expect(getProviderDetailsResult2.reserved).toEqual(10000000000000000000n);
+
+            // Swap
+            Blockchain.blockNumber = 1022n;
+
+            const swapResult = await helper_swap(nativeSwap, tokenAddress, reserveAddress, true);
+            const expectedFees = 20000000000000000n;
+
+            const decodedSwapEvent = NativeSwapTypesCoders.decodeSwapExecutedEvent(
+                swapResult.response.events[swapResult.response.events.length - 1].data,
+            );
+
+            Assert.expect(decodedSwapEvent.amountIn).toEqual(100000n);
+            Assert.expect(decodedSwapEvent.amountOut).toEqual(expectedAmount - expectedFees);
+
+            const getReserveResult3 = await helper_getReserve(nativeSwap, token, false);
+            Assert.expect(getReserveResult3.reservedLiquidity).toEqual(
+                getReserveResult1.reservedLiquidity,
+            );
+
+            Assert.expect(getReserveResult3.virtualTokenReserve).toEqual(
+                getReserveResult1.virtualTokenReserve + expectedFees / 2n,
+            );
+
+            Assert.expect(getReserveResult3.liquidity).toEqual(
+                getReserveResult1.liquidity - expectedFees / 2n - (expectedAmount - expectedFees),
+            );
+
+            Blockchain.msgSender = liquidityOwner;
+            Blockchain.txOrigin = liquidityOwner;
+            const getProviderDetailsResult3 = await helper_getProviderDetails(
+                nativeSwap,
+                tokenAddress,
+                false,
+            );
+            Assert.expect(getProviderDetailsResult3.liquidity).toEqual(
+                getProviderDetailsResult1.liquidity - expectedAmount,
+            );
+            Assert.expect(getProviderDetailsResult3.reserved).toEqual(
+                getProviderDetailsResult3.reserved,
+            );
+
+            const stakingContractBalance = await token.balanceOf(stakingContractAddress);
+            Assert.expect(stakingContractBalance).toEqual(expectedFees / 2n);
+
+            const reserverBalance = await token.balanceOf(reserveAddress);
+            Assert.expect(reserverBalance).toEqual(expectedAmount - expectedFees);
+        },
+    );
 });
