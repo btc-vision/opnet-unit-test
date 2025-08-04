@@ -158,12 +158,13 @@ export async function helper_swap(
         logSwapResult(result);
     }
 
-    const swapEvent = NativeSwapTypesCoders.decodeSwapExecutedEvent(
-        result.response.events[result.response.events.length - 1].data,
-    );
+    const swapEvt = result.response.events.find((event) => event.type === 'SwapExecuted');
+    if (swapEvt) {
+        const swapEvent = NativeSwapTypesCoders.decodeSwapExecutedEvent(swapEvt.data);
 
-    if (log) {
-        logSwapExecutedEvent(swapEvent);
+        if (log) {
+            logSwapExecutedEvent(swapEvent);
+        }
     }
 
     // Reset
@@ -322,4 +323,11 @@ export async function helper_getQuote(
     }
 
     return quoteResult;
+}
+
+export async function helper_getBalance(
+    token: OP_20,
+    stakingContractAddress: Address,
+): Promise<bigint> {
+    return await token.balanceOf(stakingContractAddress);
 }

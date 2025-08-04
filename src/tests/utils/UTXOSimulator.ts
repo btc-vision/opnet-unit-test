@@ -19,6 +19,7 @@ export function generateEmptyTransaction(): Transaction {
 export function createRecipientUTXOs(recipients: Recipient[]): void {
     // Create a new transaction.
     const tx: Transaction = generateEmptyTransaction();
+
     for (let i = 0; i < recipients.length; i++) {
         const recipient = recipients[i];
         tx.addOutput(recipient.amount, recipient.address);
