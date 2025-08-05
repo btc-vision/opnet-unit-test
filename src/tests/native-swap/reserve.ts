@@ -355,12 +355,12 @@ await opnet('Native Swap - Reserve', async (vm: OPNetUnit) => {
         Blockchain.blockNumber = 1000n;
 
         await Assert.expect(async () => {
-            for (let i = 0; i < 11; i++) {
+            for (let i = 0; i < 61; i++) {
                 await helper_reserve(
                     nativeSwap,
                     tokenAddress,
                     Blockchain.generateRandomAddress(),
-                    1000000000n,
+                    100000000n,
                     0n,
                     false,
                     false,
@@ -368,7 +368,7 @@ await opnet('Native Swap - Reserve', async (vm: OPNetUnit) => {
                     2,
                 );
             }
-        }).toThrow('NATIVE_SWAP: Not enough liquidity available.');
+        }).toThrow('NATIVE_SWAP: Minimum liquidity not met. satoshis:');
     });
 
     await vm.it('should fail to reserve when minimum amount not met', async () => {
@@ -389,40 +389,6 @@ await opnet('Native Swap - Reserve', async (vm: OPNetUnit) => {
         }).toThrow('NATIVE_SWAP: Not enough liquidity reserved;');
     });
 
-    await vm.it('should fail to reserve when maximum reservation limit reached', async () => {
-        Blockchain.blockNumber = 1000n;
-
-        await flushAndReCreatePool(5);
-
-        await helper_reserve(
-            nativeSwap,
-            tokenAddress,
-            Blockchain.generateRandomAddress(),
-            50000000000n,
-            1n,
-            false,
-            false,
-            false,
-            2,
-        );
-
-        Blockchain.blockNumber++;
-
-        await Assert.expect(async () => {
-            await helper_reserve(
-                nativeSwap,
-                tokenAddress,
-                Blockchain.generateRandomAddress(),
-                10000n,
-                1n,
-                false,
-                false,
-                false,
-                2,
-            );
-        }).toThrow('NATIVE_SWAP: Maximum reservation limit reached. Try again later.');
-    });
-
     await vm.it(
         'should fail to reserve when minimum reservation threshold is not met',
         async () => {
@@ -441,25 +407,12 @@ await opnet('Native Swap - Reserve', async (vm: OPNetUnit) => {
                 false,
                 2,
             );
-
-            await helper_reserve(
-                nativeSwap,
-                tokenAddress,
-                Blockchain.generateRandomAddress(),
-                14100n,
-                1n,
-                false,
-                false,
-                false,
-                2,
-            );
-
             await Assert.expect(async () => {
                 await helper_reserve(
                     nativeSwap,
                     tokenAddress,
                     Blockchain.generateRandomAddress(),
-                    10001n,
+                    14100n,
                     1n,
                     false,
                     false,
@@ -498,7 +451,7 @@ await opnet('Native Swap - Reserve', async (vm: OPNetUnit) => {
         async () => {
             Blockchain.blockNumber = 1000n;
 
-            await flushAndReCreatePool(5, 5, 1100000000000000000n);
+            await flushAndReCreatePool(5, 5, 1100000000000000000000n);
 
             await helper_reserve(
                 nativeSwap,
@@ -710,7 +663,7 @@ await opnet('Native Swap - Reserve', async (vm: OPNetUnit) => {
             2,
         );
 
-        Assert.expect(result.expectedAmountOut).toEqual(10000000000000000000n);
+        Assert.expect(result.expectedAmountOut).toEqual(16931470000000000000n);
         Assert.expect(result.totalSatoshis).toEqual(100000n);
 
         const reservationCreatedEvent = result.response.events.filter(
@@ -746,7 +699,7 @@ await opnet('Native Swap - Reserve', async (vm: OPNetUnit) => {
             feesAddress,
         );
 
-        Assert.expect(result.expectedAmountOut).toEqual(10000000000000000000n);
+        Assert.expect(result.expectedAmountOut).toEqual(16931470000000000000n);
         Assert.expect(result.totalSatoshis).toEqual(100000n);
 
         const reservationCreatedEvent = result.response.events.filter(

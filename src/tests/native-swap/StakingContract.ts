@@ -2,7 +2,7 @@ import { Address } from '@btc-vision/transaction';
 import { Assert, Blockchain, opnet, OPNetUnit } from '@btc-vision/unit-test-framework';
 import { NativeSwap } from '../../contracts/NativeSwap.js';
 
-await opnet('Native Swap - Stacking contract', async (vm: OPNetUnit) => {
+await opnet('Native Swap - Staking contract', async (vm: OPNetUnit) => {
     let nativeSwap: NativeSwap;
 
     const userAddress: Address = Blockchain.generateRandomAddress();

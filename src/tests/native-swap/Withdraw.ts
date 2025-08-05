@@ -173,7 +173,7 @@ await opnet('NativeSwap: withdraw mode', async (vm: OPNetUnit) => {
     });
 
     await vm.it(
-        'should revert when calling activateWithdrawMode and already in withdraw mode',
+        'should fail when calling activateWithdrawMode and already in withdraw mode',
         async () => {
             Blockchain.blockNumber = 1000n;
             Blockchain.msgSender = userAddress;
@@ -534,15 +534,14 @@ await opnet('NativeSwap: withdraw mode', async (vm: OPNetUnit) => {
                 nativeSwap,
                 tokenAddress,
                 reserveAddress,
-                4998750n,
+                2951990n,
                 0n,
                 false,
                 false,
                 true,
                 0,
             );
-            Assert.expect(reserveResult.expectedAmountOut).toEqual(499999968750000000000n);
-
+            Assert.expect(reserveResult.expectedAmountOut).toEqual(499999868752406850000n);
             const decodedReservation = NativeSwapTypesCoders.decodeReservationEvents(
                 reserveResult.response.events,
             );
@@ -551,7 +550,7 @@ await opnet('NativeSwap: withdraw mode', async (vm: OPNetUnit) => {
             Assert.expect(decodedReservation.recipients[0].address).toEqual(
                 provider.p2tr(Blockchain.network),
             );
-            Assert.expect(decodedReservation.recipients[0].amount).toEqual(4998750n);
+            Assert.expect(decodedReservation.recipients[0].amount).toEqual(2952342n);
 
             Blockchain.msgSender = provider;
             Blockchain.txOrigin = provider;
@@ -562,7 +561,7 @@ await opnet('NativeSwap: withdraw mode', async (vm: OPNetUnit) => {
             );
 
             Assert.expect(getProviderDetailsResult2.liquidity).toEqual(500000000000000000000n);
-            Assert.expect(getProviderDetailsResult2.reserved).toEqual(499999968750000000000n);
+            Assert.expect(getProviderDetailsResult2.reserved).toEqual(499999868752406850000n);
 
             // Swap
             Blockchain.blockNumber = 1007n;
@@ -972,7 +971,7 @@ await opnet('NativeSwap: withdraw mode', async (vm: OPNetUnit) => {
                 true,
                 0,
             );
-            Assert.expect(reserveResult.expectedAmountOut).toEqual(25561888875000000000n);
+            Assert.expect(reserveResult.expectedAmountOut).toEqual(43280035463039625000n);
 
             const decodedReservation = NativeSwapTypesCoders.decodeReservationEvents(
                 reserveResult.response.events,

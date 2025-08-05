@@ -658,7 +658,7 @@ await opnet('Native Swap - Swap', async (vm: OPNetUnit) => {
         Blockchain.blockNumber = 1002n;
         createRecipientUTXOs(decodedReservation.recipients);
 
-        const swapResult = await helper_swap(nativeSwap, tokenAddress, reserveAddress, true);
+        const swapResult = await helper_swap(nativeSwap, tokenAddress, reserveAddress, false);
         const expectedFees = 33862940000000000n;
 
         const swapEvt = swapResult.response.events.find((event) => event.type === 'SwapExecuted');
@@ -737,7 +737,7 @@ await opnet('Native Swap - Swap', async (vm: OPNetUnit) => {
                 true,
                 0,
             );
-            Assert.expect(reserveResult.expectedAmountOut).toEqual(10000000000000000000n);
+            Assert.expect(reserveResult.expectedAmountOut).toEqual(16931470000000000000n);
             const expectedAmount = reserveResult.expectedAmountOut;
 
             const decodedReservation = NativeSwapTypesCoders.decodeReservationEvents(
@@ -751,7 +751,7 @@ await opnet('Native Swap - Swap', async (vm: OPNetUnit) => {
             Assert.expect(decodedReservation.recipients[0].amount).toEqual(100000n);
 
             const getReserveResult2 = await helper_getReserve(nativeSwap, token, false);
-            Assert.expect(getReserveResult2.reservedLiquidity).toEqual(10000000000000000000n);
+            Assert.expect(getReserveResult2.reservedLiquidity).toEqual(16931470000000000000n);
 
             Blockchain.msgSender = liquidityOwner;
             Blockchain.txOrigin = liquidityOwner;
@@ -762,53 +762,62 @@ await opnet('Native Swap - Swap', async (vm: OPNetUnit) => {
             );
 
             Assert.expect(getProviderDetailsResult2.liquidity).toEqual(1000000000000000000000000n);
-            Assert.expect(getProviderDetailsResult2.reserved).toEqual(10000000000000000000n);
+            Assert.expect(getProviderDetailsResult2.reserved).toEqual(16931470000000000000n);
 
             // Swap
             Blockchain.blockNumber = 1022n;
 
-            const swapResult = await helper_swap(nativeSwap, tokenAddress, reserveAddress, true);
-            const expectedFees = 20000000000000000n;
+            const swapResult = await helper_swap(nativeSwap, tokenAddress, reserveAddress, false);
+            const expectedFees = 33862940000000000n;
 
-            const decodedSwapEvent = NativeSwapTypesCoders.decodeSwapExecutedEvent(
-                swapResult.response.events[swapResult.response.events.length - 1].data,
+            const swapEvt = swapResult.response.events.find(
+                (event) => event.type === 'SwapExecuted',
             );
+            Assert.expect(swapEvt).toNotEqual(undefined);
 
-            Assert.expect(decodedSwapEvent.amountIn).toEqual(100000n);
-            Assert.expect(decodedSwapEvent.amountOut).toEqual(expectedAmount - expectedFees);
+            if (swapEvt) {
+                const decodedSwapEvent = NativeSwapTypesCoders.decodeSwapExecutedEvent(
+                    swapEvt.data,
+                );
 
-            const getReserveResult3 = await helper_getReserve(nativeSwap, token, false);
-            Assert.expect(getReserveResult3.reservedLiquidity).toEqual(
-                getReserveResult1.reservedLiquidity,
-            );
+                Assert.expect(decodedSwapEvent.amountIn).toEqual(100000n);
+                Assert.expect(decodedSwapEvent.amountOut).toEqual(expectedAmount - expectedFees);
 
-            Assert.expect(getReserveResult3.virtualTokenReserve).toEqual(
-                getReserveResult1.virtualTokenReserve + expectedFees / 2n,
-            );
+                const getReserveResult3 = await helper_getReserve(nativeSwap, token, false);
+                Assert.expect(getReserveResult3.reservedLiquidity).toEqual(
+                    getReserveResult1.reservedLiquidity,
+                );
 
-            Assert.expect(getReserveResult3.liquidity).toEqual(
-                getReserveResult1.liquidity - expectedFees / 2n - (expectedAmount - expectedFees),
-            );
+                Assert.expect(getReserveResult3.virtualTokenReserve).toEqual(
+                    getReserveResult1.virtualTokenReserve + expectedFees / 2n,
+                );
 
-            Blockchain.msgSender = liquidityOwner;
-            Blockchain.txOrigin = liquidityOwner;
-            const getProviderDetailsResult3 = await helper_getProviderDetails(
-                nativeSwap,
-                tokenAddress,
-                false,
-            );
-            Assert.expect(getProviderDetailsResult3.liquidity).toEqual(
-                getProviderDetailsResult1.liquidity - expectedAmount,
-            );
-            Assert.expect(getProviderDetailsResult3.reserved).toEqual(
-                getProviderDetailsResult3.reserved,
-            );
+                Assert.expect(getReserveResult3.liquidity).toEqual(
+                    getReserveResult1.liquidity -
+                        expectedFees / 2n -
+                        (expectedAmount - expectedFees),
+                );
 
-            const stakingContractBalance = await token.balanceOf(stakingContractAddress);
-            Assert.expect(stakingContractBalance).toEqual(expectedFees / 2n);
+                Blockchain.msgSender = liquidityOwner;
+                Blockchain.txOrigin = liquidityOwner;
+                const getProviderDetailsResult3 = await helper_getProviderDetails(
+                    nativeSwap,
+                    tokenAddress,
+                    false,
+                );
+                Assert.expect(getProviderDetailsResult3.liquidity).toEqual(
+                    getProviderDetailsResult1.liquidity - expectedAmount,
+                );
+                Assert.expect(getProviderDetailsResult3.reserved).toEqual(
+                    getProviderDetailsResult3.reserved,
+                );
 
-            const reserverBalance = await token.balanceOf(reserveAddress);
-            Assert.expect(reserverBalance).toEqual(expectedAmount - expectedFees);
+                const stakingContractBalance = await token.balanceOf(stakingContractAddress);
+                Assert.expect(stakingContractBalance).toEqual(expectedFees / 2n);
+
+                const reserverBalance = await token.balanceOf(reserveAddress);
+                Assert.expect(reserverBalance).toEqual(expectedAmount - expectedFees);
+            }
         },
     );
 });

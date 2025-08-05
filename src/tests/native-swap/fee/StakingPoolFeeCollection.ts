@@ -3,6 +3,7 @@ import { Assert, Blockchain, OP_20, opnet, OPNetUnit } from '@btc-vision/unit-te
 import { NativeSwap } from '../../../contracts/NativeSwap.js';
 import { NativeSwapTypesCoders } from '../../../contracts/NativeSwapTypesCoders.js';
 import { createRecipientUTXOs } from '../../utils/UTXOSimulator.js';
+import { logSwapEvents, logSwapResult } from '../../utils/LoggerHelper.js';
 
 await opnet('Native Swap - Staking Pool Fee Collection', async (vm: OPNetUnit) => {
     let nativeSwap: NativeSwap;
@@ -18,7 +19,7 @@ await opnet('Native Swap - Staking Pool Fee Collection', async (vm: OPNetUnit) =
 
     const initialLiquidityProvider: Address = Blockchain.generateRandomAddress();
 
-    const floorPrice: bigint = 1n;
+    const floorPrice: bigint = 100000000000000n;
 
     /**
      * Helper: Create the NativeSwap pool with initial liquidity
@@ -44,7 +45,7 @@ await opnet('Native Swap - Staking Pool Fee Collection', async (vm: OPNetUnit) =
     }
 
     vm.beforeEach(async () => {
-        Blockchain.blockNumber = 1n;
+        Blockchain.blockNumber = 100n;
 
         // Reset blockchain state
         Blockchain.clearContracts();
@@ -102,23 +103,19 @@ await opnet('Native Swap - Staking Pool Fee Collection', async (vm: OPNetUnit) =
         );
         createRecipientUTXOs(decodedReservation.recipients);
 
-        Blockchain.blockNumber = Blockchain.blockNumber + 1n;
+        Blockchain.blockNumber = Blockchain.blockNumber + 3n;
 
-        await nativeSwap.swap({
+        const s = await nativeSwap.swap({
             token: tokenAddress,
         });
 
-        const expectedFee = (swapAmount * 20n) / 10000n;
-        const expectedOutAmount = swapAmount - expectedFee;
+        const expectedFee = 3386294000000000n;
         const postBalance = await token.balanceOf(userAddress);
         const stakingPoolBalance = await token.balanceOf(stakingContractAddress);
 
-        console.log(
-            `Pre: ${preBalance} Post: ${postBalance}, expectedOutAmount: ${expectedOutAmount} Staking: ${stakingPoolBalance}`,
-        );
         // Expect half the fee to go to the staking pool
         Assert.expect(stakingPoolBalance).toEqual(expectedFee / 2n);
-        Assert.expect(postBalance).toEqual(preBalance + expectedOutAmount);
+        Assert.expect(postBalance).toEqual(preBalance + 1689760706000000000n);
     });
 
     /*

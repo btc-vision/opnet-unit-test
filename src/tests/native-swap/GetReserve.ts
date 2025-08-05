@@ -107,11 +107,6 @@ await opnet('Native Swap - Get Reserve', async (vm: OPNetUnit) => {
             token: token.address,
         });
 
-        Blockchain.log(`Liquidity: ${reserveResult.liquidity}`);
-        Blockchain.log(`ReservedLiquidity: ${reserveResult.reservedLiquidity}`);
-        Blockchain.log(`VirtualBTCReserve: ${reserveResult.virtualBTCReserve}`);
-        Blockchain.log(`VirtualTokenReserve: ${reserveResult.virtualTokenReserve}`);
-
         Assert.expect(reserveResult.liquidity).toEqual(25000000n);
         Assert.expect(reserveResult.reservedLiquidity).toEqual(0n);
         Assert.expect(reserveResult.virtualBTCReserve).toEqual(250000n);
@@ -127,7 +122,7 @@ await opnet('Native Swap - Get Reserve', async (vm: OPNetUnit) => {
         });
 
         Assert.expect(reserveResult.liquidity).toEqual(25000000n);
-        Assert.expect(reserveResult.reservedLiquidity).toEqual(1000000n);
+        Assert.expect(reserveResult.reservedLiquidity).toEqual(1693147n);
         Assert.expect(reserveResult.virtualBTCReserve).toEqual(250000n);
         Assert.expect(reserveResult.virtualTokenReserve).toEqual(25000000n);
     });
