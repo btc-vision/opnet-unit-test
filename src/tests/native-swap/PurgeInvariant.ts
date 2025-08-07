@@ -55,7 +55,7 @@ await opnet('NativeSwap – purge watermark invariants', async (vm: OPNetUnit) =
         Blockchain.blockNumber = 40n;
         await swap.purgeReservationsAndRestoreProviders(tokenAddr);
 
-        const len = Number(await swap.getBlocksWithReservationsLength(tokenAddr));
+        const len = await swap.getBlocksWithReservationsLength(tokenAddr);
         Assert.expect(len).toEqual(0);
     }
 
@@ -81,7 +81,7 @@ await opnet('NativeSwap – purge watermark invariants', async (vm: OPNetUnit) =
         await swap.purgeReservationsAndRestoreProviders(tokenAddr);
     }
 
-    const queueLen = async () => Number(await swap.getBlocksWithReservationsLength(tokenAddr));
+    const queueLen = async () => await swap.getBlocksWithReservationsLength(tokenAddr);
     const watermark = async () => await swap.getLastPurgedBlock(tokenAddr);
 
     await vm.it('A) watermark advances after a full purge', async () => {

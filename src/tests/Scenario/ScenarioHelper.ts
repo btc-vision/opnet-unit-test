@@ -303,7 +303,7 @@ export class ScenarioHelper {
 
         if (this.verbose) {
             logAction(`approve`);
-            logParameter(`tokenName`, tokenName.toString());
+            logParameter(`tokenName`, tokenName);
             logParameter(`owner`, owner.toString());
             logParameter(`spender`, spender.toString());
             logParameter(`amount`, amount.toString());
@@ -345,7 +345,7 @@ export class ScenarioHelper {
 
         if (this.verbose) {
             logAction(`transfer`);
-            logParameter(`tokenName`, tokenName.toString());
+            logParameter(`tokenName`, tokenName);
             logParameter(`from`, from.toString());
             logParameter(`to`, to.toString());
             logParameter(`amount`, amount.toString());
@@ -393,7 +393,7 @@ export class ScenarioHelper {
         if (this.verbose) {
             logAction(`createPool`);
             logParameter(`context`, op.context);
-            logParameter(`tokenName`, tokenName.toString());
+            logParameter(`tokenName`, tokenName);
             logParameter(`floorPrice`, floorPrice.toString());
             logParameter(`initialLiquidity`, initialLiquidity.toString());
             logParameter(`receiver`, receiver);
@@ -470,8 +470,8 @@ export class ScenarioHelper {
         if (this.verbose) {
             logAction(`createPool`);
             logParameter(`context`, op.context);
-            logParameter(`tokenName`, tokenName.toString());
-            logParameter(`signature`, signature.toString());
+            logParameter(`tokenName`, tokenName);
+            logParameter(`signature`, signature);
             logParameter(`amount`, amount.toString());
             logParameter(`nonce`, nonce.toString());
             logParameter(`floorPrice`, floorPrice.toString());
@@ -548,7 +548,7 @@ export class ScenarioHelper {
         if (this.verbose) {
             logAction(`reserve`);
             logParameter(`context`, op.context);
-            logParameter(`tokenName`, tokenName.toString());
+            logParameter(`tokenName`, tokenName);
             logParameter(`maximumAmountIn`, maximumAmountIn.toString());
             logParameter(`minimumAmountOut`, minimumAmountOut.toString());
             logParameter(`forLP`, forLP.toString());
@@ -676,7 +676,7 @@ export class ScenarioHelper {
         if (this.verbose) {
             logAction(`listToken`);
             logParameter(`context`, op.context);
-            logParameter(`tokenName`, tokenName.toString());
+            logParameter(`tokenName`, tokenName);
             logParameter(`amountIn`, amountIn.toString());
             logParameter(`receiver`, receiver);
             logParameter(`priority`, priority.toString());
@@ -1212,7 +1212,7 @@ export class ScenarioHelper {
         if (this.verbose) {
             logAction(`getQuote`);
             logParameter(`context`, op.context);
-            logParameter(`tokenName`, tokenName.toString());
+            logParameter(`tokenName`, tokenName);
             logParameter(`satoshiIn`, satoshiIn.toString());
         }
 

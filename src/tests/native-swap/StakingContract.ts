@@ -55,11 +55,9 @@ await opnet('Native Swap - Staking contract', async (vm: OPNetUnit) => {
     await vm.it('should correctly sets stacking contract address when owner', async () => {
         const stackingContractAddress: Address = Blockchain.generateRandomAddress();
 
-        const result = await nativeSwap.setStakingContractAddress({
+        await nativeSwap.setStakingContractAddress({
             stakingContractAddress: stackingContractAddress,
         });
-
-        Assert.expect(result.result).toEqual(true);
 
         const getResult = await nativeSwap.getStakingContractAddress();
 

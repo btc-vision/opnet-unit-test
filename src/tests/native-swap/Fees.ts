@@ -76,12 +76,10 @@ await opnet('Native Swap - Fees', async (vm: OPNetUnit) => {
     });
 
     await vm.it('should correctly sets fees when owner and in ranges', async () => {
-        const setFeesResult = await nativeSwap.setFees({
+        await nativeSwap.setFees({
             priorityQueueBaseFee: 500000n,
             reservationBaseFee: 1000n,
         });
-
-        Assert.expect(setFeesResult.result).toEqual(true);
 
         const getFeesResult = await nativeSwap.getFees();
 

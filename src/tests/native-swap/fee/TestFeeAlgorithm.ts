@@ -36,7 +36,7 @@ class DynamicFee {
         }
 
         const logScaled = Math.log(Number(ratio)) * 1_000_000; //this.approximateLog(ratio);
-        const alphaComponent = Math.floor((this.alpha * Number(logScaled)) / 1_000_000);
+        const alphaComponent = Math.floor((this.alpha * logScaled) / 1_000_000);
         console.log(`Alpha component: ${alphaComponent}`);
 
         feeBP += alphaComponent;
