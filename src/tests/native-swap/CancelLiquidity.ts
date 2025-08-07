@@ -167,6 +167,34 @@ await opnet('NativeSwap: Priority and Normal Queue cancelliquidity', async (vm: 
     );
 
     await vm.it(
+        'should fail to cancel liquidity when provider has active reservation',
+        async () => {
+            Blockchain.blockNumber = 1000n;
+            const provider = Blockchain.generateRandomAddress();
+            Blockchain.msgSender = provider;
+            Blockchain.txOrigin = provider;
+            await listToken(10000, false, provider);
+
+            Blockchain.blockNumber += 2n;
+            const buyer = Blockchain.generateRandomAddress();
+            Blockchain.msgSender = buyer;
+            Blockchain.txOrigin = buyer;
+            await reserve(10000n);
+
+            await Assert.expect(async () => {
+                Blockchain.blockNumber += 1n;
+                Blockchain.msgSender = provider;
+                Blockchain.txOrigin = provider;
+                await nativeSwap.cancelListing({
+                    token: tokenAddress,
+                });
+            }).toThrow(
+                'NATIVE_SWAP: You can no longer cancel this listing. Someone have active reservations on your liquidity.',
+            );
+        },
+    );
+
+    await vm.it(
         'should fail to cancel liquidity when provider is providing liquidity',
         async () => {
             Blockchain.blockNumber = 1000n;
@@ -194,33 +222,35 @@ await opnet('NativeSwap: Priority and Normal Queue cancelliquidity', async (vm: 
         },
     );
 
-    await vm.it(
-        'should fail to cancel liquidity when provider has active reservation',
-        async () => {
-            Blockchain.blockNumber = 1000n;
-            const provider = Blockchain.generateRandomAddress();
+    await vm.it('should fail to cancel liquidity when provider is purged', async () => {
+        Blockchain.blockNumber = 1000n;
+        const provider = Blockchain.generateRandomAddress();
+        Blockchain.msgSender = provider;
+        Blockchain.txOrigin = provider;
+        await listToken(10000, false, provider);
+
+        Blockchain.blockNumber += 2n;
+        const buyer = Blockchain.generateRandomAddress();
+        Blockchain.msgSender = buyer;
+        Blockchain.txOrigin = buyer;
+        await reserve(10000n);
+
+        Blockchain.blockNumber += 12n;
+        Blockchain.msgSender = Blockchain.generateRandomAddress();
+        Blockchain.txOrigin = Blockchain.msgSender;
+        await listToken(10000, false, Blockchain.msgSender);
+
+        await Assert.expect(async () => {
+            Blockchain.blockNumber += 1n;
             Blockchain.msgSender = provider;
             Blockchain.txOrigin = provider;
-            await listToken(10000, false, provider);
-
-            Blockchain.blockNumber += 2n;
-            const buyer = Blockchain.generateRandomAddress();
-            Blockchain.msgSender = buyer;
-            Blockchain.txOrigin = buyer;
-            await reserve(10000n);
-
-            await Assert.expect(async () => {
-                Blockchain.blockNumber += 1n;
-                Blockchain.msgSender = provider;
-                Blockchain.txOrigin = provider;
-                await nativeSwap.cancelListing({
-                    token: tokenAddress,
-                });
-            }).toThrow(
-                'NATIVE_SWAP: You can no longer cancel this listing. Someone have active reservations on your liquidity.',
-            );
-        },
-    );
+            await nativeSwap.cancelListing({
+                token: tokenAddress,
+            });
+        }).toThrow(
+            'NATIVE_SWAP: You cannot cancel this listing at the moment. Provider is in the purge queue and needs to be purged first.',
+        );
+    });
 
     await vm.it(
         'should fail to cancel liquidity when provider is initial liquidity provider',

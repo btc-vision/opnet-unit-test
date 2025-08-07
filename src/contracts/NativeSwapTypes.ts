@@ -1,5 +1,6 @@
 import { Address } from '@btc-vision/transaction';
 import { CallResponse } from '@btc-vision/unit-test-framework';
+import { Add } from 'opnet';
 
 export interface IActivateProviderEvent {
     readonly name: string;
@@ -84,6 +85,14 @@ export interface IReservationPurgedEvent {
     readonly providerCount: number;
 }
 
+export interface IWithdrawListingEvent {
+    readonly name: string;
+    readonly amount: bigint;
+    readonly tokenAddress: Address;
+    readonly providerId: bigint;
+    readonly providerAddress: Address;
+}
+
 export type AllEvent =
     | ILiquidityAddedEvent
     | ILiquidityListedEvent
@@ -96,7 +105,8 @@ export type AllEvent =
     | IListingCanceledEvent
     | IActivateProviderEvent
     | IFulfilledProviderEvent
-    | IReservationPurgedEvent;
+    | IReservationPurgedEvent
+    | IWithdrawListingEvent;
 
 export interface SetFeesParams {
     readonly reservationBaseFee: bigint;
@@ -110,6 +120,20 @@ export interface SetFeesResult {
 export interface GetFeesResult {
     readonly reservationBaseFee: bigint;
     readonly priorityQueueBaseFee: bigint;
+    readonly response: CallResponse;
+}
+
+export interface SetFeesAddressParams {
+    readonly feesAddress: string;
+}
+
+export interface SetFeesAddressResult {
+    readonly result: boolean;
+    readonly response: CallResponse;
+}
+
+export interface GetFeesAddressResult {
+    readonly feesAddress: string;
     readonly response: CallResponse;
 }
 
@@ -136,11 +160,14 @@ export interface GetProviderDetailsParams {
     readonly token: Address;
 }
 
+export interface GetProviderDetailsByIdParams {
+    readonly providerId: bigint;
+}
+
 export interface GetProviderDetailsResult {
     readonly id: bigint;
     readonly liquidity: bigint;
     readonly reserved: bigint;
-    readonly liquidityProvided: bigint;
     readonly btcReceiver: string;
     readonly response: CallResponse;
     readonly queueIndex: number;
@@ -154,19 +181,12 @@ export interface GetProviderDetailsResult {
 export interface GetQueueDetailsResult {
     readonly lastPurgedBlock: bigint;
     readonly blockWithReservationsLength: number;
-    readonly removalQueueLength: number;
-    readonly removalQueueStartingIndex: number;
     readonly priorityQueueLength: number;
     readonly priorityQueueStartingIndex: number;
     readonly standardQueueLength: number;
     readonly standardQueueStartingIndex: number;
     readonly priorityPurgeQueueLength: number;
     readonly standardPurgeQueueLength: number;
-    readonly removalPurgeQueueLength: number;
-    readonly priorityPurgeQueue: number[];
-    readonly normalPurgeQueue: number[];
-    readonly priorityQueue: bigint[];
-    readonly normalQueue: bigint[];
 }
 
 export interface GetPriorityQueueCostResult {
@@ -234,7 +254,6 @@ export interface ReserveParams {
     readonly token: Address;
     readonly maximumAmountIn: bigint;
     readonly minimumAmountOut: bigint;
-    readonly forLP: boolean; // = false
     readonly activationDelay?: number;
 }
 
@@ -295,4 +314,34 @@ export interface DecodedReservationEvents {
     readonly recipients: Recipient[];
     reservation?: IReservationCreatedEvent;
     totalSatoshis: bigint;
+}
+
+export interface PauseResult {
+    readonly response: CallResponse;
+}
+
+export interface UnpauseResult {
+    readonly response: CallResponse;
+}
+
+export interface IsPausedResult {
+    readonly isPaused: boolean;
+    readonly response: CallResponse;
+}
+
+export interface ActivateWithdrawModeResult {
+    readonly response: CallResponse;
+}
+
+export interface IsWithdrawModeActiveResult {
+    readonly isWithdrawModeActive: boolean;
+    readonly response: CallResponse;
+}
+
+export interface WithdrawListingParams {
+    readonly token: Address;
+}
+
+export interface WithdrawListingResult {
+    readonly response: CallResponse;
 }

@@ -83,6 +83,7 @@ await opnet('Native Swap - Get Quote', async (vm: OPNetUnit) => {
     });
 
     await vm.it('should scale token price correctly', async () => {
+        Blockchain.blockNumber = 1000n;
         const initialLiquidityProvider: Address = Blockchain.generateRandomAddress();
         const provider: Address = Blockchain.generateRandomAddress();
 
@@ -99,20 +100,18 @@ await opnet('Native Swap - Get Quote', async (vm: OPNetUnit) => {
         );
 
         await helper_reserve(nativeSwap, tokenAddress, provider, 10000n, 0n, false, false, false);
-        await helper_getReserve(nativeSwap, token, false);
 
         Blockchain.blockNumber = Blockchain.blockNumber + 3n;
-
         await helper_swap(nativeSwap, tokenAddress, provider, false);
-        await helper_getReserve(nativeSwap, token, false);
 
         const quote = await helper_getQuote(nativeSwap, token, 1000n, false);
-        Assert.expect(quote.tokensOut).toEqual(1000n);
+        Assert.expect(quote.tokensOut).toEqual(1693n);
     });
 
     await vm.it(
         'should return the values when liquidity is greater than the number of tokens for the given amount',
         async () => {
+            Blockchain.blockNumber = 1000n;
             await helper_createPool(
                 nativeSwap,
                 token,
@@ -130,15 +129,16 @@ await opnet('Native Swap - Get Quote', async (vm: OPNetUnit) => {
                 satoshisIn: 500n,
             });
 
-            Assert.expect(getQuoteResult.price / getQuoteResult.scale).toEqual(10n);
+            Assert.expect(getQuoteResult.price / getQuoteResult.scale).toEqual(16n);
             Assert.expect(getQuoteResult.requiredSatoshis).toEqual(500n);
-            Assert.expect(getQuoteResult.tokensOut).toEqual(5000n);
+            Assert.expect(getQuoteResult.tokensOut).toEqual(8465n);
         },
     );
 
     await vm.it(
         'should return a capped values when liquidity is smaller than the number of tokens for the given amount',
         async () => {
+            Blockchain.blockNumber = 1000n;
             await helper_createPool(
                 nativeSwap,
                 token,
@@ -156,8 +156,8 @@ await opnet('Native Swap - Get Quote', async (vm: OPNetUnit) => {
                 satoshisIn: 1700000n,
             });
 
-            Assert.expect(getQuoteResult.price / getQuoteResult.scale).toEqual(10n);
-            Assert.expect(getQuoteResult.requiredSatoshis).toEqual(200000n);
+            Assert.expect(getQuoteResult.price / getQuoteResult.scale).toEqual(16n);
+            Assert.expect(getQuoteResult.requiredSatoshis).toEqual(118123n);
             Assert.expect(getQuoteResult.tokensOut).toEqual(2000000n);
         },
     );
@@ -165,6 +165,7 @@ await opnet('Native Swap - Get Quote', async (vm: OPNetUnit) => {
     await vm.it(
         'should return a capped values when liquidity is smaller than the number of tokens and there is reservation for the given amount',
         async () => {
+            Blockchain.blockNumber = 1000n;
             await helper_createPool(
                 nativeSwap,
                 token,
@@ -190,9 +191,9 @@ await opnet('Native Swap - Get Quote', async (vm: OPNetUnit) => {
 
             const result = await helper_getQuote(nativeSwap, token, 1700000n, false);
 
-            Assert.expect(result.price / result.scale).toEqual(10n);
-            Assert.expect(result.requiredSatoshis).toEqual(190000n);
-            Assert.expect(result.tokensOut).toEqual(1900000n);
+            Assert.expect(result.price / result.scale).toEqual(16n);
+            Assert.expect(result.requiredSatoshis).toEqual(108123n);
+            Assert.expect(result.tokensOut).toEqual(1830686n);
         },
     );
 });

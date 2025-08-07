@@ -11,8 +11,10 @@ import {
     DecodedReservationEvents,
     GetAntibotSettingsParams,
     GetAntibotSettingsResult,
+    GetFeesAddressResult,
     GetFeesResult,
     GetPriorityQueueCostResult,
+    GetProviderDetailsByIdParams,
     GetProviderDetailsParams,
     GetProviderDetailsResult,
     GetQueueDetailsResult,
@@ -31,24 +33,118 @@ import {
     IListingCanceledEvent,
     IReservationCreatedEvent,
     IReservationPurgedEvent,
+    IsPausedResult,
     ISwapExecutedEvent,
+    IsWithdrawModeActiveResult,
     ITransferEvent,
+    IWithdrawListingEvent,
     ListLiquidityParams,
     ListLiquidityResult,
+    PauseResult,
     RemoveLiquidityParams,
     RemoveLiquidityResult,
     ReserveParams,
     ReserveResult,
+    SetFeesAddressParams,
+    SetFeesAddressResult,
     SetFeesParams,
     SetFeesResult,
     SetStakingContractAddressParams,
     SwapParams,
     SwapResult,
+    UnpauseResult,
+    WithdrawListingParams,
+    WithdrawListingResult,
 } from './NativeSwapTypes.js';
-import { NativeSwap } from './NativeSwap.js';
-import { read } from 'fs';
 
 export class NativeSwapTypesCoders {
+    public static encodeDefault(selector: number): BinaryWriter {
+        const calldata = new BinaryWriter();
+        calldata.writeSelector(selector);
+
+        return calldata;
+    }
+
+    public static decodeActivateWithdrawModeResult(response: CallResponse): PauseResult {
+        if (!response.response) {
+            throw new Error('No response to decode from activateWithdrawMode');
+        }
+
+        return {
+            response: response,
+        };
+    }
+
+    public static encodeWithdrawListingParams(
+        selector: number,
+        params: WithdrawListingParams,
+    ): BinaryWriter {
+        const calldata = new BinaryWriter();
+
+        calldata.writeSelector(selector);
+        calldata.writeAddress(params.token);
+
+        return calldata;
+    }
+
+    public static decodeIsWithdrawModeActiveResult(
+        response: CallResponse,
+    ): IsWithdrawModeActiveResult {
+        if (!response.response) {
+            throw new Error('No response to decode from isWithdrawModeActive');
+        }
+
+        const reader = new BinaryReader(response.response);
+
+        return {
+            isWithdrawModeActive: reader.readBoolean(),
+            response: response,
+        };
+    }
+
+    public static decodeWithdrawListingResult(response: CallResponse): WithdrawListingResult {
+        if (!response.response) {
+            throw new Error('No response to decode from withdrawListing');
+        }
+
+        return {
+            response: response,
+        };
+    }
+
+    public static decodePauseResult(response: CallResponse): PauseResult {
+        if (!response.response) {
+            throw new Error('No response to decode from pause');
+        }
+
+        return {
+            response: response,
+        };
+    }
+
+    public static decodeUnpauseResult(response: CallResponse): UnpauseResult {
+        if (!response.response) {
+            throw new Error('No response to decode from unpause');
+        }
+
+        return {
+            response: response,
+        };
+    }
+
+    public static decodeIsPausedResult(response: CallResponse): IsPausedResult {
+        if (!response.response) {
+            throw new Error('No response to decode from isPaused');
+        }
+
+        const reader = new BinaryReader(response.response);
+
+        return {
+            isPaused: reader.readBoolean(),
+            response: response,
+        };
+    }
+
     public static decodeGetLastPurgedBlockResult(response: CallResponse): bigint {
         if (!response.response) {
             throw new Error('No response to decode from getLastPurgedBlock');
@@ -211,6 +307,14 @@ export class NativeSwapTypesCoders {
                     // Do nothing
                     break;
                 }
+                case 'Transfer': {
+                    console.log('Purged a provider?', event);
+                    break;
+                }
+                case 'FulfilledProvider': {
+                    console.log('Fulfilled a provider in the reserve?', event);
+                    break;
+                }
                 default: {
                     throw new Error(`Unknown event type: ${event.type}`);
                 }
@@ -236,6 +340,15 @@ export class NativeSwapTypesCoders {
         return { name: 'TransferEvent', from, to, amount };
     }
 
+    public static decodeWithdrawListingEvent(data: Uint8Array): IWithdrawListingEvent {
+        const reader = new BinaryReader(data);
+        const amount = reader.readU128();
+        const tokenAddress = reader.readAddress();
+        const providerId = reader.readU256();
+        const providerAddress = reader.readAddress();
+        return { name: 'WithdrawListingEvent', amount, tokenAddress, providerId, providerAddress };
+    }
+
     public static encodeGetFeesParams(selector: number): BinaryWriter {
         const calldata = new BinaryWriter();
 
@@ -253,6 +366,26 @@ export class NativeSwapTypesCoders {
         return {
             reservationBaseFee: reader.readU64(),
             priorityQueueBaseFee: reader.readU64(),
+            response: response,
+        };
+    }
+
+    public static encodeGetFeesAddressParams(selector: number): BinaryWriter {
+        const calldata = new BinaryWriter();
+
+        calldata.writeSelector(selector);
+
+        return calldata;
+    }
+
+    public static decodeGetFeesAddressResult(response: CallResponse): GetFeesAddressResult {
+        if (!response.response) {
+            throw new Error('No response to decode from getFeesAddress');
+        }
+
+        const reader = new BinaryReader(response.response);
+        return {
+            feesAddress: reader.readStringWithLength(),
             response: response,
         };
     }
@@ -295,6 +428,31 @@ export class NativeSwapTypesCoders {
         }
 
         return {
+            response: response,
+        };
+    }
+
+    public static encodeSetFeesAddressParams(
+        selector: number,
+        params: SetFeesAddressParams,
+    ): BinaryWriter {
+        const calldata = new BinaryWriter();
+
+        calldata.writeSelector(selector);
+        calldata.writeStringWithLength(params.feesAddress);
+
+        return calldata;
+    }
+
+    public static decodeSetFeesAddressResult(response: CallResponse): SetFeesAddressResult {
+        if (!response.response) {
+            throw new Error('No response to decode from setFeesAddress');
+        }
+
+        const reader = new BinaryReader(response.response);
+
+        return {
+            result: reader.readBoolean(),
             response: response,
         };
     }
@@ -359,6 +517,18 @@ export class NativeSwapTypesCoders {
         return calldata;
     }
 
+    public static encodeGetProviderDetailsByIdParams(
+        selector: number,
+        params: GetProviderDetailsByIdParams,
+    ): BinaryWriter {
+        const calldata = new BinaryWriter();
+
+        calldata.writeSelector(selector);
+        calldata.writeU256(params.providerId);
+
+        return calldata;
+    }
+
     public static decodeGetProviderDetailsResult(response: CallResponse): GetProviderDetailsResult {
         if (!response.response) {
             throw new Error('No response to decode from getProviderDetails');
@@ -370,7 +540,6 @@ export class NativeSwapTypesCoders {
             id: reader.readU256(),
             liquidity: reader.readU128(),
             reserved: reader.readU128(),
-            liquidityProvided: reader.readU128(),
             btcReceiver: reader.readStringWithLength(),
             response: response,
             queueIndex: reader.readU32(),
@@ -382,26 +551,6 @@ export class NativeSwapTypesCoders {
         };
     }
 
-    private static decodePurgeQueue(reader: BinaryReader, length: number): number[] {
-        const result: number[] = [];
-
-        for (let i: number = 0; i < length; i++) {
-            result.push(reader.readU32());
-        }
-
-        return result;
-    }
-
-    private static decodeQueue(reader: BinaryReader, length: number): bigint[] {
-        const result: bigint[] = [];
-
-        for (let i: number = 0; i < length; i++) {
-            result.push(reader.readU256());
-        }
-
-        return result;
-    }
-
     public static decodeGetQueueDetailsResult(response: CallResponse): GetQueueDetailsResult {
         if (!response.response) {
             throw new Error('No response to decode from getQueueDetails');
@@ -410,38 +559,22 @@ export class NativeSwapTypesCoders {
         const reader = new BinaryReader(response.response);
         const lastPurgedBlock = reader.readU64();
         const blockWithReservationsLength = reader.readU32();
-        const removalQueueLength = reader.readU32();
-        const removalQueueStartingIndex = reader.readU32();
         const priorityQueueLength = reader.readU32();
         const priorityQueueStartingIndex = reader.readU32();
         const standardQueueLength = reader.readU32();
         const standardQueueStartingIndex = reader.readU32();
         const priorityPurgeQueueLength = reader.readU32();
         const standardPurgeQueueLength = reader.readU32();
-        const removalPurgeQueueLength = reader.readU32();
 
         return {
             lastPurgedBlock: lastPurgedBlock,
             blockWithReservationsLength: blockWithReservationsLength,
-            removalQueueLength: removalQueueLength,
-            removalQueueStartingIndex: removalQueueStartingIndex,
             priorityQueueLength: priorityQueueLength,
             priorityQueueStartingIndex: priorityQueueStartingIndex,
             standardQueueLength: standardQueueLength,
             standardQueueStartingIndex: standardQueueStartingIndex,
             priorityPurgeQueueLength: priorityPurgeQueueLength,
             standardPurgeQueueLength: standardPurgeQueueLength,
-            removalPurgeQueueLength: removalPurgeQueueLength,
-            priorityPurgeQueue: NativeSwapTypesCoders.decodePurgeQueue(
-                reader,
-                priorityPurgeQueueLength,
-            ),
-            normalPurgeQueue: NativeSwapTypesCoders.decodePurgeQueue(
-                reader,
-                standardPurgeQueueLength,
-            ),
-            priorityQueue: NativeSwapTypesCoders.decodeQueue(reader, priorityQueueLength),
-            normalQueue: NativeSwapTypesCoders.decodeQueue(reader, standardQueueLength),
         };
     }
 
@@ -601,7 +734,6 @@ export class NativeSwapTypesCoders {
         calldata.writeAddress(params.token);
         calldata.writeU64(params.maximumAmountIn);
         calldata.writeU256(params.minimumAmountOut);
-        calldata.writeBoolean(params.forLP);
         calldata.writeU8(params.activationDelay ?? 2);
 
         return calldata;

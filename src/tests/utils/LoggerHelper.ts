@@ -9,6 +9,8 @@ import {
     AddLiquidityResult,
     CancelListingResult,
     CreatePoolResult,
+    GetProviderDetailsParams,
+    GetProviderDetailsResult,
     GetQuoteResult,
     GetReserveResult,
     IActivateProviderEvent,
@@ -31,6 +33,23 @@ import {
 } from '../../contracts/NativeSwapTypes.js';
 import { NetEvent } from '@btc-vision/transaction';
 import { NativeSwapTypesCoders } from '../../contracts/NativeSwapTypesCoders.js';
+
+export function logGetProviderDetailsResult(result: GetProviderDetailsResult): void {
+    Blockchain.log(``);
+    Blockchain.log(`GetProviderDetailsResult`);
+    Blockchain.log(`----------------`);
+    Blockchain.log(`id: ${result.id}`);
+    Blockchain.log(`liquidity: ${result.liquidity}`);
+    Blockchain.log(`reserved: ${result.reserved}`);
+    Blockchain.log(`isPurged: ${result.isPurged}`);
+    Blockchain.log(`isPriority: ${result.isPriority}`);
+    Blockchain.log(`btcReceiver: ${result.btcReceiver}`);
+    Blockchain.log(`queueIndex: ${result.queueIndex}`);
+    Blockchain.log(`purgeIndex: ${result.purgeIndex}`);
+    Blockchain.log(`isActive: ${result.isActive}`);
+    Blockchain.log(`listedTokenAt: ${result.listedTokenAt}`);
+    Blockchain.log(``);
+}
 
 export function logGetReserveResult(result: GetReserveResult): void {
     Blockchain.log(``);
@@ -492,4 +511,20 @@ export function logGas(response: CallResponse): void {
             response.usedGas,
         )} BTC, $${gas2USD(response.usedGas)})`,
     );
+}
+
+export function logProviderDetailsResult(result: GetProviderDetailsResult): void {
+    Blockchain.log(``);
+    console.log(`Provider details result`);
+    console.log(`---------------------`);
+    console.log(`id: ${result.id}`);
+    console.log(`liquidity: ${result.liquidity}`);
+    console.log(`isPurged: ${result.isPurged}`);
+    console.log(`purgeIndex: ${result.purgeIndex}`);
+    console.log(`reserved: ${result.reserved}`);
+    console.log(`listedTokenAt: ${result.listedTokenAt}`);
+    console.log(`isActive: ${result.isActive}`);
+    console.log(`queueIndex: ${result.queueIndex}`);
+    console.log(`btcReceiver: ${result.btcReceiver}`);
+    console.log(`isPriority: ${result.isPriority}`);
 }

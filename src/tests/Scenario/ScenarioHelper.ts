@@ -568,7 +568,6 @@ export class ScenarioHelper {
             const result = await this.nativeSwap.reserve({
                 token: token.address,
                 maximumAmountIn: maximumAmountIn,
-                forLP: forLP,
                 minimumAmountOut: minimumAmountOut,
                 activationDelay: activationDelay,
             });

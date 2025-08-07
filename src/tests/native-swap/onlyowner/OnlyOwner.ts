@@ -56,4 +56,53 @@ await opnet('Native Swap - Onlyowner tests', async (vm: OPNetUnit) => {
             }).toThrow(`Only deployer can call this method`);
         },
     );
+
+    await vm.it('should revert when setFeesAddress caller is not the contract owner', async () => {
+        const fakeCallerAddress: Address = Blockchain.generateRandomAddress();
+
+        Blockchain.txOrigin = fakeCallerAddress;
+        Blockchain.msgSender = fakeCallerAddress;
+
+        await Assert.expect(async () => {
+            await nativeSwap.setFeesAddress({
+                feesAddress: 'fake address',
+            });
+        }).toThrow(`Only deployer can call this method`);
+    });
+
+    await vm.it('should revert when pause caller is not the contract owner', async () => {
+        const fakeCallerAddress: Address = Blockchain.generateRandomAddress();
+
+        Blockchain.txOrigin = fakeCallerAddress;
+        Blockchain.msgSender = fakeCallerAddress;
+
+        await Assert.expect(async () => {
+            await nativeSwap.pause();
+        }).toThrow(`Only deployer can call this method`);
+    });
+
+    await vm.it('should revert when unpause caller is not the contract owner', async () => {
+        const fakeCallerAddress: Address = Blockchain.generateRandomAddress();
+
+        Blockchain.txOrigin = fakeCallerAddress;
+        Blockchain.msgSender = fakeCallerAddress;
+
+        await Assert.expect(async () => {
+            await nativeSwap.unpause();
+        }).toThrow(`Only deployer can call this method`);
+    });
+
+    await vm.it(
+        'should revert when activateWithdrawMode caller is not the contract owner',
+        async () => {
+            const fakeCallerAddress: Address = Blockchain.generateRandomAddress();
+
+            Blockchain.txOrigin = fakeCallerAddress;
+            Blockchain.msgSender = fakeCallerAddress;
+
+            await Assert.expect(async () => {
+                await nativeSwap.activateWithdrawMode();
+            }).toThrow(`Only deployer can call this method`);
+        },
+    );
 });

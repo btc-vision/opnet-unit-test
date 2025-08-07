@@ -3,6 +3,7 @@ import { Blockchain, OP20 } from '@btc-vision/unit-test-framework';
 import {
     logAction,
     logCreatePoolResult,
+    logGetProviderDetailsResult,
     logGetQuoteResult,
     logGetReserveResult,
     logLiquidityListedEvent,
@@ -17,6 +18,7 @@ import { createRecipientUTXOs } from './UTXOSimulator.js';
 import { NativeSwap } from '../../contracts/NativeSwap.js';
 import {
     CreatePoolResult,
+    GetProviderDetailsResult,
     GetQuoteResult,
     GetReserveResult,
     ListLiquidityResult,
@@ -89,6 +91,7 @@ export async function helper_reserve(
     log: boolean = true,
     sendUTXO: boolean = false,
     activationDelay: number = 2,
+    feesAddress: string = '',
 ): Promise<ReserveResult> {
     if (log) {
         logAction(`reserve`);
@@ -98,13 +101,15 @@ export async function helper_reserve(
     Blockchain.txOrigin = caller;
     Blockchain.msgSender = caller;
 
-    const result = await nativeSwap.reserve({
-        token: tokenAddress,
-        maximumAmountIn: maximumAmountIn,
-        minimumAmountOut: minimumAmountOut,
-        forLP: forLP,
-        activationDelay: activationDelay,
-    });
+    const result = await nativeSwap.reserve(
+        {
+            token: tokenAddress,
+            maximumAmountIn: maximumAmountIn,
+            minimumAmountOut: minimumAmountOut,
+            activationDelay: activationDelay,
+        },
+        feesAddress,
+    );
 
     if (log) {
         logReserveResult(result);
@@ -153,12 +158,13 @@ export async function helper_swap(
         logSwapResult(result);
     }
 
-    const swapEvent = NativeSwapTypesCoders.decodeSwapExecutedEvent(
-        result.response.events[result.response.events.length - 1].data,
-    );
+    const swapEvt = result.response.events.find((event) => event.type === 'SwapExecuted');
+    if (swapEvt) {
+        const swapEvent = NativeSwapTypesCoders.decodeSwapExecutedEvent(swapEvt.data);
 
-    if (log) {
-        logSwapExecutedEvent(swapEvent);
+        if (log) {
+            logSwapExecutedEvent(swapEvent);
+        }
     }
 
     // Reset
@@ -257,6 +263,46 @@ export async function helper_getReserve(
     return reserveResult;
 }
 
+export async function helper_getProviderDetails(
+    nativeSwap: NativeSwap,
+    tokenAddress: Address,
+    log: boolean = true,
+): Promise<GetProviderDetailsResult> {
+    if (log) {
+        logAction('getProviderDetails');
+    }
+
+    const getResult = await nativeSwap.getProviderDetails({
+        token: tokenAddress,
+    });
+
+    if (log) {
+        logGetProviderDetailsResult(getResult);
+    }
+
+    return getResult;
+}
+
+export async function helper_getProviderDetailsById(
+    nativeSwap: NativeSwap,
+    providerId: bigint,
+    log: boolean = true,
+): Promise<GetProviderDetailsResult> {
+    if (log) {
+        logAction('getProviderDetailsById');
+    }
+
+    const getResult = await nativeSwap.getProviderDetailsById({
+        providerId: providerId,
+    });
+
+    if (log) {
+        logGetProviderDetailsResult(getResult);
+    }
+
+    return getResult;
+}
+
 export async function helper_getQuote(
     nativeSwap: NativeSwap,
     token: OP20,
@@ -277,4 +323,11 @@ export async function helper_getQuote(
     }
 
     return quoteResult;
+}
+
+export async function helper_getBalance(
+    token: OP_20,
+    stakingContractAddress: Address,
+): Promise<bigint> {
+    return await token.balanceOf(stakingContractAddress);
 }

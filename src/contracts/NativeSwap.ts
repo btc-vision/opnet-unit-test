@@ -1,7 +1,8 @@
 import { Address } from '@btc-vision/transaction';
-import { BytecodeManager, ContractRuntime } from '@btc-vision/unit-test-framework';
+import { Blockchain, BytecodeManager, ContractRuntime } from '@btc-vision/unit-test-framework';
 import { createFeeOutput } from '../tests/utils/TransactionUtils.js';
 import {
+    ActivateWithdrawModeResult,
     AddLiquidityParams,
     AddLiquidityResult,
     CancelListingParams,
@@ -11,8 +12,10 @@ import {
     CreatePoolWithSignatureParams,
     GetAntibotSettingsParams,
     GetAntibotSettingsResult,
+    GetFeesAddressResult,
     GetFeesResult,
     GetPriorityQueueCostResult,
+    GetProviderDetailsByIdParams,
     GetProviderDetailsParams,
     GetProviderDetailsResult,
     GetQueueDetailsResult,
@@ -21,19 +24,29 @@ import {
     GetReserveParams,
     GetReserveResult,
     GetStakingContractAddressResult,
+    IsPausedResult,
+    IsWithdrawModeActiveResult,
     ListLiquidityParams,
     ListLiquidityResult,
+    PauseResult,
     RemoveLiquidityParams,
     RemoveLiquidityResult,
     ReserveParams,
     ReserveResult,
+    SetFeesAddressParams,
+    SetFeesAddressResult,
     SetFeesParams,
     SetFeesResult,
     SetStakingContractAddressParams,
     SwapParams,
     SwapResult,
+    UnpauseResult,
+    WithdrawListingParams,
+    WithdrawListingResult,
 } from './NativeSwapTypes.js';
 import { NativeSwapTypesCoders } from './NativeSwapTypesCoders.js';
+import { GetFees } from 'opnet';
+import { networks } from '@btc-vision/bitcoin';
 
 export class NativeSwap extends ContractRuntime {
     public static RESERVATION_EXPIRE_AFTER: number = 5;
@@ -77,6 +90,10 @@ export class NativeSwap extends ContractRuntime {
         `0x${this.abiCoder.encodeSelector('setFees(uint64,uint64)')}`,
     );
 
+    private readonly setFeesAddressSelector: number = Number(
+        `0x${this.abiCoder.encodeSelector('setFeesAddress(string)')}`,
+    );
+
     private readonly addLiquiditySelector: number = Number(
         `0x${this.abiCoder.encodeSelector('addLiquidity(address,string)')}`,
     );
@@ -97,6 +114,10 @@ export class NativeSwap extends ContractRuntime {
         `0x${this.abiCoder.encodeSelector('getProviderDetails(address)')}`,
     );
 
+    private readonly getProviderDetailsByIdSelector: number = Number(
+        `0x${this.abiCoder.encodeSelector('getProviderDetailsById(u256)')}`,
+    );
+
     private readonly getQueueDetailsSelector: number = Number(
         `0x${this.abiCoder.encodeSelector('getQueueDetails(address)')}`,
     );
@@ -107,6 +128,10 @@ export class NativeSwap extends ContractRuntime {
 
     private readonly getFeesSelector: number = Number(
         `0x${this.abiCoder.encodeSelector('getFees()')}`,
+    );
+
+    private readonly getFeesAddressSelector: number = Number(
+        `0x${this.abiCoder.encodeSelector('getFeesAddress()')}`,
     );
 
     private readonly getAntibotSettingsSelector: number = Number(
@@ -132,6 +157,28 @@ export class NativeSwap extends ContractRuntime {
         `0x${this.abiCoder.encodeSelector('purgeReservationsAndRestoreProviders(address)')}`,
     );
 
+    private readonly pauseSelector: number = Number(`0x${this.abiCoder.encodeSelector('pause()')}`);
+
+    private readonly unpauseSelector: number = Number(
+        `0x${this.abiCoder.encodeSelector('unpause()')}`,
+    );
+
+    private readonly isPausedSelector: number = Number(
+        `0x${this.abiCoder.encodeSelector('isPaused()')}`,
+    );
+
+    private readonly activateWithdrawModeSelector: number = Number(
+        `0x${this.abiCoder.encodeSelector('activateWithdrawMode()')}`,
+    );
+
+    private readonly isWithdrawModeActiveSelector: number = Number(
+        `0x${this.abiCoder.encodeSelector('isWithdrawModeActive()')}`,
+    );
+
+    private readonly withdrawListingSelector: number = Number(
+        `0x${this.abiCoder.encodeSelector('withdrawListing(address)')}`,
+    );
+
     public constructor(
         deployer: Address,
         address: Address,
@@ -142,6 +189,83 @@ export class NativeSwap extends ContractRuntime {
             deployer: deployer,
             gasLimit,
         });
+    }
+
+    public async pause(): Promise<PauseResult> {
+        const calldata = NativeSwapTypesCoders.encodeDefault(this.pauseSelector);
+
+        const result = await this.execute({
+            calldata: calldata.getBuffer(),
+        });
+
+        if (result.error) throw this.handleError(result.error);
+
+        return NativeSwapTypesCoders.decodePauseResult(result);
+    }
+
+    public async unpause(): Promise<UnpauseResult> {
+        const calldata = NativeSwapTypesCoders.encodeDefault(this.unpauseSelector);
+
+        const result = await this.execute({
+            calldata: calldata.getBuffer(),
+        });
+
+        if (result.error) throw this.handleError(result.error);
+
+        return NativeSwapTypesCoders.decodeUnpauseResult(result);
+    }
+
+    public async isPaused(): Promise<IsPausedResult> {
+        const calldata = NativeSwapTypesCoders.encodeDefault(this.isPausedSelector);
+
+        const result = await this.execute({
+            calldata: calldata.getBuffer(),
+            saveStates: false,
+        });
+
+        if (result.error) throw this.handleError(result.error);
+
+        return NativeSwapTypesCoders.decodeIsPausedResult(result);
+    }
+
+    public async activateWithdrawMode(): Promise<ActivateWithdrawModeResult> {
+        const calldata = NativeSwapTypesCoders.encodeDefault(this.activateWithdrawModeSelector);
+
+        const result = await this.execute({
+            calldata: calldata.getBuffer(),
+        });
+
+        if (result.error) throw this.handleError(result.error);
+
+        return NativeSwapTypesCoders.decodeActivateWithdrawModeResult(result);
+    }
+
+    public async isWithdrawModeActive(): Promise<IsWithdrawModeActiveResult> {
+        const calldata = NativeSwapTypesCoders.encodeDefault(this.isWithdrawModeActiveSelector);
+
+        const result = await this.execute({
+            calldata: calldata.getBuffer(),
+            saveStates: false,
+        });
+
+        if (result.error) throw this.handleError(result.error);
+
+        return NativeSwapTypesCoders.decodeIsWithdrawModeActiveResult(result);
+    }
+
+    public async withdrawListing(params: WithdrawListingParams): Promise<WithdrawListingResult> {
+        const calldata = NativeSwapTypesCoders.encodeWithdrawListingParams(
+            this.withdrawListingSelector,
+            params,
+        );
+
+        const result = await this.execute({
+            calldata: calldata.getBuffer(),
+        });
+
+        if (result.error) throw this.handleError(result.error);
+
+        return NativeSwapTypesCoders.decodeWithdrawListingResult(result);
     }
 
     public async getLastPurgedBlock(params: Address): Promise<bigint> {
@@ -220,6 +344,36 @@ export class NativeSwap extends ContractRuntime {
         return NativeSwapTypesCoders.decodeSetFeesResult(result);
     }
 
+    public async getFeesAddress(): Promise<GetFeesAddressResult> {
+        const calldata = NativeSwapTypesCoders.encodeGetFeesAddressParams(
+            this.getFeesAddressSelector,
+        );
+
+        const result = await this.execute({
+            calldata: calldata.getBuffer(),
+            saveStates: false,
+        });
+
+        if (result.error) throw this.handleError(result.error);
+
+        return NativeSwapTypesCoders.decodeGetFeesAddressResult(result);
+    }
+
+    public async setFeesAddress(params: SetFeesAddressParams): Promise<SetFeesAddressResult> {
+        const calldata = NativeSwapTypesCoders.encodeSetFeesAddressParams(
+            this.setFeesAddressSelector,
+            params,
+        );
+
+        const result = await this.execute({
+            calldata: calldata.getBuffer(),
+        });
+
+        if (result.error) throw this.handleError(result.error);
+
+        return NativeSwapTypesCoders.decodeSetFeesAddressResult(result);
+    }
+
     public async getStakingContractAddress(): Promise<GetStakingContractAddressResult> {
         const calldata = NativeSwapTypesCoders.encodeGetStakingContractAddressParams(
             this.getStakingContractAddressSelector,
@@ -273,6 +427,24 @@ export class NativeSwap extends ContractRuntime {
         params: GetProviderDetailsParams,
     ): Promise<GetProviderDetailsResult> {
         const calldata = NativeSwapTypesCoders.encodeGetProviderDetailsParams(
+            this.getProviderDetailsSelector,
+            params,
+        );
+
+        const result = await this.execute({
+            calldata: calldata.getBuffer(),
+            saveStates: false,
+        });
+
+        if (result.error) throw this.handleError(result.error);
+
+        return NativeSwapTypesCoders.decodeGetProviderDetailsResult(result);
+    }
+
+    public async getProviderDetailsById(
+        params: GetProviderDetailsByIdParams,
+    ): Promise<GetProviderDetailsResult> {
+        const calldata = NativeSwapTypesCoders.encodeGetProviderDetailsByIdParams(
             this.getProviderDetailsSelector,
             params,
         );
@@ -380,9 +552,22 @@ export class NativeSwap extends ContractRuntime {
         return NativeSwapTypesCoders.decodeCreatePoolWithSignatureResult(result);
     }
 
-    public async listLiquidity(params: ListLiquidityParams): Promise<ListLiquidityResult> {
+    public async listLiquidity(
+        params: ListLiquidityParams,
+        feesAddress: string = '',
+    ): Promise<ListLiquidityResult> {
         if (params.priority && !params.disablePriorityQueueFees) {
-            createFeeOutput(NativeSwap.priorityQueueFees);
+            let recipient: string = feesAddress;
+
+            if (feesAddress.length === 0) {
+                if (Blockchain.network.bech32 === networks.testnet.bech32) {
+                    recipient = NativeSwap.feeRecipientTestnet;
+                } else {
+                    recipient = NativeSwap.feeRecipient;
+                }
+            }
+
+            createFeeOutput(NativeSwap.priorityQueueFees, recipient);
         }
 
         const calldata = NativeSwapTypesCoders.encodeListLiquidityParams(
@@ -399,11 +584,20 @@ export class NativeSwap extends ContractRuntime {
         return NativeSwapTypesCoders.decodeListLiquidityResult(result);
     }
 
-    public async reserve(params: ReserveParams): Promise<ReserveResult> {
-        createFeeOutput(NativeSwap.reservationFees);
+    public async reserve(params: ReserveParams, feesAddress: string = ''): Promise<ReserveResult> {
+        let recipient: string = feesAddress;
+
+        if (feesAddress.length === 0) {
+            if (Blockchain.network.bech32 === networks.testnet.bech32) {
+                recipient = NativeSwap.feeRecipientTestnet;
+            } else {
+                recipient = NativeSwap.feeRecipient;
+            }
+        }
+
+        createFeeOutput(NativeSwap.reservationFees, recipient);
 
         const calldata = NativeSwapTypesCoders.encodeReserveParams(this.reserveSelector, params);
-
         const result = await this.execute({
             calldata: calldata.getBuffer(),
         });
