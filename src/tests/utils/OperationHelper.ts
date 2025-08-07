@@ -326,7 +326,7 @@ export async function helper_getQuote(
 }
 
 export async function helper_getBalance(
-    token: OP_20,
+    token: OP20,
     stakingContractAddress: Address,
 ): Promise<bigint> {
     return await token.balanceOf(stakingContractAddress);

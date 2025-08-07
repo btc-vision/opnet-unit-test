@@ -1,5 +1,5 @@
 import { Address } from '@btc-vision/transaction';
-import { Assert, Blockchain, OP_20, opnet, OPNetUnit } from '@btc-vision/unit-test-framework';
+import { Assert, Blockchain, OP20, opnet, OPNetUnit } from '@btc-vision/unit-test-framework';
 import { NativeSwap } from '../../contracts/NativeSwap.js';
 import {
     helper_createPool,
@@ -18,7 +18,7 @@ import { ListLiquidityResult } from '../../contracts/NativeSwapTypes.js';
 
 await opnet('Native Swap - Swap', async (vm: OPNetUnit) => {
     let nativeSwap: NativeSwap;
-    let token: OP_20;
+    let token: OP20;
 
     const userAddress: Address = Blockchain.generateRandomAddress();
     const nativeSwapAddress: Address = Blockchain.generateRandomAddress();
@@ -332,7 +332,7 @@ await opnet('Native Swap - Swap', async (vm: OPNetUnit) => {
 
             Blockchain.msgSender = providerAddress;
             Blockchain.txOrigin = providerAddress;
-            await token.approve(providerAddress, nativeSwap.address, amountIn);
+            await token.increaseAllowance(providerAddress, nativeSwap.address, amountIn);
 
             const resp: ListLiquidityResult = await nativeSwap.listLiquidity({
                 token: tokenAddress,
@@ -474,7 +474,7 @@ await opnet('Native Swap - Swap', async (vm: OPNetUnit) => {
 
             Blockchain.msgSender = providerAddress;
             Blockchain.txOrigin = providerAddress;
-            await token.approve(providerAddress, nativeSwap.address, amountIn);
+            await token.increaseAllowance(providerAddress, nativeSwap.address, amountIn);
 
             const resp: ListLiquidityResult = await nativeSwap.listLiquidity({
                 token: tokenAddress,

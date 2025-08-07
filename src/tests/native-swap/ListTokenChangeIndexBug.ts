@@ -1,5 +1,5 @@
 import { Address } from '@btc-vision/transaction';
-import { Assert, Blockchain, OP_20, opnet, OPNetUnit } from '@btc-vision/unit-test-framework';
+import { Assert, Blockchain, OP20, opnet, OPNetUnit } from '@btc-vision/unit-test-framework';
 import { NativeSwap } from '../../contracts/NativeSwap.js';
 import { NativeSwapTypesCoders } from '../../contracts/NativeSwapTypesCoders.js';
 import { ListLiquidityResult } from '../../contracts/NativeSwapTypes.js';
@@ -10,7 +10,7 @@ import { createRecipientUTXOs } from '../utils/UTXOSimulator.js';
 
 async function listToken(
     nativeSwap: NativeSwap,
-    token: OP_20,
+    token: OP20,
     tokenAddress: Address,
     contractOwnerAddress: Address,
     lister: Address,
@@ -19,11 +19,11 @@ async function listToken(
     Blockchain.txOrigin = contractOwnerAddress;
     Blockchain.msgSender = contractOwnerAddress;
 
-    await token.transfer(contractOwnerAddress, lister, amount * 2n);
+    await token.safeTransfer(contractOwnerAddress, lister, amount * 2n);
 
     Blockchain.txOrigin = lister;
     Blockchain.msgSender = lister;
-    await token.approve(lister, nativeSwap.address, amount * 2n);
+    await token.increaseAllowance(lister, nativeSwap.address, amount * 2n);
 
     const resp1: ListLiquidityResult = await nativeSwap.listLiquidity({
         token: tokenAddress,
@@ -43,7 +43,7 @@ async function listToken(
 
 await opnet('NativeSwap: listLiquidity index changes bug', async (vm: OPNetUnit) => {
     let nativeSwap: NativeSwap;
-    let token: OP_20;
+    let token: OP20;
 
     const contractOwnerAddress: Address = Blockchain.generateRandomAddress();
     const stakingContractAddress: Address = Blockchain.generateRandomAddress();
@@ -60,7 +60,7 @@ await opnet('NativeSwap: listLiquidity index changes bug', async (vm: OPNetUnit)
         Blockchain.clearContracts();
         await Blockchain.init();
 
-        token = new OP_20({
+        token = new OP20({
             file: 'MyToken',
             deployer: contractOwnerAddress,
             address: tokenAddress,
@@ -203,7 +203,7 @@ await opnet('NativeSwap: listLiquidity index changes bug', async (vm: OPNetUnit)
             false,
             2,
         );
-        
+
  */
     });
 
