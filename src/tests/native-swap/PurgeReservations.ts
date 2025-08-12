@@ -92,6 +92,7 @@ await opnet('NativeSwap: Purging Reservations', async (vm: OPNetUnit) => {
         await Blockchain.init();
 
         Blockchain.blockNumber = 100n;
+        Blockchain.msgSender = userAddress;
 
         token = new OP20({
             file: 'MyToken',
@@ -106,7 +107,10 @@ await opnet('NativeSwap: Purging Reservations', async (vm: OPNetUnit) => {
         nativeSwap = new NativeSwap(userAddress, nativeSwapAddress);
         Blockchain.register(nativeSwap);
         await nativeSwap.init();
-        Blockchain.msgSender = userAddress;
+        const stackingContractAddress: Address = Blockchain.generateRandomAddress();
+        await nativeSwap.setStakingContractAddress({
+            stakingContractAddress: stackingContractAddress,
+        });
 
         // Set a base quote
         await createPool(100000000000000n, Blockchain.expandToDecimal(1, 18) * 1_000_000n);

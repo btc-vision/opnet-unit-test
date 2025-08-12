@@ -71,6 +71,7 @@ export interface IApprovedEvent {
 
 export interface ITransferEvent {
     readonly name: string;
+    readonly operator: Address;
     readonly from: Address;
     readonly to: Address;
     readonly amount: bigint;
@@ -128,7 +129,6 @@ export interface SetFeesAddressParams {
 }
 
 export interface SetFeesAddressResult {
-    readonly result: boolean;
     readonly response: CallResponse;
 }
 

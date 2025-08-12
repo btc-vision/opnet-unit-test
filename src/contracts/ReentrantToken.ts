@@ -23,10 +23,5 @@ export class ReentrantToken extends OP20 {
             this.dispose();
             throw result.error;
         }
-
-        const reader = new BinaryReader(response);
-        if (!reader.readBoolean()) {
-            throw new Error('setCallback failed');
-        }
     }
 }

@@ -334,10 +334,11 @@ export class NativeSwapTypesCoders {
 
     public static decodeTransferEvent(data: Uint8Array): ITransferEvent {
         const reader = new BinaryReader(data);
+        const operator = reader.readAddress();
         const from = reader.readAddress();
         const to = reader.readAddress();
         const amount = reader.readU256();
-        return { name: 'TransferEvent', from, to, amount };
+        return { name: 'TransferredEvent', operator, from, to, amount };
     }
 
     public static decodeWithdrawListingEvent(data: Uint8Array): IWithdrawListingEvent {
@@ -449,10 +450,7 @@ export class NativeSwapTypesCoders {
             throw new Error('No response to decode from setFeesAddress');
         }
 
-        const reader = new BinaryReader(response.response);
-
         return {
-            result: reader.readBoolean(),
             response: response,
         };
     }

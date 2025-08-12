@@ -295,7 +295,7 @@ await opnet('NativeSwap: Priority and Normal Queue cancelliquidity', async (vm: 
             });
 
             const cancelEvts = result.response.events.filter((e) => e.type === 'ListingCanceled');
-            const transferEvts = result.response.events.filter((e) => e.type === 'Transfer');
+            const transferEvts = result.response.events.filter((e) => e.type === 'Transferred');
 
             Assert.expect(cancelEvts.length).toEqual(1);
             Assert.expect(transferEvts.length).toEqual(2);
@@ -337,7 +337,7 @@ await opnet('NativeSwap: Priority and Normal Queue cancelliquidity', async (vm: 
             });
 
             const cancelEvts = result.response.events.filter((e) => e.type === 'ListingCanceled');
-            const transferEvts = result.response.events.filter((e) => e.type === 'Transfer');
+            const transferEvts = result.response.events.filter((e) => e.type === 'Transferred');
 
             Assert.expect(cancelEvts.length).toEqual(1);
             Assert.expect(transferEvts.length).toEqual(2);
@@ -379,7 +379,7 @@ await opnet('NativeSwap: Priority and Normal Queue cancelliquidity', async (vm: 
             });
 
             const cancelEvts = result.response.events.filter((e) => e.type === 'ListingCanceled');
-            const transferEvts = result.response.events.filter((e) => e.type === 'Transfer');
+            const transferEvts = result.response.events.filter((e) => e.type === 'Transferred');
 
             Assert.expect(cancelEvts.length).toEqual(1);
             Assert.expect(transferEvts.length).toEqual(2);

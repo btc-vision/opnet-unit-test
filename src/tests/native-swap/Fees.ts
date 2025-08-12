@@ -88,11 +88,9 @@ await opnet('Native Swap - Fees', async (vm: OPNetUnit) => {
     });
 
     await vm.it('should correctly sets fees address when owner and valid address', async () => {
-        const setFeesAddressResult = await nativeSwap.setFeesAddress({
+        await nativeSwap.setFeesAddress({
             feesAddress: randomFeesAddress,
         });
-
-        Assert.expect(setFeesAddressResult.result).toEqual(true);
 
         const getFeesAddressResult = await nativeSwap.getFeesAddress();
 
