@@ -48,7 +48,8 @@ await opnet('Native Swap - Reentrancy', async (vm: OPNetUnit) => {
 
         await nativeSwap.listLiquidity({
             token: tokenAddress,
-            receiver: provider.p2tr(Blockchain.network),
+            receiver: provider,
+            network: Blockchain.network,
             amountIn: l,
             priority: false,
             disablePriorityQueueFees: false,
@@ -110,12 +111,17 @@ await opnet('Native Swap - Reentrancy', async (vm: OPNetUnit) => {
         Blockchain.msgSender = userAddress;
         await token.increaseAllowance(userAddress, nativeSwap.address, initLiquidity);
 
+        await nativeSwap.setStakingContractAddress({
+            stakingContractAddress: Blockchain.generateRandomAddress(),
+        });
+
         // Create the pool
         await nativeSwap.createPool({
             token: token.address,
             floorPrice: floorPrice,
             initialLiquidity: initLiquidity,
-            receiver: initialLiquidityProvider.p2tr(Blockchain.network),
+            receiver: initialLiquidityProvider,
+            network: Blockchain.network,
             antiBotEnabledFor: 0,
             antiBotMaximumTokensPerReservation: 0n,
             maxReservesIn5BlocksPercent: 40,
@@ -145,7 +151,8 @@ await opnet('Native Swap - Reentrancy', async (vm: OPNetUnit) => {
         Blockchain.register(token);
         await token.init();
 
-        await token.mint(userAddress, 10_000_000);
+        await token.mintRaw(token.address, 10_000_000n * 10n ** 18n);
+        await token.mintRaw(userAddress, 10_000_000n * 10n ** 18n);
 
         nativeSwap = new NativeSwap(userAddress, nativeSwapAddress);
         Blockchain.register(nativeSwap);

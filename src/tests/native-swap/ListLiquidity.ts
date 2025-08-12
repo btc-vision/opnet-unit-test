@@ -5,6 +5,7 @@ import { createRecipientUTXOs } from '../utils/UTXOSimulator.js';
 import { NativeSwapTypesCoders } from '../../contracts/NativeSwapTypesCoders.js';
 import { ListLiquidityResult } from '../../contracts/NativeSwapTypes.js';
 import { helper_createPool, helper_reserve, helper_swap } from '../utils/OperationHelper.js';
+import { CSV_DURATION } from '../globals.js';
 
 const receiver: Address = Blockchain.generateRandomAddress();
 
@@ -469,7 +470,6 @@ await opnet('NativeSwap: Priority and Normal Queue listLiquidity', async (vm: OP
             await nativeSwap.listLiquidity({
                 token: tokenAddress,
                 receiver: provider,
-                receiverStr: provider.p2tr(Blockchain.network),
                 amountIn: 10000n,
                 priority: false,
                 disablePriorityQueueFees: false,
@@ -573,7 +573,9 @@ await opnet('NativeSwap: Priority and Normal Queue listLiquidity', async (vm: OP
 
         const decoded = NativeSwapTypesCoders.decodeLiquidityListedEvent(LiquidityListedEvt.data);
         Assert.expect(decoded.totalLiquidity).toEqual(amountIn);
-        Assert.expect(decoded.provider).toEqual(userAddress.p2tr(Blockchain.network));
+        Assert.expect(decoded.provider).toEqual(
+            userAddress.toCSV(CSV_DURATION, Blockchain.network).address,
+        );
 
         const reserveAfter = await nativeSwap.getReserve({ token: tokenAddress });
 

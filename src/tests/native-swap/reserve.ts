@@ -4,12 +4,12 @@ import { NativeSwap } from '../../contracts/NativeSwap.js';
 import {
     helper_createPool,
     helper_createToken,
-    helper_getReserve,
     helper_listLiquidity,
     helper_reserve,
 } from '../utils/OperationHelper.js';
 import { NativeSwapTypesCoders } from '../../contracts/NativeSwapTypesCoders.js';
 import { IReservationPurgedEvent } from '../../contracts/NativeSwapTypes.js';
+import { CSV_DURATION } from '../globals.js';
 
 await opnet('Native Swap - Reserve', async (vm: OPNetUnit) => {
     let nativeSwap: NativeSwap;
@@ -780,7 +780,7 @@ await opnet('Native Swap - Reserve', async (vm: OPNetUnit) => {
         }
 
         Assert.expect(priorityProviderRecipient.address).toEqual(
-            provider1.p2tr(Blockchain.network),
+            provider1.toCSV(CSV_DURATION, Blockchain.network).address,
         );
     });
 

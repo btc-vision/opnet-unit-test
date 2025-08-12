@@ -13,6 +13,7 @@ import {
 import { createRecipientUTXOs } from '../utils/UTXOSimulator.js';
 import { NativeSwapTypesCoders } from '../../contracts/NativeSwapTypesCoders.js';
 import { ListLiquidityResult } from '../../contracts/NativeSwapTypes.js';
+import { CSV_DURATION } from '../globals.js';
 
 await opnet('Native Swap - Swap', async (vm: OPNetUnit) => {
     let nativeSwap: NativeSwap;
@@ -254,7 +255,7 @@ await opnet('Native Swap - Swap', async (vm: OPNetUnit) => {
 
             Assert.expect(decodedReservation.recipients.length).toEqual(1);
             Assert.expect(decodedReservation.recipients[0].address).toEqual(
-                liquidityOwner.p2tr(Blockchain.network),
+                liquidityOwner.toCSV(CSV_DURATION, Blockchain.network).address,
             );
             Assert.expect(decodedReservation.recipients[0].amount).toEqual(100000n);
 
@@ -394,7 +395,7 @@ await opnet('Native Swap - Swap', async (vm: OPNetUnit) => {
 
             Assert.expect(decodedReservation.recipients.length).toEqual(1);
             Assert.expect(decodedReservation.recipients[0].address).toEqual(
-                providerAddress.p2tr(Blockchain.network),
+                providerAddress.toCSV(CSV_DURATION, Blockchain.network).address,
             );
             Assert.expect(decodedReservation.recipients[0].amount).toEqual(10000n);
 
@@ -537,7 +538,7 @@ await opnet('Native Swap - Swap', async (vm: OPNetUnit) => {
 
             Assert.expect(decodedReservation.recipients.length).toEqual(1);
             Assert.expect(decodedReservation.recipients[0].address).toEqual(
-                providerAddress.p2tr(Blockchain.network),
+                providerAddress.toCSV(CSV_DURATION, Blockchain.network).address,
             );
             Assert.expect(decodedReservation.recipients[0].amount).toEqual(10000n);
 
@@ -636,7 +637,7 @@ await opnet('Native Swap - Swap', async (vm: OPNetUnit) => {
 
         Assert.expect(decodedReservation.recipients.length).toEqual(1);
         Assert.expect(decodedReservation.recipients[0].address).toEqual(
-            liquidityOwner.p2tr(Blockchain.network),
+            liquidityOwner.toCSV(CSV_DURATION, Blockchain.network).address,
         );
         Assert.expect(decodedReservation.recipients[0].amount).toEqual(100000n);
 
@@ -746,7 +747,7 @@ await opnet('Native Swap - Swap', async (vm: OPNetUnit) => {
 
             Assert.expect(decodedReservation.recipients.length).toEqual(1);
             Assert.expect(decodedReservation.recipients[0].address).toEqual(
-                liquidityOwner.p2tr(Blockchain.network),
+                liquidityOwner.toCSV(CSV_DURATION, Blockchain.network).address,
             );
             Assert.expect(decodedReservation.recipients[0].amount).toEqual(100000n);
 

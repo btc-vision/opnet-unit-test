@@ -12,6 +12,7 @@
         "test:native:listtoken": "tsx src/tests/native-swap/ListLiquidity.ts",
         "test:native:createpool": "tsx src/tests/native-swap/CreatePool.ts",
         "test:native:purge": "tsx src/tests/native-swap/PurgeReservations.ts",
+        "test:native:purgeWithSwap": "tsx src/tests/native-swap/PurgeWithSwap.ts",
         "test:native:addliquidity": "tsx src/tests/native-swap/AddLiquidity.ts",
         "test:native:stakingfee": "tsx src/tests/native-swap/fee/StakingPoolFeeCollection.ts",
         "test:native:fee": "tsx src/tests/native-swap/fee/TestFeeAlgorithm.ts",

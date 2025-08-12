@@ -3,7 +3,6 @@ import { Assert, Blockchain, OP20, opnet, OPNetUnit } from '@btc-vision/unit-tes
 import { NativeSwap } from '../../../contracts/NativeSwap.js';
 import { NativeSwapTypesCoders } from '../../../contracts/NativeSwapTypesCoders.js';
 import { createRecipientUTXOs } from '../../utils/UTXOSimulator.js';
-import { logSwapEvents, logSwapResult } from '../../utils/LoggerHelper.js';
 
 await opnet('Native Swap - Staking Pool Fee Collection', async (vm: OPNetUnit) => {
     let nativeSwap: NativeSwap;
@@ -35,7 +34,8 @@ await opnet('Native Swap - Staking Pool Fee Collection', async (vm: OPNetUnit) =
             token: token.address,
             floorPrice: floorPrice,
             initialLiquidity: initLiquidity,
-            receiver: initialLiquidityProvider.p2tr(Blockchain.network),
+            receiver: initialLiquidityProvider,
+            network: Blockchain.network,
             antiBotEnabledFor: 0,
             antiBotMaximumTokensPerReservation: 0n,
             maxReservesIn5BlocksPercent: 40,
