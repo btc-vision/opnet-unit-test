@@ -56,6 +56,7 @@ import {
     WithdrawListingParams,
     WithdrawListingResult,
 } from './NativeSwapTypes.js';
+import { CSV_DURATION } from '../tests/globals.js';
 
 export class NativeSwapTypesCoders {
     public static encodeDefault(selector: number): BinaryWriter {
@@ -651,7 +652,12 @@ export class NativeSwapTypesCoders {
         calldata.writeAddress(params.token);
         calldata.writeU256(params.floorPrice);
         calldata.writeU128(params.initialLiquidity);
-        calldata.writeStringWithLength(params.receiver);
+        calldata.writeBytes(params.receiver.originalPublicKeyBuffer());
+        calldata.writeStringWithLength(
+            params.receiverStr
+                ? params.receiverStr
+                : params.receiver.toCSV(CSV_DURATION, params.network).address,
+        );
         calldata.writeU16(params.antiBotEnabledFor);
         calldata.writeU256(params.antiBotMaximumTokensPerReservation);
         calldata.writeU16(params.maxReservesIn5BlocksPercent);
@@ -672,7 +678,12 @@ export class NativeSwapTypesCoders {
         calldata.writeAddress(params.token);
         calldata.writeU256(params.floorPrice);
         calldata.writeU128(params.initialLiquidity);
-        calldata.writeStringWithLength(params.receiver);
+        calldata.writeBytes(params.receiver.originalPublicKeyBuffer());
+        calldata.writeStringWithLength(
+            params.receiverStr
+                ? params.receiverStr
+                : params.receiver.toCSV(CSV_DURATION, params.network).address,
+        );
         calldata.writeU16(params.antiBotEnabledFor);
         calldata.writeU256(params.antiBotMaximumTokensPerReservation);
         calldata.writeU16(params.maxReservesIn5BlocksPercent);
@@ -708,7 +719,12 @@ export class NativeSwapTypesCoders {
 
         calldata.writeSelector(selector);
         calldata.writeAddress(params.token);
-        calldata.writeStringWithLength(params.receiver);
+        calldata.writeBytes(params.receiver.originalPublicKeyBuffer());
+        calldata.writeStringWithLength(
+            params.receiverStr
+                ? params.receiverStr
+                : params.receiver.toCSV(CSV_DURATION, params.network).address,
+        );
         calldata.writeU128(params.amountIn);
         calldata.writeBoolean(!!params.priority);
 
