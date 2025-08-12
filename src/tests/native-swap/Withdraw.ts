@@ -100,6 +100,7 @@ await opnet('NativeSwap: withdraw mode', async (vm: OPNetUnit) => {
         Blockchain.dispose();
         Blockchain.clearContracts();
         await Blockchain.init();
+        Blockchain.msgSender = userAddress;
 
         token = new OP20({
             file: 'MyToken',
@@ -127,6 +128,11 @@ await opnet('NativeSwap: withdraw mode', async (vm: OPNetUnit) => {
         nativeSwap = new NativeSwap(userAddress, nativeSwapAddress);
         Blockchain.register(nativeSwap);
         await nativeSwap.init();
+
+        const stackingContractAddress: Address = Blockchain.generateRandomAddress();
+        await nativeSwap.setStakingContractAddress({
+            stakingContractAddress: stackingContractAddress,
+        });
     });
 
     vm.afterEach(() => {
