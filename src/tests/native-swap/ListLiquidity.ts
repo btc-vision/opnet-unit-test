@@ -463,14 +463,24 @@ await opnet('NativeSwap: Priority and Normal Queue listLiquidity', async (vm: OP
     await vm.it('should fail to add liquidity if the receiver address is invalid', async () => {
         const provider = Blockchain.generateRandomAddress();
         Blockchain.blockNumber = 1000n;
+
+        Blockchain.txOrigin = token.deployer;
+        Blockchain.msgSender = token.deployer;
+
+        const amountIn = Blockchain.expandTo18Decimals(500);
+        await token.mintRaw(provider, amountIn);
+
         Blockchain.txOrigin = provider;
         Blockchain.msgSender = provider;
+
+        await token.increaseAllowance(provider, nativeSwap.address, amountIn * 2n);
 
         await Assert.expect(async () => {
             await nativeSwap.listLiquidity({
                 token: tokenAddress,
                 receiver: provider,
-                amountIn: 10000n,
+                receiverStr: provider.p2tr(Blockchain.network),
+                amountIn: amountIn,
                 priority: false,
                 disablePriorityQueueFees: false,
                 network: Blockchain.network,
