@@ -1,6 +1,6 @@
 import { Address } from '@btc-vision/transaction';
 import { CallResponse } from '@btc-vision/unit-test-framework';
-import { Add } from 'opnet';
+import { Network } from '@btc-vision/bitcoin';
 
 export interface IActivateProviderEvent {
     readonly name: string;
@@ -71,6 +71,7 @@ export interface IApprovedEvent {
 
 export interface ITransferEvent {
     readonly name: string;
+    readonly operator: Address;
     readonly from: Address;
     readonly to: Address;
     readonly amount: bigint;
@@ -114,7 +115,6 @@ export interface SetFeesParams {
 }
 
 export interface SetFeesResult {
-    readonly result: boolean;
     readonly response: CallResponse;
 }
 
@@ -129,7 +129,6 @@ export interface SetFeesAddressParams {
 }
 
 export interface SetFeesAddressResult {
-    readonly result: boolean;
     readonly response: CallResponse;
 }
 
@@ -201,7 +200,6 @@ export interface AddLiquidityParams {
 }
 
 export interface AddLiquidityResult {
-    readonly result: boolean;
     readonly response: CallResponse;
 }
 
@@ -210,7 +208,6 @@ export interface RemoveLiquidityParams {
 }
 
 export interface RemoveLiquidityResult {
-    readonly result: boolean;
     readonly response: CallResponse;
 }
 
@@ -218,40 +215,36 @@ export interface CreatePoolParams {
     readonly token: Address;
     readonly floorPrice: bigint;
     readonly initialLiquidity: bigint;
-    readonly receiver: string;
+    readonly receiver: Address;
+    readonly receiverStr?: string;
     readonly antiBotEnabledFor: number;
     readonly antiBotMaximumTokensPerReservation: bigint;
     readonly maxReservesIn5BlocksPercent: number; //4000
+    readonly network: Network;
 }
 
 export interface CreatePoolResult {
-    readonly result: boolean;
     readonly response: CallResponse;
 }
 
-export interface CreatePoolWithSignatureParams {
+export interface CreatePoolWithSignatureParams extends CreatePoolParams {
     readonly signature: Uint8Array;
     readonly amount: bigint;
     readonly nonce: bigint;
-    readonly token: Address;
-    readonly floorPrice: bigint;
-    readonly initialLiquidity: bigint;
-    readonly receiver: string;
-    readonly antiBotEnabledFor: number;
-    readonly antiBotMaximumTokensPerReservation: bigint;
-    readonly maxReservesIn5BlocksPercent: number; //4000
+    readonly network: Network;
 }
 
 export interface ListLiquidityParams {
     readonly token: Address;
-    readonly receiver: string;
+    readonly receiver: Address;
     readonly amountIn: bigint;
     readonly priority?: boolean; // = false lose 3% in fees
     readonly disablePriorityQueueFees?: boolean; // not persisted
+    readonly network: Network;
+    readonly receiverStr?: string;
 }
 
 export interface ListLiquidityResult {
-    readonly result: boolean;
     readonly response: CallResponse;
 }
 
@@ -273,7 +266,6 @@ export interface CancelListingParams {
 }
 
 export interface CancelListingResult {
-    readonly result: boolean;
     readonly response: CallResponse;
 }
 
@@ -282,7 +274,6 @@ export interface SwapParams {
 }
 
 export interface SwapResult {
-    readonly result: boolean;
     readonly response: CallResponse;
 }
 

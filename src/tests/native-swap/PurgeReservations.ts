@@ -3,17 +3,16 @@ import {
     Assert,
     Blockchain,
     gas2USD,
-    OP_20,
+    OP20,
     opnet,
     OPNetUnit,
 } from '@btc-vision/unit-test-framework';
 import { NativeSwap } from '../../contracts/NativeSwap.js';
 import { ReserveResult } from '../../contracts/NativeSwapTypes.js';
-import { logReserveResult } from '../utils/LoggerHelper.js';
 
 await opnet('NativeSwap: Purging Reservations', async (vm: OPNetUnit) => {
     let nativeSwap: NativeSwap;
-    let token: OP_20;
+    let token: OP20;
 
     const initialLiquidityProvider: Address = Blockchain.generateRandomAddress();
 
@@ -31,14 +30,19 @@ await opnet('NativeSwap: Purging Reservations', async (vm: OPNetUnit) => {
         Blockchain.txOrigin = userAddress;
         Blockchain.msgSender = userAddress;
 
+        await nativeSwap.setStakingContractAddress({
+            stakingContractAddress: Blockchain.generateRandomAddress(),
+        });
+
         await token.mintRaw(userAddress, initialLiquidity);
-        await token.approve(userAddress, nativeSwap.address, initialLiquidity);
+        await token.increaseAllowance(userAddress, nativeSwap.address, initialLiquidity);
 
         await nativeSwap.createPool({
             token: tokenAddress,
             floorPrice: floorPrice,
             initialLiquidity: initialLiquidity,
-            receiver: initialLiquidityProvider.p2tr(Blockchain.network),
+            receiver: initialLiquidityProvider,
+            network: Blockchain.network,
             antiBotEnabledFor: antiBotEnabledFor,
             antiBotMaximumTokensPerReservation: antiBotMaximumTokensPerReservation,
             maxReservesIn5BlocksPercent: 40,
@@ -54,10 +58,11 @@ await opnet('NativeSwap: Purging Reservations', async (vm: OPNetUnit) => {
         Blockchain.msgSender = provider;
         Blockchain.txOrigin = provider;
 
-        await token.approve(provider, nativeSwap.address, amountIn);
+        await token.increaseAllowance(provider, nativeSwap.address, amountIn);
         const resp = await nativeSwap.listLiquidity({
             token: tokenAddress,
-            receiver: provider.p2tr(Blockchain.network),
+            receiver: provider,
+            network: Blockchain.network,
             amountIn: amountIn,
             priority: priority,
             disablePriorityQueueFees: false,
@@ -92,8 +97,9 @@ await opnet('NativeSwap: Purging Reservations', async (vm: OPNetUnit) => {
         await Blockchain.init();
 
         Blockchain.blockNumber = 100n;
+        Blockchain.msgSender = userAddress;
 
-        token = new OP_20({
+        token = new OP20({
             file: 'MyToken',
             deployer: userAddress,
             address: tokenAddress,
@@ -106,7 +112,10 @@ await opnet('NativeSwap: Purging Reservations', async (vm: OPNetUnit) => {
         nativeSwap = new NativeSwap(userAddress, nativeSwapAddress);
         Blockchain.register(nativeSwap);
         await nativeSwap.init();
-        Blockchain.msgSender = userAddress;
+        const stackingContractAddress: Address = Blockchain.generateRandomAddress();
+        await nativeSwap.setStakingContractAddress({
+            stakingContractAddress: stackingContractAddress,
+        });
 
         // Set a base quote
         await createPool(100000000000000n, Blockchain.expandToDecimal(1, 18) * 1_000_000n);

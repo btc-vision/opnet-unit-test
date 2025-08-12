@@ -1,19 +1,19 @@
 import { Address } from '@btc-vision/transaction';
-import { Assert, Blockchain, OP_20, opnet, OPNetUnit } from '@btc-vision/unit-test-framework';
+import { Assert, Blockchain, OP20, opnet, OPNetUnit } from '@btc-vision/unit-test-framework';
 import { NativeSwap } from '../../contracts/NativeSwap.js';
 import {
     helper_createPool,
     helper_createToken,
-    helper_getReserve,
     helper_listLiquidity,
     helper_reserve,
 } from '../utils/OperationHelper.js';
 import { NativeSwapTypesCoders } from '../../contracts/NativeSwapTypesCoders.js';
 import { IReservationPurgedEvent } from '../../contracts/NativeSwapTypes.js';
+import { CSV_DURATION } from '../globals.js';
 
 await opnet('Native Swap - Reserve', async (vm: OPNetUnit) => {
     let nativeSwap: NativeSwap;
-    let token: OP_20;
+    let token: OP20;
 
     const userAddress: Address = Blockchain.generateRandomAddress();
     const nativeSwapAddress: Address = Blockchain.generateRandomAddress();
@@ -728,7 +728,7 @@ await opnet('Native Swap - Reserve', async (vm: OPNetUnit) => {
         // Provider1: priority queue
         Blockchain.msgSender = provider1;
         Blockchain.txOrigin = provider1;
-        await token.approve(provider1, nativeSwap.address, amt);
+        await token.increaseAllowance(provider1, nativeSwap.address, amt);
 
         await helper_listLiquidity(
             nativeSwap,
@@ -744,7 +744,7 @@ await opnet('Native Swap - Reserve', async (vm: OPNetUnit) => {
         // Provider2: normal queue
         Blockchain.msgSender = provider2;
         Blockchain.txOrigin = provider2;
-        await token.approve(provider2, nativeSwap.address, amt);
+        await token.increaseAllowance(provider2, nativeSwap.address, amt);
 
         await helper_listLiquidity(
             nativeSwap,
@@ -780,7 +780,7 @@ await opnet('Native Swap - Reserve', async (vm: OPNetUnit) => {
         }
 
         Assert.expect(priorityProviderRecipient.address).toEqual(
-            provider1.p2tr(Blockchain.network),
+            provider1.toCSV(CSV_DURATION, Blockchain.network).address,
         );
     });
 
@@ -791,7 +791,7 @@ await opnet('Native Swap - Reserve', async (vm: OPNetUnit) => {
         await token.mintRaw(provider, amountIn);
         Blockchain.msgSender = provider;
         Blockchain.txOrigin = provider;
-        await token.approve(provider, nativeSwap.address, amountIn);
+        await token.increaseAllowance(provider, nativeSwap.address, amountIn);
 
         await helper_listLiquidity(
             nativeSwap,

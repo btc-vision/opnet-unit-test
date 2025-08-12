@@ -4,7 +4,7 @@ import {
     Blockchain,
     FastBigIntMap,
     gas2USD,
-    OP_20,
+    OP20,
     opnet,
     OPNetUnit,
     StateHandler,
@@ -13,21 +13,10 @@ import {
 import fs from 'fs';
 import { BitcoinUtils } from 'opnet';
 import { NativeSwap } from '../../contracts/NativeSwap.js';
-import {
-    Recipient,
-    ReserveParams,
-    ReserveResult,
-    SwapParams,
-} from '../../contracts/NativeSwapTypes.js';
+import { Recipient, ReserveResult } from '../../contracts/NativeSwapTypes.js';
 import { createRecipientsOutput } from '../utils/TransactionUtils.js';
 import { NativeSwapTypesCoders } from '../../contracts/NativeSwapTypesCoders.js';
-import { Network, networks } from '@btc-vision/bitcoin';
-import {
-    logCancelListingEvents,
-    logCancelListingResult,
-    logLiquidityListedEvent,
-    logSwapResult,
-} from '../utils/LoggerHelper.js';
+import { networks } from '@btc-vision/bitcoin';
 
 interface ParsedState {
     readonly pointer: {
@@ -174,7 +163,7 @@ await opnet('NativeSwap: Debug', async (vm: OPNetUnit) => {
     const nativeSwap: NativeSwap = new NativeSwap(admin, nativeAddy, 2_500_000_000_000_000_000n);
     Blockchain.register(nativeSwap);
 
-    const token: OP_20 = new OP_20({
+    const token: OP20 = new OP20({
         file: 'MyToken',
         deployer: userAddress,
         address: tokenAddress,
@@ -190,10 +179,11 @@ await opnet('NativeSwap: Debug', async (vm: OPNetUnit) => {
         Blockchain.msgSender = provider;
         Blockchain.txOrigin = provider;
 
-        await token.approve(provider, nativeSwap.address, amountIn);
+        await token.increaseAllowance(provider, nativeSwap.address, amountIn);
         const resp = await nativeSwap.listLiquidity({
             token: tokenAddress,
-            receiver: provider.p2tr(Blockchain.network),
+            receiver: provider,
+            network: Blockchain.network,
             amountIn: amountIn,
             priority: priority,
             disablePriorityQueueFees: false,
@@ -214,10 +204,10 @@ await opnet('NativeSwap: Debug', async (vm: OPNetUnit) => {
         Blockchain.msgSender = userAddress;
 
         // Transfer tokens from userAddress to provider
-        await token.transfer(userAddress, provider, l);
+        await token.safeTransfer(userAddress, provider, l);
 
         // Approve NativeSwap contract to spend tokens
-        await token.approve(provider, nativeSwap.address, l);
+        await token.increaseAllowance(provider, nativeSwap.address, l);
 
         // Add liquidity
         Blockchain.txOrigin = provider;
@@ -225,7 +215,8 @@ await opnet('NativeSwap: Debug', async (vm: OPNetUnit) => {
 
         const liquid = await nativeSwap.listLiquidity({
             token: tokenAddress,
-            receiver: provider.p2tr(Blockchain.network),
+            receiver: provider,
+            network: Blockchain.network,
             amountIn: l,
             priority: priority,
             disablePriorityQueueFees: false,
@@ -495,7 +486,7 @@ await opnet('NativeSwap: Debug', async (vm: OPNetUnit) => {
         console.log(`balanceOf`);
         console.log(`--------------------`);
         console.log(b);
-        
+
  */
         /*
         console.log('cancel');
@@ -537,7 +528,7 @@ await opnet('NativeSwap: Debug', async (vm: OPNetUnit) => {
         /*
         const b = await token.balanceOf(addy);
 
-        await token.approve(addy, nativeSwap.address, b);
+        await token.increaseAllowance(addy, nativeSwap.address, b);
 
         createRecipientsOutput([
             {

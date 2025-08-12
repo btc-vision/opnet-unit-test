@@ -1,10 +1,10 @@
 import { Address } from '@btc-vision/transaction';
-import { Assert, Blockchain, OP_20, opnet, OPNetUnit } from '@btc-vision/unit-test-framework';
+import { Assert, Blockchain, OP20, opnet, OPNetUnit } from '@btc-vision/unit-test-framework';
 import { NativeSwap } from '../../contracts/NativeSwap.js';
 
 await opnet('NativeSwap – purge watermark invariants', async (vm: OPNetUnit) => {
     let swap: NativeSwap;
-    let tkn: OP_20;
+    let token: OP20;
 
     const deployer: Address = Blockchain.generateRandomAddress();
     const tokenAddr: Address = Blockchain.generateRandomAddress();
@@ -21,16 +21,16 @@ await opnet('NativeSwap – purge watermark invariants', async (vm: OPNetUnit) =
         await Blockchain.init();
         Blockchain.blockNumber = 1n;
 
-        tkn = new OP_20({
+        token = new OP20({
             file: 'MyToken',
             deployer,
             address: tokenAddr,
             decimals: tokenDec,
         });
-        Blockchain.register(tkn);
+        Blockchain.register(token);
 
-        await tkn.init();
-        await tkn.mintRaw(deployer, Blockchain.expandToDecimal(1_000_000, tokenDec));
+        await token.init();
+        await token.mintRaw(deployer, Blockchain.expandToDecimal(1_000_000, tokenDec));
 
         swap = new NativeSwap(deployer, contractAddr);
         Blockchain.register(swap);
@@ -41,12 +41,18 @@ await opnet('NativeSwap – purge watermark invariants', async (vm: OPNetUnit) =
 
         Blockchain.msgSender = deployer;
         Blockchain.txOrigin = deployer;
-        await tkn.approve(deployer, swap.address, initialLiq);
+        await token.increaseAllowance(deployer, swap.address, initialLiq);
+
+        await swap.setStakingContractAddress({
+            stakingContractAddress: Blockchain.generateRandomAddress(),
+        });
+
         await swap.createPool({
             token: tokenAddr,
             floorPrice,
             initialLiquidity: initialLiq,
-            receiver: lpReceiver.p2tr(Blockchain.network),
+            receiver: lpReceiver,
+            network: Blockchain.network,
             antiBotEnabledFor: 0,
             antiBotMaximumTokensPerReservation: 0n,
             maxReservesIn5BlocksPercent: 100,
@@ -55,7 +61,7 @@ await opnet('NativeSwap – purge watermark invariants', async (vm: OPNetUnit) =
         Blockchain.blockNumber = 40n;
         await swap.purgeReservationsAndRestoreProviders(tokenAddr);
 
-        const len = Number(await swap.getBlocksWithReservationsLength(tokenAddr));
+        const len = await swap.getBlocksWithReservationsLength(tokenAddr);
         Assert.expect(len).toEqual(0);
     }
 
@@ -81,7 +87,7 @@ await opnet('NativeSwap – purge watermark invariants', async (vm: OPNetUnit) =
         await swap.purgeReservationsAndRestoreProviders(tokenAddr);
     }
 
-    const queueLen = async () => Number(await swap.getBlocksWithReservationsLength(tokenAddr));
+    const queueLen = async () => await swap.getBlocksWithReservationsLength(tokenAddr);
     const watermark = async () => await swap.getLastPurgedBlock(tokenAddr);
 
     await vm.it('A) watermark advances after a full purge', async () => {

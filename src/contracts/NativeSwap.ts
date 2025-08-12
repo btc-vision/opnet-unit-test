@@ -45,7 +45,6 @@ import {
     WithdrawListingResult,
 } from './NativeSwapTypes.js';
 import { NativeSwapTypesCoders } from './NativeSwapTypesCoders.js';
-import { GetFees } from 'opnet';
 import { networks } from '@btc-vision/bitcoin';
 
 export class NativeSwap extends ContractRuntime {
@@ -71,7 +70,7 @@ export class NativeSwap extends ContractRuntime {
     );
 
     private readonly listLiquiditySelector: number = Number(
-        `0x${this.abiCoder.encodeSelector('listLiquidity(address,string,uint128,bool)')}`,
+        `0x${this.abiCoder.encodeSelector('listLiquidity(address,bytes,string,uint128,bool)')}`,
     );
 
     private readonly cancelListingSelector: number = Number(
@@ -79,7 +78,7 @@ export class NativeSwap extends ContractRuntime {
     );
 
     private readonly createPoolSelector: number = Number(
-        `0x${this.abiCoder.encodeSelector('createPool(address,uint256,uint128,string,uint16,uint256,uint16)')}`,
+        `0x${this.abiCoder.encodeSelector('createPool(address,uint256,uint128,bytes,string,uint16,uint256,uint16)')}`,
     );
 
     private readonly createPoolWithSignatureSelector: number = Number(

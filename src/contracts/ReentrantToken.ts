@@ -1,7 +1,7 @@
 import { BinaryReader, BinaryWriter } from '@btc-vision/transaction';
-import { OP_20 } from '@btc-vision/unit-test-framework';
+import { OP20 } from '@btc-vision/unit-test-framework';
 
-export class ReentrantToken extends OP_20 {
+export class ReentrantToken extends OP20 {
     protected readonly setCallbackSelector: number = Number(
         `0x${this.abiCoder.encodeSelector('setCallback(string)')}`,
     );
@@ -22,11 +22,6 @@ export class ReentrantToken extends OP_20 {
         if (!response) {
             this.dispose();
             throw result.error;
-        }
-
-        const reader = new BinaryReader(response);
-        if (!reader.readBoolean()) {
-            throw new Error('setCallback failed');
         }
     }
 }

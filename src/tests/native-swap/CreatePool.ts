@@ -1,14 +1,14 @@
 import { Address } from '@btc-vision/transaction';
-import { Assert, Blockchain, OP_20, opnet, OPNetUnit } from '@btc-vision/unit-test-framework';
+import { Assert, Blockchain, OP20, opnet, OPNetUnit } from '@btc-vision/unit-test-framework';
 import { NativeSwap } from '../../contracts/NativeSwap.js';
-import { networks } from '@btc-vision/bitcoin';
 import { NativeSwapTypesCoders } from '../../contracts/NativeSwapTypesCoders.js';
+import { CSV_DURATION } from '../globals.js';
 
 const receiver: Address = Blockchain.generateRandomAddress();
 
 await opnet('NativeSwap: createPool', async (vm: OPNetUnit) => {
     let nativeSwap: NativeSwap;
-    let token: OP_20;
+    let token: OP20;
 
     const userAddress: Address = receiver;
     const stakingContractAddress: Address = Blockchain.generateRandomAddress();
@@ -16,7 +16,10 @@ await opnet('NativeSwap: createPool', async (vm: OPNetUnit) => {
     const nativeSwapAddress: Address = Blockchain.generateRandomAddress();
 
     const liquidityOwner: Address = Blockchain.generateRandomAddress();
-    const initialLiquidityAddress: string = liquidityOwner.p2tr(Blockchain.network);
+    const initialLiquidityAddress: string = liquidityOwner.toCSV(
+        CSV_DURATION,
+        Blockchain.network,
+    ).address;
     const initialLiquidityAmount: bigint = Blockchain.expandTo18Decimals(1_000_000);
 
     async function mintAndApprove(amount: bigint, to: Address): Promise<void> {
@@ -30,7 +33,7 @@ await opnet('NativeSwap: createPool', async (vm: OPNetUnit) => {
         Blockchain.txOrigin = addyBefore;
         Blockchain.msgSender = addyBefore;
 
-        await token.approve(addyBefore, nativeSwap.address, amount);
+        await token.increaseAllowance(addyBefore, nativeSwap.address, amount);
     }
 
     vm.beforeEach(async () => {
@@ -38,7 +41,7 @@ await opnet('NativeSwap: createPool', async (vm: OPNetUnit) => {
         Blockchain.clearContracts();
         await Blockchain.init();
 
-        token = new OP_20({
+        token = new OP20({
             file: 'MyToken',
             deployer: liquidityOwner,
             address: tokenAddress,
@@ -53,7 +56,15 @@ await opnet('NativeSwap: createPool', async (vm: OPNetUnit) => {
 
         nativeSwap = new NativeSwap(userAddress, nativeSwapAddress);
         Blockchain.register(nativeSwap);
+
         await nativeSwap.init();
+
+        Blockchain.msgSender = userAddress;
+        Blockchain.txOrigin = userAddress;
+
+        await nativeSwap.setStakingContractAddress({
+            stakingContractAddress: stakingContractAddress,
+        });
     });
 
     vm.afterEach(() => {
@@ -78,10 +89,11 @@ await opnet('NativeSwap: createPool', async (vm: OPNetUnit) => {
                 token: tokenAddress,
                 floorPrice: 100000000000000n,
                 initialLiquidity: initialLiquidityAmount,
-                receiver: initialLiquidityAddress,
+                receiver: liquidityOwner,
                 antiBotEnabledFor: 0,
                 antiBotMaximumTokensPerReservation: 0n,
                 maxReservesIn5BlocksPercent: 40,
+                network: Blockchain.network,
             });
         }).toThrow('NATIVE_SWAP: Only token owner can call createPool.');
     });
@@ -98,10 +110,12 @@ await opnet('NativeSwap: createPool', async (vm: OPNetUnit) => {
                 token: tokenAddress,
                 floorPrice: 100000000000000n,
                 initialLiquidity: initialLiquidityAmount,
-                receiver: liquidityOwner.p2tr(networks.bitcoin),
+                receiver: liquidityOwner,
+                receiverStr: liquidityOwner.p2tr(Blockchain.network),
                 antiBotEnabledFor: 0,
                 antiBotMaximumTokensPerReservation: 0n,
                 maxReservesIn5BlocksPercent: 40,
+                network: Blockchain.network,
             });
         }).toThrow('NATIVE_SWAP: Invalid receiver address.');
     });
@@ -118,10 +132,11 @@ await opnet('NativeSwap: createPool', async (vm: OPNetUnit) => {
                 token: tokenAddress,
                 floorPrice: 0n,
                 initialLiquidity: initialLiquidityAmount,
-                receiver: initialLiquidityAddress,
+                receiver: liquidityOwner,
                 antiBotEnabledFor: 0,
                 antiBotMaximumTokensPerReservation: 0n,
                 maxReservesIn5BlocksPercent: 40,
+                network: Blockchain.network,
             });
         }).toThrow('NATIVE_SWAP: Floor price cannot be zero.');
     });
@@ -138,10 +153,11 @@ await opnet('NativeSwap: createPool', async (vm: OPNetUnit) => {
                 token: tokenAddress,
                 floorPrice: 100000000000000n,
                 initialLiquidity: 0n,
-                receiver: initialLiquidityAddress,
+                receiver: liquidityOwner,
                 antiBotEnabledFor: 0,
                 antiBotMaximumTokensPerReservation: 0n,
                 maxReservesIn5BlocksPercent: 40,
+                network: Blockchain.network,
             });
         }).toThrow('NATIVE_SWAP: Initial liquidity cannot be zero.');
     });
@@ -160,10 +176,11 @@ await opnet('NativeSwap: createPool', async (vm: OPNetUnit) => {
                     token: tokenAddress,
                     floorPrice: 100000000000000n,
                     initialLiquidity: initialLiquidityAmount,
-                    receiver: initialLiquidityAddress,
+                    receiver: liquidityOwner,
                     antiBotEnabledFor: 0,
                     antiBotMaximumTokensPerReservation: 0n,
                     maxReservesIn5BlocksPercent: 40,
+                    network: Blockchain.network,
                 });
             }).toThrow('Insufficient allowance');
         },
@@ -181,10 +198,11 @@ await opnet('NativeSwap: createPool', async (vm: OPNetUnit) => {
                 token: tokenAddress,
                 floorPrice: 100000000000000n,
                 initialLiquidity: initialLiquidityAmount,
-                receiver: initialLiquidityAddress,
+                receiver: liquidityOwner,
                 antiBotEnabledFor: 5,
                 antiBotMaximumTokensPerReservation: 0n,
                 maxReservesIn5BlocksPercent: 40,
+                network: Blockchain.network,
             });
         }).toThrow('NATIVE_SWAP: Anti-bot max tokens per reservation cannot be zero.');
     });
@@ -200,10 +218,11 @@ await opnet('NativeSwap: createPool', async (vm: OPNetUnit) => {
             token: tokenAddress,
             floorPrice: 100000000000000n,
             initialLiquidity: initialLiquidityAmount,
-            receiver: initialLiquidityAddress,
+            receiver: liquidityOwner,
             antiBotEnabledFor: 0,
             antiBotMaximumTokensPerReservation: 0n,
             maxReservesIn5BlocksPercent: 40,
+            network: Blockchain.network,
         });
 
         await Assert.expect(async () => {
@@ -211,10 +230,11 @@ await opnet('NativeSwap: createPool', async (vm: OPNetUnit) => {
                 token: tokenAddress,
                 floorPrice: 100000000000000n,
                 initialLiquidity: initialLiquidityAmount,
-                receiver: initialLiquidityAddress,
+                receiver: liquidityOwner,
                 antiBotEnabledFor: 0,
                 antiBotMaximumTokensPerReservation: 0n,
                 maxReservesIn5BlocksPercent: 40,
+                network: Blockchain.network,
             });
         }).toThrow('NATIVE_SWAP: Base quote already set.');
     });
@@ -233,10 +253,11 @@ await opnet('NativeSwap: createPool', async (vm: OPNetUnit) => {
                     token: tokenAddress,
                     floorPrice: 100000000000000n,
                     initialLiquidity: initialLiquidityAmount,
-                    receiver: initialLiquidityAddress,
+                    receiver: liquidityOwner,
                     antiBotEnabledFor: 0,
                     antiBotMaximumTokensPerReservation: 0n,
                     maxReservesIn5BlocksPercent: 101,
+                    network: Blockchain.network,
                 });
             }).toThrow(
                 'NATIVE_SWAP: The maximum reservation percentage for 5 blocks must be less than or equal to 100.',
@@ -255,10 +276,11 @@ await opnet('NativeSwap: createPool', async (vm: OPNetUnit) => {
             token: tokenAddress,
             floorPrice: 100000000000000n,
             initialLiquidity: initialLiquidityAmount,
-            receiver: initialLiquidityAddress,
+            receiver: liquidityOwner,
             antiBotEnabledFor: 5,
             antiBotMaximumTokensPerReservation: 10000n,
             maxReservesIn5BlocksPercent: 80,
+            network: Blockchain.network,
         });
 
         Assert.expect(result.response.events.length).toEqual(2);

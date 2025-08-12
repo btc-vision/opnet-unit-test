@@ -1,33 +1,22 @@
 import { Address } from '@btc-vision/transaction';
-import {
-    Assert,
-    Blockchain,
-    gas2BTC,
-    gas2Sat,
-    gas2USD,
-    generateEmptyTransaction,
-    OP_20,
-    opnet,
-    OPNetUnit,
-    Transaction,
-} from '@btc-vision/unit-test-framework';
+import { Assert, Blockchain, OP20, opnet, OPNetUnit } from '@btc-vision/unit-test-framework';
 import { NativeSwap } from '../../contracts/NativeSwap.js';
 
 import { NativeSwapTypesCoders } from '../../contracts/NativeSwapTypesCoders.js';
 import {
     helper_createPool,
     helper_getProviderDetails,
-    helper_getReserve,
     helper_listLiquidity,
     helper_reserve,
     helper_swap,
 } from '../utils/OperationHelper.js';
+import { CSV_DURATION } from '../globals.js';
 
 const receiver: Address = Blockchain.generateRandomAddress();
 
 async function setupPool(
     nativeSwap: NativeSwap,
-    token: OP_20,
+    token: OP20,
     liquidityOwner: Address,
 ): Promise<void> {
     const floorPrice: bigint = 100000000000000n;
@@ -42,7 +31,7 @@ async function setupPool(
 
     Blockchain.msgSender = liquidityOwner;
     Blockchain.txOrigin = liquidityOwner;
-    await token.approve(liquidityOwner, nativeSwap.address, amountIn * 2n);
+    await token.increaseAllowance(liquidityOwner, nativeSwap.address, amountIn * 2n);
 
     await helper_createPool(
         nativeSwap,
@@ -60,7 +49,7 @@ async function setupPool(
 
 async function listLiquidity(
     nativeSwap: NativeSwap,
-    token: OP_20,
+    token: OP20,
     provider: Address,
     liquidityOwner: Address,
 ): Promise<void> {
@@ -71,7 +60,7 @@ async function listLiquidity(
 
     Blockchain.msgSender = provider;
     Blockchain.txOrigin = provider;
-    await token.approve(provider, nativeSwap.address, amountIn * 2n);
+    await token.increaseAllowance(provider, nativeSwap.address, amountIn * 2n);
 
     await helper_listLiquidity(
         nativeSwap,
@@ -87,8 +76,8 @@ async function listLiquidity(
 
 await opnet('NativeSwap: withdraw mode', async (vm: OPNetUnit) => {
     let nativeSwap: NativeSwap;
-    let token: OP_20;
-    let tokenB: OP_20;
+    let token: OP20;
+    let tokenB: OP20;
 
     const userAddress: Address = receiver;
     const tokenAddress: Address = Blockchain.generateRandomAddress();
@@ -100,8 +89,9 @@ await opnet('NativeSwap: withdraw mode', async (vm: OPNetUnit) => {
         Blockchain.dispose();
         Blockchain.clearContracts();
         await Blockchain.init();
+        Blockchain.msgSender = userAddress;
 
-        token = new OP_20({
+        token = new OP20({
             file: 'MyToken',
             deployer: liquidityOwner,
             address: tokenAddress,
@@ -110,7 +100,7 @@ await opnet('NativeSwap: withdraw mode', async (vm: OPNetUnit) => {
         Blockchain.register(token);
         await token.init();
 
-        tokenB = new OP_20({
+        tokenB = new OP20({
             file: 'MyToken',
             deployer: liquidityOwner,
             address: tokenBAddress,
@@ -127,6 +117,11 @@ await opnet('NativeSwap: withdraw mode', async (vm: OPNetUnit) => {
         nativeSwap = new NativeSwap(userAddress, nativeSwapAddress);
         Blockchain.register(nativeSwap);
         await nativeSwap.init();
+
+        const stackingContractAddress: Address = Blockchain.generateRandomAddress();
+        await nativeSwap.setStakingContractAddress({
+            stakingContractAddress: stackingContractAddress,
+        });
     });
 
     vm.afterEach(() => {
@@ -548,7 +543,7 @@ await opnet('NativeSwap: withdraw mode', async (vm: OPNetUnit) => {
 
             Assert.expect(decodedReservation.recipients.length).toEqual(1);
             Assert.expect(decodedReservation.recipients[0].address).toEqual(
-                provider.p2tr(Blockchain.network),
+                provider.toCSV(CSV_DURATION, Blockchain.network).address,
             );
             Assert.expect(decodedReservation.recipients[0].amount).toEqual(2952342n);
 
@@ -979,7 +974,7 @@ await opnet('NativeSwap: withdraw mode', async (vm: OPNetUnit) => {
 
             Assert.expect(decodedReservation.recipients.length).toEqual(1);
             Assert.expect(decodedReservation.recipients[0].address).toEqual(
-                provider.p2tr(Blockchain.network),
+                provider.toCSV(CSV_DURATION, Blockchain.network).address,
             );
             Assert.expect(decodedReservation.recipients[0].amount).toEqual(255555n);
 

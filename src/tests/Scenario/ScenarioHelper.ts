@@ -1,4 +1,4 @@
-import { Assert, Blockchain, OP_20 } from '@btc-vision/unit-test-framework';
+import { Assert, Blockchain, OP20 } from '@btc-vision/unit-test-framework';
 import { NativeSwap } from '../../contracts/NativeSwap.js';
 import {
     logAction,
@@ -42,8 +42,6 @@ import { createRecipientsOutput } from '../utils/TransactionUtils.js';
 import { ExpectedSwapExecutedEvent } from './Expected/ExpectedSwapExecutedEvent.js';
 import { ExpectedLiquidityAddedEvent } from './Expected/ExpectedLiquidityAddedEvent.js';
 import { ExpectedLiquidityRemovedEvent } from './Expected/ExpectedLiquidityRemovedEvent.js';
-import { ExpectedListingCanceledEvent } from './Expected/ExpectedListingCanceledEvent.js';
-import { ExpectedFulfilledProviderEvent } from './Expected/ExpectedFulfilledProviderEvent.js';
 import { ExpectedActivateProviderEvent } from './Expected/ExpectedActivateProviderEvent.js';
 import { BitcoinUtils } from 'opnet';
 
@@ -76,7 +74,7 @@ export class ScenarioHelper {
 
     public open: number = 0;
 
-    private _tokens: Map<string, OP_20> = new Map<string, OP_20>();
+    private _tokens: Map<string, OP20> = new Map<string, OP20>();
 
     private _reserveRecipients: Map<string, Map<string, Recipient[]>> = new Map<
         string,
@@ -249,7 +247,7 @@ export class ScenarioHelper {
 
         Assert.expect(this._tokens.has(tokenName)).toEqual(false);
 
-        const token = new OP_20({
+        const token = new OP20({
             file: tokenFileName,
             deployer: deployerAddress,
             address: tokenAddress,
@@ -286,7 +284,7 @@ export class ScenarioHelper {
             this.nativeSwap.dispose();
         }
 
-        this._tokens.forEach((token: OP_20) => {
+        this._tokens.forEach((token: OP20) => {
             token.dispose();
         });
 
@@ -303,14 +301,14 @@ export class ScenarioHelper {
 
         if (this.verbose) {
             logAction(`approve`);
-            logParameter(`tokenName`, tokenName.toString());
+            logParameter(`tokenName`, tokenName);
             logParameter(`owner`, owner.toString());
             logParameter(`spender`, spender.toString());
             logParameter(`amount`, amount.toString());
         }
 
         const token = this.getToken(tokenName);
-        const result = await token.approve(owner, spender, amount);
+        const result = await token.increaseAllowance(owner, spender, amount);
 
         Assert.expect(result.events.length).toEqual(1);
 
@@ -345,14 +343,14 @@ export class ScenarioHelper {
 
         if (this.verbose) {
             logAction(`transfer`);
-            logParameter(`tokenName`, tokenName.toString());
+            logParameter(`tokenName`, tokenName);
             logParameter(`from`, from.toString());
             logParameter(`to`, to.toString());
             logParameter(`amount`, amount.toString());
         }
 
         const token = this.getToken(tokenName);
-        const result = await token.transfer(from, to, amount);
+        const result = await token.safeTransfer(from, to, amount);
 
         Assert.expect(result.events.length).toEqual(1);
 
@@ -383,7 +381,7 @@ export class ScenarioHelper {
         const tokenName = op.parameters['tokenName'];
         const floorPrice = BigInt(op.parameters['floorPrice']);
         const initialLiquidity = BigInt(op.parameters['initialLiquidity']);
-        const receiver = op.parameters['receiver'];
+        const receiver = op.parameters['receiver']; // Address.from (USE address.toOriginalPublicKey() when exporting!!!)
         const antiBotEnabledFor = parseInt(op.parameters['antiBotEnabledFor']);
         const antiBotMaximumTokensPerReservation = BigInt(
             op.parameters['antiBotMaximumTokensPerReservation'],
@@ -393,7 +391,7 @@ export class ScenarioHelper {
         if (this.verbose) {
             logAction(`createPool`);
             logParameter(`context`, op.context);
-            logParameter(`tokenName`, tokenName.toString());
+            logParameter(`tokenName`, tokenName);
             logParameter(`floorPrice`, floorPrice.toString());
             logParameter(`initialLiquidity`, initialLiquidity.toString());
             logParameter(`receiver`, receiver);
@@ -410,7 +408,8 @@ export class ScenarioHelper {
             token: token.address,
             floorPrice,
             initialLiquidity: initialLiquidity,
-            receiver: receiver,
+            receiver: receiver, // must be an Address now.
+            network: Blockchain.network,
             antiBotEnabledFor: antiBotEnabledFor,
             antiBotMaximumTokensPerReservation: antiBotMaximumTokensPerReservation,
             maxReservesIn5BlocksPercent: maxReservesIn5BlocksPercent,
@@ -460,7 +459,7 @@ export class ScenarioHelper {
         const nonce = BigInt(op.parameters['nonce']);
         const floorPrice = BigInt(op.parameters['floorPrice']);
         const initialLiquidity = BigInt(op.parameters['initialLiquidity']);
-        const receiver = op.parameters['receiver'];
+        const receiver = op.parameters['receiver']; // Address.from
         const antiBotEnabledFor = parseInt(op.parameters['antiBotEnabledFor']);
         const antiBotMaximumTokensPerReservation = BigInt(
             op.parameters['antiBotMaximumTokensPerReservation'],
@@ -470,8 +469,8 @@ export class ScenarioHelper {
         if (this.verbose) {
             logAction(`createPool`);
             logParameter(`context`, op.context);
-            logParameter(`tokenName`, tokenName.toString());
-            logParameter(`signature`, signature.toString());
+            logParameter(`tokenName`, tokenName);
+            logParameter(`signature`, signature);
             logParameter(`amount`, amount.toString());
             logParameter(`nonce`, nonce.toString());
             logParameter(`floorPrice`, floorPrice.toString());
@@ -493,8 +492,9 @@ export class ScenarioHelper {
             nonce: nonce,
             floorPrice: floorPrice,
             initialLiquidity: initialLiquidity,
-            receiver: receiver,
+            receiver: receiver, // Must be an address now.
             antiBotEnabledFor: antiBotEnabledFor,
+            network: Blockchain.network,
             antiBotMaximumTokensPerReservation: antiBotMaximumTokensPerReservation,
             maxReservesIn5BlocksPercent: maxReservesIn5BlocksPercent,
         });
@@ -548,7 +548,7 @@ export class ScenarioHelper {
         if (this.verbose) {
             logAction(`reserve`);
             logParameter(`context`, op.context);
-            logParameter(`tokenName`, tokenName.toString());
+            logParameter(`tokenName`, tokenName);
             logParameter(`maximumAmountIn`, maximumAmountIn.toString());
             logParameter(`minimumAmountOut`, minimumAmountOut.toString());
             logParameter(`forLP`, forLP.toString());
@@ -670,13 +670,13 @@ export class ScenarioHelper {
     public async listLiquidity(op: OperationDefinition): Promise<void> {
         const tokenName = op.parameters['tokenName'];
         const amountIn = BigInt(op.parameters['amountIn']);
-        const receiver = op.parameters['receiver'];
+        const receiver = op.parameters['receiver']; // Address.from
         const priority = op.parameters['priority'] == 'true';
 
         if (this.verbose) {
             logAction(`listToken`);
             logParameter(`context`, op.context);
-            logParameter(`tokenName`, tokenName.toString());
+            logParameter(`tokenName`, tokenName);
             logParameter(`amountIn`, amountIn.toString());
             logParameter(`receiver`, receiver);
             logParameter(`priority`, priority.toString());
@@ -686,19 +686,18 @@ export class ScenarioHelper {
         const result = await this.nativeSwap.listLiquidity({
             token: token.address,
             receiver: receiver,
+            network: Blockchain.network,
             amountIn: amountIn,
             priority: priority,
             disablePriorityQueueFees: false,
         });
 
-        if (result.result) {
-            if (!this._providerMap.has(tokenName)) {
-                this._providerMap.set(tokenName, []);
-            }
-
-            const arr = this._providerMap.get(tokenName);
-            arr?.push(Blockchain.msgSender.toString());
+        if (!this._providerMap.has(tokenName)) {
+            this._providerMap.set(tokenName, []);
         }
+
+        const arr = this._providerMap.get(tokenName);
+        arr?.push(Blockchain.msgSender.toString());
 
         const events: NetEvent[] = [];
 
@@ -1079,14 +1078,12 @@ export class ScenarioHelper {
         const token = this.getToken(tokenName);
         const result = await this.nativeSwap.cancelListing({ token: token.address });
 
-        if (result.result) {
-            if (this._providerMap.has(tokenName)) {
-                const arr = this._providerMap.get(tokenName);
-                if (arr) {
-                    const index = arr.indexOf(Blockchain.msgSender.toString());
-                    if (index !== -1) {
-                        arr.splice(index, 1);
-                    }
+        if (this._providerMap.has(tokenName)) {
+            const arr = this._providerMap.get(tokenName);
+            if (arr) {
+                const index = arr.indexOf(Blockchain.msgSender.toString());
+                if (index !== -1) {
+                    arr.splice(index, 1);
                 }
             }
         }
@@ -1142,7 +1139,7 @@ export class ScenarioHelper {
                 }
             }
         }
-        
+
          */
     }
 
@@ -1216,7 +1213,7 @@ export class ScenarioHelper {
         if (this.verbose) {
             logAction(`getQuote`);
             logParameter(`context`, op.context);
-            logParameter(`tokenName`, tokenName.toString());
+            logParameter(`tokenName`, tokenName);
             logParameter(`satoshiIn`, satoshiIn.toString());
         }
 
@@ -1360,7 +1357,7 @@ export class ScenarioHelper {
         return this._notPurgedReservations.has(mapId);
     }
 
-    private getToken(name: string): OP_20 {
+    private getToken(name: string): OP20 {
         const token = this._tokens.get(name);
         if (token === undefined || !token) {
             throw new Error('Token not initialized');

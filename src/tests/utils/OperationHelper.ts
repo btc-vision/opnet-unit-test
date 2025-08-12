@@ -1,5 +1,5 @@
 import { Address } from '@btc-vision/transaction';
-import { Blockchain, OP_20 } from '@btc-vision/unit-test-framework';
+import { Blockchain, OP20 } from '@btc-vision/unit-test-framework';
 import {
     logAction,
     logCreatePoolResult,
@@ -34,7 +34,7 @@ export interface ReserveData {
 
 export async function helper_createPool(
     nativeSwap: NativeSwap,
-    token: OP_20,
+    token: OP20,
     owner: Address,
     receiver: Address,
     tokenLiquidityToApprove: number,
@@ -50,6 +50,13 @@ export async function helper_createPool(
         logAction('createPool');
     }
 
+    Blockchain.txOrigin = nativeSwap.deployer;
+    Blockchain.msgSender = nativeSwap.deployer;
+
+    await nativeSwap.setStakingContractAddress({
+        stakingContractAddress: Blockchain.generateRandomAddress(),
+    });
+
     const liquidityAmount: bigint = Blockchain.expandToDecimal(
         tokenLiquidityToApprove,
         token.decimals,
@@ -62,16 +69,17 @@ export async function helper_createPool(
         await token.mintRaw(owner, liquidityAmount);
     }
 
-    await token.approve(owner, nativeSwap.address, liquidityAmount);
+    await token.increaseAllowance(owner, nativeSwap.address, liquidityAmount);
 
     const result = await nativeSwap.createPool({
         token: token.address,
         floorPrice: floorPrice,
         initialLiquidity: poolInitialLiquidity,
-        receiver: receiver.p2tr(Blockchain.network),
+        receiver: receiver,
         antiBotEnabledFor: antiBotEnabledFor,
         antiBotMaximumTokensPerReservation: antiBotMaximumTokensPerReservation,
         maxReservesIn5BlocksPercent: maxReservesIn5BlocksPercent,
+        network: Blockchain.network,
     });
 
     if (log) {
@@ -194,10 +202,11 @@ export async function helper_listLiquidity(
 
     const result = await nativeSwap.listLiquidity({
         token: tokenAddress,
-        receiver: providerAddress.p2tr(Blockchain.network),
+        receiver: providerAddress,
         amountIn: amountIn,
         priority: priority,
         disablePriorityQueueFees: disablePriorityQueueFees,
+        network: Blockchain.network,
     });
 
     if (log) {
@@ -225,9 +234,9 @@ export async function helper_createToken(
     deployer: Address,
     tokenDecimals: number,
     initialMintCount: number,
-): Promise<OP_20> {
+): Promise<OP20> {
     // Instantiate and register the OP_20 token
-    let token = new OP_20({
+    let token = new OP20({
         file: 'MyToken',
         deployer: deployer,
         address: Blockchain.generateRandomAddress(),
@@ -245,7 +254,7 @@ export async function helper_createToken(
 
 export async function helper_getReserve(
     nativeSwap: NativeSwap,
-    token: OP_20,
+    token: OP20,
     log: boolean = true,
 ): Promise<GetReserveResult> {
     if (log) {
@@ -305,7 +314,7 @@ export async function helper_getProviderDetailsById(
 
 export async function helper_getQuote(
     nativeSwap: NativeSwap,
-    token: OP_20,
+    token: OP20,
     satoshisIn: bigint,
     log: boolean = true,
 ): Promise<GetQuoteResult> {
@@ -326,7 +335,7 @@ export async function helper_getQuote(
 }
 
 export async function helper_getBalance(
-    token: OP_20,
+    token: OP20,
     stakingContractAddress: Address,
 ): Promise<bigint> {
     return await token.balanceOf(stakingContractAddress);

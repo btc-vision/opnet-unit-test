@@ -5,7 +5,7 @@ import {
     Blockchain,
     FastBigIntMap,
     gas2USD,
-    OP_20,
+    OP20,
     OPNetUnit,
     StateHandler,
 } from '@btc-vision/unit-test-framework';
@@ -57,7 +57,7 @@ export function mergeStates(original: FastBigIntMap, toMerge: FastBigIntMap): Fa
 }
 
 export async function addProviderLiquidity(
-    token: OP_20,
+    token: OP20,
     nativeSwap: NativeSwap,
     amountIn: bigint,
     priority: boolean = false,
@@ -66,7 +66,7 @@ export async function addProviderLiquidity(
     Blockchain.msgSender = provider;
     Blockchain.txOrigin = provider;
 
-    await token.approve(provider, nativeSwap.address, amountIn);
+    await token.increaseAllowance(provider, nativeSwap.address, amountIn);
     const resp = await nativeSwap.listLiquidity({
         token: token.address,
         receiver: provider.p2tr(Blockchain.network),
@@ -81,7 +81,7 @@ export async function addProviderLiquidity(
 
 export async function listTokenRandom(
     userAddress: Address,
-    token: OP_20,
+    token: OP20,
     nativeSwap: NativeSwap,
     vm: OPNetUnit,
     l: bigint,
@@ -94,10 +94,10 @@ export async function listTokenRandom(
     Blockchain.msgSender = userAddress;
 
     // Transfer tokens from userAddress to provider
-    await token.transfer(userAddress, provider, l);
+    await token.safeTransfer(userAddress, provider, l);
 
     // Approve NativeSwap contract to spend tokens
-    await token.approve(provider, nativeSwap.address, l);
+    await token.increaseAllowance(provider, nativeSwap.address, l);
 
     // Add liquidity
     Blockchain.txOrigin = provider;
@@ -126,7 +126,7 @@ const shuffle = <T>(array: T[]) => {
 };
 
 export async function swapAll(
-    token: OP_20,
+    token: OP20,
     nativeSwap: NativeSwap,
     vm: OPNetUnit,
     userAddress: Address,
@@ -153,7 +153,7 @@ export async function swapAll(
 }
 
 async function randomReserve(
-    token: OP_20,
+    token: OP20,
     nativeSwap: NativeSwap,
     vm: OPNetUnit,
     amount: bigint,
@@ -211,7 +211,7 @@ async function randomReserve(
 }
 
 export async function makeReservation(
-    token: OP_20,
+    token: OP20,
     nativeSwap: NativeSwap,
     vm: OPNetUnit,
     buyer: Address,

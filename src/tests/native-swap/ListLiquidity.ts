@@ -1,28 +1,17 @@
 import { Address } from '@btc-vision/transaction';
-import {
-    Assert,
-    Blockchain,
-    gas2BTC,
-    gas2Sat,
-    gas2USD,
-    generateEmptyTransaction,
-    OP_20,
-    opnet,
-    OPNetUnit,
-    Transaction,
-} from '@btc-vision/unit-test-framework';
+import { Assert, Blockchain, OP20, opnet, OPNetUnit } from '@btc-vision/unit-test-framework';
 import { NativeSwap } from '../../contracts/NativeSwap.js';
 import { createRecipientUTXOs } from '../utils/UTXOSimulator.js';
 import { NativeSwapTypesCoders } from '../../contracts/NativeSwapTypesCoders.js';
 import { ListLiquidityResult } from '../../contracts/NativeSwapTypes.js';
 import { helper_createPool, helper_reserve, helper_swap } from '../utils/OperationHelper.js';
-import { networks } from '@btc-vision/bitcoin';
+import { CSV_DURATION } from '../globals.js';
 
 const receiver: Address = Blockchain.generateRandomAddress();
 
 await opnet('NativeSwap: Priority and Normal Queue listLiquidity', async (vm: OPNetUnit) => {
     let nativeSwap: NativeSwap;
-    let token: OP_20;
+    let token: OP20;
 
     const userAddress: Address = receiver;
     const stakingContractAddress: Address = Blockchain.generateRandomAddress();
@@ -59,7 +48,7 @@ await opnet('NativeSwap: Priority and Normal Queue listLiquidity', async (vm: OP
         Blockchain.clearContracts();
         await Blockchain.init();
 
-        token = new OP_20({
+        token = new OP20({
             file: 'MyToken',
             deployer: liquidityOwner,
             address: tokenAddress,
@@ -107,12 +96,13 @@ await opnet('NativeSwap: Priority and Normal Queue listLiquidity', async (vm: OP
         'should fail to add liquidity to the priority queue when not enough priority fees sent',
         async () => {
             const amountIn = Blockchain.expandTo18Decimals(1000);
-            await token.approve(userAddress, nativeSwap.address, amountIn);
+            await token.increaseAllowance(userAddress, nativeSwap.address, amountIn);
 
             await Assert.expect(async () => {
                 await nativeSwap.listLiquidity({
                     token: tokenAddress,
-                    receiver: userAddress.p2tr(Blockchain.network),
+                    receiver: userAddress,
+                    network: Blockchain.network,
                     amountIn: amountIn,
                     priority: true,
                     disablePriorityQueueFees: true,
@@ -122,12 +112,13 @@ await opnet('NativeSwap: Priority and Normal Queue listLiquidity', async (vm: OP
     );
 
     await vm.it('should fail to add liquidity with zero amount', async () => {
-        await token.approve(userAddress, nativeSwap.address, 0n);
+        await token.increaseAllowance(userAddress, nativeSwap.address, 0n);
         await Assert.expect(async () => {
             await nativeSwap.listLiquidity({
                 token: tokenAddress,
-                receiver: userAddress.p2tr(Blockchain.network),
+                receiver: userAddress,
                 amountIn: 0n,
+                network: Blockchain.network,
                 priority: false,
                 disablePriorityQueueFees: false,
             });
@@ -138,12 +129,13 @@ await opnet('NativeSwap: Priority and Normal Queue listLiquidity', async (vm: OP
         'should fail to add liquidity when trying to add more liquidity than supported',
         async () => {
             const amountIn = Blockchain.expandTo18Decimals(1000);
-            await token.approve(userAddress, nativeSwap.address, amountIn);
+            await token.increaseAllowance(userAddress, nativeSwap.address, amountIn);
 
             await Assert.expect(async () => {
                 await nativeSwap.listLiquidity({
                     token: tokenAddress,
-                    receiver: userAddress.p2tr(Blockchain.network),
+                    receiver: userAddress,
+                    network: Blockchain.network,
                     amountIn: 340282366920938463463374607431768211455n,
                     priority: false,
                     disablePriorityQueueFees: false,
@@ -156,12 +148,13 @@ await opnet('NativeSwap: Priority and Normal Queue listLiquidity', async (vm: OP
         'should fail to  add to normal queue liquidity if provider is already priority',
         async () => {
             const amountIn = Blockchain.expandTo18Decimals(100);
-            await token.approve(userAddress, nativeSwap.address, amountIn * 2n);
+            await token.increaseAllowance(userAddress, nativeSwap.address, amountIn * 2n);
 
             // Add to priority first
             await nativeSwap.listLiquidity({
                 token: tokenAddress,
-                receiver: userAddress.p2tr(Blockchain.network),
+                receiver: userAddress,
+                network: Blockchain.network,
                 amountIn: amountIn,
                 priority: true,
                 disablePriorityQueueFees: false,
@@ -171,9 +164,10 @@ await opnet('NativeSwap: Priority and Normal Queue listLiquidity', async (vm: OP
             await Assert.expect(async () => {
                 await nativeSwap.listLiquidity({
                     token: tokenAddress,
-                    receiver: userAddress.p2tr(Blockchain.network),
+                    receiver: userAddress,
                     amountIn: amountIn,
                     priority: false,
+                    network: Blockchain.network,
                     disablePriorityQueueFees: false,
                 });
             }).toThrow(
@@ -184,15 +178,16 @@ await opnet('NativeSwap: Priority and Normal Queue listLiquidity', async (vm: OP
 
     await vm.it('should fail to add liquidity when provider is providing liquidity', async () => {
         const amountIn = Blockchain.expandTo18Decimals(100);
-        await token.approve(userAddress, nativeSwap.address, amountIn * 2n);
+        await token.increaseAllowance(userAddress, nativeSwap.address, amountIn * 2n);
 
         // Add to priority
         await nativeSwap.listLiquidity({
             token: tokenAddress,
-            receiver: userAddress.p2tr(Blockchain.network),
+            receiver: userAddress,
             amountIn: amountIn,
             priority: true,
             disablePriorityQueueFees: false,
+            network: Blockchain.network,
         });
 
         Blockchain.blockNumber += 2n;
@@ -208,10 +203,11 @@ await opnet('NativeSwap: Priority and Normal Queue listLiquidity', async (vm: OP
             // Add to priority
             await nativeSwap.listLiquidity({
                 token: tokenAddress,
-                receiver: userAddress.p2tr(Blockchain.network),
+                receiver: userAddress,
                 amountIn: amountIn,
                 priority: true,
                 disablePriorityQueueFees: false,
+                network: Blockchain.network,
             });
         }).toThrow(
             'NATIVE_SWAP: You have an active position partially fulfilled. You must wait until it is fully fulfilled.',
@@ -225,13 +221,14 @@ await opnet('NativeSwap: Priority and Normal Queue listLiquidity', async (vm: OP
         await token.mintRaw(provider, amountIn * 2n);
         Blockchain.msgSender = provider;
         Blockchain.txOrigin = provider;
-        await token.approve(provider, nativeSwap.address, amountIn * 2n);
+        await token.increaseAllowance(provider, nativeSwap.address, amountIn * 2n);
         await nativeSwap.listLiquidity({
             token: tokenAddress,
-            receiver: provider.p2tr(Blockchain.network),
+            receiver: provider,
             amountIn: amountIn,
             priority: false,
             disablePriorityQueueFees: false,
+            network: Blockchain.network,
         });
 
         // Make a reservation from a different user
@@ -263,10 +260,11 @@ await opnet('NativeSwap: Priority and Normal Queue listLiquidity', async (vm: OP
         await Assert.expect(async () => {
             await nativeSwap.listLiquidity({
                 token: tokenAddress,
-                receiver: provider.p2tr(Blockchain.network),
+                receiver: provider,
                 amountIn: amountIn,
                 priority: false,
                 disablePriorityQueueFees: false,
+                network: Blockchain.network,
             });
         }).toThrow(
             'NATIVE_SWAP: You have an active position partially fulfilled. You must wait until it is fully fulfilled.',
@@ -279,13 +277,14 @@ await opnet('NativeSwap: Priority and Normal Queue listLiquidity', async (vm: OP
         await token.mintRaw(provider, amountIn * 10n);
         Blockchain.msgSender = provider;
         Blockchain.txOrigin = provider;
-        await token.approve(provider, nativeSwap.address, amountIn * 10n);
+        await token.increaseAllowance(provider, nativeSwap.address, amountIn * 10n);
         await nativeSwap.listLiquidity({
             token: tokenAddress,
-            receiver: provider.p2tr(Blockchain.network),
+            receiver: provider,
             amountIn: amountIn,
             priority: false,
             disablePriorityQueueFees: false,
+            network: Blockchain.network,
         });
 
         Blockchain.blockNumber += 2n;
@@ -301,10 +300,11 @@ await opnet('NativeSwap: Priority and Normal Queue listLiquidity', async (vm: OP
 
             await nativeSwap.listLiquidity({
                 token: tokenAddress,
-                receiver: provider.p2tr(Blockchain.network),
+                receiver: provider,
                 amountIn: amountIn,
                 priority: false,
                 disablePriorityQueueFees: false,
+                network: Blockchain.network,
             });
         }).toThrow(
             'NATIVE_SWAP: You are in the purge queue. Your current listing must be bought before listing again.',
@@ -317,7 +317,7 @@ await opnet('NativeSwap: Priority and Normal Queue listLiquidity', async (vm: OP
         Blockchain.clearContracts();
         await Blockchain.init();
 
-        token = new OP_20({
+        token = new OP20({
             file: 'MyToken',
             deployer: userAddress,
             address: tokenAddress,
@@ -333,16 +333,17 @@ await opnet('NativeSwap: Priority and Normal Queue listLiquidity', async (vm: OP
         Blockchain.msgSender = userAddress;
 
         const amountIn = Blockchain.expandTo18Decimals(100);
-        await token.approve(userAddress, nativeSwap.address, amountIn);
+        await token.increaseAllowance(userAddress, nativeSwap.address, amountIn);
 
         // No createPool(...) invoked here => p0 = 0
         await Assert.expect(async () => {
             await nativeSwap.listLiquidity({
                 token: tokenAddress,
-                receiver: userAddress.p2tr(Blockchain.network),
+                receiver: userAddress,
                 amountIn: amountIn,
                 priority: false,
                 disablePriorityQueueFees: false,
+                network: Blockchain.network,
             });
         }).toThrow('NATIVE_SWAP: Pool does not exist for token.');
     });
@@ -354,14 +355,15 @@ await opnet('NativeSwap: Priority and Normal Queue listLiquidity', async (vm: OP
             await token.mintRaw(liquidityOwner, amountIn * 2n);
             Blockchain.msgSender = liquidityOwner;
             Blockchain.txOrigin = liquidityOwner;
-            await token.approve(liquidityOwner, nativeSwap.address, amountIn * 2n);
+            await token.increaseAllowance(liquidityOwner, nativeSwap.address, amountIn * 2n);
             await Assert.expect(async () => {
                 await nativeSwap.listLiquidity({
                     token: tokenAddress,
-                    receiver: liquidityOwner.p2tr(Blockchain.network),
+                    receiver: liquidityOwner,
                     amountIn: amountIn,
                     priority: false,
                     disablePriorityQueueFees: false,
+                    network: Blockchain.network,
                 });
             }).toThrow('NATIVE_SWAP: Initial provider can only add once, if not initialLiquidity.');
         },
@@ -373,7 +375,7 @@ await opnet('NativeSwap: Priority and Normal Queue listLiquidity', async (vm: OP
         Blockchain.clearContracts();
         await Blockchain.init();
 
-        token = new OP_20({
+        token = new OP20({
             file: 'MyToken',
             deployer: liquidityOwner,
             address: tokenAddress,
@@ -405,15 +407,16 @@ await opnet('NativeSwap: Priority and Normal Queue listLiquidity', async (vm: OP
 
         // With that huge floor price, a smaller subsequent addition is worthless in sat terms:
         const smallAmount = 10n;
-        await token.approve(userAddress, nativeSwap.address, smallAmount);
+        await token.increaseAllowance(userAddress, nativeSwap.address, smallAmount);
 
         await Assert.expect(async () => {
             await nativeSwap.listLiquidity({
                 token: tokenAddress,
-                receiver: userAddress.p2tr(Blockchain.network),
+                receiver: userAddress,
                 amountIn: smallAmount,
                 priority: false,
                 disablePriorityQueueFees: false,
+                network: Blockchain.network,
             });
         }).toThrow('NATIVE_SWAP: Liquidity value is too low in satoshis.');
     });
@@ -425,7 +428,7 @@ await opnet('NativeSwap: Priority and Normal Queue listLiquidity', async (vm: OP
         Blockchain.clearContracts();
         await Blockchain.init();
 
-        token = new OP_20({
+        token = new OP20({
             file: 'MyToken',
             deployer: liquidityOwner,
             address: tokenAddress,
@@ -443,15 +446,16 @@ await opnet('NativeSwap: Priority and Normal Queue listLiquidity', async (vm: OP
         Blockchain.msgSender = userAddress;
 
         const amount = 100000n;
-        await token.approve(userAddress, nativeSwap.address, 100000n);
+        await token.increaseAllowance(userAddress, nativeSwap.address, 100000n);
 
         await Assert.expect(async () => {
             await nativeSwap.listLiquidity({
                 token: tokenAddress,
-                receiver: userAddress.p2tr(Blockchain.network),
+                receiver: userAddress,
                 amountIn: amount,
                 priority: false,
                 disablePriorityQueueFees: false,
+                network: Blockchain.network,
             });
         }).toThrow('NATIVE_SWAP: Pool does not exist for token.');
     });
@@ -459,16 +463,27 @@ await opnet('NativeSwap: Priority and Normal Queue listLiquidity', async (vm: OP
     await vm.it('should fail to add liquidity if the receiver address is invalid', async () => {
         const provider = Blockchain.generateRandomAddress();
         Blockchain.blockNumber = 1000n;
+
+        Blockchain.txOrigin = token.deployer;
+        Blockchain.msgSender = token.deployer;
+
+        const amountIn = Blockchain.expandTo18Decimals(500);
+        await token.mintRaw(provider, amountIn);
+
         Blockchain.txOrigin = provider;
         Blockchain.msgSender = provider;
+
+        await token.increaseAllowance(provider, nativeSwap.address, amountIn * 2n);
 
         await Assert.expect(async () => {
             await nativeSwap.listLiquidity({
                 token: tokenAddress,
-                receiver: provider.p2tr(networks.bitcoin),
-                amountIn: 10000n,
+                receiver: provider,
+                receiverStr: provider.p2tr(Blockchain.network),
+                amountIn: amountIn,
                 priority: false,
                 disablePriorityQueueFees: false,
+                network: Blockchain.network,
             });
         }).toThrow('NATIVE_SWAP: Invalid receiver address.');
     });
@@ -482,20 +497,22 @@ await opnet('NativeSwap: Priority and Normal Queue listLiquidity', async (vm: OP
         await Assert.expect(async () => {
             await nativeSwap.listLiquidity({
                 token: new Address(),
-                receiver: provider.p2tr(Blockchain.network),
+                receiver: provider,
                 amountIn: 10000n,
                 priority: false,
                 disablePriorityQueueFees: false,
+                network: Blockchain.network,
             });
         }).toThrow(`Invalid token address`);
 
         await Assert.expect(async () => {
             await nativeSwap.listLiquidity({
                 token: Address.dead(),
-                receiver: provider.p2tr(Blockchain.network),
+                receiver: provider,
                 amountIn: 10000n,
                 priority: false,
                 disablePriorityQueueFees: false,
+                network: Blockchain.network,
             });
         }).toThrow(`Invalid token address`);
     });
@@ -504,25 +521,27 @@ await opnet('NativeSwap: Priority and Normal Queue listLiquidity', async (vm: OP
         'should not allow adding priority queue liquidity if provider is already normal',
         async () => {
             const amountIn = Blockchain.expandTo18Decimals(100);
-            await token.approve(userAddress, nativeSwap.address, amountIn * 2n);
+            await token.increaseAllowance(userAddress, nativeSwap.address, amountIn * 2n);
 
             // Add to normal first
             await nativeSwap.listLiquidity({
                 token: tokenAddress,
-                receiver: userAddress.p2tr(Blockchain.network),
+                receiver: userAddress,
                 amountIn: amountIn,
                 priority: false,
                 disablePriorityQueueFees: false,
+                network: Blockchain.network,
             });
 
             // Try adding to priority queue
             await Assert.expect(async () => {
                 await nativeSwap.listLiquidity({
                     token: tokenAddress,
-                    receiver: userAddress.p2tr(Blockchain.network),
+                    receiver: userAddress,
                     amountIn: amountIn,
                     priority: true,
                     disablePriorityQueueFees: false,
+                    network: Blockchain.network,
                 });
             }).toThrow('NATIVE_SWAP: You must cancel your listings before switching queue type.');
         },
@@ -531,7 +550,7 @@ await opnet('NativeSwap: Priority and Normal Queue listLiquidity', async (vm: OP
     await vm.it('should add liquidity to the normal queue successfully', async () => {
         Blockchain.blockNumber = 1000n;
         const amountIn = Blockchain.expandTo18Decimals(500);
-        await token.approve(userAddress, nativeSwap.address, amountIn);
+        await token.increaseAllowance(userAddress, nativeSwap.address, amountIn);
 
         const reserveBefore = await nativeSwap.getReserve({ token: tokenAddress });
 
@@ -540,10 +559,11 @@ await opnet('NativeSwap: Priority and Normal Queue listLiquidity', async (vm: OP
 
         const resp: ListLiquidityResult = await nativeSwap.listLiquidity({
             token: tokenAddress,
-            receiver: userAddress.p2tr(Blockchain.network),
+            receiver: userAddress,
             amountIn: amountIn,
             priority: false,
             disablePriorityQueueFees: false,
+            network: Blockchain.network,
         });
 
         Assert.expect(resp.response.error).toBeUndefined();
@@ -563,7 +583,9 @@ await opnet('NativeSwap: Priority and Normal Queue listLiquidity', async (vm: OP
 
         const decoded = NativeSwapTypesCoders.decodeLiquidityListedEvent(LiquidityListedEvt.data);
         Assert.expect(decoded.totalLiquidity).toEqual(amountIn);
-        Assert.expect(decoded.provider).toEqual(userAddress.p2tr(Blockchain.network));
+        Assert.expect(decoded.provider).toEqual(
+            userAddress.toCSV(CSV_DURATION, Blockchain.network).address,
+        );
 
         const reserveAfter = await nativeSwap.getReserve({ token: tokenAddress });
 
@@ -582,7 +604,7 @@ await opnet('NativeSwap: Priority and Normal Queue listLiquidity', async (vm: OP
         async () => {
             Blockchain.blockNumber = 1000n;
             const amountIn = Blockchain.expandTo18Decimals(1000);
-            await token.approve(userAddress, nativeSwap.address, amountIn);
+            await token.increaseAllowance(userAddress, nativeSwap.address, amountIn);
 
             const reserveBefore = await nativeSwap.getReserve({ token: tokenAddress });
             const initialUserBalance = await token.balanceOf(userAddress);
@@ -592,10 +614,11 @@ await opnet('NativeSwap: Priority and Normal Queue listLiquidity', async (vm: OP
             // Priority mode: 3% fee to dead address by default logic
             const resp = await nativeSwap.listLiquidity({
                 token: tokenAddress,
-                receiver: userAddress.p2tr(Blockchain.network),
+                receiver: userAddress,
                 amountIn: amountIn,
                 priority: true,
                 disablePriorityQueueFees: false,
+                network: Blockchain.network,
             });
 
             Assert.expect(resp.response.error).toBeUndefined();
@@ -645,7 +668,7 @@ await opnet('NativeSwap: Priority and Normal Queue listLiquidity', async (vm: OP
 
             Blockchain.blockNumber = 1000n;
             const amountIn = Blockchain.expandTo18Decimals(1000);
-            await token.approve(userAddress, nativeSwap.address, amountIn);
+            await token.increaseAllowance(userAddress, nativeSwap.address, amountIn);
 
             const reserveBefore = await nativeSwap.getReserve({ token: tokenAddress });
             const initialUserBalance = await token.balanceOf(userAddress);
@@ -656,10 +679,11 @@ await opnet('NativeSwap: Priority and Normal Queue listLiquidity', async (vm: OP
             const resp = await nativeSwap.listLiquidity(
                 {
                     token: tokenAddress,
-                    receiver: userAddress.p2tr(Blockchain.network),
+                    receiver: userAddress,
                     amountIn: amountIn,
                     priority: true,
                     disablePriorityQueueFees: false,
+                    network: Blockchain.network,
                 },
                 feesAddress,
             );
@@ -705,7 +729,7 @@ await opnet('NativeSwap: Priority and Normal Queue listLiquidity', async (vm: OP
         'should allow multiple additions to priority queue for the same provider',
         async () => {
             const amountIn = Blockchain.expandTo18Decimals(500);
-            await token.approve(userAddress, nativeSwap.address, amountIn * 2n);
+            await token.increaseAllowance(userAddress, nativeSwap.address, amountIn * 2n);
 
             const reserve1 = await nativeSwap.getReserve({ token: tokenAddress });
             const initialStakingBalance = await token.balanceOf(stakingContractAddress);
@@ -713,10 +737,11 @@ await opnet('NativeSwap: Priority and Normal Queue listLiquidity', async (vm: OP
             // First addition
             const resp1 = await nativeSwap.listLiquidity({
                 token: tokenAddress,
-                receiver: userAddress.p2tr(Blockchain.network),
+                receiver: userAddress,
                 amountIn: amountIn,
                 priority: true,
                 disablePriorityQueueFees: false,
+                network: Blockchain.network,
             });
 
             Assert.expect(resp1.response.error).toBeUndefined();
@@ -728,10 +753,11 @@ await opnet('NativeSwap: Priority and Normal Queue listLiquidity', async (vm: OP
             // Second addition
             const resp2 = await nativeSwap.listLiquidity({
                 token: tokenAddress,
-                receiver: userAddress.p2tr(Blockchain.network),
+                receiver: userAddress,
                 amountIn: amountIn,
                 priority: true,
                 disablePriorityQueueFees: false,
+                network: Blockchain.network,
             });
 
             Assert.expect(resp2.response.error).toBeUndefined();
@@ -770,13 +796,14 @@ await opnet('NativeSwap: Priority and Normal Queue listLiquidity', async (vm: OP
         await token.mintRaw(provider, amountIn * 2n);
         Blockchain.msgSender = provider;
         Blockchain.txOrigin = provider;
-        await token.approve(provider, nativeSwap.address, amountIn * 2n);
+        await token.increaseAllowance(provider, nativeSwap.address, amountIn * 2n);
         await nativeSwap.listLiquidity({
             token: tokenAddress,
-            receiver: provider.p2tr(Blockchain.network),
+            receiver: provider,
             amountIn: amountIn,
             priority: false,
             disablePriorityQueueFees: false,
+            network: Blockchain.network,
         });
 
         const providerDetail1 = await nativeSwap.getProviderDetails({ token: tokenAddress });
@@ -808,10 +835,11 @@ await opnet('NativeSwap: Priority and Normal Queue listLiquidity', async (vm: OP
         Blockchain.txOrigin = provider;
         await nativeSwap.listLiquidity({
             token: tokenAddress,
-            receiver: provider.p2tr(Blockchain.network),
+            receiver: provider,
             amountIn: amountIn,
             priority: false,
             disablePriorityQueueFees: false,
+            network: Blockchain.network,
         });
 
         const providerDetail2 = await nativeSwap.getProviderDetails({ token: tokenAddress });
@@ -830,25 +858,27 @@ await opnet('NativeSwap: Priority and Normal Queue listLiquidity', async (vm: OP
         // Provider1: normal queue
         Blockchain.msgSender = provider1;
         Blockchain.txOrigin = provider1;
-        await token.approve(provider1, nativeSwap.address, amt);
+        await token.increaseAllowance(provider1, nativeSwap.address, amt);
         await nativeSwap.listLiquidity({
             token: tokenAddress,
-            receiver: provider1.p2tr(Blockchain.network),
+            receiver: provider1,
             amountIn: amt,
             priority: false,
             disablePriorityQueueFees: false,
+            network: Blockchain.network,
         });
 
         // Provider2: priority queue
         Blockchain.msgSender = provider2;
         Blockchain.txOrigin = provider2;
-        await token.approve(provider2, nativeSwap.address, amt);
+        await token.increaseAllowance(provider2, nativeSwap.address, amt);
         await nativeSwap.listLiquidity({
             token: tokenAddress,
-            receiver: provider2.p2tr(Blockchain.network),
+            receiver: provider2,
             amountIn: amt,
             priority: true,
             disablePriorityQueueFees: false,
+            network: Blockchain.network,
         });
 
         // Check total reserve: sum of normal + (amt - fee)
@@ -867,16 +897,17 @@ await opnet('NativeSwap: Priority and Normal Queue listLiquidity', async (vm: OP
             const amt = Blockchain.expandTo18Decimals(1000);
 
             await token.mintRaw(user2, amt);
-            await token.approve(userAddress, nativeSwap.address, amt);
-            await token.approve(user2, nativeSwap.address, amt);
+            await token.increaseAllowance(userAddress, nativeSwap.address, amt);
+            await token.increaseAllowance(user2, nativeSwap.address, amt);
 
             // userAddress: add priority
             await nativeSwap.listLiquidity({
                 token: tokenAddress,
-                receiver: userAddress.p2tr(Blockchain.network),
+                receiver: userAddress,
                 amountIn: amt,
                 priority: true,
                 disablePriorityQueueFees: false,
+                network: Blockchain.network,
             });
 
             // user2: add normal
@@ -884,10 +915,11 @@ await opnet('NativeSwap: Priority and Normal Queue listLiquidity', async (vm: OP
             Blockchain.txOrigin = user2;
             const resp = await nativeSwap.listLiquidity({
                 token: tokenAddress,
-                receiver: user2.p2tr(Blockchain.network),
+                receiver: user2,
                 amountIn: amt,
                 priority: false,
                 disablePriorityQueueFees: false,
+                network: Blockchain.network,
             });
             Assert.expect(resp.response.error).toBeUndefined();
 
@@ -908,13 +940,14 @@ await opnet('NativeSwap: Priority and Normal Queue listLiquidity', async (vm: OP
         await token.mintRaw(provider, amountIn * 2n);
         Blockchain.msgSender = provider;
         Blockchain.txOrigin = provider;
-        await token.approve(provider, nativeSwap.address, amountIn * 2n);
+        await token.increaseAllowance(provider, nativeSwap.address, amountIn * 2n);
         await nativeSwap.listLiquidity({
             token: tokenAddress,
-            receiver: provider.p2tr(Blockchain.network),
+            receiver: provider,
             amountIn: amountIn,
             priority: false,
             disablePriorityQueueFees: false,
+            network: Blockchain.network,
         });
 
         // Make a reservation from a different user
@@ -942,7 +975,7 @@ await opnet('NativeSwap: Priority and Normal Queue listLiquidity', async (vm: OP
         });
 
         // Now the provider tries to add more liquidity with a different receiver
-        const newReceiver = Blockchain.generateRandomAddress().p2tr(Blockchain.network);
+        const newReceiver = Blockchain.generateRandomAddress();
         Blockchain.msgSender = provider;
 
         // Should NOT revert
@@ -952,6 +985,7 @@ await opnet('NativeSwap: Priority and Normal Queue listLiquidity', async (vm: OP
             amountIn: amountIn,
             priority: false,
             disablePriorityQueueFees: false,
+            network: Blockchain.network,
         });
     });
 });

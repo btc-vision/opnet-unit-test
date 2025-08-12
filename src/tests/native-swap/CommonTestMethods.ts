@@ -1,5 +1,5 @@
 import { Address } from '@btc-vision/transaction';
-import { Blockchain, gas2USD, OP_20, OPNetUnit } from '@btc-vision/unit-test-framework';
+import { Blockchain, gas2USD, OP20, OPNetUnit } from '@btc-vision/unit-test-framework';
 import { NativeSwap } from '../../contracts/NativeSwap.js';
 import { Recipient, ReserveResult } from '../../contracts/NativeSwapTypes.js';
 import { NativeSwapTypesCoders } from '../../contracts/NativeSwapTypesCoders.js';
@@ -25,9 +25,9 @@ export class NativeSwapTestHelper {
 
     constructor(private vm: OPNetUnit) {}
 
-    public _token: OP_20 | null = null;
+    public _token: OP20 | null = null;
 
-    public get token(): OP_20 {
+    public get token(): OP20 {
         if (!this._token) {
             throw new Error('Token not initialized');
         }
@@ -35,7 +35,7 @@ export class NativeSwapTestHelper {
         return this._token;
     }
 
-    public set token(token: OP_20) {
+    public set token(token: OP20) {
         this._token = token;
     }
 
@@ -92,7 +92,7 @@ export class NativeSwapTestHelper {
             await Blockchain.init();
 
             // Instantiate and register the OP_20 token
-            this.token = new OP_20({
+            this.token = new OP20({
                 file: 'MyToken',
                 deployer: this.userAddress,
                 address: this.tokenAddress,
@@ -160,7 +160,11 @@ export class NativeSwapTestHelper {
         // Approve NativeSwap to take tokens
         Blockchain.txOrigin = this.userAddress;
         Blockchain.msgSender = this.userAddress;
-        await this.token.approve(this.userAddress, this.nativeSwap.address, initLiquidity);
+        await this.token.increaseAllowance(
+            this.userAddress,
+            this.nativeSwap.address,
+            initLiquidity,
+        );
 
         console.log(
             'Creating pool with floor price',
@@ -170,15 +174,20 @@ export class NativeSwapTestHelper {
         );
         // 10000000000n 1000000000000000000n
 
+        await this.nativeSwap.setStakingContractAddress({
+            stakingContractAddress: Blockchain.generateRandomAddress(),
+        });
+
         // Create the pool
         await this.nativeSwap.createPool({
             token: this.token.address,
             floorPrice,
             initialLiquidity: initLiquidity,
-            receiver: this.initialLiquidityProvider.p2tr(Blockchain.network),
+            receiver: this.initialLiquidityProvider,
             antiBotEnabledFor: 0,
             antiBotMaximumTokensPerReservation: 0n,
             maxReservesIn5BlocksPercent: 40,
+            network: Blockchain.network,
         });
 
         Blockchain.blockNumber += 1n;
@@ -271,10 +280,10 @@ export class NativeSwapTestHelper {
         Blockchain.txOrigin = this.userAddress;
         Blockchain.msgSender = this.userAddress;
         // Transfer tokens from userAddress to provider
-        await this.token.transfer(this.userAddress, provider, l);
+        await this.token.safeTransfer(this.userAddress, provider, l);
 
         // Approve NativeSwap contract to spend tokens
-        await this.token.approve(provider, this.nativeSwap.address, l);
+        await this.token.increaseAllowance(provider, this.nativeSwap.address, l);
 
         // Add liquidity
         Blockchain.txOrigin = provider;
@@ -282,10 +291,11 @@ export class NativeSwapTestHelper {
 
         await this.nativeSwap.listLiquidity({
             token: this.tokenAddress,
-            receiver: provider.p2tr(Blockchain.network),
+            receiver: provider,
             amountIn: l,
             priority: false,
             disablePriorityQueueFees: false,
+            network: Blockchain.network,
         });
 
         Blockchain.txOrigin = backup;
@@ -332,10 +342,10 @@ export class NativeSwapTestHelper {
         // Transfer tokens from userAddress to provider
         Blockchain.txOrigin = this.userAddress;
         Blockchain.msgSender = this.userAddress;
-        await this.token.transfer(this.userAddress, provider, l);
+        await this.token.safeTransfer(this.userAddress, provider, l);
 
         // Approve NativeSwap contract to spend tokens
-        await this.token.approve(provider, this.nativeSwap.address, l);
+        await this.token.increaseAllowance(provider, this.nativeSwap.address, l);
 
         // Add liquidity
         Blockchain.txOrigin = provider;
@@ -363,7 +373,7 @@ export class NativeSwapTestHelper {
             createRecipientsOutput(reservation.r);
 
             // Approve again in case large amounts are needed
-            await this.token.approve(
+            await this.token.increaseAllowance(
                 reservation.a,
                 this.nativeSwap.address,
                 BitcoinUtils.expandToDecimals(1_000_000_000_000, this.tokenDecimals),

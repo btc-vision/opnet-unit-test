@@ -6,7 +6,7 @@ import {
     gas2Sat,
     gas2USD,
     generateEmptyTransaction,
-    OP_20,
+    OP20,
     opnet,
     OPNetUnit,
     Transaction,
@@ -26,7 +26,7 @@ const receiver: Address = Blockchain.generateRandomAddress();
 
 await opnet('NativeSwap: Priority and Normal Queue cancelliquidity', async (vm: OPNetUnit) => {
     let nativeSwap: NativeSwap;
-    let token: OP_20;
+    let token: OP20;
 
     const userAddress: Address = receiver;
     const stakingContractAddress: Address = Blockchain.generateRandomAddress();
@@ -47,7 +47,7 @@ await opnet('NativeSwap: Priority and Normal Queue cancelliquidity', async (vm: 
     ): Promise<void> {
         const realAmountIn = Blockchain.expandTo18Decimals(amountIn);
         await token.mintRaw(providerAddress, realAmountIn);
-        await token.approve(providerAddress, nativeSwap.address, realAmountIn);
+        await token.increaseAllowance(providerAddress, nativeSwap.address, realAmountIn);
 
         await helper_listLiquidity(
             nativeSwap,
@@ -85,7 +85,7 @@ await opnet('NativeSwap: Priority and Normal Queue cancelliquidity', async (vm: 
         Blockchain.clearContracts();
         await Blockchain.init();
 
-        token = new OP_20({
+        token = new OP20({
             file: 'MyToken',
             deployer: liquidityOwner,
             address: tokenAddress,
@@ -295,7 +295,7 @@ await opnet('NativeSwap: Priority and Normal Queue cancelliquidity', async (vm: 
             });
 
             const cancelEvts = result.response.events.filter((e) => e.type === 'ListingCanceled');
-            const transferEvts = result.response.events.filter((e) => e.type === 'Transfer');
+            const transferEvts = result.response.events.filter((e) => e.type === 'Transferred');
 
             Assert.expect(cancelEvts.length).toEqual(1);
             Assert.expect(transferEvts.length).toEqual(2);
@@ -337,7 +337,7 @@ await opnet('NativeSwap: Priority and Normal Queue cancelliquidity', async (vm: 
             });
 
             const cancelEvts = result.response.events.filter((e) => e.type === 'ListingCanceled');
-            const transferEvts = result.response.events.filter((e) => e.type === 'Transfer');
+            const transferEvts = result.response.events.filter((e) => e.type === 'Transferred');
 
             Assert.expect(cancelEvts.length).toEqual(1);
             Assert.expect(transferEvts.length).toEqual(2);
@@ -379,7 +379,7 @@ await opnet('NativeSwap: Priority and Normal Queue cancelliquidity', async (vm: 
             });
 
             const cancelEvts = result.response.events.filter((e) => e.type === 'ListingCanceled');
-            const transferEvts = result.response.events.filter((e) => e.type === 'Transfer');
+            const transferEvts = result.response.events.filter((e) => e.type === 'Transferred');
 
             Assert.expect(cancelEvts.length).toEqual(1);
             Assert.expect(transferEvts.length).toEqual(2);
@@ -430,7 +430,7 @@ await opnet('NativeSwap: Priority and Normal Queue cancelliquidity', async (vm: 
         Blockchain.clearContracts();
         await Blockchain.init();
 
-        token = new OP_20({
+        token = new OP20({
             file: 'MyToken',
             deployer: liquidityOwner,
             address: tokenAddress,
@@ -448,7 +448,7 @@ await opnet('NativeSwap: Priority and Normal Queue cancelliquidity', async (vm: 
         Blockchain.msgSender = userAddress;
 
         const amount = 100000n;
-        await token.approve(userAddress, nativeSwap.address, 100000n);
+        await token.increaseAllowance(userAddress, nativeSwap.address, 100000n);
 
         await Assert.expect(async () => {
             await nativeSwap.cancelListing({
