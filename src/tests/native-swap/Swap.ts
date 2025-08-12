@@ -7,13 +7,11 @@ import {
     helper_getBalance,
     helper_getProviderDetails,
     helper_getReserve,
-    helper_listLiquidity,
     helper_reserve,
     helper_swap,
 } from '../utils/OperationHelper.js';
 import { createRecipientUTXOs } from '../utils/UTXOSimulator.js';
 import { NativeSwapTypesCoders } from '../../contracts/NativeSwapTypesCoders.js';
-import { SwapExecutedEvent } from 'opnet';
 import { ListLiquidityResult } from '../../contracts/NativeSwapTypes.js';
 
 await opnet('Native Swap - Swap', async (vm: OPNetUnit) => {
@@ -336,7 +334,8 @@ await opnet('Native Swap - Swap', async (vm: OPNetUnit) => {
 
             const resp: ListLiquidityResult = await nativeSwap.listLiquidity({
                 token: tokenAddress,
-                receiver: providerAddress.p2tr(Blockchain.network),
+                receiver: providerAddress,
+                network: Blockchain.network,
                 amountIn: amountIn,
                 priority: false,
                 disablePriorityQueueFees: false,
@@ -478,7 +477,8 @@ await opnet('Native Swap - Swap', async (vm: OPNetUnit) => {
 
             const resp: ListLiquidityResult = await nativeSwap.listLiquidity({
                 token: tokenAddress,
-                receiver: providerAddress.p2tr(Blockchain.network),
+                receiver: providerAddress,
+                network: Blockchain.network,
                 amountIn: amountIn,
                 priority: true,
                 disablePriorityQueueFees: false,

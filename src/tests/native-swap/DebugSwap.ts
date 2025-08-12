@@ -13,21 +13,10 @@ import {
 import fs from 'fs';
 import { BitcoinUtils } from 'opnet';
 import { NativeSwap } from '../../contracts/NativeSwap.js';
-import {
-    Recipient,
-    ReserveParams,
-    ReserveResult,
-    SwapParams,
-} from '../../contracts/NativeSwapTypes.js';
+import { Recipient, ReserveResult } from '../../contracts/NativeSwapTypes.js';
 import { createRecipientsOutput } from '../utils/TransactionUtils.js';
 import { NativeSwapTypesCoders } from '../../contracts/NativeSwapTypesCoders.js';
-import { Network, networks } from '@btc-vision/bitcoin';
-import {
-    logCancelListingEvents,
-    logCancelListingResult,
-    logLiquidityListedEvent,
-    logSwapResult,
-} from '../utils/LoggerHelper.js';
+import { networks } from '@btc-vision/bitcoin';
 
 interface ParsedState {
     readonly pointer: {
@@ -193,7 +182,8 @@ await opnet('NativeSwap: Debug', async (vm: OPNetUnit) => {
         await token.increaseAllowance(provider, nativeSwap.address, amountIn);
         const resp = await nativeSwap.listLiquidity({
             token: tokenAddress,
-            receiver: provider.p2tr(Blockchain.network),
+            receiver: provider,
+            network: Blockchain.network,
             amountIn: amountIn,
             priority: priority,
             disablePriorityQueueFees: false,
@@ -225,7 +215,8 @@ await opnet('NativeSwap: Debug', async (vm: OPNetUnit) => {
 
         const liquid = await nativeSwap.listLiquidity({
             token: tokenAddress,
-            receiver: provider.p2tr(Blockchain.network),
+            receiver: provider,
+            network: Blockchain.network,
             amountIn: l,
             priority: priority,
             disablePriorityQueueFees: false,
@@ -495,7 +486,7 @@ await opnet('NativeSwap: Debug', async (vm: OPNetUnit) => {
         console.log(`balanceOf`);
         console.log(`--------------------`);
         console.log(b);
-        
+
  */
         /*
         console.log('cancel');

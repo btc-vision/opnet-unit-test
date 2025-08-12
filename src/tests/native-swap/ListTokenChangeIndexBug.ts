@@ -5,7 +5,6 @@ import { NativeSwapTypesCoders } from '../../contracts/NativeSwapTypesCoders.js'
 import { ListLiquidityResult } from '../../contracts/NativeSwapTypes.js';
 import { helper_createPool, helper_reserve, helper_swap } from '../utils/OperationHelper.js';
 import { address } from '@btc-vision/bitcoin';
-import { logProviderDetailsResult } from '../utils/LoggerHelper.js';
 import { createRecipientUTXOs } from '../utils/UTXOSimulator.js';
 
 async function listToken(
@@ -27,7 +26,8 @@ async function listToken(
 
     const resp1: ListLiquidityResult = await nativeSwap.listLiquidity({
         token: tokenAddress,
-        receiver: lister.p2tr(Blockchain.network),
+        receiver: lister,
+        network: Blockchain.network,
         amountIn: amount,
         priority: false,
         disablePriorityQueueFees: false,

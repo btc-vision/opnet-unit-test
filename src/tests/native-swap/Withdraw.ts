@@ -1,27 +1,16 @@
 import { Address } from '@btc-vision/transaction';
-import {
-    Assert,
-    Blockchain,
-    gas2BTC,
-    gas2Sat,
-    gas2USD,
-    generateEmptyTransaction,
-    OP20,
-    opnet,
-    OPNetUnit,
-    Transaction,
-} from '@btc-vision/unit-test-framework';
+import { Assert, Blockchain, OP20, opnet, OPNetUnit } from '@btc-vision/unit-test-framework';
 import { NativeSwap } from '../../contracts/NativeSwap.js';
 
 import { NativeSwapTypesCoders } from '../../contracts/NativeSwapTypesCoders.js';
 import {
     helper_createPool,
     helper_getProviderDetails,
-    helper_getReserve,
     helper_listLiquidity,
     helper_reserve,
     helper_swap,
 } from '../utils/OperationHelper.js';
+import { CSV_DURATION } from '../globals.js';
 
 const receiver: Address = Blockchain.generateRandomAddress();
 
@@ -554,7 +543,7 @@ await opnet('NativeSwap: withdraw mode', async (vm: OPNetUnit) => {
 
             Assert.expect(decodedReservation.recipients.length).toEqual(1);
             Assert.expect(decodedReservation.recipients[0].address).toEqual(
-                provider.p2tr(Blockchain.network),
+                provider.toCSV(CSV_DURATION, Blockchain.network).address,
             );
             Assert.expect(decodedReservation.recipients[0].amount).toEqual(2952342n);
 
@@ -985,7 +974,7 @@ await opnet('NativeSwap: withdraw mode', async (vm: OPNetUnit) => {
 
             Assert.expect(decodedReservation.recipients.length).toEqual(1);
             Assert.expect(decodedReservation.recipients[0].address).toEqual(
-                provider.p2tr(Blockchain.network),
+                provider.toCSV(CSV_DURATION, Blockchain.network).address,
             );
             Assert.expect(decodedReservation.recipients[0].amount).toEqual(255555n);
 

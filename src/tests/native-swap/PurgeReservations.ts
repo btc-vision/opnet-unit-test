@@ -9,7 +9,6 @@ import {
 } from '@btc-vision/unit-test-framework';
 import { NativeSwap } from '../../contracts/NativeSwap.js';
 import { ReserveResult } from '../../contracts/NativeSwapTypes.js';
-import { logReserveResult } from '../utils/LoggerHelper.js';
 
 await opnet('NativeSwap: Purging Reservations', async (vm: OPNetUnit) => {
     let nativeSwap: NativeSwap;
@@ -31,6 +30,10 @@ await opnet('NativeSwap: Purging Reservations', async (vm: OPNetUnit) => {
         Blockchain.txOrigin = userAddress;
         Blockchain.msgSender = userAddress;
 
+        await nativeSwap.setStakingContractAddress({
+            stakingContractAddress: Blockchain.generateRandomAddress(),
+        });
+
         await token.mintRaw(userAddress, initialLiquidity);
         await token.increaseAllowance(userAddress, nativeSwap.address, initialLiquidity);
 
@@ -38,7 +41,8 @@ await opnet('NativeSwap: Purging Reservations', async (vm: OPNetUnit) => {
             token: tokenAddress,
             floorPrice: floorPrice,
             initialLiquidity: initialLiquidity,
-            receiver: initialLiquidityProvider.p2tr(Blockchain.network),
+            receiver: initialLiquidityProvider,
+            network: Blockchain.network,
             antiBotEnabledFor: antiBotEnabledFor,
             antiBotMaximumTokensPerReservation: antiBotMaximumTokensPerReservation,
             maxReservesIn5BlocksPercent: 40,
@@ -57,7 +61,8 @@ await opnet('NativeSwap: Purging Reservations', async (vm: OPNetUnit) => {
         await token.increaseAllowance(provider, nativeSwap.address, amountIn);
         const resp = await nativeSwap.listLiquidity({
             token: tokenAddress,
-            receiver: provider.p2tr(Blockchain.network),
+            receiver: provider,
+            network: Blockchain.network,
             amountIn: amountIn,
             priority: priority,
             disablePriorityQueueFees: false,

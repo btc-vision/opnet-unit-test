@@ -21,14 +21,19 @@ await opnet('Native Swap - Get Reserve', async (vm: OPNetUnit) => {
 
         await token.increaseAllowance(userAddress, nativeSwap.address, liquidityAmount);
 
+        await nativeSwap.setStakingContractAddress({
+            stakingContractAddress: Blockchain.generateRandomAddress(),
+        });
+
         await nativeSwap.createPool({
             token: token.address,
             floorPrice: 100n,
             initialLiquidity: 25000000n,
-            receiver: initialLiquidityProvider.p2tr(Blockchain.network),
+            receiver: initialLiquidityProvider,
             antiBotEnabledFor: 0,
             antiBotMaximumTokensPerReservation: 0n,
             maxReservesIn5BlocksPercent: 40,
+            network: Blockchain.network,
         });
     }
 

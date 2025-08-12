@@ -174,15 +174,20 @@ export class NativeSwapTestHelper {
         );
         // 10000000000n 1000000000000000000n
 
+        await this.nativeSwap.setStakingContractAddress({
+            stakingContractAddress: Blockchain.generateRandomAddress(),
+        });
+
         // Create the pool
         await this.nativeSwap.createPool({
             token: this.token.address,
             floorPrice,
             initialLiquidity: initLiquidity,
-            receiver: this.initialLiquidityProvider.p2tr(Blockchain.network),
+            receiver: this.initialLiquidityProvider,
             antiBotEnabledFor: 0,
             antiBotMaximumTokensPerReservation: 0n,
             maxReservesIn5BlocksPercent: 40,
+            network: Blockchain.network,
         });
 
         Blockchain.blockNumber += 1n;
@@ -286,10 +291,11 @@ export class NativeSwapTestHelper {
 
         await this.nativeSwap.listLiquidity({
             token: this.tokenAddress,
-            receiver: provider.p2tr(Blockchain.network),
+            receiver: provider,
             amountIn: l,
             priority: false,
             disablePriorityQueueFees: false,
+            network: Blockchain.network,
         });
 
         Blockchain.txOrigin = backup;

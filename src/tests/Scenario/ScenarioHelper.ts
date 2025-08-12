@@ -42,8 +42,6 @@ import { createRecipientsOutput } from '../utils/TransactionUtils.js';
 import { ExpectedSwapExecutedEvent } from './Expected/ExpectedSwapExecutedEvent.js';
 import { ExpectedLiquidityAddedEvent } from './Expected/ExpectedLiquidityAddedEvent.js';
 import { ExpectedLiquidityRemovedEvent } from './Expected/ExpectedLiquidityRemovedEvent.js';
-import { ExpectedListingCanceledEvent } from './Expected/ExpectedListingCanceledEvent.js';
-import { ExpectedFulfilledProviderEvent } from './Expected/ExpectedFulfilledProviderEvent.js';
 import { ExpectedActivateProviderEvent } from './Expected/ExpectedActivateProviderEvent.js';
 import { BitcoinUtils } from 'opnet';
 
@@ -383,7 +381,7 @@ export class ScenarioHelper {
         const tokenName = op.parameters['tokenName'];
         const floorPrice = BigInt(op.parameters['floorPrice']);
         const initialLiquidity = BigInt(op.parameters['initialLiquidity']);
-        const receiver = op.parameters['receiver'];
+        const receiver = op.parameters['receiver']; // Address.from (USE address.toOriginalPublicKey() when exporting!!!)
         const antiBotEnabledFor = parseInt(op.parameters['antiBotEnabledFor']);
         const antiBotMaximumTokensPerReservation = BigInt(
             op.parameters['antiBotMaximumTokensPerReservation'],
@@ -410,7 +408,8 @@ export class ScenarioHelper {
             token: token.address,
             floorPrice,
             initialLiquidity: initialLiquidity,
-            receiver: receiver,
+            receiver: receiver, // must be an Address now.
+            network: Blockchain.network,
             antiBotEnabledFor: antiBotEnabledFor,
             antiBotMaximumTokensPerReservation: antiBotMaximumTokensPerReservation,
             maxReservesIn5BlocksPercent: maxReservesIn5BlocksPercent,
@@ -460,7 +459,7 @@ export class ScenarioHelper {
         const nonce = BigInt(op.parameters['nonce']);
         const floorPrice = BigInt(op.parameters['floorPrice']);
         const initialLiquidity = BigInt(op.parameters['initialLiquidity']);
-        const receiver = op.parameters['receiver'];
+        const receiver = op.parameters['receiver']; // Address.from
         const antiBotEnabledFor = parseInt(op.parameters['antiBotEnabledFor']);
         const antiBotMaximumTokensPerReservation = BigInt(
             op.parameters['antiBotMaximumTokensPerReservation'],
@@ -493,8 +492,9 @@ export class ScenarioHelper {
             nonce: nonce,
             floorPrice: floorPrice,
             initialLiquidity: initialLiquidity,
-            receiver: receiver,
+            receiver: receiver, // Must be an address now.
             antiBotEnabledFor: antiBotEnabledFor,
+            network: Blockchain.network,
             antiBotMaximumTokensPerReservation: antiBotMaximumTokensPerReservation,
             maxReservesIn5BlocksPercent: maxReservesIn5BlocksPercent,
         });
@@ -670,7 +670,7 @@ export class ScenarioHelper {
     public async listLiquidity(op: OperationDefinition): Promise<void> {
         const tokenName = op.parameters['tokenName'];
         const amountIn = BigInt(op.parameters['amountIn']);
-        const receiver = op.parameters['receiver'];
+        const receiver = op.parameters['receiver']; // Address.from
         const priority = op.parameters['priority'] == 'true';
 
         if (this.verbose) {
@@ -686,6 +686,7 @@ export class ScenarioHelper {
         const result = await this.nativeSwap.listLiquidity({
             token: token.address,
             receiver: receiver,
+            network: Blockchain.network,
             amountIn: amountIn,
             priority: priority,
             disablePriorityQueueFees: false,

@@ -50,6 +50,13 @@ export async function helper_createPool(
         logAction('createPool');
     }
 
+    Blockchain.txOrigin = nativeSwap.deployer;
+    Blockchain.msgSender = nativeSwap.deployer;
+
+    await nativeSwap.setStakingContractAddress({
+        stakingContractAddress: Blockchain.generateRandomAddress(),
+    });
+
     const liquidityAmount: bigint = Blockchain.expandToDecimal(
         tokenLiquidityToApprove,
         token.decimals,
@@ -68,10 +75,11 @@ export async function helper_createPool(
         token: token.address,
         floorPrice: floorPrice,
         initialLiquidity: poolInitialLiquidity,
-        receiver: receiver.p2tr(Blockchain.network),
+        receiver: receiver,
         antiBotEnabledFor: antiBotEnabledFor,
         antiBotMaximumTokensPerReservation: antiBotMaximumTokensPerReservation,
         maxReservesIn5BlocksPercent: maxReservesIn5BlocksPercent,
+        network: Blockchain.network,
     });
 
     if (log) {
@@ -194,10 +202,11 @@ export async function helper_listLiquidity(
 
     const result = await nativeSwap.listLiquidity({
         token: tokenAddress,
-        receiver: providerAddress.p2tr(Blockchain.network),
+        receiver: providerAddress,
         amountIn: amountIn,
         priority: priority,
         disablePriorityQueueFees: disablePriorityQueueFees,
+        network: Blockchain.network,
     });
 
     if (log) {

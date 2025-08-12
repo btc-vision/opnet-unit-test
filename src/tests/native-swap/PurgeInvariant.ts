@@ -42,11 +42,17 @@ await opnet('NativeSwap – purge watermark invariants', async (vm: OPNetUnit) =
         Blockchain.msgSender = deployer;
         Blockchain.txOrigin = deployer;
         await token.increaseAllowance(deployer, swap.address, initialLiq);
+
+        await swap.setStakingContractAddress({
+            stakingContractAddress: Blockchain.generateRandomAddress(),
+        });
+
         await swap.createPool({
             token: tokenAddr,
             floorPrice,
             initialLiquidity: initialLiq,
-            receiver: lpReceiver.p2tr(Blockchain.network),
+            receiver: lpReceiver,
+            network: Blockchain.network,
             antiBotEnabledFor: 0,
             antiBotMaximumTokensPerReservation: 0n,
             maxReservesIn5BlocksPercent: 100,
