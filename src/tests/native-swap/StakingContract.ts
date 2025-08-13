@@ -27,16 +27,17 @@ await opnet('Native Swap - Staking contract', async (vm: OPNetUnit) => {
         Blockchain.dispose();
     });
 
-    await vm.it(
-        'should sets stacking contract to dead address when contract is deploying',
-        async () => {
-            const stackingContractAddress = await nativeSwap.getStakingContractAddress();
+    await vm.it('should sets stacking contract address when contract is deploying', async () => {
+        const stackingContractAddress = await nativeSwap.getStakingContractAddress();
 
-            Assert.expect(stackingContractAddress.stakingContractAddress.toString()).toEqual(
-                Address.dead().toString(),
-            );
-        },
-    );
+        Assert.expect(stackingContractAddress.stakingContractAddress.toString()).toNotEqual(
+            Address.dead().toString(),
+        );
+
+        Assert.expect(stackingContractAddress.stakingContractAddress.toString()).toNotEqual(
+            Address.zero().toString(),
+        );
+    });
 
     await vm.it('should revert when caller is not the token owner', async () => {
         const fakeCallerAddress: Address = Blockchain.generateRandomAddress();
@@ -64,5 +65,21 @@ await opnet('Native Swap - Staking contract', async (vm: OPNetUnit) => {
         Assert.expect(getResult.stakingContractAddress.toString()).toEqual(
             stackingContractAddress.toString(),
         );
+    });
+
+    await vm.it('should fail to sets stacking contract address if dead address', async () => {
+        await Assert.expect(async () => {
+            await nativeSwap.setStakingContractAddress({
+                stakingContractAddress: Address.dead(),
+            });
+        }).toThrow('NATIVE_SWAP: Staking contract address cannot be dead address.');
+    });
+
+    await vm.it('should fail to sets stacking contract address if zero address', async () => {
+        await Assert.expect(async () => {
+            await nativeSwap.setStakingContractAddress({
+                stakingContractAddress: Address.zero(),
+            });
+        }).toThrow('NATIVE_SWAP: Staking contract address cannot be empty.');
     });
 });

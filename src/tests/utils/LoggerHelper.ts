@@ -394,12 +394,6 @@ export function logListLiquidityEvent(events: NetEvent[]): void {
                 );
                 break;
             }
-            case 'LiquidityReserved': {
-                logLiquidityReservedEvent(
-                    NativeSwapTypesCoders.decodeLiquidityReservedEvent(event.data),
-                );
-                break;
-            }
             case 'Transfer': {
                 logTransferEvent(NativeSwapTypesCoders.decodeTransferEvent(event.data));
                 break;

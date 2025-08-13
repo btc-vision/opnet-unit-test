@@ -2,11 +2,14 @@ import { Address } from '@btc-vision/transaction';
 import { Blockchain, OP20 } from '@btc-vision/unit-test-framework';
 import {
     logAction,
+    logCancelListingEvents,
+    logCancelListingResult,
     logCreatePoolResult,
     logGetProviderDetailsResult,
     logGetQuoteResult,
     logGetReserveResult,
     logLiquidityListedEvent,
+    logListLiquidityEvent,
     logListLiquidityResult,
     logRecipient,
     logReserveResult,
@@ -17,6 +20,7 @@ import { NativeSwapTypesCoders } from '../../contracts/NativeSwapTypesCoders.js'
 import { createRecipientUTXOs } from './UTXOSimulator.js';
 import { NativeSwap } from '../../contracts/NativeSwap.js';
 import {
+    CancelListingResult,
     CreatePoolResult,
     GetProviderDetailsResult,
     GetQuoteResult,
@@ -182,6 +186,34 @@ export async function helper_swap(
     return result;
 }
 
+export async function helper_cancelLiquidity(
+    nativeSwap: NativeSwap,
+    tokenAddress: Address,
+    caller: Address,
+    log: boolean = true,
+): Promise<CancelListingResult> {
+    if (log) {
+        logAction('cancelLiquidity');
+    }
+    const backup = Blockchain.txOrigin;
+
+    Blockchain.txOrigin = caller;
+    Blockchain.msgSender = caller;
+
+    const result = await nativeSwap.cancelListing({ token: tokenAddress });
+
+    if (log) {
+        logCancelListingResult(result);
+        logCancelListingEvents(result.response.events);
+    }
+
+    // Reset
+    Blockchain.txOrigin = backup;
+    Blockchain.msgSender = backup;
+
+    return result;
+}
+
 export async function helper_listLiquidity(
     nativeSwap: NativeSwap,
     tokenAddress: Address,
@@ -211,16 +243,7 @@ export async function helper_listLiquidity(
 
     if (log) {
         logListLiquidityResult(result);
-    }
-
-    const evt = result.response.events.find((e) => e.type === 'LiquidityListed');
-
-    if (evt) {
-        const listLiquidityEvent = NativeSwapTypesCoders.decodeLiquidityListedEvent(evt.data);
-
-        if (log) {
-            logLiquidityListedEvent(listLiquidityEvent);
-        }
+        logListLiquidityEvent(result.response.events);
     }
 
     // Reset

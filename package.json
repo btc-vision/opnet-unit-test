@@ -25,6 +25,7 @@
         "test:native:swap": "tsx src/tests/native-swap/Swap.ts",
         "test:native:withdraw": "tsx src/tests/native-swap/Withdraw.ts",
         "test:native": "npm-run-all test:native:cancellisting test:native:onlyowner test:native:reentrancy test:native:listtoken test:native:createpool test:native:purge test:native:addliquidity test:native:stakingfee test:native:fee test:native:fees test:native:staking test:native:getquote test:native:getreserve test:native:reserve test:native:pause test:native:swap test:native:withdraw",
+        "test:track": "tsx src/tests/native-swap/TrackPriceBalance.ts",
         "debug": "tsx src/tests/native-swap/DebugSwap.ts --max-old-space-size=8192",
         "replay": "tsx src/tests/native-swap/ReplayBlockSwap.ts --max-old-space-size=8192",
         "test:userflows:createanewpool": "tsx src/tests/native-swap/userflows/CreateANewPool.ts",
