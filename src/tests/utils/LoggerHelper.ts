@@ -168,6 +168,7 @@ export function logListingCanceledEvent(event: IListingCanceledEvent): void {
     Blockchain.log(`ListingCanceledEvent`);
     Blockchain.log(`-----------------`);
     Blockchain.log(`amount: ${event.amount}`);
+    Blockchain.log(`penalty: ${event.penalty}`);
 
     Blockchain.log(``);
 }
@@ -179,7 +180,7 @@ export function logSwapEvents(events: NetEvent[]): void {
     for (let i = 0; i < events.length; i++) {
         const event = events[i];
         switch (event.type) {
-            case 'Transfer': {
+            case 'Transferred': {
                 logTransferEvent(NativeSwapTypesCoders.decodeTransferEvent(event.data));
                 break;
             }
@@ -194,7 +195,7 @@ export function logSwapEvents(events: NetEvent[]): void {
                 break;
             }
 
-            case 'FulfilledProvider': {
+            case 'ProviderFulfilled': {
                 logFulfilledProviderEvent(
                     NativeSwapTypesCoders.decodeFulfilledProviderEvent(event.data),
                 );
@@ -216,7 +217,7 @@ export function logAddLiquidityEvents(events: NetEvent[]): void {
     for (let i = 0; i < events.length; i++) {
         const event = events[i];
         switch (event.type) {
-            case 'Transfer': {
+            case 'Transferred': {
                 logTransferEvent(NativeSwapTypesCoders.decodeTransferEvent(event.data));
                 break;
             }
@@ -224,7 +225,7 @@ export function logAddLiquidityEvents(events: NetEvent[]): void {
                 logLiquidityAddedEvent(NativeSwapTypesCoders.decodeLiquidityAddedEvent(event.data));
                 break;
             }
-            case 'FulfilledProvider':
+            case 'ProviderFulfilled':
                 logFulfilledProviderEvent(
                     NativeSwapTypesCoders.decodeFulfilledProviderEvent(event.data),
                 );
@@ -244,7 +245,7 @@ export function logRemoveLiquidityEvents(events: NetEvent[]): void {
     for (let i = 0; i < events.length; i++) {
         const event = events[i];
         switch (event.type) {
-            case 'Transfer': {
+            case 'Transferred': {
                 logTransferEvent(NativeSwapTypesCoders.decodeTransferEvent(event.data));
                 break;
             }
@@ -275,12 +276,12 @@ export function logCancelListingEvents(events: NetEvent[]): void {
     for (let i = 0; i < events.length; i++) {
         const event = events[i];
         switch (event.type) {
-            case 'FulfilledProvider':
+            case 'ProviderFulfilled':
                 logFulfilledProviderEvent(
                     NativeSwapTypesCoders.decodeFulfilledProviderEvent(event.data),
                 );
                 break;
-            case 'Transfer': {
+            case 'Transferred': {
                 logTransferEvent(NativeSwapTypesCoders.decodeTransferEvent(event.data));
                 break;
             }
@@ -313,7 +314,7 @@ export function logActivateProviderEvent(event: IActivateProviderEvent): void {
 
 export function logFulfilledProviderEvent(event: IFulfilledProviderEvent): void {
     Blockchain.log(``);
-    Blockchain.log(`FulfilledProviderEvent`);
+    Blockchain.log(`ProviderFulfilledEvent`);
     Blockchain.log(`-----------------`);
     Blockchain.log(`providerId: ${event.providerId}`);
     Blockchain.log(`canceled: ${event.canceled}`);
@@ -394,7 +395,7 @@ export function logListLiquidityEvent(events: NetEvent[]): void {
                 );
                 break;
             }
-            case 'Transfer': {
+            case 'Transferred': {
                 logTransferEvent(NativeSwapTypesCoders.decodeTransferEvent(event.data));
                 break;
             }

@@ -74,6 +74,7 @@ export async function helper_createPoolNew(
 
     if (log) {
         logCreatePoolResult(result);
+        logListLiquidityEvent(result.response.events);
     }
 
     return result;
@@ -100,12 +101,13 @@ export async function helper_createTokenNew(
 
 export async function helper_listLiquidityNew(
     nativeSwap: NativeSwap,
-    tokenAddress: Address,
+    token: OP20,
     caller: Address,
     amountIn: bigint,
     priority: boolean,
     providerAddress: Address,
     disablePriorityQueueFees: boolean,
+    mint: boolean = true,
     log: boolean = false,
 ): Promise<ListLiquidityResult> {
     if (log) {
@@ -115,8 +117,13 @@ export async function helper_listLiquidityNew(
     Blockchain.txOrigin = caller;
     Blockchain.msgSender = caller;
 
+    if (mint) {
+        await token.mintRaw(caller, amountIn);
+        await token.increaseAllowance(caller, nativeSwap.address, amountIn);
+    }
+
     const result = await nativeSwap.listLiquidity({
-        token: tokenAddress,
+        token: token.address,
         receiver: providerAddress,
         amountIn: amountIn,
         priority: priority,
@@ -195,16 +202,13 @@ export async function helper_getReserveNew(
     return reserveResult;
 }
 
-/*
-export async function helper_reserve(
+export async function helper_reserveNew(
     nativeSwap: NativeSwap,
     tokenAddress: Address,
     caller: Address,
     maximumAmountIn: bigint,
     minimumAmountOut: bigint = 0n,
-    forLP = false,
-    log: boolean = true,
-    sendUTXO: boolean = false,
+    log: boolean = false,
     activationDelay: number = 2,
     feesAddress: string = '',
 ): Promise<ReserveResult> {
@@ -212,7 +216,6 @@ export async function helper_reserve(
         logAction(`reserve`);
     }
 
-    const backup = Blockchain.txOrigin;
     Blockchain.txOrigin = caller;
     Blockchain.msgSender = caller;
 
@@ -240,17 +243,9 @@ export async function helper_reserve(
         }
     }
 
-    if (sendUTXO) {
-        createRecipientUTXOs(decodedReservation.recipients);
-    }
-
-    // Reset
-    Blockchain.txOrigin = backup;
-    Blockchain.msgSender = backup;
-
     return result;
 }
-
+/*
 export async function helper_swap(
     nativeSwap: NativeSwap,
     tokenAddress: Address,
