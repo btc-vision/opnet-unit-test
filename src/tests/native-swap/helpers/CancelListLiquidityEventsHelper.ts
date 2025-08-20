@@ -1,5 +1,5 @@
 import {
-    IFulfilledProviderEvent,
+    IProviderFulfilledEvent,
     IListingCanceledEvent,
     IReservationPurgedEvent,
     ITransferEvent,
@@ -10,7 +10,7 @@ import { ProviderHelper } from './ProviderHelper.js';
 import { Assert } from '@btc-vision/unit-test-framework';
 
 export class CancelListLiquidityEventsHelper {
-    public fulfilledProviderEvent: IFulfilledProviderEvent | null = null;
+    public providerFulfilledEvents: IProviderFulfilledEvent[] = [];
     public listingCancelledEvent: IListingCanceledEvent | null = null;
     public transferredEvents: ITransferEvent[] = [];
     public purgedReservationEvents: IReservationPurgedEvent[] = [];
@@ -25,8 +25,8 @@ export function decodeCancelListLiquidityEventsHelper(
         const event = events[i];
         switch (event.type) {
             case 'ProviderFulfilled':
-                result.fulfilledProviderEvent = NativeSwapTypesCoders.decodeFulfilledProviderEvent(
-                    event.data,
+                result.providerFulfilledEvents.push(
+                    NativeSwapTypesCoders.decodeProviderFulfilledEvent(event.data),
                 );
                 break;
             case 'Transferred': {
@@ -62,12 +62,12 @@ export function assertCancelListLiquidityEventsHelper(
     provider: ProviderHelper,
     events: CancelListLiquidityEventsHelper,
 ): void {
-    Assert.expect(events.fulfilledProviderEvent).toNotEqual(null);
+    Assert.expect(events.providerFulfilledEvents).toBeGreaterThan(0);
     Assert.expect(events.listingCancelledEvent).toNotEqual(null);
 
-    if (events.fulfilledProviderEvent !== null) {
-        Assert.expect(events.fulfilledProviderEvent.providerId).toEqual(provider.id);
-    }
+    Assert.expect(
+        events.providerFulfilledEvents.find((p) => p.providerId === provider.id),
+    ).toBeDefined();
 
     if (events.listingCancelledEvent !== null) {
         Assert.expect(events.listingCancelledEvent.amount).toEqual(provider.liquidity);

@@ -9,11 +9,12 @@ export interface IActivateProviderEvent {
     readonly btcToRemove: bigint;
 }
 
-export interface IFulfilledProviderEvent {
+export interface IProviderFulfilledEvent {
     readonly name: string;
     readonly providerId: bigint;
     readonly canceled: boolean;
     readonly removalCompleted: boolean;
+    readonly stakedAmount: bigint;
 }
 
 export interface ILiquidityAddedEvent {
@@ -62,6 +63,12 @@ export interface ISwapExecutedEvent {
     readonly amountOut: bigint;
 }
 
+export interface IReservationFallbackEvent {
+    readonly name: string;
+    readonly reservationId: bigint;
+    readonly expirationBlock: bigint;
+}
+
 export interface IApprovedEvent {
     readonly name: string;
     readonly owner: Address;
@@ -84,6 +91,7 @@ export interface IReservationPurgedEvent {
     readonly purgingBlock: bigint;
     readonly purgeIndex: number;
     readonly providerCount: number;
+    readonly purgedAmount: bigint;
 }
 
 export interface IWithdrawListingEvent {
@@ -105,9 +113,10 @@ export type AllEvent =
     | ITransferEvent
     | IListingCanceledEvent
     | IActivateProviderEvent
-    | IFulfilledProviderEvent
+    | IProviderFulfilledEvent
     | IReservationPurgedEvent
-    | IWithdrawListingEvent;
+    | IWithdrawListingEvent
+    | IReservationFallbackEvent;
 
 export interface SetFeesParams {
     readonly reservationBaseFee: bigint;
@@ -176,6 +185,7 @@ export interface GetProviderDetailsResult {
     readonly isActive: boolean;
     readonly listedTokenAt: bigint;
     readonly isPurged: boolean;
+    readonly canProvideLiquidity: boolean;
 }
 
 export interface GetQueueDetailsResult {

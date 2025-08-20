@@ -1,6 +1,5 @@
 import {
-    IFulfilledProviderEvent,
-    ILiquidityListedEvent,
+    IProviderFulfilledEvent,
     ILiquidityReservedEvent,
     IReservationCreatedEvent,
     IReservationPurgedEvent,
@@ -14,7 +13,7 @@ export class ReserveLiquidityEventsHelper {
     public reservationCreatedEvent: IReservationCreatedEvent | null = null;
     public purgedReservationEvents: IReservationPurgedEvent[] = [];
     public transferredEvents: ITransferEvent[] = [];
-    public fulfilledProviderEvents: IFulfilledProviderEvent[] = [];
+    public providerFulfilledEvents: IProviderFulfilledEvent[] = [];
 }
 
 export function decodeReserveLiquidityEventsHelper(
@@ -49,9 +48,9 @@ export function decodeReserveLiquidityEventsHelper(
                 );
                 break;
             }
-            case 'FulfilledProvider': {
-                result.fulfilledProviderEvents.push(
-                    NativeSwapTypesCoders.decodeFulfilledProviderEvent(event.data),
+            case 'ProviderFulfilled': {
+                result.providerFulfilledEvents.push(
+                    NativeSwapTypesCoders.decodeProviderFulfilledEvent(event.data),
                 );
                 break;
             }

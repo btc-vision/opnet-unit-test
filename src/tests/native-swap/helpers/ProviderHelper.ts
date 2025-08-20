@@ -18,6 +18,7 @@ export class ProviderHelper {
     public listedTokenAt: bigint;
     public isPurged: boolean;
     public isFullfiled: boolean;
+    public canProvideLiquidity: boolean;
 
     constructor(
         public address: Address,
@@ -36,6 +37,7 @@ export class ProviderHelper {
         this.listedTokenAt = 0n;
         this.isPurged = false;
         this.isFullfiled = false;
+        this.canProvideLiquidity = false;
     }
 
     public async update(nativeSwap: NativeSwap): Promise<void> {
@@ -61,6 +63,7 @@ export class ProviderHelper {
         this.isActive = result.isActive;
         this.listedTokenAt = result.listedTokenAt;
         this.isPurged = result.isPurged;
+        this.canProvideLiquidity = result.canProvideLiquidity;
     }
 
     public setFulfilled(value: boolean): void {
@@ -89,6 +92,7 @@ export class ProviderHelper {
         Blockchain.log(`isFullfiled: ${this.isFullfiled}`);
         Blockchain.log(`listedTokenAt: ${this.listedTokenAt}`);
         Blockchain.log(`initialLiquidityProvider: ${this.initialLiquidityProvider}`);
+        Blockchain.log(`canProvideLiquidity: ${this.canProvideLiquidity}`);
         Blockchain.log('');
     }
 }

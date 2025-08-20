@@ -13,6 +13,7 @@ import {
     logListLiquidityResult,
     logRecipient,
     logReserveResult,
+    logSwapEvents,
     logSwapExecutedEvent,
     logSwapResult,
 } from './LoggerHelper.js';
@@ -245,17 +246,16 @@ export async function helper_reserveNew(
 
     return result;
 }
-/*
-export async function helper_swap(
+
+export async function helper_swapNew(
     nativeSwap: NativeSwap,
     tokenAddress: Address,
     caller: Address,
-    log: boolean = true,
+    log: boolean = false,
 ): Promise<SwapResult> {
     if (log) {
         logAction('swap');
     }
-    const backup = Blockchain.txOrigin;
 
     Blockchain.txOrigin = caller;
     Blockchain.msgSender = caller;
@@ -268,24 +268,14 @@ export async function helper_swap(
         logSwapResult(result);
     }
 
-    const swapEvt = result.response.events.find((event) => event.type === 'SwapExecuted');
-    if (swapEvt) {
-        const swapEvent = NativeSwapTypesCoders.decodeSwapExecutedEvent(swapEvt.data);
-
-        if (log) {
-            logSwapExecutedEvent(swapEvent);
-        }
+    if (log) {
+        logSwapEvents(result.response.events);
     }
-
-    // Reset
-    Blockchain.txOrigin = backup;
-    Blockchain.msgSender = backup;
 
     return result;
 }
 
-
-
+/*
 
 
 

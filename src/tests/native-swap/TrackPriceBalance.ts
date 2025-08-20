@@ -1,4 +1,4 @@
-import { Assert, Blockchain, opnet, OPNetUnit } from '@btc-vision/unit-test-framework';
+import { Assert, Blockchain, opnet, OPNetUnit, Transaction } from '@btc-vision/unit-test-framework';
 import { NativeSwap } from '../../contracts/NativeSwap.js';
 import { Address } from '@btc-vision/transaction';
 import {
@@ -7,6 +7,7 @@ import {
     helper_createTokenNew,
     helper_listLiquidityNew,
     helper_reserveNew,
+    helper_swapNew,
 } from '../utils/OperationHelperNew.js';
 import { ProviderHelper } from './helpers/ProviderHelper.js';
 import {
@@ -37,12 +38,16 @@ import {
     decodeCancelListLiquidityEventsHelper,
 } from './helpers/CancelListLiquidityEventsHelper.js';
 
-import {
-    generateReservationId,
-    ReserveLiquidityHelper,
-    ReserveLiquidityRecipientHelper,
-} from './helpers/ReserveLiquidityHelper.js';
+import { ReserveLiquidityHelper } from './helpers/ReserveLiquidityHelper.js';
 import { decodeReserveLiquidityEventsHelper } from './helpers/ReserveLiquidityEventsHelper.js';
+import {
+    IActivateProviderEvent,
+    IProviderFulfilledEvent,
+    IReservationPurgedEvent,
+    ITransferEvent,
+} from '../../contracts/NativeSwapTypes.js';
+import { NativeSwapTypesCoders } from '../../contracts/NativeSwapTypesCoders.js';
+import { decodeSwapEventsHelper } from './helpers/SwapEventsHelper.js';
 
 const ENABLE_LOG: boolean = false;
 
@@ -74,8 +79,19 @@ await opnet('Native Swap - Track price and balance', async (vm: OPNetUnit) => {
         return result === undefined ? null : result;
     }
 
-    function getReservation(reserver: Address): ReserveLiquidityHelper | null {
-        const result = reservationArray.find((r) => r.reserver === reserver);
+    function removeProvider(provider: ProviderHelper): void {
+        Blockchain.log(`Removing provider: ${provider.id}`);
+        const index = providerArray.indexOf(provider);
+
+        if (index === -1) {
+            throw new Error('Provider not found');
+        }
+
+        providerArray.splice(index, 1);
+    }
+
+    function getReservation(reservationId: bigint): ReserveLiquidityHelper | null {
+        const result = reservationArray.find((r) => r.reservationId === reservationId);
 
         return result === undefined ? null : result;
     }
@@ -125,6 +141,16 @@ await opnet('Native Swap - Track price and balance', async (vm: OPNetUnit) => {
         }
 
         tokenArray = [];
+    }
+
+    function getTransactionTotalAmount(transaction: Transaction): bigint {
+        let total: bigint = 0n;
+
+        for (let i = 0; i < transaction.outputs.length; i++) {
+            total += transaction.outputs[i].value;
+        }
+
+        return total;
     }
 
     async function createPool(
@@ -196,63 +222,13 @@ await opnet('Native Swap - Track price and balance', async (vm: OPNetUnit) => {
         amountIn: bigint,
         priority: boolean = false,
     ): Promise<ProviderHelper> {
-        pushOriginSender();
-
+        // Create the provider
         const provider: ProviderHelper = new ProviderHelper(providerAddress, tokenHelper, priority);
 
-        const initialReserve = await LiquidityReserveHelper.create(nativeSwap, tokenHelper);
-        const initialProviderLiquidity = provider.liquidity;
-        const initialProviderBalance = await provider.getBalance();
-        const initialStakingBalance = await tokenHelper.getStakingContractBalance();
-        const initialNativeSwapBalance = await tokenHelper.getNativeSwapContractBalance();
+        // List provider liquidity
+        await relistLiquidity(provider, amountIn, priority);
 
-        const result = await helper_listLiquidityNew(
-            nativeSwap,
-            provider.tokenHelper.token,
-            provider.address,
-            amountIn,
-            provider.priority,
-            provider.address,
-            false,
-            true,
-            ENABLE_LOG,
-        );
-
-        let tax = 0n;
-
-        if (provider.isPriority) {
-            tax = (amountIn * 30n) / 1000n;
-        }
-
-        const decodedEvents = decodeListLiquidityEventsHelper(result.response.events);
-        assertListLiquidityEventsHelper(
-            nativeSwapContractAddress,
-            stakingContractAddress,
-            provider,
-            amountIn,
-            tax,
-            decodedEvents,
-        );
-
-        await provider.update(nativeSwap);
-
-        Assert.expect(provider.liquidity).toEqual(initialProviderLiquidity + amountIn - tax);
-
-        await assertProviderBalanceHelper(provider, initialProviderBalance);
-        await assertNativeSwapBalanceHelper(tokenHelper, initialNativeSwapBalance + amountIn - tax);
-        await assertStakingBalanceHelper(tokenHelper, initialStakingBalance + tax);
-        const slashing = computeSlashing(initialReserve.virtualTokenReserve, amountIn);
-
-        await assertCurrentLiquidityReserveHelper(
-            nativeSwap,
-            tokenHelper,
-            initialReserve.liquidity + amountIn - tax,
-            initialReserve.reservedLiquidity,
-            initialReserve.virtualBTCReserve,
-            initialReserve.virtualTokenReserve + slashing + tax,
-        );
-
-        popOriginSender();
+        // Add provider to providers array
         providerArray.push(provider);
 
         return provider;
@@ -265,6 +241,7 @@ await opnet('Native Swap - Track price and balance', async (vm: OPNetUnit) => {
     ): Promise<void> {
         pushOriginSender();
 
+        // Get initial balances and reserve
         const initialReserve = await LiquidityReserveHelper.create(
             nativeSwap,
             provider.tokenHelper,
@@ -274,6 +251,7 @@ await opnet('Native Swap - Track price and balance', async (vm: OPNetUnit) => {
         const initialStakingBalance = await provider.tokenHelper.getStakingContractBalance();
         const initialNativeSwapBalance = await provider.tokenHelper.getNativeSwapContractBalance();
 
+        // List provider liquidity
         const result = await helper_listLiquidityNew(
             nativeSwap,
             provider.tokenHelper.token,
@@ -286,13 +264,17 @@ await opnet('Native Swap - Track price and balance', async (vm: OPNetUnit) => {
             ENABLE_LOG,
         );
 
+        // Compute tax if required
         let tax = 0n;
 
         if (provider.isPriority) {
             tax = (amountIn * 30n) / 1000n;
         }
 
+        // Decode the list liquidity events
         const decodedEvents = decodeListLiquidityEventsHelper(result.response.events);
+
+        // Validate list liquidity events
         assertListLiquidityEventsHelper(
             nativeSwapContractAddress,
             stakingContractAddress,
@@ -302,22 +284,34 @@ await opnet('Native Swap - Track price and balance', async (vm: OPNetUnit) => {
             decodedEvents,
         );
 
+        // Update the provider
         await provider.update(nativeSwap);
 
-        Assert.expect(provider.liquidity).toEqual(initialProviderLiquidity + amountIn - tax);
+        // Validate provider liquidity
+        const newProviderLiquidity = initialProviderLiquidity + amountIn - tax;
+        Assert.expect(provider.liquidity).toEqual(newProviderLiquidity);
 
-        await assertProviderBalanceHelper(provider, initialProviderBalance);
-        await assertNativeSwapBalanceHelper(
-            provider.tokenHelper,
-            initialNativeSwapBalance + amountIn - tax,
-        );
-        await assertStakingBalanceHelper(provider.tokenHelper, initialStakingBalance + tax);
+        // Validate provider balance
+        // Should stay the same as we mint the exact amount in helper_listLiquidityNew
+        const newProviderBalance = initialProviderBalance;
+        await assertProviderBalanceHelper(provider, newProviderBalance);
+
+        // Validate nativeswap balance
+        const newNativeSwapBalance = initialNativeSwapBalance + amountIn - tax;
+        await assertNativeSwapBalanceHelper(provider.tokenHelper, newNativeSwapBalance);
+
+        // Validate staking balance
+        const newStakingBalance = initialStakingBalance + tax;
+        await assertStakingBalanceHelper(provider.tokenHelper, newStakingBalance);
+
+        // Validate reserve
         const slashing = computeSlashing(initialReserve.virtualTokenReserve, amountIn);
+        const newReserveLiquidity = initialReserve.liquidity + amountIn - tax;
 
         await assertCurrentLiquidityReserveHelper(
             nativeSwap,
             provider.tokenHelper,
-            initialReserve.liquidity + amountIn - tax,
+            newReserveLiquidity,
             initialReserve.reservedLiquidity,
             initialReserve.virtualBTCReserve,
             initialReserve.virtualTokenReserve + slashing + tax,
@@ -329,6 +323,7 @@ await opnet('Native Swap - Track price and balance', async (vm: OPNetUnit) => {
     async function cancelLiquidity(provider: ProviderHelper): Promise<void> {
         pushOriginSender();
 
+        // Get initial balances and reserve
         const initialReserve = await LiquidityReserveHelper.create(
             nativeSwap,
             provider.tokenHelper,
@@ -338,6 +333,7 @@ await opnet('Native Swap - Track price and balance', async (vm: OPNetUnit) => {
         const initialStakingBalance = await provider.tokenHelper.getStakingContractBalance();
         const initialNativeSwapBalance = await provider.tokenHelper.getNativeSwapContractBalance();
 
+        // Cancel provider liquidity
         const result = await helper_cancelLiquidityNew(
             nativeSwap,
             provider.tokenHelper.token.address,
@@ -345,8 +341,14 @@ await opnet('Native Swap - Track price and balance', async (vm: OPNetUnit) => {
             ENABLE_LOG,
         );
 
+        // Decode the cancellation events
         const decodedEvents = decodeCancelListLiquidityEventsHelper(result.response.events);
 
+        if (decodedEvents.listingCancelledEvent === null) {
+            throw new Error('Listing was not cancelled.');
+        }
+
+        // Validate cancellation events
         assertCancelListLiquidityEventsHelper(
             nativeSwapContractAddress,
             stakingContractAddress,
@@ -354,38 +356,52 @@ await opnet('Native Swap - Track price and balance', async (vm: OPNetUnit) => {
             decodedEvents,
         );
 
+        // Update the provider
         await provider.update(nativeSwap);
 
+        // Provider should not provide liquidity anymore
         Assert.expect(provider.liquidity).toEqual(0n);
 
-        Assert.expect(decodedEvents.listingCancelledEvent).toNotEqual(null);
+        // Validate provider balance.
+        // Provider should be fully refunded less penalty
+        await assertProviderBalanceHelper(
+            provider,
+            initialProviderBalance +
+                decodedEvents.listingCancelledEvent.amount -
+                decodedEvents.listingCancelledEvent.penalty,
+        );
 
-        if (decodedEvents.listingCancelledEvent !== null) {
-            await assertProviderBalanceHelper(
-                provider,
-                initialProviderBalance +
-                    decodedEvents.listingCancelledEvent.amount -
-                    decodedEvents.listingCancelledEvent.penalty,
-            );
+        const totalAmountPurged = processPurgedReservation(decodedEvents.purgedReservationEvents);
+        const transferToStakingAmount = await processProviderFulfilled(
+            decodedEvents.providerFulfilledEvents,
+        );
 
-            await assertNativeSwapBalanceHelper(
-                provider.tokenHelper,
-                initialNativeSwapBalance - decodedEvents.listingCancelledEvent.amount,
-            );
+        // Validate the new nativeSwap balance
+        const newNativeSwapBalance =
+            initialNativeSwapBalance -
+            decodedEvents.listingCancelledEvent.amount -
+            transferToStakingAmount;
+        await assertNativeSwapBalanceHelper(provider.tokenHelper, newNativeSwapBalance);
 
-            await assertStakingBalanceHelper(
-                provider.tokenHelper,
-                initialStakingBalance + decodedEvents.listingCancelledEvent.penalty,
-            );
-        }
+        // Validate staking balance.
+        let newStakingBalance =
+            initialStakingBalance +
+            decodedEvents.listingCancelledEvent.penalty +
+            transferToStakingAmount;
+        await assertStakingBalanceHelper(provider.tokenHelper, newStakingBalance);
 
         //!!! CHECK WHY WE NEVER DECREASE VIRTUAL TOKEN RESERVE in nativeswap
+
+        // Validate the new reserve
+        const newLiquidity =
+            initialReserve.liquidity - transferToStakingAmount - initialProviderLiquidity;
+        const newReservedLiquidity = initialReserve.reservedLiquidity - totalAmountPurged;
 
         await assertCurrentLiquidityReserveHelper(
             nativeSwap,
             provider.tokenHelper,
-            initialReserve.liquidity - initialProviderLiquidity,
-            initialReserve.reservedLiquidity,
+            newLiquidity,
+            newReservedLiquidity,
             initialReserve.virtualBTCReserve,
             initialReserve.virtualTokenReserve,
         );
@@ -401,10 +417,16 @@ await opnet('Native Swap - Track price and balance', async (vm: OPNetUnit) => {
         activationDelay: number = 2,
         feesAddress: string = '',
     ): Promise<ReserveLiquidityHelper | null> {
-        let reservation: ReserveLiquidityHelper | null = null;
-
         pushOriginSender();
 
+        let reservation: ReserveLiquidityHelper | null = null;
+
+        // Get initial balances and reserve
+        const initialStakingBalance: bigint = await tokenHelper.getStakingContractBalance();
+        const initialNativeSwapBalance = await tokenHelper.getNativeSwapContractBalance();
+        const initialReserve = await LiquidityReserveHelper.create(nativeSwap, tokenHelper);
+
+        // Create the reservation
         const result = await helper_reserveNew(
             nativeSwap,
             tokenHelper.token.address,
@@ -416,54 +438,236 @@ await opnet('Native Swap - Track price and balance', async (vm: OPNetUnit) => {
             feesAddress,
         );
 
+        // Decode reservations events
         const decodedEvents = decodeReserveLiquidityEventsHelper(result.response.events);
 
+        // Must have a valid reservation created event
         Assert.expect(decodedEvents.reservationCreatedEvent).toNotEqual(null);
-
-        if (decodedEvents.reservationCreatedEvent !== null) {
-            if (decodedEvents.reservationCreatedEvent.expectedAmountOut > 0n) {
-                Assert.expect(decodedEvents.liquidityReservedEvents.length).toBeGreaterThan(0);
-            }
-
-            reservation = new ReserveLiquidityHelper(
-                tokenHelper,
-                reserver,
-                generateReservationId(tokenHelper.token.address, reserver),
-                decodedEvents.reservationCreatedEvent.totalSatoshis,
-                decodedEvents.reservationCreatedEvent.expectedAmountOut,
-                Blockchain.blockNumber,
-            );
-
-            for (let i = 0; i < decodedEvents.liquidityReservedEvents.length; i++) {
-                const item = decodedEvents.liquidityReservedEvents[i];
-
-                reservation.recipients.push(
-                    new ReserveLiquidityRecipientHelper(
-                        item.depositAddress,
-                        item.amount,
-                        item.providerId,
-                    ),
-                );
-
-                const provider = getProvider(item.providerId);
-                Assert.expect(provider).toNotEqual(null);
-
-                if (provider !== null) {
-                    await provider.update(nativeSwap);
-                }
-            }
-
-            for (let i = 0; i < decodedEvents.purgedReservationEvents.length; i++) {
-                //const purgedReservation= getReservation(decodedEvents.purgedReservationEvents[i].)
-                Blockchain.log(`purge: ${decodedEvents.purgedReservationEvents[i].reservationId}`);
-            }
-
-            reservationArray.push(reservation);
+        if (decodedEvents.reservationCreatedEvent === null) {
+            throw new Error('No reservation created');
         }
+
+        // When reservation complete and liquidity was reserved, we
+        // must have at least 1 liquidity reserved event
+        if (decodedEvents.reservationCreatedEvent.expectedAmountOut > 0n) {
+            Assert.expect(decodedEvents.liquidityReservedEvents.length).toBeGreaterThan(0);
+        }
+
+        // Create a reservation object with the decoded events
+        // and store it in the reservations array
+        reservation = await ReserveLiquidityHelper.create(
+            nativeSwap,
+            tokenHelper,
+            reserver,
+            decodedEvents.reservationCreatedEvent,
+            decodedEvents.liquidityReservedEvents,
+            providerArray,
+        );
+
+        reservationArray.push(reservation);
+
+        // Process the reservation purged events and get the total purged amount
+        const totalAmountPurged = processPurgedReservation(decodedEvents.purgedReservationEvents);
+
+        // Process the provider fulfilled events and get the total transferred to the staking contract
+        const transferToStakingAmount = await processProviderFulfilled(
+            decodedEvents.providerFulfilledEvents,
+        );
+
+        // Validate new staking balance
+        const newStakingBalance = initialStakingBalance + transferToStakingAmount;
+        await assertStakingBalanceHelper(tokenHelper, newStakingBalance);
+
+        // Validate the new nativeSwap balance
+        const newNativeSwapBalance = initialNativeSwapBalance - transferToStakingAmount;
+        await assertNativeSwapBalanceHelper(tokenHelper, newNativeSwapBalance);
+
+        // Validate the new reserve
+        const newLiquidity = initialReserve.liquidity - transferToStakingAmount;
+        const newReservedLiquidity =
+            initialReserve.reservedLiquidity +
+            (reservation !== null ? reservation.expectedAmountOut : 0n) -
+            totalAmountPurged;
+
+        await assertCurrentLiquidityReserveHelper(
+            nativeSwap,
+            tokenHelper,
+            newLiquidity,
+            newReservedLiquidity,
+            initialReserve.virtualBTCReserve,
+            initialReserve.virtualTokenReserve,
+        );
 
         popOriginSender();
 
         return reservation;
+    }
+
+    async function swapNotExpired(
+        reservation: ReserveLiquidityHelper,
+        transaction: Transaction | null,
+    ): Promise<void> {
+        pushOriginSender();
+        const localTransaction =
+            transaction !== null ? transaction : reservation.createTransaction();
+
+        Blockchain.transaction = localTransaction;
+
+        Assert.expect(reservation.isExpired()).toEqual(false);
+
+        // Get initial balances and reserve
+        const initialReserve = await LiquidityReserveHelper.create(
+            nativeSwap,
+            reservation.tokenHelper,
+        );
+        const initialStakingBalance = await reservation.tokenHelper.getStakingContractBalance();
+        const initialNativeSwapBalance =
+            await reservation.tokenHelper.getNativeSwapContractBalance();
+        const initialReserverBalance = await reservation.tokenHelper.getBalanceOf(
+            reservation.reserver,
+        );
+
+        const result = await helper_swapNew(
+            nativeSwap,
+            reservation.tokenHelper.token.address,
+            reservation.reserver,
+            true, //ENABLE_LOG,
+        );
+
+        const swapEvents = decodeSwapEventsHelper(result.response.events);
+
+        Assert.expect(swapEvents.swapExecutedEvent).toNotEqual(null);
+        if (swapEvents.swapExecutedEvent === null) {
+            throw new Error('Swap not executed.');
+        }
+        Assert.expect(swapEvents.swapExecutedEvent.amountIn).toEqual(
+            getTransactionTotalAmount(localTransaction),
+        );
+        Assert.expect(
+            swapEvents.swapExecutedEvent.buyer.toString() === reservation.reserver.toString(),
+        );
+
+        const transferAmountReservation = getTransferAmount(
+            swapEvents.transferredEvents,
+            nativeSwapContractAddress,
+            reservation.reserver,
+        );
+
+        Assert.expect(transferAmountReservation).toEqual(swapEvents.swapExecutedEvent.amountOut);
+        const newReserverBalance = await reservation.tokenHelper.getBalanceOf(reservation.reserver);
+        Assert.expect(newReserverBalance).toEqual(
+            initialReserverBalance + transferAmountReservation,
+        );
+
+        const transferAmountStaking = getTransferAmount(
+            swapEvents.transferredEvents,
+            nativeSwapContractAddress,
+            stakingContractAddress,
+        );
+
+        // !!!Fees to compute
+        await processProviderActivated(swapEvents.providerActivatedEvent);
+        const fulfilledStakingAmount = await processProviderFulfilled(
+            swapEvents.providerFulfilledEvents,
+        );
+        //!!!Assert.expect(fulfilledStakingAmount).toEqual(transferAmountStaking);
+
+        const newStakingBalance = await reservation.tokenHelper.getStakingContractBalance();
+        Assert.expect(newStakingBalance).toEqual(initialStakingBalance + transferAmountStaking);
+
+        const newNativeSwapBalance = await reservation.tokenHelper.getNativeSwapContractBalance();
+        Assert.expect(newNativeSwapBalance).toEqual(
+            initialNativeSwapBalance - transferAmountStaking - transferAmountReservation,
+        );
+
+        await assertCurrentLiquidityReserveHelper(
+            nativeSwap,
+            reservation.tokenHelper,
+            initialReserve.liquidity - transferAmountStaking - transferAmountReservation,
+            initialReserve.reservedLiquidity - reservation.expectedAmountOut,
+            initialReserve.virtualBTCReserve,
+            initialReserve.virtualTokenReserve,
+        );
+
+        Blockchain.transaction = null;
+
+        popOriginSender();
+    }
+
+    function getTransferAmount(
+        transferEvents: ITransferEvent[],
+        from: Address,
+        to: Address,
+    ): bigint {
+        const transfer = transferEvents.find(
+            (t) => t.from.toString() === from.toString() && t.to.toString() == to.toString(),
+        );
+
+        return transfer === undefined ? 0n : transfer.amount;
+    }
+
+    async function processProviderActivated(
+        providerActivatedEvents: IActivateProviderEvent[],
+    ): Promise<void> {
+        for (let i = 0; i < providerActivatedEvents.length; i++) {
+            const provider = getProvider(providerActivatedEvents[i].providerId);
+            Assert.expect(provider).toNotEqual(null);
+
+            if (provider === null) {
+                throw new Error(`Provider not found`);
+            }
+
+            await provider.update(nativeSwap);
+        }
+    }
+
+    function processPurgedReservation(purgedReservationEvents: IReservationPurgedEvent[]): bigint {
+        let totalPurged: bigint = 0n;
+
+        for (let i = 0; i < purgedReservationEvents.length; i++) {
+            const purgedReservation = getReservation(purgedReservationEvents[i].reservationId);
+
+            Assert.expect(purgedReservation).toNotEqual(null);
+
+            if (purgedReservation !== null) {
+                purgedReservation.purged = true;
+                purgedReservation.purgeIndex = purgedReservationEvents[i].purgeIndex;
+                purgedReservation.purgedAmount = purgedReservationEvents[i].purgedAmount;
+                totalPurged += purgedReservation.purgedAmount;
+            }
+
+            Blockchain.log(
+                `purge: ${purgedReservationEvents[i].reservationId}, amount: ${purgedReservationEvents[i].purgedAmount} `,
+            );
+        }
+
+        return totalPurged;
+    }
+
+    async function processProviderFulfilled(
+        providerFulfilledEvents: IProviderFulfilledEvent[],
+    ): Promise<bigint> {
+        let transferToStakingAmount: bigint = 0n;
+
+        for (let i = 0; i < providerFulfilledEvents.length; i++) {
+            const provider = getProvider(providerFulfilledEvents[i].providerId);
+
+            Assert.expect(provider).toNotEqual(null);
+
+            if (provider === null) {
+                throw new Error(`Provider not found`);
+            }
+
+            provider.setFulfilled(true);
+            transferToStakingAmount += providerFulfilledEvents[i].stakedAmount;
+            await provider.update(nativeSwap);
+            Assert.expect(provider.liquidity).toEqual(0n);
+            Assert.expect(provider.isActive).toEqual(false);
+
+            removeProvider(provider);
+        }
+
+        return transferToStakingAmount;
     }
 
     vm.beforeEach(async () => {
@@ -486,11 +690,17 @@ await opnet('Native Swap - Track price and balance', async (vm: OPNetUnit) => {
             expandNumberTo18Decimals(17),
         );
 
+        Blockchain.blockNumber += 10n;
         const provider1: ProviderHelper = await listLiquidity(
             tokenArray[0],
             Blockchain.generateRandomAddress(),
             expandBigIntTo18Decimals(100000000n),
         );
+
+        Blockchain.blockNumber += 2n;
+        Blockchain.log('reservation 1');
+        const r1 = await LiquidityReserveHelper.create(nativeSwap, tokenArray[0]);
+        r1.logToConsole();
 
         const reservation = await reserveLiquidity(
             tokenArray[0],
@@ -498,20 +708,42 @@ await opnet('Native Swap - Track price and balance', async (vm: OPNetUnit) => {
             10000000n,
         );
 
-        if (reservation !== null) {
-            reservation.logToConsole();
+        if (reservation === null) {
+            throw new Error('Cannot reserve.');
         }
 
+        const r2 = await LiquidityReserveHelper.create(nativeSwap, tokenArray[0]);
+        r2.logToConsole();
+        reservation.logToConsole();
+
+        Blockchain.blockNumber += 3n;
+        Blockchain.log('swap');
+        await swapNotExpired(reservation, null);
+
+        /*
         Blockchain.blockNumber += 20n;
 
+        Blockchain.log('reservation 2');
+        const r3 = await LiquidityReserveHelper.create(nativeSwap, tokenArray[0]);
+        r3.logToConsole();
         const reservation2 = await reserveLiquidity(
             tokenArray[0],
             Blockchain.generateRandomAddress(),
             10000000n,
         );
 
+        Blockchain.log('reservation 1-1');
+        if (reservation !== null) {
+            reservation.logToConsole();
+        }
+
+        Blockchain.log('reservation 2-1');
         if (reservation2 !== null) {
             reservation2.logToConsole();
+            const r4 = await LiquidityReserveHelper.create(nativeSwap, tokenArray[0]);
+            r4.logToConsole();
         }
+        
+ */
     });
 });

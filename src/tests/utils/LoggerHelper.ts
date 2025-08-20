@@ -15,7 +15,7 @@ import {
     GetReserveResult,
     IActivateProviderEvent,
     IApprovedEvent,
-    IFulfilledProviderEvent,
+    IProviderFulfilledEvent,
     ILiquidityAddedEvent,
     ILiquidityListedEvent,
     ILiquidityRemovedEvent,
@@ -30,9 +30,11 @@ import {
     RemoveLiquidityResult,
     ReserveResult,
     SwapResult,
+    IReservationFallbackEvent,
 } from '../../contracts/NativeSwapTypes.js';
 import { NetEvent } from '@btc-vision/transaction';
 import { NativeSwapTypesCoders } from '../../contracts/NativeSwapTypesCoders.js';
+import { NativeSwap } from '../../contracts/NativeSwap.js';
 
 export function logGetProviderDetailsResult(result: GetProviderDetailsResult): void {
     Blockchain.log(``);
@@ -143,6 +145,16 @@ export function logSwapExecutedEvent(event: ISwapExecutedEvent): void {
     Blockchain.log(``);
 }
 
+export function logReservationFallbackEvent(event: IReservationFallbackEvent): void {
+    Blockchain.log(``);
+    Blockchain.log(`ReservationFallbackEvent`);
+    Blockchain.log(`-----------------`);
+    Blockchain.log(`reservationId: ${event.reservationId}`);
+    Blockchain.log(`expirationBlock: ${event.expirationBlock}`);
+
+    Blockchain.log(``);
+}
+
 export function logLiquidityAddedEvent(event: ILiquidityAddedEvent): void {
     Blockchain.log(``);
     Blockchain.log(`LiquidityAddedEvent`);
@@ -188,7 +200,7 @@ export function logSwapEvents(events: NetEvent[]): void {
                 logSwapExecutedEvent(NativeSwapTypesCoders.decodeSwapExecutedEvent(event.data));
                 break;
             }
-            case 'ActivateProvider': {
+            case 'ProviderActivated': {
                 logActivateProviderEvent(
                     NativeSwapTypesCoders.decodeActivateProviderEvent(event.data),
                 );
@@ -196,8 +208,14 @@ export function logSwapEvents(events: NetEvent[]): void {
             }
 
             case 'ProviderFulfilled': {
-                logFulfilledProviderEvent(
-                    NativeSwapTypesCoders.decodeFulfilledProviderEvent(event.data),
+                logProviderFulfilledEvent(
+                    NativeSwapTypesCoders.decodeProviderFulfilledEvent(event.data),
+                );
+                break;
+            }
+            case 'ReservationFallback': {
+                logReservationFallbackEvent(
+                    NativeSwapTypesCoders.decodeReservationFallbackEvent(event.data),
                 );
                 break;
             }
@@ -226,8 +244,8 @@ export function logAddLiquidityEvents(events: NetEvent[]): void {
                 break;
             }
             case 'ProviderFulfilled':
-                logFulfilledProviderEvent(
-                    NativeSwapTypesCoders.decodeFulfilledProviderEvent(event.data),
+                logProviderFulfilledEvent(
+                    NativeSwapTypesCoders.decodeProviderFulfilledEvent(event.data),
                 );
                 break;
             default: {
@@ -255,7 +273,7 @@ export function logRemoveLiquidityEvents(events: NetEvent[]): void {
                 );
                 break;
             }
-            case 'ActivateProvider': {
+            case 'ProviderActivated': {
                 logActivateProviderEvent(
                     NativeSwapTypesCoders.decodeActivateProviderEvent(event.data),
                 );
@@ -277,8 +295,8 @@ export function logCancelListingEvents(events: NetEvent[]): void {
         const event = events[i];
         switch (event.type) {
             case 'ProviderFulfilled':
-                logFulfilledProviderEvent(
-                    NativeSwapTypesCoders.decodeFulfilledProviderEvent(event.data),
+                logProviderFulfilledEvent(
+                    NativeSwapTypesCoders.decodeProviderFulfilledEvent(event.data),
                 );
                 break;
             case 'Transferred': {
@@ -304,7 +322,7 @@ export function logCancelListingEvents(events: NetEvent[]): void {
 
 export function logActivateProviderEvent(event: IActivateProviderEvent): void {
     Blockchain.log(``);
-    Blockchain.log(`ActivateProviderEvent`);
+    Blockchain.log(`ProviderActivatedEvent`);
     Blockchain.log(`-----------------`);
     Blockchain.log(`providerId: ${event.providerId}`);
     Blockchain.log(`listingAmount: ${event.listingAmount}`);
@@ -312,7 +330,7 @@ export function logActivateProviderEvent(event: IActivateProviderEvent): void {
     Blockchain.log(``);
 }
 
-export function logFulfilledProviderEvent(event: IFulfilledProviderEvent): void {
+export function logProviderFulfilledEvent(event: IProviderFulfilledEvent): void {
     Blockchain.log(``);
     Blockchain.log(`ProviderFulfilledEvent`);
     Blockchain.log(`-----------------`);
@@ -340,6 +358,7 @@ export function logReservationPurgedEvent(event: IReservationPurgedEvent): void 
     Blockchain.log(`purgingBlock: ${event.purgingBlock}`);
     Blockchain.log(`purgeIndex: ${event.purgeIndex}`);
     Blockchain.log(`providerCount: ${event.providerCount}`);
+    Blockchain.log(`purgedAmount: ${event.purgedAmount}`);
     Blockchain.log(``);
 }
 

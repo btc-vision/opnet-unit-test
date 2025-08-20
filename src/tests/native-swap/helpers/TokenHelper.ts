@@ -33,6 +33,10 @@ export class TokenHelper {
         return await this.token.balanceOf(this.nativeSwapContractAddress);
     }
 
+    public async getBalanceOf(address: Address): Promise<bigint> {
+        return await this.token.balanceOf(address);
+    }
+
     public setInitialLiquidityProviderAddress(address: Address): void {
         this.initialLiquidityProviderAddress = address;
     }

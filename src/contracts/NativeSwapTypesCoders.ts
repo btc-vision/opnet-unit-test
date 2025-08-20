@@ -25,7 +25,7 @@ import {
     GetStakingContractAddressResult,
     IActivateProviderEvent,
     IApprovedEvent,
-    IFulfilledProviderEvent,
+    IProviderFulfilledEvent,
     ILiquidityAddedEvent,
     ILiquidityListedEvent,
     ILiquidityRemovedEvent,
@@ -55,6 +55,7 @@ import {
     UnpauseResult,
     WithdrawListingParams,
     WithdrawListingResult,
+    IReservationFallbackEvent,
 } from './NativeSwapTypes.js';
 import { CSV_DURATION } from '../tests/globals.js';
 
@@ -182,7 +183,7 @@ export class NativeSwapTypesCoders {
         const btcToRemove = reader.readU64();
 
         return {
-            name: 'ActivateProviderEvent',
+            name: 'ProviderActivatedEvent',
             providerId,
             listingAmount,
             btcToRemove,
@@ -196,6 +197,7 @@ export class NativeSwapTypesCoders {
         const purgingBlock = reader.readU64();
         const purgeIndex = reader.readU32();
         const providerCount = reader.readU32();
+        const purgedAmount = reader.readU256();
 
         return {
             name: 'ReservationPurgedEvent',
@@ -204,20 +206,35 @@ export class NativeSwapTypesCoders {
             purgingBlock,
             purgeIndex,
             providerCount,
+            purgedAmount,
         };
     }
 
-    public static decodeFulfilledProviderEvent(data: Uint8Array): IFulfilledProviderEvent {
+    public static decodeReservationFallbackEvent(data: Uint8Array): IReservationFallbackEvent {
+        const reader = new BinaryReader(data);
+        const reservationId = reader.readU128();
+        const expirationBlock = reader.readU64();
+
+        return {
+            name: 'ReservationFallbackEvent',
+            reservationId,
+            expirationBlock,
+        };
+    }
+
+    public static decodeProviderFulfilledEvent(data: Uint8Array): IProviderFulfilledEvent {
         const reader = new BinaryReader(data);
         const providerId = reader.readU256();
         const canceled = reader.readBoolean();
         const removalCompleted = reader.readBoolean();
+        const stakedAmount = reader.readU256();
 
         return {
-            name: 'FulfilledProviderEvent',
+            name: 'ProviderFulfilledEvent',
             providerId,
             canceled,
             removalCompleted,
+            stakedAmount,
         };
     }
 
@@ -312,7 +329,7 @@ export class NativeSwapTypesCoders {
                     console.log('Purged a provider?', event);
                     break;
                 }
-                case 'FulfilledProvider': {
+                case 'ProviderFulfilled': {
                     console.log('Fulfilled a provider in the reserve?', event);
                     break;
                 }
@@ -547,6 +564,7 @@ export class NativeSwapTypesCoders {
             isActive: reader.readBoolean(),
             listedTokenAt: reader.readU64(),
             isPurged: reader.readBoolean(),
+            canProvideLiquidity: reader.readBoolean(),
         };
     }
 
