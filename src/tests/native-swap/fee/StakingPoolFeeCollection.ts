@@ -3,6 +3,7 @@ import { Assert, Blockchain, OP20, opnet, OPNetUnit } from '@btc-vision/unit-tes
 import { NativeSwap } from '../../../contracts/NativeSwap.js';
 import { NativeSwapTypesCoders } from '../../../contracts/NativeSwapTypesCoders.js';
 import { createRecipientUTXOs } from '../../utils/UTXOSimulator.js';
+import { helper_swap } from '../../utils/OperationHelper.js';
 
 await opnet('Native Swap - Staking Pool Fee Collection', async (vm: OPNetUnit) => {
     let nativeSwap: NativeSwap;
@@ -105,16 +106,15 @@ await opnet('Native Swap - Staking Pool Fee Collection', async (vm: OPNetUnit) =
 
         Blockchain.blockNumber = Blockchain.blockNumber + 3n;
 
-        const s = await nativeSwap.swap({
-            token: tokenAddress,
-        });
+        await helper_swap(nativeSwap, tokenAddress, userAddress, false);
 
         const expectedFee = 3386294000000000n;
         const postBalance = await token.balanceOf(userAddress);
         const stakingPoolBalance = await token.balanceOf(stakingContractAddress);
 
         // Expect half the fee to go to the staking pool
-        Assert.expect(stakingPoolBalance).toEqual(expectedFee / 2n);
+        Assert.expect(stakingPoolBalance).toEqual(expectedFee);
+
         Assert.expect(postBalance).toEqual(preBalance + 1689760706000000000n);
     });
 

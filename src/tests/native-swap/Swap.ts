@@ -677,11 +677,11 @@ await opnet('Native Swap - Swap', async (vm: OPNetUnit) => {
             );
 
             Assert.expect(getReserveResult3.virtualTokenReserve).toEqual(
-                getReserveResult1.virtualTokenReserve + expectedFees / 2n,
+                getReserveResult1.virtualTokenReserve - expectedFees,
             );
 
             Assert.expect(getReserveResult3.liquidity).toEqual(
-                getReserveResult1.liquidity - expectedFees / 2n - (expectedAmount - expectedFees),
+                getReserveResult1.liquidity - expectedFees - (expectedAmount - expectedFees),
             );
 
             Blockchain.msgSender = liquidityOwner;
@@ -699,7 +699,7 @@ await opnet('Native Swap - Swap', async (vm: OPNetUnit) => {
             );
 
             const stakingContractBalance = await token.balanceOf(stakingContractAddress);
-            Assert.expect(stakingContractBalance).toEqual(expectedFees / 2n);
+            Assert.expect(stakingContractBalance).toEqual(expectedFees);
 
             const reserverBalance = await token.balanceOf(reserveAddress);
             Assert.expect(reserverBalance).toEqual(expectedAmount - expectedFees);
@@ -790,13 +790,11 @@ await opnet('Native Swap - Swap', async (vm: OPNetUnit) => {
                 );
 
                 Assert.expect(getReserveResult3.virtualTokenReserve).toEqual(
-                    getReserveResult1.virtualTokenReserve + expectedFees / 2n,
+                    getReserveResult1.virtualTokenReserve - expectedFees,
                 );
 
                 Assert.expect(getReserveResult3.liquidity).toEqual(
-                    getReserveResult1.liquidity -
-                        expectedFees / 2n -
-                        (expectedAmount - expectedFees),
+                    getReserveResult1.liquidity - expectedFees - (expectedAmount - expectedFees),
                 );
 
                 Blockchain.msgSender = liquidityOwner;
@@ -814,7 +812,7 @@ await opnet('Native Swap - Swap', async (vm: OPNetUnit) => {
                 );
 
                 const stakingContractBalance = await token.balanceOf(stakingContractAddress);
-                Assert.expect(stakingContractBalance).toEqual(expectedFees / 2n);
+                Assert.expect(stakingContractBalance).toEqual(expectedFees);
 
                 const reserverBalance = await token.balanceOf(reserveAddress);
                 Assert.expect(reserverBalance).toEqual(expectedAmount - expectedFees);

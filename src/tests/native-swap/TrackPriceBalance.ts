@@ -736,6 +736,9 @@ await opnet('Native Swap - Track price and balance', async (vm: OPNetUnit) => {
         await initBlockchain();
         await createTokens();
         await initNativeSwap();
+        tokenArray = [];
+        providerArray = [];
+        reservationArray = [];
     });
 
     vm.afterEach(() => {
