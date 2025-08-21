@@ -56,8 +56,10 @@ import {
     WithdrawListingParams,
     WithdrawListingResult,
     IReservationFallbackEvent,
+    IProviderConsumedEvent,
 } from './NativeSwapTypes.js';
 import { CSV_DURATION } from '../tests/globals.js';
+import { result } from 'gulp-eslint-new';
 
 export class NativeSwapTypesCoders {
     public static encodeDefault(selector: number): BinaryWriter {
@@ -238,6 +240,18 @@ export class NativeSwapTypesCoders {
         };
     }
 
+    public static decodeProviderConsumedEvent(data: Uint8Array): IProviderConsumedEvent {
+        const reader = new BinaryReader(data);
+        const providerId = reader.readU256();
+        const amountUsed = reader.readU128();
+
+        return {
+            name: 'ProviderConsumedEvent',
+            providerId,
+            amountUsed,
+        };
+    }
+
     public static decodeLiquidityAddedEvent(data: Uint8Array): ILiquidityAddedEvent {
         const reader = new BinaryReader(data);
         const totalTokensContributed = reader.readU256();
@@ -294,7 +308,8 @@ export class NativeSwapTypesCoders {
         const buyer = reader.readAddress();
         const amountIn = reader.readU64();
         const amountOut = reader.readU256();
-        return { name: 'SwapExecutedEvent', buyer, amountIn, amountOut };
+        const totalFees = reader.readU256();
+        return { name: 'SwapExecutedEvent', buyer, amountIn, amountOut, totalFees };
     }
 
     public static decodeReservationEvents(events: NetEvent[]): DecodedReservationEvents {

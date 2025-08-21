@@ -1,5 +1,6 @@
 import {
     IActivateProviderEvent,
+    IProviderConsumedEvent,
     IProviderFulfilledEvent,
     IReservationFallbackEvent,
     ISwapExecutedEvent,
@@ -14,6 +15,7 @@ export class SwapEventsHelper {
     public transferredEvents: ITransferEvent[] = [];
     public providerFulfilledEvents: IProviderFulfilledEvent[] = [];
     public providerActivatedEvent: IActivateProviderEvent[] = [];
+    public providerConsumedEvent: IProviderConsumedEvent[] = [];
 }
 
 export function decodeSwapEventsHelper(events: NetEvent[]): SwapEventsHelper {
@@ -50,6 +52,12 @@ export function decodeSwapEventsHelper(events: NetEvent[]): SwapEventsHelper {
             case 'ReservationFallback': {
                 result.reservationFallbackEvent =
                     NativeSwapTypesCoders.decodeReservationFallbackEvent(event.data);
+                break;
+            }
+            case 'ProviderConsumed': {
+                result.providerConsumedEvent.push(
+                    NativeSwapTypesCoders.decodeProviderConsumedEvent(event.data),
+                );
                 break;
             }
             default: {

@@ -31,6 +31,7 @@ import {
     ReserveResult,
     SwapResult,
     IReservationFallbackEvent,
+    IProviderConsumedEvent,
 } from '../../contracts/NativeSwapTypes.js';
 import { NetEvent } from '@btc-vision/transaction';
 import { NativeSwapTypesCoders } from '../../contracts/NativeSwapTypesCoders.js';
@@ -140,6 +141,7 @@ export function logSwapExecutedEvent(event: ISwapExecutedEvent): void {
     Blockchain.log(`-----------------`);
     Blockchain.log(`amountIn: ${event.amountIn}`);
     Blockchain.log(`amountOut: ${event.amountOut}`);
+    Blockchain.log(`totalFees: ${event.totalFees}`);
     Blockchain.log(`buyer: ${event.buyer}`);
 
     Blockchain.log(``);
@@ -216,6 +218,12 @@ export function logSwapEvents(events: NetEvent[]): void {
             case 'ReservationFallback': {
                 logReservationFallbackEvent(
                     NativeSwapTypesCoders.decodeReservationFallbackEvent(event.data),
+                );
+                break;
+            }
+            case 'ProviderConsumed': {
+                logProviderConsumedEvent(
+                    NativeSwapTypesCoders.decodeProviderConsumedEvent(event.data),
                 );
                 break;
             }
@@ -337,6 +345,16 @@ export function logProviderFulfilledEvent(event: IProviderFulfilledEvent): void 
     Blockchain.log(`providerId: ${event.providerId}`);
     Blockchain.log(`canceled: ${event.canceled}`);
     Blockchain.log(`removalCompleted: ${event.removalCompleted}`);
+    Blockchain.log(`stakedAmount: ${event.stakedAmount}`);
+    Blockchain.log(``);
+}
+
+export function logProviderConsumedEvent(event: IProviderConsumedEvent): void {
+    Blockchain.log(``);
+    Blockchain.log(`ProviderConsumedEvent`);
+    Blockchain.log(`-----------------`);
+    Blockchain.log(`providerId: ${event.providerId}`);
+    Blockchain.log(`amountUsed: ${event.amountUsed}`);
     Blockchain.log(``);
 }
 

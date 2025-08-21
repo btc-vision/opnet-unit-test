@@ -17,6 +17,12 @@ export interface IProviderFulfilledEvent {
     readonly stakedAmount: bigint;
 }
 
+export interface IProviderConsumedEvent {
+    readonly name: string;
+    readonly providerId: bigint;
+    readonly amountUsed: bigint;
+}
+
 export interface ILiquidityAddedEvent {
     readonly name: string;
     readonly totalTokensContributed: bigint;
@@ -61,6 +67,7 @@ export interface ISwapExecutedEvent {
     readonly buyer: Address;
     readonly amountIn: bigint;
     readonly amountOut: bigint;
+    readonly totalFees: bigint;
 }
 
 export interface IReservationFallbackEvent {
@@ -116,7 +123,8 @@ export type AllEvent =
     | IProviderFulfilledEvent
     | IReservationPurgedEvent
     | IWithdrawListingEvent
-    | IReservationFallbackEvent;
+    | IReservationFallbackEvent
+    | IProviderConsumedEvent;
 
 export interface SetFeesParams {
     readonly reservationBaseFee: bigint;

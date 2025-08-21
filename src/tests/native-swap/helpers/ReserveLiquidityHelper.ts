@@ -93,7 +93,6 @@ export class ReserveLiquidityHelper {
         const transaction = new Transaction(generateTransactionId(), inputs, outputs);
 
         for (let i = 0; i < this.recipients.length; i++) {
-            Blockchain.log(`output${i}: ${this.recipients[i].amount}`);
             transaction.addOutput(this.recipients[i].amount, this.recipients[i].address);
         }
 

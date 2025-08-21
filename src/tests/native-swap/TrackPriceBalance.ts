@@ -390,8 +390,6 @@ await opnet('Native Swap - Track price and balance', async (vm: OPNetUnit) => {
             transferToStakingAmount;
         await assertStakingBalanceHelper(provider.tokenHelper, newStakingBalance);
 
-        //!!! CHECK WHY WE NEVER DECREASE VIRTUAL TOKEN RESERVE in nativeswap
-
         // Validate the new reserve
         const newLiquidity =
             initialReserve.liquidity - transferToStakingAmount - initialProviderLiquidity;
@@ -503,17 +501,20 @@ await opnet('Native Swap - Track price and balance', async (vm: OPNetUnit) => {
         return reservation;
     }
 
-    async function swapNotExpired(
+    async function swap(
         reservation: ReserveLiquidityHelper,
         transaction: Transaction | null,
     ): Promise<void> {
         pushOriginSender();
+
+        // Setup transaction.
+        // If no transaction is provided, we create a transaction that will
+        // contain the exact amount of satoshis for each provider in the reservation.
+        // Otherwise, we use the provided transaction that may have different amounts.
         const localTransaction =
             transaction !== null ? transaction : reservation.createTransaction();
 
         Blockchain.transaction = localTransaction;
-
-        Assert.expect(reservation.isExpired()).toEqual(false);
 
         // Get initial balances and reserve
         const initialReserve = await LiquidityReserveHelper.create(
@@ -527,66 +528,93 @@ await opnet('Native Swap - Track price and balance', async (vm: OPNetUnit) => {
             reservation.reserver,
         );
 
+        // Execute the swap
         const result = await helper_swapNew(
             nativeSwap,
             reservation.tokenHelper.token.address,
             reservation.reserver,
-            true, //ENABLE_LOG,
+            ENABLE_LOG,
         );
 
+        // Decode swap events
         const swapEvents = decodeSwapEventsHelper(result.response.events);
 
+        // Ensure swap was executed
         Assert.expect(swapEvents.swapExecutedEvent).toNotEqual(null);
         if (swapEvents.swapExecutedEvent === null) {
             throw new Error('Swap not executed.');
         }
-        Assert.expect(swapEvents.swapExecutedEvent.amountIn).toEqual(
-            getTransactionTotalAmount(localTransaction),
-        );
+
+        const transactionTotalAmount = getTransactionTotalAmount(localTransaction);
+        // The used amount must match the provided amount of satoshis
+        Assert.expect(swapEvents.swapExecutedEvent.amountIn).toEqual(transactionTotalAmount);
+
+        if (transactionTotalAmount === reservation.totalSatoshis && !reservation.isExpired()) {
+            Assert.expect(reservation.expectedAmountOut).toEqual(
+                swapEvents.swapExecutedEvent.amountOut + swapEvents.swapExecutedEvent.totalFees,
+            );
+        }
+
+        // Ensure the swap goes to the reserver
         Assert.expect(
             swapEvents.swapExecutedEvent.buyer.toString() === reservation.reserver.toString(),
         );
 
+        if (reservation.isExpired()) {
+            Assert.expect(swapEvents.reservationFallbackEvent).toNotEqual(null);
+        }
+
+        // Ensure the amount transferred to the reserver match
         const transferAmountReservation = getTransferAmount(
             swapEvents.transferredEvents,
             nativeSwapContractAddress,
             reservation.reserver,
         );
-
         Assert.expect(transferAmountReservation).toEqual(swapEvents.swapExecutedEvent.amountOut);
+
+        // Ensure the new reserver balance match
         const newReserverBalance = await reservation.tokenHelper.getBalanceOf(reservation.reserver);
         Assert.expect(newReserverBalance).toEqual(
             initialReserverBalance + transferAmountReservation,
         );
 
+        // Get the amount transferred to the staking contract
         const transferAmountStaking = getTransferAmount(
             swapEvents.transferredEvents,
             nativeSwapContractAddress,
             stakingContractAddress,
         );
 
-        // !!!Fees to compute
+        // Process the ProviderActivated events
         await processProviderActivated(swapEvents.providerActivatedEvent);
+
+        // Process the ProviderFulfilled events
         const fulfilledStakingAmount = await processProviderFulfilled(
             swapEvents.providerFulfilledEvents,
         );
-        //!!!Assert.expect(fulfilledStakingAmount).toEqual(transferAmountStaking);
 
+        // Ensure the computed staking amount match the transferred amount
+        const stakingAmount = fulfilledStakingAmount + swapEvents.swapExecutedEvent.totalFees;
+        Assert.expect(transferAmountStaking).toEqual(stakingAmount);
+
+        // Ensure the new balance of the staking contract is accurate
         const newStakingBalance = await reservation.tokenHelper.getStakingContractBalance();
-        Assert.expect(newStakingBalance).toEqual(initialStakingBalance + transferAmountStaking);
+        Assert.expect(newStakingBalance).toEqual(initialStakingBalance + stakingAmount);
 
+        // Ensure the new balance of the nativeswap contract is accurate
         const newNativeSwapBalance = await reservation.tokenHelper.getNativeSwapContractBalance();
         Assert.expect(newNativeSwapBalance).toEqual(
             initialNativeSwapBalance - transferAmountStaking - transferAmountReservation,
         );
 
+        // Ensure the liquidity reserve is accurate
         await assertCurrentLiquidityReserveHelper(
             nativeSwap,
             reservation.tokenHelper,
             initialReserve.liquidity - transferAmountStaking - transferAmountReservation,
             initialReserve.reservedLiquidity - reservation.expectedAmountOut,
             initialReserve.virtualBTCReserve,
-            initialReserve.virtualTokenReserve,
+            initialReserve.virtualTokenReserve - stakingAmount,
         );
 
         Blockchain.transaction = null;
@@ -699,8 +727,6 @@ await opnet('Native Swap - Track price and balance', async (vm: OPNetUnit) => {
 
         Blockchain.blockNumber += 2n;
         Blockchain.log('reservation 1');
-        const r1 = await LiquidityReserveHelper.create(nativeSwap, tokenArray[0]);
-        r1.logToConsole();
 
         const reservation = await reserveLiquidity(
             tokenArray[0],
@@ -712,13 +738,11 @@ await opnet('Native Swap - Track price and balance', async (vm: OPNetUnit) => {
             throw new Error('Cannot reserve.');
         }
 
-        const r2 = await LiquidityReserveHelper.create(nativeSwap, tokenArray[0]);
-        r2.logToConsole();
-        reservation.logToConsole();
-
-        Blockchain.blockNumber += 3n;
+        Blockchain.blockNumber += 13n;
         Blockchain.log('swap');
-        await swapNotExpired(reservation, null);
+        await swap(reservation, null);
+
+        //!!! Adjust virtualtokenreserve in cancel and list
 
         /*
         Blockchain.blockNumber += 20n;
