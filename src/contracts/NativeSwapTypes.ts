@@ -46,8 +46,9 @@ export interface ILiquidityRemovedEvent {
 export interface ILiquidityReservedEvent {
     readonly name: string;
     readonly depositAddress: string;
-    readonly amount: bigint;
+    readonly satoshisAmount: bigint;
     readonly providerId: bigint;
+    readonly tokenAmount: bigint;
 }
 
 export interface IListingCanceledEvent {

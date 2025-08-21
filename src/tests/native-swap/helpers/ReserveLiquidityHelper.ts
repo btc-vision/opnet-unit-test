@@ -21,7 +21,8 @@ import { NativeSwap } from '../../../contracts/NativeSwap.js';
 export class ReserveLiquidityRecipientHelper {
     constructor(
         public address: string,
-        public amount: bigint,
+        public satoshisAmount: bigint,
+        public tokenAmount: bigint,
         public providerId: bigint,
     ) {}
 }
@@ -66,7 +67,8 @@ export class ReserveLiquidityHelper {
             reservation.recipients.push(
                 new ReserveLiquidityRecipientHelper(
                     item.depositAddress,
-                    item.amount,
+                    item.satoshisAmount,
+                    item.tokenAmount,
                     item.providerId,
                 ),
             );
@@ -93,7 +95,7 @@ export class ReserveLiquidityHelper {
         const transaction = new Transaction(generateTransactionId(), inputs, outputs);
 
         for (let i = 0; i < this.recipients.length; i++) {
-            transaction.addOutput(this.recipients[i].amount, this.recipients[i].address);
+            transaction.addOutput(this.recipients[i].satoshisAmount, this.recipients[i].address);
         }
 
         return transaction;
@@ -122,7 +124,8 @@ export class ReserveLiquidityHelper {
             Blockchain.log('\t----------');
             Blockchain.log(`\taddress: ${this.recipients[i].address}`);
             Blockchain.log(`\tproviderId: ${this.recipients[i].providerId}`);
-            Blockchain.log(`\tamount: ${this.recipients[i].amount}`);
+            Blockchain.log(`\tsatoshisAmount: ${this.recipients[i].satoshisAmount}`);
+            Blockchain.log(`\ttokenAmount: ${this.recipients[i].tokenAmount}`);
             Blockchain.log('');
         }
         Blockchain.log('');

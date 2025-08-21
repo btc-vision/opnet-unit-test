@@ -413,7 +413,8 @@ export function logLiquidityReservedEvent(event: ILiquidityReservedEvent): void 
     Blockchain.log(``);
     Blockchain.log(`LiquidityReservedEvent`);
     Blockchain.log(`-----------------`);
-    Blockchain.log(`amount: ${event.amount}`);
+    Blockchain.log(`satoshisAmount: ${event.satoshisAmount}`);
+    Blockchain.log(`tokenAmount: ${event.tokenAmount}`);
     Blockchain.log(`depositAddress: ${event.depositAddress}`);
     Blockchain.log(`providerId: ${event.providerId}`);
     Blockchain.log(``);

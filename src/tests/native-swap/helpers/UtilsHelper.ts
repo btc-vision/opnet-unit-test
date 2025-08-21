@@ -1,3 +1,5 @@
+import { Blockchain } from '@btc-vision/unit-test-framework';
+
 export function expandBigIntTo18Decimals(n: bigint): bigint {
     return n * 10n ** 18n;
 }
@@ -19,4 +21,28 @@ export function computeSlashing(oldLiquidity: bigint, amountIn: bigint): bigint 
     const deltaHalf: bigint = newHalfCred - oldHalfCred;
 
     return deltaHalf;
+}
+
+export function calculateHalfToCharge(initialAmount: bigint, penaltyAmount: bigint): bigint {
+    const halfCred = half(initialAmount);
+    Blockchain.log(`halfCred: ${halfCred}`);
+    const halfToCharge: bigint = penaltyAmount < halfCred ? penaltyAmount : halfCred;
+
+    return halfToCharge;
+}
+
+export function calculatePenaltyLeft(initialAmount: bigint, penaltyAmount: bigint): bigint {
+    let penaltyLeft: bigint = 0n;
+
+    Blockchain.log(`initialAmount: ${initialAmount}`);
+    Blockchain.log(`penaltyAmount: ${penaltyAmount}`);
+
+    if (penaltyAmount > 0) {
+        const halfToCharge = calculateHalfToCharge(initialAmount, penaltyAmount);
+        penaltyLeft = penaltyAmount - halfToCharge;
+        Blockchain.log(`halfToCharge: ${halfToCharge}`);
+    }
+
+    Blockchain.log(`penaltyLeft: ${penaltyLeft}`);
+    return penaltyLeft;
 }

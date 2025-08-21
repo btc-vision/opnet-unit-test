@@ -62,7 +62,7 @@ export function assertCancelListLiquidityEventsHelper(
     provider: ProviderHelper,
     events: CancelListLiquidityEventsHelper,
 ): void {
-    Assert.expect(events.providerFulfilledEvents).toBeGreaterThan(0);
+    Assert.expect(events.providerFulfilledEvents.length).toBeGreaterThan(0);
     Assert.expect(events.listingCancelledEvent).toNotEqual(null);
 
     Assert.expect(

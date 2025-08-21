@@ -1,10 +1,28 @@
 import { Address } from '@btc-vision/transaction';
 import { NativeSwap } from '../../../contracts/NativeSwap.js';
-import { helper_getProviderDetailsNew } from '../../utils/OperationHelperNew.js';
 import { Blockchain } from '@btc-vision/unit-test-framework';
 import { TokenHelper } from './TokenHelper.js';
-import { GetProviderDetailsResult } from '../../../contracts/NativeSwapTypes.js';
-import { logAction, logGetProviderDetailsResult } from '../../utils/LoggerHelper.js';
+
+export class ProviderSnapshotHelper {
+    constructor(
+        public providerId: bigint,
+        public liquidity: bigint,
+        public reserved: bigint,
+    ) {}
+
+    public static async create(provider: ProviderHelper): Promise<ProviderSnapshotHelper> {
+        return new ProviderSnapshotHelper(provider.id, provider.liquidity, provider.reserved);
+    }
+
+    public logToConsole(): void {
+        Blockchain.log('PROVIDER SNAPSHOT');
+        Blockchain.log('----------');
+        Blockchain.log(`providerId: ${this.providerId}`);
+        Blockchain.log(`liquidity: ${this.liquidity}`);
+        Blockchain.log(`reserved: ${this.reserved}`);
+        Blockchain.log('');
+    }
+}
 
 export class ProviderHelper {
     public id: bigint;

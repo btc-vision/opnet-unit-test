@@ -284,9 +284,16 @@ export class NativeSwapTypesCoders {
     public static decodeLiquidityReservedEvent(data: Uint8Array): ILiquidityReservedEvent {
         const reader = new BinaryReader(data);
         const depositAddress = reader.readStringWithLength();
-        const amount = reader.readU64();
+        const satoshisAmount = reader.readU64();
         const providerId = reader.readU256();
-        return { name: 'LiquidityReservedEvent', depositAddress, amount, providerId };
+        const tokenAmount = reader.readU128();
+        return {
+            name: 'LiquidityReservedEvent',
+            depositAddress,
+            satoshisAmount,
+            tokenAmount,
+            providerId,
+        };
     }
 
     public static decodeCancelListingEvent(data: Uint8Array): IListingCanceledEvent {
@@ -323,11 +330,11 @@ export class NativeSwapTypesCoders {
             switch (event.type) {
                 case 'LiquidityReserved': {
                     const recipient = this.decodeLiquidityReservedEvent(event.data);
-                    reservation.totalSatoshis += recipient.amount;
+                    reservation.totalSatoshis += recipient.satoshisAmount;
 
                     reservation.recipients.push({
                         address: recipient.depositAddress,
-                        amount: recipient.amount,
+                        amount: recipient.satoshisAmount,
                         providerId: recipient.providerId.toString(),
                     });
                     break;
