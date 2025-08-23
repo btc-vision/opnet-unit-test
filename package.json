@@ -39,6 +39,7 @@
     "dependencies": {
         "@btc-vision/bitcoin": "^6.4.8",
         "@btc-vision/logger": "^1.0.6",
+        "@btc-vision/opnet-transform": "^0.1.11",
         "@btc-vision/transaction": "^1.6.5",
         "@btc-vision/unit-test-framework": "file:../unit-test-framework",
         "gulp-logger-new": "^1.0.1",
