@@ -101,6 +101,33 @@ export class ReserveLiquidityHelper {
         return transaction;
     }
 
+    public createPartialTransaction(): Transaction {
+        const OUTPUT_INCLUSION_RATE = 0.7;
+        const MIN_BASIS_POINTS = 4000n; // 40.00%
+        const MAX_BASIS_POINTS = 10000n; // 100.00%
+
+        const inputs: TransactionInput[] = [];
+        const outputs: TransactionOutput[] = [];
+        const transaction = new Transaction(generateTransactionId(), inputs, outputs);
+
+        for (let i = 0; i < this.recipients.length; i++) {
+            if (Math.random() < OUTPUT_INCLUSION_RATE) {
+                // Generate random basis points between 4000 and 10000
+                const range = Number(MAX_BASIS_POINTS - MIN_BASIS_POINTS);
+                const randomBasisPoints =
+                    MIN_BASIS_POINTS + BigInt(Math.floor(Math.random() * range));
+
+                // Calculate adjusted amount
+                const originalAmount = this.recipients[i].satoshisAmount;
+                const adjustedAmount = (originalAmount * randomBasisPoints) / 10000n;
+
+                transaction.addOutput(adjustedAmount, this.recipients[i].address);
+            }
+        }
+
+        return transaction;
+    }
+
     public logToConsole(): void {
         Blockchain.log('RESERVATION INFO');
         Blockchain.log('----------');
