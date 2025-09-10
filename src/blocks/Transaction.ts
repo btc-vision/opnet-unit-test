@@ -18,6 +18,7 @@ import {
     RustContract,
     Transaction as BitcoinTransaction,
 } from '@btc-vision/unit-test-framework';
+import { NativeSwapTypesCoders } from '../contracts/NativeSwapTypesCoders.js';
 
 export interface ParsedEvent {
     contractAddress: Address;
@@ -179,6 +180,17 @@ export class Transaction extends Logger {
             sender: this.from,
             txOrigin: this.from,
         });
+
+        if (
+            txId === 'e67e98baea4d877b4e5607ed9e1602f358a4c26322753e4c95a5afb6b4bb49eb' ||
+            txId === ''
+        ) {
+            const events = result.events;
+            const decodedEvents = NativeSwapTypesCoders.decodeReservationPurgedEvent(
+                events[0].data,
+            );
+            console.log('events', events, 'decoded', decodedEvents);
+        }
 
         if (result.error) {
             this.fail(

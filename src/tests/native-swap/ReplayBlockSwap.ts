@@ -4,23 +4,26 @@ import { NativeSwap } from '../../contracts/NativeSwap.js';
 import { networks } from '@btc-vision/bitcoin';
 import { cleanupSwap, getStates, tokenDecimals } from './utils/UtilSwap.js';
 import { BlockReplay } from '../../blocks/BlockReplay.js';
+import { helper_reserve } from '../utils/OperationHelper.js';
 
-const nativeStatesFile = './states/NativeSwapStates2.json';
-const motoStatesFile = './states/MotoStates2.json';
+const nativeStatesFile = './states/NativeswapStates.json';
+const motoStatesFile = './states/MotoStates.json';
 const pillStatesFile = './states/PillStates.json';
-const b1tStatesFile = './states/B1TStates.json';
-const ICHXFile = './states/ICHX.json';
+const jorgeFile = './states/jorge.json';
+const rFile = './states/r.json';
+//const b1tStatesFile = './states/B1TStates.json';
+//const ICHXFile = './states/ICHX.json';
 
 const admin: Address = Address.fromString(
     '0x02729c84e0174d1a2c1f089dd685bdaf507581762c85bfcf69c7ec90cf2ba596b9',
 );
 
 const motoAddress: Address = Address.fromString(
-    `0xdb944e78cada1d705af892bb0560a4a9c4b9896d64ef23dfd3870ffd5004f4f2`,
+    `0x95d245621dd9faca22a7294419ad3b88e7187af6fa7e7bf7acf223a016b6f953`,
 );
 
 const pillAddress: Address = Address.fromString(
-    '0x7a0b58be893a250638cb2c95bf993ebe00b60779a4597b7c1ef0e76552c823ce',
+    '0x4038c7b0e617f9fdc776d02cc3f62d6d0b29807c8886af55355766305c9d3af5',
 );
 
 const bt1Address: Address = Address.fromString(
@@ -28,19 +31,27 @@ const bt1Address: Address = Address.fromString(
 );
 
 const nativeAddy: Address = Address.fromString(
-    '0xd0e91f6aafa36407a1325a13e73d9b59a14874fc5dde10b4219c3e13d42d4175',
+    '0xb029ae75cff337453696c86af773b022b929b2666eec8b8693e8e745be65e305',
 );
 
 const ICHXAddress: Address = Address.fromString(
     '0xb44aebe0a2e7760514d6167dca571b8c18eee82ef9232788a81891b87b95ddc2',
 );
 
+const jorgeAddress: Address = Address.fromString(
+    '0xf678fb621e91eab96099e7b6d951d025d5e24beafda79f19aed6f7777a98f73d',
+);
+
+const rnd: Address = Address.fromString(
+    '0xb67d7054beadd15e97b58c469333ab3d57d801ccbc598c0a46148a7619e71f4f',
+);
+
 // at 4548512=>queueIndex: 3534 (4548511n ici)
 // at 4548514n => queueIndex: 8644 (4548513n ici)
 // at 4548543n => isActive = false
 
-const SEARCHED_BLOCK: bigint = 4548508n; //4548511n; //4548543n;
-const MAX_BLOCK_TO_REPLAY: number = 5; // replay one block from SEARCHED_BLOCK
+const SEARCHED_BLOCK: bigint = 4658710n; //4548511n; //4548543n;
+const MAX_BLOCK_TO_REPLAY: number = 15; // replay one block from SEARCHED_BLOCK
 const KEEP_NEW_STATES: boolean = false; // if true, it won't clear and load the states from the file, it will keep the new computed one.
 
 await opnet('NativeSwap: Debug', async (vm: OPNetUnit) => {
@@ -51,10 +62,8 @@ await opnet('NativeSwap: Debug', async (vm: OPNetUnit) => {
     Blockchain.register(nativeSwap);
 
     const moto: OP20 = new OP20({
-        file: 'moto2',
-        deployer: Address.fromString(
-            '0x02729c84e0174d1a2c1f089dd685bdaf507581762c85bfcf69c7ec90cf2ba596b9',
-        ),
+        file: 'moto',
+        deployer: admin,
         address: motoAddress,
         decimals: tokenDecimals,
     });
@@ -63,20 +72,34 @@ await opnet('NativeSwap: Debug', async (vm: OPNetUnit) => {
 
     const pill: OP20 = new OP20({
         file: 'pill',
-        deployer: Address.fromString(
-            '0x02729c84e0174d1a2c1f089dd685bdaf507581762c85bfcf69c7ec90cf2ba596b9',
-        ),
+        deployer: admin,
         address: pillAddress,
         decimals: tokenDecimals,
     });
 
     Blockchain.register(pill);
 
-    const b1t: OP20 = new OP20({
+    const jorge: OP20 = new OP20({
+        file: 'MyToken',
+        deployer: admin,
+        address: jorgeAddress,
+        decimals: tokenDecimals,
+    });
+
+    Blockchain.register(jorge);
+
+    const rndt: OP20 = new OP20({
+        file: 'MyToken',
+        deployer: admin,
+        address: rnd,
+        decimals: tokenDecimals,
+    });
+
+    Blockchain.register(rndt);
+
+    /*const b1t: OP20 = new OP20({
         file: 'pill',
-        deployer: Address.fromString(
-            '0x02729c84e0174d1a2c1f089dd685bdaf507581762c85bfcf69c7ec90cf2ba596b9',
-        ),
+        deployer: admin,
         address: bt1Address,
         decimals: tokenDecimals,
     });
@@ -85,14 +108,12 @@ await opnet('NativeSwap: Debug', async (vm: OPNetUnit) => {
 
     const ICHX: OP20 = new OP20({
         file: 'moto2',
-        deployer: Address.fromString(
-            '0x02bc0f338bb90e546ef42826d8e4d9f272d145ca3a077af2d33d61487b2b0e7934',
-        ),
+        deployer: admin,
         address: ICHXAddress,
         decimals: tokenDecimals,
     });
 
-    Blockchain.register(ICHX);
+    Blockchain.register(ICHX);*/
 
     async function loadStates(block: bigint): Promise<void> {
         StateHandler.purgeAll();
@@ -107,20 +128,25 @@ await opnet('NativeSwap: Debug', async (vm: OPNetUnit) => {
         const nativeStates = await getStates(nativeStatesFile, block);
         const motoStates = await getStates(motoStatesFile, block);
         const pillStates = await getStates(pillStatesFile, block);
-        const b1tStates = await getStates(b1tStatesFile, block);
-        const ICHXStates = await getStates(ICHXFile, block);
+        const jorgeStates = await getStates(jorgeFile, block);
+        const rS = await getStates(rFile, block);
+        // const ICHXStates = await getStates(ICHXFile, block);
 
         StateHandler.overrideStates(nativeAddy, nativeStates);
         StateHandler.overrideStates(motoAddress, motoStates);
-        StateHandler.overrideStates(bt1Address, b1tStates);
+        StateHandler.overrideStates(jorgeAddress, jorgeStates);
+        StateHandler.overrideStates(rnd, rS);
+        //StateHandler.overrideStates(bt1Address, b1tStates);
         StateHandler.overrideStates(pillAddress, pillStates);
-        StateHandler.overrideStates(ICHXAddress, ICHXStates);
+        //StateHandler.overrideStates(ICHXAddress, ICHXStates);
 
         StateHandler.overrideDeployment(nativeAddy);
         StateHandler.overrideDeployment(motoAddress);
-        StateHandler.overrideDeployment(bt1Address);
+        StateHandler.overrideDeployment(jorgeAddress);
+        StateHandler.overrideDeployment(rnd);
+        //StateHandler.overrideDeployment(bt1Address);
         StateHandler.overrideDeployment(pillAddress);
-        StateHandler.overrideDeployment(ICHXAddress);
+        //StateHandler.overrideDeployment(ICHXAddress);
     }
 
     vm.beforeEach(async () => {
@@ -171,6 +197,10 @@ await opnet('NativeSwap: Debug', async (vm: OPNetUnit) => {
                 token: motoAddress,
             });
             console.log(test);
+
+            const rnd = Blockchain.generateRandomAddress();
+            const resp = await helper_reserve(nativeSwap, motoAddress, rnd, 1_000_000_000n, 0n);
+            console.log(resp);
         }
     });
 });
