@@ -46,6 +46,10 @@ const rnd: Address = Address.fromString(
     '0xb67d7054beadd15e97b58c469333ab3d57d801ccbc598c0a46148a7619e71f4f',
 );
 
+const adminR: Address = Address.fromString(
+    '0x0258b47abfa41d8946d618fe3489940b5f2bfc79b84e0f9cd3afeccf84fd25c7d4',
+);
+
 // at 4548512=>queueIndex: 3534 (4548511n ici)
 // at 4548514n => queueIndex: 8644 (4548513n ici)
 // at 4548543n => isActive = false
@@ -90,7 +94,7 @@ await opnet('NativeSwap: Debug', async (vm: OPNetUnit) => {
 
     const rndt: OP20 = new OP20({
         file: 'MyToken',
-        deployer: admin,
+        deployer: adminR,
         address: rnd,
         decimals: tokenDecimals,
     });
