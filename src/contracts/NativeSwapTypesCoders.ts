@@ -25,13 +25,15 @@ import {
     GetStakingContractAddressResult,
     IActivateProviderEvent,
     IApprovedEvent,
-    IProviderFulfilledEvent,
     ILiquidityAddedEvent,
     ILiquidityListedEvent,
     ILiquidityRemovedEvent,
     ILiquidityReservedEvent,
     IListingCanceledEvent,
+    IProviderConsumedEvent,
+    IProviderFulfilledEvent,
     IReservationCreatedEvent,
+    IReservationFallbackEvent,
     IReservationPurgedEvent,
     IsPausedResult,
     ISwapExecutedEvent,
@@ -55,11 +57,8 @@ import {
     UnpauseResult,
     WithdrawListingParams,
     WithdrawListingResult,
-    IReservationFallbackEvent,
-    IProviderConsumedEvent,
 } from './NativeSwapTypes.js';
 import { CSV_DURATION } from '../tests/globals.js';
-import { result } from 'gulp-eslint-new';
 
 export class NativeSwapTypesCoders {
     public static encodeDefault(selector: number): BinaryWriter {
@@ -692,7 +691,7 @@ export class NativeSwapTypesCoders {
         calldata.writeAddress(params.token);
         calldata.writeU256(params.floorPrice);
         calldata.writeU128(params.initialLiquidity);
-        calldata.writeBytes(params.receiver.originalPublicKeyBuffer());
+        calldata.writeBytesWithLength(params.receiver.originalPublicKeyBuffer());
         calldata.writeStringWithLength(
             params.receiverStr
                 ? params.receiverStr
@@ -718,7 +717,7 @@ export class NativeSwapTypesCoders {
         calldata.writeAddress(params.token);
         calldata.writeU256(params.floorPrice);
         calldata.writeU128(params.initialLiquidity);
-        calldata.writeBytes(params.receiver.originalPublicKeyBuffer());
+        calldata.writeBytesWithLength(params.receiver.originalPublicKeyBuffer());
         calldata.writeStringWithLength(
             params.receiverStr
                 ? params.receiverStr
@@ -759,7 +758,7 @@ export class NativeSwapTypesCoders {
 
         calldata.writeSelector(selector);
         calldata.writeAddress(params.token);
-        calldata.writeBytes(params.receiver.originalPublicKeyBuffer());
+        calldata.writeBytesWithLength(params.receiver.originalPublicKeyBuffer());
         calldata.writeStringWithLength(
             params.receiverStr
                 ? params.receiverStr

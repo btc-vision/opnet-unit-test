@@ -8,7 +8,6 @@ import {
     logGetProviderDetailsResult,
     logGetQuoteResult,
     logGetReserveResult,
-    logLiquidityListedEvent,
     logListLiquidityEvent,
     logListLiquidityResult,
     logRecipient,
