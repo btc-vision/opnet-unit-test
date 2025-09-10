@@ -30,6 +30,7 @@
         "test:nft": "tsx src/tests/nft/OP721.ts",
         "debug": "tsx src/tests/native-swap/DebugSwap.ts --max-old-space-size=8192",
         "replay": "tsx src/tests/native-swap/ReplayBlockSwap.ts --max-old-space-size=8192",
+        "replay2": "tsx src/tests/native-swap/ReplayBlockSwapError2.ts --max-old-space-size=8192",
         "test:swap": "tsx src/tests/native-swap/SwapProblem.ts",
         "test:purgeInvar": "tsx src/tests/native-swap/PurgeInvariant.ts",
         "test": "npm-run-all test:*",
