@@ -977,6 +977,7 @@ await opnet('NativeSwap: Priority and Normal Queue listLiquidity', async (vm: OP
         // Now the provider tries to add more liquidity with a different receiver
         const newReceiver = Blockchain.generateRandomAddress();
         Blockchain.msgSender = provider;
+        Blockchain.txOrigin = provider;
 
         // Should NOT revert
         await nativeSwap.listLiquidity({
