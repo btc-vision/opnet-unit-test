@@ -28,6 +28,7 @@
         "test:track": "tsx src/tests/native-swap/TrackPriceBalance.ts",
         "test:token": "tsx src/tests/token/OP20.ts",
         "test:nft": "tsx src/tests/nft/OP721.ts",
+        "test:native:constant": "tsx src/tests/native-swap/ConstantProduct.ts",
         "test:u256": "tsx src/tests/math/u256Basic.ts",
         "debug": "tsx src/tests/native-swap/DebugSwap.ts --max-old-space-size=8192",
         "replay": "tsx src/tests/native-swap/ReplayBlockSwap.ts --max-old-space-size=8192",
