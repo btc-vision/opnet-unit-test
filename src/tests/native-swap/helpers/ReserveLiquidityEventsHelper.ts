@@ -1,6 +1,6 @@
 import {
-    IProviderFulfilledEvent,
     ILiquidityReservedEvent,
+    IProviderFulfilledEvent,
     IReservationCreatedEvent,
     IReservationPurgedEvent,
     ITransferEvent,
@@ -42,7 +42,7 @@ export function decodeReserveLiquidityEventsHelper(
 
                 break;
             }
-            case 'Transfer': {
+            case 'Transferred': {
                 result.transferredEvents.push(
                     NativeSwapTypesCoders.decodeTransferEvent(event.data),
                 );

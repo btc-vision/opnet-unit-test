@@ -1,21 +1,15 @@
 import { Address } from '@btc-vision/transaction';
-import {
-    Assert,
-    Blockchain,
-    gas2USD,
-    OP20,
-    opnet,
-    OPNetUnit,
-} from '@btc-vision/unit-test-framework';
+import { Assert, Blockchain, gas2USD, opnet, OPNetUnit } from '@btc-vision/unit-test-framework';
 import { NativeSwap } from '../../contracts/NativeSwap.js';
 import { Recipient, ReserveResult } from '../../contracts/NativeSwapTypes.js';
 import { BitcoinUtils } from 'opnet';
 import { createRecipientsOutput } from '../utils/TransactionUtils.js';
 import { NativeSwapTypesCoders } from '../../contracts/NativeSwapTypesCoders.js';
+import { MotoContract } from '../../contracts/MotoContract.js';
 
 await opnet('NativeSwap: Purging Reservations', async (vm: OPNetUnit) => {
     let nativeSwap: NativeSwap;
-    let token: OP20;
+    let token: MotoContract;
     let toSwap: { a: Address; r: Recipient[] }[] = [];
     let usedReservationAddresses: Address[] = [];
 
@@ -132,12 +126,14 @@ await opnet('NativeSwap: Purging Reservations', async (vm: OPNetUnit) => {
 
             createRecipientsOutput(reservation.r);
             const s = await nativeSwap.swap({ token: tokenAddress });
-            const d = NativeSwapTypesCoders.decodeSwapExecutedEvent(
-                s.response.events[s.response.events.length - 1].data,
-            );
+            const event = s.response.events[s.response.events.length - 2];
+            if (event.type !== 'SwapExecuted') {
+                throw new Error(`No swap executed event found, got ${event.type}`);
+            }
 
+            const d = NativeSwapTypesCoders.decodeSwapExecutedEvent(event.data);
             vm.log(
-                `Swapped spent ${gas2USD(s.response.usedGas)} USD in gas, ${d.amountOut} tokens`,
+                `Swapped spent ${gas2USD(s.response.usedGas)} USD in gas (pages: ${s.response.memoryPagesUsed}), ${d.amountOut} tokens`,
             );
         }
 
@@ -236,8 +232,8 @@ await opnet('NativeSwap: Purging Reservations', async (vm: OPNetUnit) => {
 
         Blockchain.blockNumber = 1n;
 
-        token = new OP20({
-            file: 'MyToken',
+        token = new MotoContract({
+            file: 'moto',
             deployer: userAddress,
             address: tokenAddress,
             decimals: tokenDecimals,
@@ -279,7 +275,7 @@ await opnet('NativeSwap: Purging Reservations', async (vm: OPNetUnit) => {
 
         await listTokenRandom(BitcoinUtils.expandToDecimals(10000, tokenDecimals), undefined, true);
 
-        for (let i = 0; i < 500; i++) {
+        for (let i = 0; i < 600; i++) {
             await listTokenRandom(
                 BitcoinUtils.expandToDecimals(1000, tokenDecimals),
                 undefined,
@@ -321,13 +317,11 @@ await opnet('NativeSwap: Purging Reservations', async (vm: OPNetUnit) => {
             token: tokenAddress,
         });
 
-        console.log(reserve);
-
         //Assert.expect(reserve.reservedLiquidity).toEqual(0n);
         Assert.expect(startLp).toBeGreaterThan(reserve.liquidity);
 
         // Check again
-        for (let i = 0; i < 250; i++) {
+        for (let i = 0; i < 350; i++) {
             //await randomReserve(1_500_000n / 2n, false, true);
             await makeReservation(Blockchain.generateRandomAddress(), 100_000n, 1n);
             await makeReservation(Blockchain.generateRandomAddress(), 1_500_000n / 2n, 1n);
@@ -347,7 +341,7 @@ await opnet('NativeSwap: Purging Reservations', async (vm: OPNetUnit) => {
             await makeReservation(Blockchain.generateRandomAddress(), 100_000n, 1n);
         }
 
-        await randomReserve(25_000_000n, false, true, true);
+        await randomReserve(15_000_000n, false, true, true);
 
         Blockchain.blockNumber += 6n;
 
@@ -364,12 +358,12 @@ await opnet('NativeSwap: Purging Reservations', async (vm: OPNetUnit) => {
 
         Blockchain.blockNumber += 4n;
 
-        await randomReserve(25_000_000n, false, true);
+        await randomReserve(55_000_000n, false, true);
 
         Blockchain.blockNumber += 10n;
         toSwap = [];
 
-        await randomReserve(100_000_000n, false, true);
+        await randomReserve(200_000_000n, false, true);
 
         for (let i = 0; i < 12; i++) {
             await randomReserve(5_500_000n, false, true, true);
@@ -379,13 +373,107 @@ await opnet('NativeSwap: Purging Reservations', async (vm: OPNetUnit) => {
 
         await swapAll();
 
+        vm.debug(`--------------- CHECK PRICE DIFFERENCE ---------------`);
+
+        for (let i = 0; i < 12; i++) {
+            await randomReserve(1_000_000n, false, true, true);
+        }
+
+        Blockchain.blockNumber += 1n;
+
+        vm.debug(`--------------- SWAP 1 ---------------`);
+
+        await swapAll();
+
+        vm.debug(`--------------- CHECK PRICE DIFFERENCE ---------------`);
+
+        for (let i = 0; i < 12; i++) {
+            await randomReserve(1_000_000n, false, true, true);
+        }
+
+        Blockchain.blockNumber += 1n;
+
+        vm.debug(`--------------- SWAP 2 ---------------`);
+
+        await swapAll();
+
+        Blockchain.blockNumber += 1n;
+
+        vm.debug(`--------------- RESERVE GET QUOTE ---------------`);
+
+        await randomReserve(1_000_000n, false, true, true);
+
+        Blockchain.blockNumber += 25n;
+
         const reserve54 = await nativeSwap.getReserve({
             token: tokenAddress,
         });
 
-        console.log('reserve54', reserve54);
+        vm.debug(
+            `--------------- SIMULATE MASSIVE LISTING (${reserve54.virtualTokenReserve} - worth ${BitcoinUtils.formatUnits(reserve54.virtualBTCReserve, 8)} BTC) ---------------`,
+        );
 
-        Assert.expect(reserve54.reservedLiquidity).toEqual(0n);
-        Assert.expect(startLp).toBeGreaterThan(reserve54.liquidity);
+        await listTokenRandom(reserve54.virtualTokenReserve, undefined, true);
+
+        Blockchain.blockNumber += 1n;
+
+        vm.debug(`--------------- RESERVE ---------------`);
+
+        await randomReserve(1_000_000n, false, true, true);
+
+        Blockchain.blockNumber += 1n;
+
+        vm.debug(`--------------- SWAP ---------------`);
+
+        await swapAll();
+
+        Blockchain.blockNumber += 1n;
+
+        vm.debug(`--------------- RESERVE 2 ---------------`);
+
+        await randomReserve(1_000_000n, false, true, true);
+
+        Blockchain.blockNumber += 1n;
+
+        vm.debug(`--------------- SWAP ---------------`);
+
+        await swapAll();
+
+        Blockchain.blockNumber += 1n;
+
+        vm.debug(`--------------- SIMULATING LOTS OF SMALL TRADES ---------------`);
+
+        for (let i = 0; i < 500; i++) {
+            const s = await randomReserve(51_000n, false, true, true);
+
+            if (i % 20 === 0) {
+                //for (let y = 0; y < 20; y++) {
+                await listTokenRandom(reserve54.virtualTokenReserve, undefined, false);
+                //}
+
+                vm.debug(`--------------- NEXT BLOCK. ---------------`);
+                Blockchain.blockNumber += 1n;
+                await swapAll();
+            }
+        }
+
+        Blockchain.blockNumber += 1n;
+
+        await swapAll();
+
+        vm.debug(`--------------- SMALL TRADES DONE. FINAL QUOTE ---------------`);
+
+        await randomReserve(1_000_000n, false, true, true);
+
+        //Blockchain.blockNumber += 1n;
+
+        const reserves = await nativeSwap.getReserve({
+            token: tokenAddress,
+        });
+
+        console.log('reserves', reserves);
+
+        Assert.expect(reserves.reservedLiquidity).toEqual(0n);
+        Assert.expect(startLp).toBeGreaterThan(reserves.liquidity);
     });
 });

@@ -346,8 +346,7 @@ export class NativeSwapTypesCoders {
                     // Do nothing
                     break;
                 }
-                case 'Transfer': {
-                    console.log('Purged a provider?', event);
+                case 'Transferred': {
                     break;
                 }
                 case 'ProviderFulfilled': {
@@ -797,13 +796,13 @@ export class NativeSwapTypesCoders {
             throw new Error('No response to decode from reserve');
         }
 
-        const event = response.events[response.events.length - 1];
+        const event = response.events.find((e) => e.type === 'ReservationCreated');
         if (!event) {
-            throw new Error('No event to decode');
+            throw new Error('No ReservationCreated event found in reserve response');
         }
 
         if (event.type !== 'ReservationCreated') {
-            throw new Error('Wrong event returned');
+            throw new Error(`Wrong event returned ${event.type}`);
         }
 
         const decodeEvent = this.decodeReservationCreatedEvent(event.data);
