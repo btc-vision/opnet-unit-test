@@ -11,7 +11,7 @@ const admin: Address = Address.fromString(
 );
 
 const motoAddress: Address = Address.fromString(
-    `0x95d245621dd9faca22a7294419ad3b88e7187af6fa7e7bf7acf223a016b6f953`,
+    `0x765af63f9f7656f0dbefaaf052a266ebee231daebb532809a0d1fccb016e2e5d`,
 );
 
 const nativeAddy: Address = Address.fromString(
