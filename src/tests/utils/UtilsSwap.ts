@@ -245,7 +245,7 @@ export async function makeReservation(
     return resp;
 }
 
-interface ParsedState {
+/*interface ParsedState {
     readonly pointer: {
         $binary: {
             base64: string;
@@ -259,6 +259,12 @@ interface ParsedState {
     readonly lastSeenAt: {
         $numberLong: string;
     };
+}*/
+
+interface ParsedState {
+    readonly pointer: string;
+    readonly value: string;
+    readonly lastSeenAt: number;
 }
 
 const CACHE_DIR = path.resolve('cache');
@@ -295,15 +301,15 @@ export async function getStates(file: string, SEARCHED_BLOCK: bigint): Promise<F
 
     for await (const data of stream as AsyncIterable<{ value: ParsedState }>) {
         const value = data.value;
-        const ptrB64 = value.pointer.$binary.base64;
-        const seenAt = BigInt(value.lastSeenAt.$numberLong);
+        const ptrB64 = value.pointer;
+        const seenAt = BigInt(value.lastSeenAt);
         if (seenAt > SEARCHED_BLOCK) continue;
 
         const prev = latest.get(ptrB64);
         if (!prev || seenAt > prev.seenAt) {
             latest.set(ptrB64, {
                 seenAt,
-                valueB64: value.value?.$binary.base64 ?? null,
+                valueB64: value.value ?? null,
             });
         }
     }
