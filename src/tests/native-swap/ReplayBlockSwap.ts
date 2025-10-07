@@ -157,7 +157,7 @@ await opnet('NativeSwap: Debug', async (vm: OPNetUnit) => {
         await Promise.resolve();
 
         Blockchain.blockNumber = SEARCHED_BLOCK;
-        Blockchain.network = networks.testnet;
+        Blockchain.network = networks.regtest;
 
         for (let i = 0; i < MAX_BLOCK_TO_REPLAY; i++) {
             Blockchain.blockNumber += 1n;
