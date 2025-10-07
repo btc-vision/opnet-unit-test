@@ -2,17 +2,15 @@ import { Address } from '@btc-vision/transaction';
 import { Blockchain, OP20, opnet, OPNetUnit, StateHandler } from '@btc-vision/unit-test-framework';
 import { NativeSwap } from '../../contracts/NativeSwap.js';
 import { networks } from '@btc-vision/bitcoin';
-import { cleanupSwap, getStates, tokenDecimals } from './utils/UtilSwap.js';
 import { BlockReplay } from '../../blocks/BlockReplay.js';
 import { helper_reserve } from '../utils/OperationHelper.js';
+import { cleanupSwap, getStates, tokenDecimals } from '../utils/UtilsSwap.js';
 
 const nativeStatesFile = './states/NativeswapStates.json';
 const motoStatesFile = './states/MotoStates.json';
 const pillStatesFile = './states/PillStates.json';
 const jorgeFile = './states/jorge.json';
 const rFile = './states/r.json';
-//const b1tStatesFile = './states/B1TStates.json';
-//const ICHXFile = './states/ICHX.json';
 
 const admin: Address = Address.fromString(
     '0x02729c84e0174d1a2c1f089dd685bdaf507581762c85bfcf69c7ec90cf2ba596b9',
@@ -26,16 +24,8 @@ const pillAddress: Address = Address.fromString(
     '0x4038c7b0e617f9fdc776d02cc3f62d6d0b29807c8886af55355766305c9d3af5',
 );
 
-const bt1Address: Address = Address.fromString(
-    '0x83d9d8ce0135e00519dc0861f9627e109c47bb31df4a22f7ba7934315c1f277a',
-);
-
 const nativeAddy: Address = Address.fromString(
     '0xb029ae75cff337453696c86af773b022b929b2666eec8b8693e8e745be65e305',
-);
-
-const ICHXAddress: Address = Address.fromString(
-    '0xb44aebe0a2e7760514d6167dca571b8c18eee82ef9232788a81891b87b95ddc2',
 );
 
 const jorgeAddress: Address = Address.fromString(
@@ -100,24 +90,6 @@ await opnet('NativeSwap: Debug', async (vm: OPNetUnit) => {
     });
 
     Blockchain.register(rndt);
-
-    /*const b1t: OP20 = new OP20({
-        file: 'pill',
-        deployer: admin,
-        address: bt1Address,
-        decimals: tokenDecimals,
-    });
-
-    Blockchain.register(b1t);
-
-    const ICHX: OP20 = new OP20({
-        file: 'moto2',
-        deployer: admin,
-        address: ICHXAddress,
-        decimals: tokenDecimals,
-    });
-
-    Blockchain.register(ICHX);*/
 
     async function loadStates(block: bigint): Promise<void> {
         StateHandler.purgeAll();
