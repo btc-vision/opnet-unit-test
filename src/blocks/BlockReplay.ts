@@ -31,8 +31,6 @@ export class BlockReplay extends Logger {
             return false;
         }
 
-        await Promise.resolve();
-
         this.log(
             `Block ${this.blockHeight} replay started with ${this.transactions.length} transactions.`,
         );

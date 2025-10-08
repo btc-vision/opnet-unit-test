@@ -3,7 +3,6 @@ import { Blockchain, OP20, opnet, OPNetUnit, StateHandler } from '@btc-vision/un
 import { NativeSwap } from '../../contracts/NativeSwap.js';
 import { networks } from '@btc-vision/bitcoin';
 import { BlockReplay } from '../../blocks/BlockReplay.js';
-import { helper_reserve } from '../utils/OperationHelper.js';
 import { cleanupSwap, getStates, tokenDecimals } from '../utils/UtilsSwap.js';
 
 const admin: Address = Address.fromString(
@@ -47,7 +46,7 @@ const stakingStatesFile = `./states/${stakingAddress.p2op(Blockchain.network)}.j
 // at 4548543n => isActive = false
 
 const SEARCHED_BLOCK: bigint = 15460n; //4548511n; //4548543n;
-const MAX_BLOCK_TO_REPLAY: number = 2; // replay one block from SEARCHED_BLOCK
+const MAX_BLOCK_TO_REPLAY: number = 12; // replay one block from SEARCHED_BLOCK
 const KEEP_NEW_STATES: boolean = false; // if true, it won't clear and load the states from the file, it will keep the new computed one.
 
 await opnet('NativeSwap: Debug', async (vm: OPNetUnit) => {
@@ -189,9 +188,14 @@ await opnet('NativeSwap: Debug', async (vm: OPNetUnit) => {
             });
             console.log('reserves', test);
 
-            const rnd = Blockchain.generateRandomAddress();
+            const details = await nativeSwap.getQueueDetails({
+                token: motoAddress,
+            });
+            console.log('details', details);
+
+            /*const rnd = Blockchain.generateRandomAddress();
             const resp = await helper_reserve(nativeSwap, motoAddress, rnd, 1_000_000_000n, 0n);
-            console.log(resp);
+            console.log(resp);*/
         }
     });
 });
