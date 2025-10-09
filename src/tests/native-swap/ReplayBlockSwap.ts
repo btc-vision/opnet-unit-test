@@ -45,7 +45,7 @@ const stakingStatesFile = `./states/${stakingAddress.p2op(Blockchain.network)}.j
 // at 4548514n => queueIndex: 8644 (4548513n ici)
 // at 4548543n => isActive = false
 
-const SEARCHED_BLOCK: bigint = 15460n; //4548511n; //4548543n;
+const SEARCHED_BLOCK: bigint = 15465n; //4548511n; //4548543n;
 const MAX_BLOCK_TO_REPLAY: number = 12; // replay one block from SEARCHED_BLOCK
 const KEEP_NEW_STATES: boolean = false; // if true, it won't clear and load the states from the file, it will keep the new computed one.
 
