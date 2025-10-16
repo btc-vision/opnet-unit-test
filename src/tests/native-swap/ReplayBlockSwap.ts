@@ -38,16 +38,16 @@ const adminR: Address = Address.fromString(
 );*/
 
 const nativeStatesFile = `./states/${nativeAddy.p2op(Blockchain.network)}.json`;
-const motoStatesFile = `./states/${nativeAddy.p2op(Blockchain.network)}.json`;
+const motoStatesFile = `./states/${motoAddress.p2op(Blockchain.network)}.json`;
 const stakingStatesFile = `./states/${stakingAddress.p2op(Blockchain.network)}.json`;
 
 // at 4548512=>queueIndex: 3534 (4548511n ici)
 // at 4548514n => queueIndex: 8644 (4548513n ici)
 // at 4548543n => isActive = false
 
-const SEARCHED_BLOCK: bigint = 15465n; //4548511n; //4548543n;
+const SEARCHED_BLOCK: bigint = 15460n; //4548511n; //4548543n;
 const MAX_BLOCK_TO_REPLAY: number = 12; // replay one block from SEARCHED_BLOCK
-const KEEP_NEW_STATES: boolean = false; // if true, it won't clear and load the states from the file, it will keep the new computed one.
+const KEEP_NEW_STATES: boolean = true; // if true, it won't clear and load the states from the file, it will keep the new computed one.
 
 await opnet('NativeSwap: Debug', async (vm: OPNetUnit) => {
     Blockchain.msgSender = admin;
@@ -173,6 +173,19 @@ await opnet('NativeSwap: Debug', async (vm: OPNetUnit) => {
                 blockHeight: Blockchain.blockNumber,
                 ignoreUnknownContracts: true,
             });
+
+            const test2 = await nativeSwap.getReserve({
+                token: motoAddress,
+            });
+            console.log('reserves', test2);
+
+            const details2 = await nativeSwap.getQueueDetails({
+                token: motoAddress,
+            });
+            console.log('details', details2);
+
+            const balanceOfMoto = await moto.balanceOf(nativeSwap.address);
+            console.log('balanceOfMoto', balanceOfMoto);
 
             const ok = await block.replayBlock();
             if (!ok) {
