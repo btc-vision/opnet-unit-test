@@ -144,3 +144,5 @@ blocks
 blocks/*.json
 cache
 cache/*.json
+bytecode
+bytecode/*.wasm

@@ -233,7 +233,7 @@ await opnet('NativeSwap: Purging Reservations', async (vm: OPNetUnit) => {
         Blockchain.blockNumber = 1n;
 
         token = new MotoContract({
-            file: 'moto',
+            file: 'MyToken',
             deployer: userAddress,
             address: tokenAddress,
             decimals: tokenDecimals,
@@ -465,7 +465,7 @@ await opnet('NativeSwap: Purging Reservations', async (vm: OPNetUnit) => {
 
         await randomReserve(1_000_000n, false, true, true);
 
-        //Blockchain.blockNumber += 1n;
+        Blockchain.blockNumber += 10n;
 
         const reserves = await nativeSwap.getReserve({
             token: tokenAddress,
