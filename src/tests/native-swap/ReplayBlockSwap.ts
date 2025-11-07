@@ -285,15 +285,15 @@ await opnet('NativeSwap: Debug', async (vm: OPNetUnit) => {
             }
 
             // Post-block checks
-            /* const reservesAfter = await nativeSwap.getReserve({
-                 token: Address.fromString(CONTRACTS[1].address),
-             });
-             console.log('Reserves after:', reservesAfter);
+            const reservesAfter = await nativeSwap.getReserve({
+                token: Address.fromString(PILL.address),
+            });
+            console.log('Reserves after:', reservesAfter);
 
-             const queueDetailsAfter = await nativeSwap.getQueueDetails({
-                 token: Address.fromString(CONTRACTS[1].address),
-             });
-             console.log('Queue details after:', queueDetailsAfter);*/
+            const queueDetailsAfter = await nativeSwap.getQueueDetails({
+                token: Address.fromString(PILL.address),
+            });
+            console.log('Queue details after:', queueDetailsAfter);
         }
     });
 });
