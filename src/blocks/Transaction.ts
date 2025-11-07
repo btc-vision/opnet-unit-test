@@ -357,7 +357,18 @@ export class Transaction extends Logger {
 
     private createOutputs(tx: BitcoinTransaction): void {
         for (const output of this.outputs) {
-            tx.addOutput(output.value, output.scriptPubKey.address);
+            //try {
+            if (output.scriptPubKey.address) {
+                tx.addOutput(output.value, output.scriptPubKey.address);
+            } else {
+                tx.addOutput(output.value, undefined, Buffer.from(output.scriptPubKey.hex, 'hex'));
+            }
+            /*} catch (e) {
+                this.error(
+                    `Failed to add output to transaction ${this.txId.toString('hex')}: ${(e as Error).stack}`,
+                );
+                console.log(output);
+            }*/
         }
     }
 }

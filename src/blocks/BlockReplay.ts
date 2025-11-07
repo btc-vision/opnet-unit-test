@@ -49,7 +49,7 @@ export class BlockReplay extends Logger {
                 await tx.execute();
             } catch (e) {
                 this.panic(
-                    `Block ${this.blockHeight} transaction ${tx.id} execution failed -> ${e}`,
+                    `Block ${this.blockHeight} transaction ${tx.id} execution failed -> ${(e as Error).stack}`,
                 );
                 return false;
             }
