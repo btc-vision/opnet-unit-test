@@ -223,8 +223,8 @@ const CONTRACTS: ContractConfig[] = [
 ];
 
 const ADMIN_ADDRESS = '0x02729c84e0174d1a2c1f089dd685bdaf507581762c85bfcf69c7ec90cf2ba596b9';
-const SEARCHED_BLOCK: bigint = 19047n;
-const MAX_BLOCK_TO_REPLAY: number = 1;
+const SEARCHED_BLOCK: bigint = 19046n;
+const MAX_BLOCK_TO_REPLAY: number = 2;
 const KEEP_NEW_STATES: boolean = false;
 
 await opnet('NativeSwap: Debug', async (vm: OPNetUnit) => {
