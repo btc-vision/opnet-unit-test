@@ -10,32 +10,24 @@ const admin: Address = Address.fromString(
 );
 
 const motoAddress: Address = Address.fromString(
-    `0x765af63f9f7656f0dbefaaf052a266ebee231daebb532809a0d1fccb016e2e5d`,
+    `0xb7e01bd7c583ef6d2e4fd0e3bb9835f275c54b5dc5af44a442b526ebaeeebfb9`,
+);
+
+const pillAddress: Address = Address.fromString(
+    `0x186f943f8b0f803be7a44fce28739ff65953cf2bd83687a392186adaf293a336`,
+);
+
+const odAddress: Address = Address.fromString(
+    `0xb65d29d27c454ff0c5b3b4200d1bb6cbb36db10ca3f2f8622e4d2c9587888cba`,
 );
 
 const nativeAddy: Address = Address.fromString(
-    '0xbd712a5731badaf95c150129134e9caae63a9e80aba5180049d99b3a5222d1aa',
+    '0x32d5c3490be026cda337526b72bc13036d278400ce823e29a00cb5aef15b5d53',
 );
 
 const stakingAddress: Address = Address.fromString(
-    '0x8a7669bacf8420e59115a75d1739786e422c3c128b800ce23f78bc0e228bbf8b',
+    '0x798dd7cd3b5818a3fcfe81420c6757d84a30e098f88cca9afb140205d24f4049',
 );
-
-/*const pillAddress: Address = Address.fromString(
-    '0x4038c7b0e617f9fdc776d02cc3f62d6d0b29807c8886af55355766305c9d3af5',
-);*/
-
-/*const jorgeAddress: Address = Address.fromString(
-    '0xf678fb621e91eab96099e7b6d951d025d5e24beafda79f19aed6f7777a98f73d',
-);
-
-const rnd: Address = Address.fromString(
-    '0xb67d7054beadd15e97b58c469333ab3d57d801ccbc598c0a46148a7619e71f4f',
-);
-
-const adminR: Address = Address.fromString(
-    '0x0258b47abfa41d8946d618fe3489940b5f2bfc79b84e0f9cd3afeccf84fd25c7d4',
-);*/
 
 const nativeStatesFile = `./states/${nativeAddy.p2op(Blockchain.network)}.json`;
 const motoStatesFile = `./states/${motoAddress.p2op(Blockchain.network)}.json`;

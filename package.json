@@ -53,20 +53,20 @@
         "stream-json": "^1.9.1"
     },
     "devDependencies": {
-        "@eslint/js": "9.38.0",
-        "@types/node": "^24.3.1",
+        "@eslint/js": "^9.39.1",
+        "@types/node": "^24.10.0",
         "@types/stream-json": "^1.7.8",
-        "@typescript-eslint/eslint-plugin": "^8.43.0",
-        "@typescript-eslint/parser": "^8.43.0",
-        "eslint": "9.38.0",
+        "@typescript-eslint/eslint-plugin": "^8.46.3",
+        "@typescript-eslint/parser": "^8.46.3",
+        "eslint": "^9.39.1",
         "gulp": "^5.0.1",
         "gulp-cached": "^1.1.1",
         "gulp-clean": "^0.4.0",
-        "gulp-eslint-new": "^2.4.0",
+        "gulp-eslint-new": "^2.5.0",
         "gulp-typescript": "^6.0.0-alpha.1",
         "prettier": "^3.6.2",
-        "tsx": "^4.20.5",
-        "typescript": "^5.9.2",
-        "typescript-eslint": "^8.43.0"
+        "tsx": "^4.20.6",
+        "typescript": "^5.9.3",
+        "typescript-eslint": "^8.46.3"
     }
 }
