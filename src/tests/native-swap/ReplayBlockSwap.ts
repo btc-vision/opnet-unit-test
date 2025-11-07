@@ -41,6 +41,7 @@ interface ContractConfig {
     decimals?: number; // For OP20 tokens
     customFactory?: (address: Address, deployer: Address) => ContractRuntime; // For custom contract types
     initParams?: unknown[]; // Additional initialization parameters
+    overrideContract?: string;
 }
 
 // Contract manager class to handle all the boilerplate
@@ -95,10 +96,17 @@ class ContractManager {
                     throw new Error(`Unknown contract type: ${config.type}`);
             }
 
-            BytecodeManager.loadBytecode(
-                `./bytecode/${address.p2op(Blockchain.network)}.wasm`,
-                contract.address,
-            );
+            if (config.overrideContract) {
+                BytecodeManager.loadBytecode(
+                    `./bytecode/${config.overrideContract}.wasm`,
+                    contract.address,
+                );
+            } else {
+                BytecodeManager.loadBytecode(
+                    `./bytecode/${address.p2op(Blockchain.network)}.wasm`,
+                    contract.address,
+                );
+            }
 
             Blockchain.register(contract);
             this.contracts.set(config.address, contract);
@@ -174,6 +182,7 @@ const CONTRACTS: ContractConfig[] = [
         type: ContractType.NativeSwap,
         name: 'NativeSwap',
         initParams: [2_500_000_000_000_000_000n],
+        overrideContract: 'NativeSwap',
     },
     {
         address: '0xb7e01bd7c583ef6d2e4fd0e3bb9835f275c54b5dc5af44a442b526ebaeeebfb9',
@@ -214,8 +223,8 @@ const CONTRACTS: ContractConfig[] = [
 ];
 
 const ADMIN_ADDRESS = '0x02729c84e0174d1a2c1f089dd685bdaf507581762c85bfcf69c7ec90cf2ba596b9';
-const SEARCHED_BLOCK: bigint = 19048n;
-const MAX_BLOCK_TO_REPLAY: number = 3;
+const SEARCHED_BLOCK: bigint = 19047n;
+const MAX_BLOCK_TO_REPLAY: number = 1;
 const KEEP_NEW_STATES: boolean = false;
 
 await opnet('NativeSwap: Debug', async (vm: OPNetUnit) => {
