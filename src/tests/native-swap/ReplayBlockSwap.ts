@@ -1,162 +1,259 @@
 import { Address } from '@btc-vision/transaction';
-import { Blockchain, OP20, opnet, OPNetUnit, StateHandler } from '@btc-vision/unit-test-framework';
+import {
+    Blockchain,
+    BytecodeManager,
+    FastBigIntMap,
+    OP20,
+    opnet,
+    OPNetUnit,
+    StateHandler,
+} from '@btc-vision/unit-test-framework';
 import { NativeSwap } from '../../contracts/NativeSwap.js';
 import { networks } from '@btc-vision/bitcoin';
 import { BlockReplay } from '../../blocks/BlockReplay.js';
 import { cleanupSwap, getStates, tokenDecimals } from '../utils/UtilsSwap.js';
+import { ContractRuntime } from '@btc-vision/unit-test-framework/build/opnet/modules/ContractRuntime.js';
 
-const admin: Address = Address.fromString(
-    '0x02729c84e0174d1a2c1f089dd685bdaf507581762c85bfcf69c7ec90cf2ba596b9',
-);
+// Contract type enum for clarity
+enum ContractType {
+    OP20 = 'OP20',
+    NativeSwap = 'NativeSwap',
+    Custom = 'Custom',
+}
 
-const motoAddress: Address = Address.fromString(
-    `0xb7e01bd7c583ef6d2e4fd0e3bb9835f275c54b5dc5af44a442b526ebaeeebfb9`,
-);
+// Base contract interface
+interface BaseContract {
+    address: Address;
+    [key: string]: unknown;
+}
 
-const pillAddress: Address = Address.fromString(
-    `0x186f943f8b0f803be7a44fce28739ff65953cf2bd83687a392186adaf293a336`,
-);
+// State object interface
+interface StateObject {
+    [key: string]: unknown;
+}
 
-const odAddress: Address = Address.fromString(
-    `0xb65d29d27c454ff0c5b3b4200d1bb6cbb36db10ca3f2f8622e4d2c9587888cba`,
-);
+// Contract configuration interface
+interface ContractConfig {
+    address: string;
+    type: ContractType;
+    name?: string; // Optional friendly name for logging
+    deployer?: string; // Optional, defaults to admin
+    decimals?: number; // For OP20 tokens
+    customFactory?: (address: Address, deployer: Address) => ContractRuntime; // For custom contract types
+    initParams?: unknown[]; // Additional initialization parameters
+}
 
-const nativeAddy: Address = Address.fromString(
-    '0x32d5c3490be026cda337526b72bc13036d278400ce823e29a00cb5aef15b5d53',
-);
+// Contract manager class to handle all the boilerplate
+class ContractManager {
+    private admin: Address;
+    private contracts: Map<string, ContractRuntime> = new Map();
+    private configs: ContractConfig[] = [];
+    private statesCache: Map<string, FastBigIntMap> = new Map();
 
-const stakingAddress: Address = Address.fromString(
-    '0x798dd7cd3b5818a3fcfe81420c6757d84a30e098f88cca9afb140205d24f4049',
-);
+    constructor(adminAddress: string, contracts: ContractConfig[]) {
+        this.admin = Address.fromString(adminAddress);
+        this.configs = contracts;
+    }
 
-const nativeStatesFile = `./states/${nativeAddy.p2op(Blockchain.network)}.json`;
-const motoStatesFile = `./states/${motoAddress.p2op(Blockchain.network)}.json`;
-const stakingStatesFile = `./states/${stakingAddress.p2op(Blockchain.network)}.json`;
+    // Initialize all contracts automatically
+    initialize(): void {
+        for (const config of this.configs) {
+            const address = Address.fromString(config.address);
+            const deployer = config.deployer ? Address.fromString(config.deployer) : this.admin;
 
-// at 4548512=>queueIndex: 3534 (4548511n ici)
-// at 4548514n => queueIndex: 8644 (4548513n ici)
-// at 4548543n => isActive = false
+            let contract: ContractRuntime;
 
-const SEARCHED_BLOCK: bigint = 15460n; //4548511n; //4548543n;
-const MAX_BLOCK_TO_REPLAY: number = 12; // replay one block from SEARCHED_BLOCK
-const KEEP_NEW_STATES: boolean = true; // if true, it won't clear and load the states from the file, it will keep the new computed one.
+            switch (config.type) {
+                case ContractType.OP20:
+                    contract = new OP20({
+                        file: address.p2op(Blockchain.network),
+                        deployer,
+                        address,
+                        decimals: config.decimals || tokenDecimals,
+                    });
+                    break;
 
-await opnet('NativeSwap: Debug', async (vm: OPNetUnit) => {
-    Blockchain.msgSender = admin;
-    Blockchain.txOrigin = admin;
+                case ContractType.NativeSwap:
+                    contract = new NativeSwap(
+                        deployer,
+                        address,
+                        ...((config.initParams as [bigint]) || [2_500_000_000_000_000_000n]),
+                    );
+                    break;
 
-    const nativeSwap: NativeSwap = new NativeSwap(admin, nativeAddy, 2_500_000_000_000_000_000n);
-    Blockchain.register(nativeSwap);
+                case ContractType.Custom:
+                    if (config.customFactory) {
+                        contract = config.customFactory(address, deployer);
+                    } else {
+                        throw new Error(
+                            `Custom factory required for ${config.name || config.address}`,
+                        );
+                    }
+                    break;
 
-    const moto: OP20 = new OP20({
-        file: motoAddress.p2op(Blockchain.network),
-        deployer: admin,
-        address: motoAddress,
-        decimals: tokenDecimals,
-    });
+                default:
+                    throw new Error(`Unknown contract type: ${config.type}`);
+            }
 
-    Blockchain.register(moto);
+            BytecodeManager.loadBytecode(
+                `./bytecode/${address.p2op(Blockchain.network)}.wasm`,
+                contract.address,
+            );
 
-    const staking: OP20 = new OP20({
-        file: stakingAddress.p2op(Blockchain.network),
-        deployer: admin,
-        address: stakingAddress,
-        decimals: tokenDecimals,
-    });
+            Blockchain.register(contract);
+            this.contracts.set(config.address, contract);
+        }
+    }
 
-    Blockchain.register(staking);
-
-    /*const pill: OP20 = new OP20({
-        file: 'pill',
-        deployer: admin,
-        address: pillAddress,
-        decimals: tokenDecimals,
-    });
-
-    Blockchain.register(pill);
-
-    const jorge: OP20 = new OP20({
-        file: 'MyToken',
-        deployer: admin,
-        address: jorgeAddress,
-        decimals: tokenDecimals,
-    });
-
-    Blockchain.register(jorge);
-
-    const rndt: OP20 = new OP20({
-        file: 'MyToken',
-        deployer: adminR,
-        address: rnd,
-        decimals: tokenDecimals,
-    });
-
-    Blockchain.register(rndt);*/
-
-    async function loadStates(block: bigint): Promise<void> {
+    // Load states for all contracts at once
+    async loadStates(blockNumber: bigint): Promise<void> {
         StateHandler.purgeAll();
-
         Blockchain.dispose();
         Blockchain.cleanup();
-
         cleanupSwap();
-
         await Blockchain.init();
 
-        const nativeStates = await getStates(nativeStatesFile, block);
-        const motoStates = await getStates(motoStatesFile, block);
-        const stakingStates = await getStates(stakingStatesFile, block);
+        for (const config of this.configs) {
+            const address = Address.fromString(config.address);
+            const statesFile = `./states/${address.p2op(Blockchain.network)}.json`;
 
-        //const pillStates = await getStates(pillStatesFile, block);
-        //const jorgeStates = await getStates(jorgeFile, block);
-        //const rS = await getStates(rFile, block);
-        // const ICHXStates = await getStates(ICHXFile, block);
-
-        StateHandler.overrideStates(nativeAddy, nativeStates);
-        StateHandler.overrideStates(motoAddress, motoStates);
-        StateHandler.overrideStates(stakingAddress, stakingStates);
-        //StateHandler.overrideStates(jorgeAddress, jorgeStates);
-        //StateHandler.overrideStates(rnd, rS);
-        //StateHandler.overrideStates(bt1Address, b1tStates);
-        //StateHandler.overrideStates(pillAddress, pillStates);
-        //StateHandler.overrideStates(ICHXAddress, ICHXStates);
-
-        StateHandler.overrideDeployment(nativeAddy);
-        StateHandler.overrideDeployment(motoAddress);
-        StateHandler.overrideDeployment(stakingAddress);
-        //StateHandler.overrideDeployment(jorgeAddress);
-        //StateHandler.overrideDeployment(rnd);
-        //StateHandler.overrideDeployment(bt1Address);
-        //StateHandler.overrideDeployment(pillAddress);
-        //StateHandler.overrideDeployment(ICHXAddress);
+            try {
+                const states = await this.getOrCreateStates(statesFile, blockNumber);
+                StateHandler.overrideStates(address, states);
+                StateHandler.overrideDeployment(address);
+            } catch (error) {
+                console.warn(`Failed to load states for ${config.name || config.address}:`, error);
+                // Continue with other contracts even if one fails
+            }
+        }
     }
+
+    // Get a specific contract instance
+    getContract<T extends ContractRuntime>(address: string): T {
+        const contract = this.contracts.get(address);
+        if (!contract) {
+            throw new Error(`Contract not found: ${address}`);
+        }
+
+        return contract as T;
+    }
+
+    // Get all contracts
+    getAllContracts(): Map<string, ContractRuntime> {
+        return this.contracts;
+    }
+
+    // Cleanup all contracts
+    cleanup(): void {
+        this.contracts.clear();
+        this.statesCache.clear();
+        StateHandler.purgeAll();
+        Blockchain.dispose();
+        Blockchain.cleanup();
+        cleanupSwap();
+    }
+
+    // Get states from cache or load from file
+    private async getOrCreateStates(filepath: string, blockNumber: bigint): Promise<FastBigIntMap> {
+        const cacheKey = `${filepath}_${blockNumber}`;
+
+        if (this.statesCache.has(cacheKey)) {
+            return this.statesCache.get(cacheKey) as FastBigIntMap;
+        }
+
+        const states = await getStates(filepath, blockNumber);
+        this.statesCache.set(cacheKey, states);
+        return states;
+    }
+}
+
+// Main configuration - just add contracts here
+const CONTRACTS: ContractConfig[] = [
+    {
+        address: '0x32d5c3490be026cda337526b72bc13036d278400ce823e29a00cb5aef15b5d53',
+        type: ContractType.NativeSwap,
+        name: 'NativeSwap',
+        initParams: [2_500_000_000_000_000_000n],
+    },
+    {
+        address: '0xb7e01bd7c583ef6d2e4fd0e3bb9835f275c54b5dc5af44a442b526ebaeeebfb9',
+        type: ContractType.OP20,
+        name: 'MOTO',
+        decimals: tokenDecimals,
+    },
+    {
+        address: '0x798dd7cd3b5818a3fcfe81420c6757d84a30e098f88cca9afb140205d24f4049',
+        type: ContractType.OP20,
+        name: 'Staking',
+        decimals: tokenDecimals,
+    },
+    {
+        address: '0x186f943f8b0f803be7a44fce28739ff65953cf2bd83687a392186adaf293a336',
+        type: ContractType.OP20,
+        name: 'PILL',
+        decimals: tokenDecimals,
+    },
+    {
+        address: '0xb65d29d27c454ff0c5b3b4200d1bb6cbb36db10ca3f2f8622e4d2c9587888cba',
+        type: ContractType.OP20,
+        name: 'OD',
+        decimals: tokenDecimals,
+    },
+    {
+        address: '0xb1cff60e445799e592fa6534ff1147c01f0ebf68181c5338b633da999850a6a1',
+        type: ContractType.OP20,
+        name: 'Noclue',
+        decimals: tokenDecimals,
+    },
+    {
+        address: '0xe12d29f947d183bda359e8ad250e7b183fbd085d2b5d3a3ccf281224277997a1',
+        type: ContractType.OP20,
+        name: 'Noclue2',
+        decimals: tokenDecimals,
+    },
+];
+
+const ADMIN_ADDRESS = '0x02729c84e0174d1a2c1f089dd685bdaf507581762c85bfcf69c7ec90cf2ba596b9';
+const SEARCHED_BLOCK: bigint = 19040n;
+const MAX_BLOCK_TO_REPLAY: number = 10;
+const KEEP_NEW_STATES: boolean = false;
+
+await opnet('NativeSwap: Debug', async (vm: OPNetUnit) => {
+    const manager = new ContractManager(ADMIN_ADDRESS, CONTRACTS);
+
+    Blockchain.msgSender = Address.fromString(ADMIN_ADDRESS);
+    Blockchain.txOrigin = Address.fromString(ADMIN_ADDRESS);
 
     vm.beforeEach(async () => {
         cleanupSwap();
-
         await Blockchain.init();
-
         Blockchain.blockNumber = SEARCHED_BLOCK + 1n;
+        manager.initialize();
     });
 
     vm.afterEach(() => {
-        Blockchain.dispose();
-        Blockchain.cleanup();
+        manager.cleanup();
     });
 
     await vm.it('should debug', async () => {
-        await Promise.resolve();
-
         Blockchain.blockNumber = SEARCHED_BLOCK;
         Blockchain.network = networks.regtest;
+
+        const PILL = CONTRACTS[3];
+
+        // Get contract instances with type safety
+        const nativeSwap = manager.getContract<NativeSwap>(CONTRACTS[0].address);
+        const moto = manager.getContract<OP20>(PILL.address);
 
         for (let i = 0; i < MAX_BLOCK_TO_REPLAY; i++) {
             Blockchain.blockNumber += 1n;
 
-            vm.info(`Loading block ${Blockchain.blockNumber}... Loading states...`);
+            vm.info(`Loading block ${Blockchain.blockNumber}...`);
 
+            // Load states conditionally based on configuration
             if ((i !== 0 && !KEEP_NEW_STATES) || i === 0) {
-                await loadStates(Blockchain.blockNumber - 1n);
+                vm.info(`Loading states for block ${Blockchain.blockNumber - 1n}...`);
+                await manager.loadStates(Blockchain.blockNumber - 1n);
             }
 
             vm.info(`Replaying block ${Blockchain.blockNumber}...`);
@@ -166,41 +263,37 @@ await opnet('NativeSwap: Debug', async (vm: OPNetUnit) => {
                 ignoreUnknownContracts: true,
             });
 
-            const test2 = await nativeSwap.getReserve({
-                token: motoAddress,
+            // Pre-block checks
+            const reservesBefore = await nativeSwap.getReserve({
+                token: Address.fromString(PILL.address),
             });
-            console.log('reserves', test2);
+            console.log('Reserves before:', reservesBefore);
 
-            const details2 = await nativeSwap.getQueueDetails({
-                token: motoAddress,
+            const queueDetailsBefore = await nativeSwap.getQueueDetails({
+                token: Address.fromString(PILL.address),
             });
-            console.log('details', details2);
+            console.log('Queue details before:', queueDetailsBefore);
 
             const balanceOfMoto = await moto.balanceOf(nativeSwap.address);
-            console.log('balanceOfMoto', balanceOfMoto);
+            console.log('MOTO balance in NativeSwap:', balanceOfMoto);
 
-            const ok = await block.replayBlock();
-            if (!ok) {
+            // Replay the block
+            const success = await block.replayBlock();
+            if (!success) {
                 vm.panic(`Block ${Blockchain.blockNumber} replay failed.`);
-
                 return;
             }
 
-            // Simulate something at the end of the block.
+            // Post-block checks
+            /* const reservesAfter = await nativeSwap.getReserve({
+                 token: Address.fromString(CONTRACTS[1].address),
+             });
+             console.log('Reserves after:', reservesAfter);
 
-            const test = await nativeSwap.getReserve({
-                token: motoAddress,
-            });
-            console.log('reserves', test);
-
-            const details = await nativeSwap.getQueueDetails({
-                token: motoAddress,
-            });
-            console.log('details', details);
-
-            /*const rnd = Blockchain.generateRandomAddress();
-            const resp = await helper_reserve(nativeSwap, motoAddress, rnd, 1_000_000_000n, 0n);
-            console.log(resp);*/
+             const queueDetailsAfter = await nativeSwap.getQueueDetails({
+                 token: Address.fromString(CONTRACTS[1].address),
+             });
+             console.log('Queue details after:', queueDetailsAfter);*/
         }
     });
 });

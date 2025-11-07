@@ -2,7 +2,7 @@ import { Address } from '@btc-vision/transaction';
 import { Blockchain, OP20, opnet, OPNetUnit, StateHandler } from '@btc-vision/unit-test-framework';
 import { NativeSwap } from '../../contracts/NativeSwap.js';
 import { networks } from '@btc-vision/bitcoin';
-//import { cleanupSwap, getStates, tokenDecimals } from './utils/UtilSwap.js';
+import { cleanupSwap, getStates, tokenDecimals } from '../utils/UtilsSwap.js';
 import { BlockReplay } from '../../blocks/BlockReplay.js';
 import { helper_reserve } from '../utils/OperationHelper.js';
 
