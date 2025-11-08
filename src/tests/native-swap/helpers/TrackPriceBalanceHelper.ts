@@ -1,14 +1,12 @@
-import {
-    assertNativeSwapBalanceHelper,
-    assertProviderBalanceHelper,
-    assertStakingBalanceHelper,
-    TokenHelper,
-} from './TokenHelper.js';
-import { ProviderHelper, ProviderSnapshotHelper } from './ProviderHelper.js';
-import { ReserveLiquidityHelper } from './ReserveLiquidityHelper.js';
 import { Address } from '@btc-vision/transaction';
 import { Assert, Blockchain, Transaction } from '@btc-vision/unit-test-framework';
 import { NativeSwap } from '../../../contracts/NativeSwap.js';
+import {
+    IActivateProviderEvent,
+    IProviderFulfilledEvent,
+    IReservationPurgedEvent,
+    ITransferEvent,
+} from '../../../contracts/NativeSwapTypes.js';
 import {
     helper_cancelLiquidityNew,
     helper_createPoolNew,
@@ -17,13 +15,10 @@ import {
     helper_reserveNew,
     helper_swapNew,
 } from '../../utils/OperationHelperNew.js';
-import { calculatePenaltyLeft, computeSlashing, expandNumberTo18Decimals } from './UtilsHelper.js';
 import {
-    IActivateProviderEvent,
-    IProviderFulfilledEvent,
-    IReservationPurgedEvent,
-    ITransferEvent,
-} from '../../../contracts/NativeSwapTypes.js';
+    assertCancelListLiquidityEventsHelper,
+    decodeCancelListLiquidityEventsHelper,
+} from './CancelListLiquidityEventsHelper.js';
 import {
     assertCreatePoolEventsHelper,
     decodeCreatePoolEventsHelper,
@@ -36,12 +31,17 @@ import {
     assertListLiquidityEventsHelper,
     decodeListLiquidityEventsHelper,
 } from './ListLiquidityEventsHelper.js';
-import {
-    assertCancelListLiquidityEventsHelper,
-    decodeCancelListLiquidityEventsHelper,
-} from './CancelListLiquidityEventsHelper.js';
+import { ProviderHelper, ProviderSnapshotHelper } from './ProviderHelper.js';
 import { decodeReserveLiquidityEventsHelper } from './ReserveLiquidityEventsHelper.js';
+import { ReserveLiquidityHelper } from './ReserveLiquidityHelper.js';
 import { assertReservedSwapperProviders, decodeSwapEventsHelper } from './SwapEventsHelper.js';
+import {
+    assertNativeSwapBalanceHelper,
+    assertProviderBalanceHelper,
+    assertStakingBalanceHelper,
+    TokenHelper,
+} from './TokenHelper.js';
+import { calculatePenaltyLeft, computeSlashing, expandNumberTo18Decimals } from './UtilsHelper.js';
 
 export const TOKEN_NUMBER: number = 10;
 const ENABLE_LOG: boolean = true;
@@ -177,7 +177,7 @@ export async function getReservedProvidersSnapshot(
 
         await provider.update(nativeSwap);
 
-        result.set(provider.id, await ProviderSnapshotHelper.create(provider));
+        result.set(provider.id, ProviderSnapshotHelper.create(provider));
     }
 
     return result;
