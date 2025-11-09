@@ -1,6 +1,6 @@
 import { Address } from '@btc-vision/transaction';
-import { NativeSwap } from '../../../contracts/NativeSwap.js';
 import { Blockchain } from '@btc-vision/unit-test-framework';
+import { NativeSwap } from '../../../contracts/NativeSwap.js';
 import { TokenHelper } from './TokenHelper.js';
 
 export class ProviderSnapshotHelper {
@@ -10,7 +10,7 @@ export class ProviderSnapshotHelper {
         public reserved: bigint,
     ) {}
 
-    public static async create(provider: ProviderHelper): Promise<ProviderSnapshotHelper> {
+    public static create(provider: ProviderHelper): ProviderSnapshotHelper {
         return new ProviderSnapshotHelper(provider.id, provider.liquidity, provider.reserved);
     }
 
