@@ -324,6 +324,11 @@ await opnet('NativeSwap: Purging Reservations', async (vm: OPNetUnit) => {
         for (let i = 0; i < 350; i++) {
             //await randomReserve(1_500_000n / 2n, false, true);
             await makeReservation(Blockchain.generateRandomAddress(), 100_000n, 1n);
+            await listTokenRandom(
+                BitcoinUtils.expandToDecimals(1000, tokenDecimals),
+                undefined,
+                false,
+            );
             await makeReservation(Blockchain.generateRandomAddress(), 1_500_000n / 2n, 1n);
         }
 
