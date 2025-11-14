@@ -181,7 +181,7 @@ const CONTRACTS: ContractConfig[] = [
         address: '0x32d5c3490be026cda337526b72bc13036d278400ce823e29a00cb5aef15b5d53',
         type: ContractType.NativeSwap,
         name: 'NativeSwap',
-        initParams: [590_000_000_000_000_000n],
+        initParams: [590_000_000_000n],
         //overrideContract: 'NativeSwap',
     },
     {
