@@ -181,8 +181,8 @@ const CONTRACTS: ContractConfig[] = [
         address: '0x32d5c3490be026cda337526b72bc13036d278400ce823e29a00cb5aef15b5d53',
         type: ContractType.NativeSwap,
         name: 'NativeSwap',
-        initParams: [2_500_000_000_000_000_000n],
-        overrideContract: 'NativeSwap',
+        initParams: [590_000_000_000_000_000n],
+        //overrideContract: 'NativeSwap',
     },
     {
         address: '0xb7e01bd7c583ef6d2e4fd0e3bb9835f275c54b5dc5af44a442b526ebaeeebfb9',
@@ -223,7 +223,7 @@ const CONTRACTS: ContractConfig[] = [
 ];
 
 const ADMIN_ADDRESS = '0x02729c84e0174d1a2c1f089dd685bdaf507581762c85bfcf69c7ec90cf2ba596b9';
-const SEARCHED_BLOCK: bigint = 19046n;
+const SEARCHED_BLOCK: bigint = 20307n;
 const MAX_BLOCK_TO_REPLAY: number = 2;
 const KEEP_NEW_STATES: boolean = false;
 
@@ -248,11 +248,11 @@ await opnet('NativeSwap: Debug', async (vm: OPNetUnit) => {
         Blockchain.blockNumber = SEARCHED_BLOCK;
         Blockchain.network = networks.regtest;
 
-        const PILL = CONTRACTS[3];
+        const ODSY = CONTRACTS[4];
 
         // Get contract instances with type safety
         const nativeSwap = manager.getContract<NativeSwap>(CONTRACTS[0].address);
-        const moto = manager.getContract<OP20>(PILL.address);
+        const moto = manager.getContract<OP20>(ODSY.address);
 
         for (let i = 0; i < MAX_BLOCK_TO_REPLAY; i++) {
             Blockchain.blockNumber += 1n;
@@ -273,18 +273,18 @@ await opnet('NativeSwap: Debug', async (vm: OPNetUnit) => {
             });
 
             // Pre-block checks
-            const reservesBefore = await nativeSwap.getReserve({
-                token: Address.fromString(PILL.address),
+            /*const reservesBefore = await nativeSwap.getReserve({
+                token: Address.fromString(ODSY.address),
             });
             console.log('Reserves before:', reservesBefore);
 
             const queueDetailsBefore = await nativeSwap.getQueueDetails({
-                token: Address.fromString(PILL.address),
+                token: Address.fromString(ODSY.address),
             });
             console.log('Queue details before:', queueDetailsBefore);
 
             const balanceOfMoto = await moto.balanceOf(nativeSwap.address);
-            console.log('MOTO balance in NativeSwap:', balanceOfMoto);
+            console.log('MOTO balance in NativeSwap:', balanceOfMoto);*/
 
             // Replay the block
             const success = await block.replayBlock();
@@ -295,12 +295,12 @@ await opnet('NativeSwap: Debug', async (vm: OPNetUnit) => {
 
             // Post-block checks
             const reservesAfter = await nativeSwap.getReserve({
-                token: Address.fromString(PILL.address),
+                token: Address.fromString(ODSY.address),
             });
             console.log('Reserves after:', reservesAfter);
 
             const queueDetailsAfter = await nativeSwap.getQueueDetails({
-                token: Address.fromString(PILL.address),
+                token: Address.fromString(ODSY.address),
             });
             console.log('Queue details after:', queueDetailsAfter);
         }
