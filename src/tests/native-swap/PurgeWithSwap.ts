@@ -244,7 +244,7 @@ await opnet('NativeSwap: Purging Reservations', async (vm: OPNetUnit) => {
         const totalSupply = Blockchain.expandToDecimal(1_000_000_000_000, tokenDecimals);
         await token.mintRaw(userAddress, totalSupply);
 
-        nativeSwap = new NativeSwap(userAddress, nativeAddress);
+        nativeSwap = new NativeSwap(userAddress, nativeAddress, 590_000_000_000n);
         Blockchain.register(nativeSwap);
 
         await nativeSwap.init();

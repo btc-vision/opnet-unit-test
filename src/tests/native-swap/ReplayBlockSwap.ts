@@ -21,17 +21,6 @@ enum ContractType {
     Custom = 'Custom',
 }
 
-// Base contract interface
-interface BaseContract {
-    address: Address;
-    [key: string]: unknown;
-}
-
-// State object interface
-interface StateObject {
-    [key: string]: unknown;
-}
-
 // Contract configuration interface
 interface ContractConfig {
     address: string;
@@ -46,9 +35,9 @@ interface ContractConfig {
 
 // Contract manager class to handle all the boilerplate
 class ContractManager {
-    private admin: Address;
+    private readonly admin: Address;
     private contracts: Map<string, ContractRuntime> = new Map();
-    private configs: ContractConfig[] = [];
+    private readonly configs: ContractConfig[] = [];
     private statesCache: Map<string, FastBigIntMap> = new Map();
 
     constructor(adminAddress: string, contracts: ContractConfig[]) {
@@ -182,7 +171,7 @@ const CONTRACTS: ContractConfig[] = [
         type: ContractType.NativeSwap,
         name: 'NativeSwap',
         initParams: [590_000_000_000n],
-        //overrideContract: 'NativeSwap',
+        overrideContract: 'NativeSwap',
     },
     {
         address: '0xb7e01bd7c583ef6d2e4fd0e3bb9835f275c54b5dc5af44a442b526ebaeeebfb9',
@@ -225,7 +214,7 @@ const CONTRACTS: ContractConfig[] = [
 const ADMIN_ADDRESS = '0x02729c84e0174d1a2c1f089dd685bdaf507581762c85bfcf69c7ec90cf2ba596b9';
 const SEARCHED_BLOCK: bigint = 20307n;
 const MAX_BLOCK_TO_REPLAY: number = 2;
-const KEEP_NEW_STATES: boolean = false;
+const KEEP_NEW_STATES: boolean = true;
 
 await opnet('NativeSwap: Debug', async (vm: OPNetUnit) => {
     const manager = new ContractManager(ADMIN_ADDRESS, CONTRACTS);
@@ -293,8 +282,24 @@ await opnet('NativeSwap: Debug', async (vm: OPNetUnit) => {
                 return;
             }
 
+            const addressBefore = Blockchain.msgSender;
+            const buyer = Blockchain.generateRandomAddress();
+            Blockchain.msgSender = buyer;
+            Blockchain.txOrigin = buyer;
+
+            const resp = await nativeSwap.reserve({
+                token: Address.fromString(ODSY.address),
+                maximumAmountIn: 10_000_000n,
+                minimumAmountOut: 1n,
+            });
+
+            console.log(`Reserve response for ODSY at block ${Blockchain.blockNumber}:`, resp);
+
+            Blockchain.msgSender = addressBefore;
+            Blockchain.txOrigin = addressBefore;
+
             // Post-block checks
-            const reservesAfter = await nativeSwap.getReserve({
+            /*const reservesAfter = await nativeSwap.getReserve({
                 token: Address.fromString(ODSY.address),
             });
             console.log('Reserves after:', reservesAfter);
@@ -302,7 +307,7 @@ await opnet('NativeSwap: Debug', async (vm: OPNetUnit) => {
             const queueDetailsAfter = await nativeSwap.getQueueDetails({
                 token: Address.fromString(ODSY.address),
             });
-            console.log('Queue details after:', queueDetailsAfter);
+            console.log('Queue details after:', queueDetailsAfter);*/
         }
     });
 });
