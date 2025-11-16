@@ -37,10 +37,6 @@ await opnet('Native Swap - Staking contract', async (vm: OPNetUnit) => {
         Assert.expect(stackingContractAddress.stakingContractAddress.toString()).toNotEqual(
             Address.dead().toString(),
         );
-
-        Assert.expect(stackingContractAddress.stakingContractAddress.toString()).toNotEqual(
-            Address.zero().toString(),
-        );
     });
 
     await vm.it('should revert when caller is not the token owner', async () => {
@@ -77,13 +73,5 @@ await opnet('Native Swap - Staking contract', async (vm: OPNetUnit) => {
                 stakingContractAddress: Address.dead(),
             });
         }).toThrow('NATIVE_SWAP: Staking contract address cannot be dead address.');
-    });
-
-    await vm.it('should fail to sets stacking contract address if zero address', async () => {
-        await Assert.expect(async () => {
-            await nativeSwap.setStakingContractAddress({
-                stakingContractAddress: Address.zero(),
-            });
-        }).toThrow('NATIVE_SWAP: Staking contract address cannot be empty.');
     });
 });

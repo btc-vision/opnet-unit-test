@@ -106,9 +106,9 @@ export class Transaction extends Logger {
         this.specialGasUsed = Transaction.decimal128ToBigint(raw.specialGasUsed);
         this.wasCompressed = raw.wasCompressed;
 
-        this.events = raw.events.map(Transaction.parseEvent);
-        this.inputs = raw.inputs.map(Transaction.parseInput);
-        this.outputs = raw.outputs.map(Transaction.parseOutput);
+        this.events = raw.events.map(Transaction.parseEvent.bind(Transaction));
+        this.inputs = raw.inputs.map(Transaction.parseInput.bind(Transaction));
+        this.outputs = raw.outputs.map(Transaction.parseOutput.bind(Transaction));
     }
 
     private static objectIdToString(id: ObjectId): string {
