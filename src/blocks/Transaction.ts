@@ -283,6 +283,7 @@ export class Transaction extends Logger {
                 `  [${idx}] contract=${e.contractAddress.toString()} / type=${e.type.toString()} / data=${toHex(e.data)}`,
             );
         });
+
         if (this.events.length === 0) out.push('  <none>');
         out.push('');
 
