@@ -43,6 +43,8 @@ export interface ParsedOutput {
     };
 }
 
+const deadBuffer = Address.dead().toBuffer();
+
 export class Transaction extends Logger {
     readonly logColor = '#fde084';
 
@@ -90,7 +92,20 @@ export class Transaction extends Logger {
             Transaction.binaryToBuffer(raw.contractTweakedPublicKey),
         );
 
-        this.from = new Address(Transaction.binaryToBuffer(raw.from));
+        let address: Address;
+
+        const buf = Transaction.binaryToBuffer(raw.from);
+        if (buf.length === 33) {
+            const tempAddress = new Address(deadBuffer, buf);
+            address = new Address(
+                tempAddress.tweakedPublicKeyToBuffer(),
+                tempAddress.tweakedPublicKeyToBuffer(),
+            );
+        } else {
+            address = new Address(buf);
+        }
+
+        this.from = address;
         this.gasUsed = Transaction.decimal128ToBigint(raw.gasUsed);
         this.txId = Transaction.binaryToBuffer(raw.id);
         this.index = raw.index;

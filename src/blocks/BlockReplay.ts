@@ -92,7 +92,7 @@ export class BlockReplay extends Logger {
             }
         } catch (e) {
             this.fail(
-                `Coudnt load block ${this.blockHeight} transactions from file ${json} -> ${e}`,
+                `Couldn't load block ${this.blockHeight} transactions from file ${json} -> ${(e as Error).stack}`,
             );
         }
     }

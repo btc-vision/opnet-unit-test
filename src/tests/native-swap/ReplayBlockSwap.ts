@@ -178,6 +178,7 @@ const CONTRACTS: ContractConfig[] = [
         type: ContractType.OP20,
         name: 'MOTO',
         decimals: tokenDecimals,
+        overrideContract: 'MyToken',
     },
     {
         address: '0x798dd7cd3b5818a3fcfe81420c6757d84a30e098f88cca9afb140205d24f4049',
@@ -190,28 +191,32 @@ const CONTRACTS: ContractConfig[] = [
         type: ContractType.OP20,
         name: 'PILL',
         decimals: tokenDecimals,
+        overrideContract: 'pill',
     },
     {
         address: '0xb65d29d27c454ff0c5b3b4200d1bb6cbb36db10ca3f2f8622e4d2c9587888cba',
         type: ContractType.OP20,
         name: 'OD',
         decimals: tokenDecimals,
+        overrideContract: 'MyToken',
     },
     {
         address: '0xb1cff60e445799e592fa6534ff1147c01f0ebf68181c5338b633da999850a6a1',
         type: ContractType.OP20,
         name: 'Noclue',
         decimals: tokenDecimals,
+        overrideContract: 'MyToken',
     },
     {
         address: '0xe12d29f947d183bda359e8ad250e7b183fbd085d2b5d3a3ccf281224277997a1',
         type: ContractType.OP20,
         name: 'Noclue2',
         decimals: tokenDecimals,
+        overrideContract: 'MyToken',
     },
 ];
 
-const ADMIN_ADDRESS = '0x02729c84e0174d1a2c1f089dd685bdaf507581762c85bfcf69c7ec90cf2ba596b9';
+const ADMIN_ADDRESS = '0xcbe1fb2adf81b16ba4afbb38743f4738ccb28170d2efc35a3ca9366ce64ea451';
 const SEARCHED_BLOCK: bigint = 20307n;
 const MAX_BLOCK_TO_REPLAY: number = 2;
 const KEEP_NEW_STATES: boolean = true;

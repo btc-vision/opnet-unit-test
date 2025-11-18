@@ -19,6 +19,7 @@ import { NativeSwap } from '../../contracts/NativeSwap.js';
 import { createRecipientsOutput } from './TransactionUtils.js';
 import { NativeSwapTypesCoders } from '../../contracts/NativeSwapTypesCoders.js';
 import { Recipient, ReserveResult } from '../../contracts/NativeSwapTypes.js';
+import * as inspector from 'node:inspector';
 
 const streamArray = streamArrayJson.streamArray;
 const parser = streamJson.parser;
@@ -276,16 +277,138 @@ export async function getStates(file: string, SEARCHED_BLOCK: bigint): Promise<F
     const baseName = path.basename(file).replaceAll(path.sep, '_');
     const cachePath = path.join(CACHE_DIR, `cache-${baseName}-${SEARCHED_BLOCK.toString()}.json`);
 
+    /*if (existsSync(cachePath)) {
+        console.log(`Cache hit -> ${cachePath}`);
+        const raw = readFileSync(cachePath, 'utf8');
+        const array: [string, string][] = JSON.parse(raw) as [string, string][];
+
+        console.log(`Deserializing ${array.length} pointers from cache...`);
+
+        let startLoad = performance.now();
+        const map = new FastBigIntMap();
+
+        let c = 0;
+        for (const [kHex, vHex] of array) {
+            const tookElemRead = performance.now();
+            if (c % 2000 === 0)
+                console.log(
+                    `Pointer: ${c} | Took ${(tookElemRead - startLoad).toFixed(4)}ms to read element from cache`,
+                );
+
+            const writeElem = performance.now();
+            map.set(BigInt(`0x${kHex}`), BigInt(`0x${vHex}`));
+
+            const writeEnd = performance.now();
+            if (c % 2000 === 0) {
+                console.log(
+                    `Pointer: ${c} | Took ${(writeEnd - writeElem).toFixed(4)}ms to write element to map`,
+                );
+                startLoad = writeEnd;
+            }
+            c++;
+        }
+        const endLoad = performance.now();
+
+        console.log(
+            `Loaded ${map.size} pointers from cache in ${(endLoad - startLoad).toFixed(2)}ms`,
+        );
+        console.log(`Average per entry: ${((endLoad - startLoad) / array.length).toFixed(4)}ms`);
+        return map;
+    }*/
+
     if (existsSync(cachePath)) {
         console.log(`Cache hit -> ${cachePath}`);
         const raw = readFileSync(cachePath, 'utf8');
         const array: [string, string][] = JSON.parse(raw) as [string, string][];
 
+        console.log(`Deserializing ${array.length} pointers from cache...`);
+
         const map = new FastBigIntMap();
-        for (const [kHex, vHex] of array) {
-            map.set(BigInt(`0x${kHex}`), BigInt(`0x${vHex}`));
+
+        const session = new inspector.Session();
+        session.connect();
+
+        let profilingStarted = false;
+
+        let destructureTime = 0;
+        let bigintConvTime = 0;
+        let mapSetTime = 0;
+
+        let maxSetTime = 0;
+        let maxSetIndex = 0;
+        let minSetTime = Infinity;
+
+        for (let i = 0; i < array.length; i++) {
+            // Start CPU profiler at 229K
+            if (i === 229000) {
+                console.log('\n=== STARTING CPU PROFILER ===');
+                session.post('Profiler.enable');
+                session.post('Profiler.start');
+                profilingStarted = true;
+            }
+
+            // Take heap snapshots at key points
+            /*if (i === 230000 || i === 232000 || i === 234000) {
+                const snapshot = v8.writeHeapSnapshot(`./heap-${i}.heapsnapshot`);
+                console.log(`Heap snapshot: ${snapshot}`);
+            }*/
+
+            const t0 = performance.now();
+            const [kHex, vHex] = array[i];
+            const t1 = performance.now();
+            const destructTime = t1 - t0;
+
+            const keyBigInt = BigInt(`0x${kHex}`);
+            const valBigInt = BigInt(`0x${vHex}`);
+            const t2 = performance.now();
+            const bigintTime = t2 - t1;
+
+            map.set(keyBigInt, valBigInt);
+            const t3 = performance.now();
+            const setTime = t3 - t2;
+
+            if (setTime > maxSetTime) {
+                maxSetTime = setTime;
+                maxSetIndex = i;
+            }
+            if (setTime < minSetTime) {
+                minSetTime = setTime;
+            }
+
+            destructureTime += destructTime;
+            bigintConvTime += bigintTime;
+            mapSetTime += setTime;
+
+            if (i % 2000 === 0) {
+                const heapUsed = (process.memoryUsage().heapUsed / 1024 / 1024).toFixed(2);
+                const heapTotal = (process.memoryUsage().heapTotal / 1024 / 1024).toFixed(2);
+
+                console.log(
+                    `Entry ${i}: avg_set=${(mapSetTime / 2000).toFixed(6)}ms min=${minSetTime.toFixed(6)}ms max=${maxSetTime.toFixed(6)}ms @${maxSetIndex} | heap=${heapUsed}/${heapTotal}MB`,
+                );
+                destructureTime = 0;
+                bigintConvTime = 0;
+                mapSetTime = 0;
+                maxSetTime = 0;
+                minSetTime = Infinity;
+            }
+
+            // Stop profiling at 235K
+            if (i === 294000 && profilingStarted) {
+                console.log('\n=== STOPPING CPU PROFILER ===');
+                session.post('Profiler.stop', (err, result) => {
+                    if (!err && result.profile) {
+                        writeFileSync('./cpu-profile.cpuprofile', JSON.stringify(result.profile));
+                        console.log('CPU profile written to cpu-profile.cpuprofile');
+                        console.log(
+                            'Import this file in Chrome DevTools > Performance > Load Profile',
+                        );
+                    }
+                    session.disconnect();
+                });
+            }
         }
-        console.log(`Loaded ${map.size} pointers from cache`);
+
         return map;
     }
 

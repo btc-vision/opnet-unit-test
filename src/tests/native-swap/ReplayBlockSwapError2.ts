@@ -15,7 +15,7 @@ const rFile = './states/r.json';
 //const ICHXFile = './states/ICHX.json';
 
 const admin: Address = Address.fromString(
-    '0x020373626d317ae8788ce3280b491068610d840c23ecb64c14075bbb9f670af52c',
+    '0xcbe1fb2adf81b16ba4afbb38743f4738ccb28170d2efc35a3ca9366ce64ea451',
 );
 
 const motoAddress: Address = Address.fromString(
