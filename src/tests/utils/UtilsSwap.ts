@@ -273,6 +273,10 @@ mkdirSync(CACHE_DIR, { recursive: true });
 
 type Latest = Map<string, { seenAt: bigint; valueB64: string | null }>;
 
+async function wait(ms: number): Promise<void> {
+    return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
 export async function getStates(file: string, SEARCHED_BLOCK: bigint): Promise<FastBigIntMap> {
     const baseName = path.basename(file).replaceAll(path.sep, '_');
     const cachePath = path.join(CACHE_DIR, `cache-${baseName}-${SEARCHED_BLOCK.toString()}.json`);
@@ -315,6 +319,8 @@ export async function getStates(file: string, SEARCHED_BLOCK: bigint): Promise<F
         console.log(`Average per entry: ${((endLoad - startLoad) / array.length).toFixed(4)}ms`);
         return map;
     }*/
+
+    await wait(5000);
 
     if (existsSync(cachePath)) {
         console.log(`Cache hit -> ${cachePath}`);
