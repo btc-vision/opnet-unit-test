@@ -1,8 +1,7 @@
-import { Address } from '@btc-vision/transaction';
+import { Address, Map } from '@btc-vision/transaction';
 import {
     Blockchain,
     BytecodeManager,
-    FastBigIntMap,
     OP20,
     opnet,
     OPNetUnit,
@@ -38,7 +37,7 @@ class ContractManager {
     private readonly admin: Address;
     private contracts: Map<string, ContractRuntime> = new Map();
     private readonly configs: ContractConfig[] = [];
-    private statesCache: Map<string, FastBigIntMap> = new Map();
+    private statesCache: Map<string, Map<bigint, bigint>> = new Map();
 
     constructor(adminAddress: string, contracts: ContractConfig[]) {
         this.admin = Address.fromString(adminAddress);
@@ -151,11 +150,14 @@ class ContractManager {
     }
 
     // Get states from cache or load from file
-    private async getOrCreateStates(filepath: string, blockNumber: bigint): Promise<FastBigIntMap> {
+    private async getOrCreateStates(
+        filepath: string,
+        blockNumber: bigint,
+    ): Promise<Map<bigint, bigint>> {
         const cacheKey = `${filepath}_${blockNumber}`;
 
         if (this.statesCache.has(cacheKey)) {
-            return this.statesCache.get(cacheKey) as FastBigIntMap;
+            return this.statesCache.get(cacheKey) as Map<bigint, bigint>;
         }
 
         const states = await getStates(filepath, blockNumber);
@@ -224,8 +226,8 @@ const KEEP_NEW_STATES: boolean = true;
 await opnet('NativeSwap: Debug', async (vm: OPNetUnit) => {
     const manager = new ContractManager(ADMIN_ADDRESS, CONTRACTS);
 
-    Blockchain.msgSender = Address.fromString(ADMIN_ADDRESS);
-    Blockchain.txOrigin = Address.fromString(ADMIN_ADDRESS);
+    Blockchain.msgSender = Address.fromString(ADMIN_ADDRESS, ADMIN_ADDRESS);
+    Blockchain.txOrigin = Address.fromString(ADMIN_ADDRESS, ADMIN_ADDRESS);
 
     vm.beforeEach(async () => {
         cleanupSwap();

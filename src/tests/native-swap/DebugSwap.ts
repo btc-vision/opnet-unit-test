@@ -1,14 +1,5 @@
-import { Address, BufferHelper } from '@btc-vision/transaction';
-import {
-    Assert,
-    Blockchain,
-    FastBigIntMap,
-    gas2USD,
-    OP20,
-    opnet,
-    OPNetUnit,
-    StateHandler,
-} from '@btc-vision/unit-test-framework';
+import { Address, BufferHelper, Map } from '@btc-vision/transaction';
+import { Assert, Blockchain, gas2USD, OP20, opnet, OPNetUnit, StateHandler, } from '@btc-vision/unit-test-framework';
 
 import fs from 'fs';
 import { BitcoinUtils } from 'opnet';
@@ -44,7 +35,7 @@ const motoStatesFile = './states/MotoStates2.json';
 // at 4548543n => isActive = false
 
 const SEARCHED_BLOCK: bigint = 4548511n; //4548543n;
-function getStates(file: string): FastBigIntMap {
+function getStates(file: string): Map<bigint, bigint> {
     const data = fs.readFileSync(file, 'utf8');
     const parsedData = JSON.parse(data) as ParsedStates;
 
@@ -87,7 +78,7 @@ function getStates(file: string): FastBigIntMap {
         });
     }
 
-    const map: FastBigIntMap = new FastBigIntMap();
+    const map: Map<bigint, bigint> = new Map<bigint, bigint>();
     for (const state of parsedDeduped) {
         const pointer = state.pointer.$binary.base64;
         const value = state.value.$binary.base64;
@@ -109,9 +100,9 @@ function getStates(file: string): FastBigIntMap {
     return map;
 }
 
-function getModifiedStates(states: FastBigIntMap, contract: Address) {
+function getModifiedStates(states: Map<bigint, bigint>, contract: Address) {
     const currentStates = StateHandler.getStates(contract);
-    const modifiedStates = new FastBigIntMap();
+    const modifiedStates = new Map<bigint, bigint>();
 
     for (const [key, value] of states.entries()) {
         const currentValue = currentStates.get(key);
@@ -125,7 +116,10 @@ function getModifiedStates(states: FastBigIntMap, contract: Address) {
     return modifiedStates;
 }
 
-function mergeStates(original: FastBigIntMap, toMerge: FastBigIntMap): FastBigIntMap {
+function mergeStates(
+    original: Map<bigint, bigint>,
+    toMerge: Map<bigint, bigint>,
+): Map<bigint, bigint> {
     for (const [key, value] of toMerge.entries()) {
         original.set(key, value);
     }
