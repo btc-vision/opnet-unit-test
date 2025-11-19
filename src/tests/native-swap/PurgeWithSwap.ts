@@ -108,16 +108,16 @@ await opnet('NativeSwap: Purging Reservations', async (vm: OPNetUnit) => {
         vm.info(`Added liquidity for ${l} tokens - ${gas2USD(liquid.response.usedGas)} USD`);
     }
 
-    const shuffle = <T>(array: T[]) => {
+    /*const shuffle = <T>(array: T[]) => {
         for (let i = array.length - 1; i > 0; i--) {
             const j = Math.floor(Math.random() * (i + 1));
             [array[i], array[j]] = [array[j], array[i]];
         }
         return array;
-    };
+    };*/
 
     async function swapAll(): Promise<void> {
-        toSwap = shuffle(toSwap);
+        //toSwap = shuffle(toSwap);
 
         for (let i = 0; i < toSwap.length; i++) {
             const reservation = toSwap[i];
