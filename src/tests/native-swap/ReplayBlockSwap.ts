@@ -1,12 +1,5 @@
 import { Address, Map } from '@btc-vision/transaction';
-import {
-    Blockchain,
-    BytecodeManager,
-    OP20,
-    opnet,
-    OPNetUnit,
-    StateHandler,
-} from '@btc-vision/unit-test-framework';
+import { Blockchain, BytecodeManager, OP20, opnet, OPNetUnit, StateHandler, } from '@btc-vision/unit-test-framework';
 import { NativeSwap } from '../../contracts/NativeSwap.js';
 import { networks } from '@btc-vision/bitcoin';
 import { BlockReplay } from '../../blocks/BlockReplay.js';
@@ -40,7 +33,10 @@ class ContractManager {
     private statesCache: Map<string, Map<bigint, bigint>> = new Map();
 
     constructor(adminAddress: string, contracts: ContractConfig[]) {
-        this.admin = Address.fromString(adminAddress);
+        this.admin = Address.fromString(
+            adminAddress,
+            '0x0000000000000000000000000000000000000000000000000000000000000000',
+        );
         this.configs = contracts;
     }
 
@@ -48,7 +44,12 @@ class ContractManager {
     initialize(): void {
         for (const config of this.configs) {
             const address = Address.fromString(config.address);
-            const deployer = config.deployer ? Address.fromString(config.deployer) : this.admin;
+            const deployer = config.deployer
+                ? Address.fromString(
+                      config.deployer,
+                      '0x0000000000000000000000000000000000000000000000000000000000000000',
+                  )
+                : this.admin;
 
             let contract: ContractRuntime;
 
