@@ -33,6 +33,7 @@ import {
     swap,
     TOKEN_NUMBER,
 } from './helpers/TrackPriceBalanceHelper.js';
+import { FastMap } from '@btc-vision/transaction';
 
 await opnet('Native Swap - Track price and balance', async (vm: OPNetUnit) => {
     async function executeOperation(operation: BaseOperation) {
@@ -211,9 +212,9 @@ await opnet('Native Swap - Track price and balance', async (vm: OPNetUnit) => {
         }
     }
 
-    function buildOperations(): Map<bigint, BaseOperation[]> {
+    function buildOperations(): FastMap<bigint, BaseOperation[]> {
         let currentBlock = 100n;
-        const operationMap = new Map<bigint, BaseOperation[]>();
+        const operationMap = new FastMap<bigint, BaseOperation[]>();
         const operations: BaseOperation[] = [];
 
         operationMap.set(currentBlock, operations);

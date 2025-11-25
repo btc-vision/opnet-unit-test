@@ -1,5 +1,12 @@
-import { Address, Map } from '@btc-vision/transaction';
-import { Blockchain, BytecodeManager, OP20, opnet, OPNetUnit, StateHandler, } from '@btc-vision/unit-test-framework';
+import { Address, FastMap } from '@btc-vision/transaction';
+import {
+    Blockchain,
+    BytecodeManager,
+    OP20,
+    opnet,
+    OPNetUnit,
+    StateHandler,
+} from '@btc-vision/unit-test-framework';
 import { NativeSwap } from '../../contracts/NativeSwap.js';
 import { networks } from '@btc-vision/bitcoin';
 import { BlockReplay } from '../../blocks/BlockReplay.js';
@@ -28,9 +35,9 @@ interface ContractConfig {
 // Contract manager class to handle all the boilerplate
 class ContractManager {
     private readonly admin: Address;
-    private contracts: Map<string, ContractRuntime> = new Map();
+    private contracts: FastMap<string, ContractRuntime> = new FastMap();
     private readonly configs: ContractConfig[] = [];
-    private statesCache: Map<string, Map<bigint, bigint>> = new Map();
+    private statesCache: FastMap<string, FastMap<bigint, bigint>> = new FastMap();
 
     constructor(adminAddress: string, contracts: ContractConfig[]) {
         this.admin = Address.fromString(
@@ -136,7 +143,7 @@ class ContractManager {
     }
 
     // Get all contracts
-    getAllContracts(): Map<string, ContractRuntime> {
+    getAllContracts(): FastMap<string, ContractRuntime> {
         return this.contracts;
     }
 
@@ -154,11 +161,11 @@ class ContractManager {
     private async getOrCreateStates(
         filepath: string,
         blockNumber: bigint,
-    ): Promise<Map<bigint, bigint>> {
+    ): Promise<FastMap<bigint, bigint>> {
         const cacheKey = `${filepath}_${blockNumber}`;
 
         if (this.statesCache.has(cacheKey)) {
-            return this.statesCache.get(cacheKey) as Map<bigint, bigint>;
+            return this.statesCache.get(cacheKey) as FastMap<bigint, bigint>;
         }
 
         const states = await getStates(filepath, blockNumber);
@@ -188,6 +195,7 @@ const CONTRACTS: ContractConfig[] = [
         type: ContractType.OP20,
         name: 'Staking',
         decimals: tokenDecimals,
+        overrideContract: 'staking',
     },
     {
         address: '0x186f943f8b0f803be7a44fce28739ff65953cf2bd83687a392186adaf293a336',
@@ -222,7 +230,7 @@ const CONTRACTS: ContractConfig[] = [
 const ADMIN_ADDRESS = '0xcbe1fb2adf81b16ba4afbb38743f4738ccb28170d2efc35a3ca9366ce64ea451';
 const SEARCHED_BLOCK: bigint = 20307n;
 const MAX_BLOCK_TO_REPLAY: number = 2;
-const KEEP_NEW_STATES: boolean = true;
+const KEEP_NEW_STATES: boolean = false;
 
 await opnet('NativeSwap: Debug', async (vm: OPNetUnit) => {
     const manager = new ContractManager(ADMIN_ADDRESS, CONTRACTS);

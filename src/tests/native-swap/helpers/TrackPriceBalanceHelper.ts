@@ -1,4 +1,4 @@
-import { Address } from '@btc-vision/transaction';
+import { Address, FastMap } from '@btc-vision/transaction';
 import { Assert, Blockchain, Transaction } from '@btc-vision/unit-test-framework';
 import { NativeSwap } from '../../../contracts/NativeSwap.js';
 import {
@@ -166,8 +166,8 @@ export function getTransactionTotalAmount(transaction: Transaction): bigint {
 
 export async function getReservedProvidersSnapshot(
     reservation: ReserveLiquidityHelper,
-): Promise<Map<bigint, ProviderSnapshotHelper>> {
-    const result = new Map<bigint, ProviderSnapshotHelper>();
+): Promise<FastMap<bigint, ProviderSnapshotHelper>> {
+    const result = new FastMap<bigint, ProviderSnapshotHelper>();
 
     for (let i = 0; i < reservation.recipients.length; i++) {
         const provider = getProvider(reservation.recipients[i].providerId);

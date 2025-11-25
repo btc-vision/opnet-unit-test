@@ -1,10 +1,10 @@
-import { Address } from '@btc-vision/transaction';
+import { Address, FastMap } from '@btc-vision/transaction';
 import { Assert, Blockchain, OP20 } from '@btc-vision/unit-test-framework';
 import { ProviderHelper } from './ProviderHelper.js';
 
 export class TokenHelper {
     public isPoolCreated: boolean = false;
-    private priceAtBlock: Map<number, bigint> = new Map();
+    private priceAtBlock: FastMap<number, bigint> = new FastMap();
     private initialLiquidityProviderAddress: Address;
 
     constructor(
