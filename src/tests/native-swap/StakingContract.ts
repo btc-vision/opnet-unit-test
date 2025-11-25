@@ -67,11 +67,11 @@ await opnet('Native Swap - Staking contract', async (vm: OPNetUnit) => {
         );
     });
 
-    await vm.it('should fail to sets stacking contract address if dead address', async () => {
+    await vm.it('should fail to sets stacking contract address if zero address', async () => {
         await Assert.expect(async () => {
             await nativeSwap.setStakingContractAddress({
-                stakingContractAddress: Address.dead(),
+                stakingContractAddress: new Address(),
             });
-        }).toThrow('NATIVE_SWAP: Staking contract address cannot be dead address.');
+        }).toThrow('NATIVE_SWAP: Staking contract address cannot be empty.');
     });
 });
