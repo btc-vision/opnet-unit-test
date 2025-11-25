@@ -1,4 +1,4 @@
-import { Address, BufferHelper, Map } from '@btc-vision/transaction';
+import { Address, BufferHelper, FastMap } from '@btc-vision/transaction';
 import {
     Assert,
     Blockchain,
@@ -31,9 +31,9 @@ export function cleanupSwap(): void {
     toSwap = [];
 }
 
-export function getModifiedStates(states: Map<bigint, bigint>, contract: Address) {
+export function getModifiedStates(states: FastMap<bigint, bigint>, contract: Address) {
     const currentStates = StateHandler.getStates(contract);
-    const modifiedStates = new Map<bigint, bigint>();
+    const modifiedStates = new FastMap<bigint, bigint>();
 
     for (const [key, value] of states.entries()) {
         const currentValue = currentStates.get(key);
@@ -48,9 +48,9 @@ export function getModifiedStates(states: Map<bigint, bigint>, contract: Address
 }
 
 export function mergeStates(
-    original: Map<bigint, bigint>,
-    toMerge: Map<bigint, bigint>,
-): Map<bigint, bigint> {
+    original: FastMap<bigint, bigint>,
+    toMerge: FastMap<bigint, bigint>,
+): FastMap<bigint, bigint> {
     for (const [key, value] of toMerge.entries()) {
         original.set(key, value);
     }
@@ -272,12 +272,12 @@ interface ParsedState {
 const CACHE_DIR = path.resolve('cache');
 mkdirSync(CACHE_DIR, { recursive: true });
 
-type Latest = Map<string, { seenAt: bigint; valueB64: string | null }>;
+type Latest = FastMap<string, { seenAt: bigint; valueB64: string | null }>;
 
 export async function getStates(
     file: string,
     SEARCHED_BLOCK: bigint,
-): Promise<Map<bigint, bigint>> {
+): Promise<FastMap<bigint, bigint>> {
     const baseName = path.basename(file).replaceAll(path.sep, '_');
     const cachePath = path.join(CACHE_DIR, `cache-${baseName}-${SEARCHED_BLOCK.toString()}.json`);
 
@@ -285,7 +285,7 @@ export async function getStates(
         console.log(`Cache hit -> ${cachePath}`);
         const raw = readFileSync(cachePath, 'utf8');
         const array: [string, string][] = JSON.parse(raw) as [string, string][];
-        const map = new Map<bigint, bigint>();
+        const map = new FastMap<bigint, bigint>();
 
         for (const [kHex, vHex] of array) {
             map.set(BigInt(`0x${kHex}`), BigInt(`0x${vHex}`));
@@ -293,7 +293,7 @@ export async function getStates(
         return map;
     }
 
-    const latest: Latest = new Map();
+    const latest: Latest = new FastMap();
 
     const stream = chain([
         createReadStream(file, { encoding: 'utf8' }),
@@ -316,7 +316,7 @@ export async function getStates(
         }
     }
 
-    const map = new Map<bigint, bigint>();
+    const map = new FastMap<bigint, bigint>();
     for (const [ptrB64, { valueB64 }] of latest) {
         const ptrArr = Uint8Array.from(Buffer.from(ptrB64, 'base64'));
         if (ptrArr.length !== 32) {

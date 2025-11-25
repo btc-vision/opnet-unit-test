@@ -6,10 +6,9 @@ import {
     ISwapExecutedEvent,
     ITransferEvent,
 } from '../../../contracts/NativeSwapTypes.js';
-import { NetEvent } from '@btc-vision/transaction';
+import { FastMap, NetEvent } from '@btc-vision/transaction';
 import { NativeSwapTypesCoders } from '../../../contracts/NativeSwapTypesCoders.js';
 import { ReserveLiquidityHelper } from './ReserveLiquidityHelper.js';
-import { ReserveLiquidityEventsHelper } from './ReserveLiquidityEventsHelper.js';
 import { Assert, Blockchain } from '@btc-vision/unit-test-framework';
 import { ProviderSnapshotHelper } from './ProviderHelper.js';
 
@@ -74,8 +73,8 @@ export function decodeSwapEventsHelper(events: NetEvent[]): SwapEventsHelper {
 }
 
 export function assertReservedSwapperProviders(
-    initialProvidersSnapshot: Map<bigint, ProviderSnapshotHelper>,
-    finalProvidersSnapshot: Map<bigint, ProviderSnapshotHelper>,
+    initialProvidersSnapshot: FastMap<bigint, ProviderSnapshotHelper>,
+    finalProvidersSnapshot: FastMap<bigint, ProviderSnapshotHelper>,
     reservation: ReserveLiquidityHelper,
     swapEvents: SwapEventsHelper,
 ): void {

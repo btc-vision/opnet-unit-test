@@ -1,4 +1,4 @@
-import { Address, BufferHelper, Map } from '@btc-vision/transaction';
+import { Address, BufferHelper, FastMap } from '@btc-vision/transaction';
 import { Assert, Blockchain, gas2USD, OP20, opnet, OPNetUnit, StateHandler, } from '@btc-vision/unit-test-framework';
 
 import fs from 'fs';
@@ -35,12 +35,12 @@ const motoStatesFile = './states/MotoStates2.json';
 // at 4548543n => isActive = false
 
 const SEARCHED_BLOCK: bigint = 4548511n; //4548543n;
-function getStates(file: string): Map<bigint, bigint> {
+function getStates(file: string): FastMap<bigint, bigint> {
     const data = fs.readFileSync(file, 'utf8');
     const parsedData = JSON.parse(data) as ParsedStates;
 
     let parsedDeduped: ParsedStates = [];
-    const seenAtPointers = new Map<string, { seenAt: number; value: string }>();
+    const seenAtPointers = new FastMap<string, { seenAt: number; value: string }>();
     for (const state of parsedData) {
         const pointer = state.pointer.$binary.base64;
         const at = Number(state.lastSeenAt.$numberLong);
@@ -78,7 +78,7 @@ function getStates(file: string): Map<bigint, bigint> {
         });
     }
 
-    const map: Map<bigint, bigint> = new Map<bigint, bigint>();
+    const map: FastMap<bigint, bigint> = new FastMap<bigint, bigint>();
     for (const state of parsedDeduped) {
         const pointer = state.pointer.$binary.base64;
         const value = state.value.$binary.base64;
@@ -100,9 +100,9 @@ function getStates(file: string): Map<bigint, bigint> {
     return map;
 }
 
-function getModifiedStates(states: Map<bigint, bigint>, contract: Address) {
+function getModifiedStates(states: FastMap<bigint, bigint>, contract: Address) {
     const currentStates = StateHandler.getStates(contract);
-    const modifiedStates = new Map<bigint, bigint>();
+    const modifiedStates = new FastMap<bigint, bigint>();
 
     for (const [key, value] of states.entries()) {
         const currentValue = currentStates.get(key);
@@ -117,9 +117,9 @@ function getModifiedStates(states: Map<bigint, bigint>, contract: Address) {
 }
 
 function mergeStates(
-    original: Map<bigint, bigint>,
-    toMerge: Map<bigint, bigint>,
-): Map<bigint, bigint> {
+    original: FastMap<bigint, bigint>,
+    toMerge: FastMap<bigint, bigint>,
+): FastMap<bigint, bigint> {
     for (const [key, value] of toMerge.entries()) {
         original.set(key, value);
     }
