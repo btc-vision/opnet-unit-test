@@ -108,14 +108,14 @@ await opnet('Native Swap - Staking Pool Fee Collection', async (vm: OPNetUnit) =
 
         await helper_swap(nativeSwap, tokenAddress, userAddress, false);
 
-        const expectedFee = 3386294000000000n;
+        const expectedFee = 2960904000000000n;
         const postBalance = await token.balanceOf(userAddress);
         const stakingPoolBalance = await token.balanceOf(stakingContractAddress);
 
         // Expect half the fee to go to the staking pool
         Assert.expect(stakingPoolBalance).toEqual(expectedFee);
 
-        Assert.expect(postBalance).toEqual(preBalance + 1689760706000000000n);
+        Assert.expect(postBalance).toEqual(preBalance + 1477491096000000000n);
     });
 
     /*

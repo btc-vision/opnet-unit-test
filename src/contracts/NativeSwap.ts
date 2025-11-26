@@ -57,12 +57,12 @@ export class NativeSwap extends ContractRuntime {
     public static feeRecipientTestnet: string =
         'tb1p823gdnqvk8a90f8cu30w8ywvk29uh8txtqqnsmk6f5ktd7hlyl0q3cyz4c';
 
-    public static reservationFees: bigint = 10_000n; // The fixed fee rate per tick consumed.
+    public static reservationFees: bigint = 5_000n; // The fixed fee rate per tick consumed.
     public static priorityQueueFees: bigint = 50_000n; // The fixed fee rate per tick consumed.
 
     // Define selectors for contract methods
     private readonly reserveSelector: number = Number(
-        `0x${this.abiCoder.encodeSelector('reserve(address,uint64,uint256,bool,uint8)')}`,
+        `0x${this.abiCoder.encodeSelector('reserve(address,uint64,uint256,uint8)')}`,
     );
 
     private readonly swapSelector: number = Number(

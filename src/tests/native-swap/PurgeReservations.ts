@@ -1,12 +1,5 @@
 import { Address } from '@btc-vision/transaction';
-import {
-    Assert,
-    Blockchain,
-    gas2USD,
-    OP20,
-    opnet,
-    OPNetUnit,
-} from '@btc-vision/unit-test-framework';
+import { Assert, Blockchain, gas2USD, OP20, opnet, OPNetUnit, } from '@btc-vision/unit-test-framework';
 import { NativeSwap } from '../../contracts/NativeSwap.js';
 import { ReserveResult } from '../../contracts/NativeSwapTypes.js';
 
@@ -264,7 +257,7 @@ await opnet('NativeSwap: Purging Reservations', async (vm: OPNetUnit) => {
     await vm.it(
         'should handle a large number of reservations spread across many blocks and purge them efficiently',
         async () => {
-            await addProviderLiquidity(Blockchain.expandTo18Decimals(21_000_000));
+            await addProviderLiquidity(Blockchain.expandTo18Decimals(1_000_000));
             const initialReserve = await nativeSwap.getReserve({
                 token: tokenAddress,
             });
@@ -305,7 +298,7 @@ await opnet('NativeSwap: Purging Reservations', async (vm: OPNetUnit) => {
     await vm.it(
         'should handle a large number of reservations spread across many blocks and purge them efficiently 2',
         async () => {
-            await addProviderLiquidity(Blockchain.expandTo18Decimals(21_000_000));
+            await addProviderLiquidity(Blockchain.expandTo18Decimals(1_000_000));
             Blockchain.blockNumber = 1000n;
 
             // Create 50 reservations over 10 different blocks
@@ -317,7 +310,7 @@ await opnet('NativeSwap: Purging Reservations', async (vm: OPNetUnit) => {
             Blockchain.blockNumber = 1026n;
 
             // Purge
-            await addProviderLiquidity(Blockchain.expandTo18Decimals(21_000_000));
+            await addProviderLiquidity(Blockchain.expandTo18Decimals(1_000_000));
 
             const reserve = await nativeSwap.getReserve({
                 token: tokenAddress,
@@ -405,7 +398,7 @@ await opnet('NativeSwap: Purging Reservations', async (vm: OPNetUnit) => {
         const reserve2 = await nativeSwap.getReserve({
             token: tokenAddress,
         });
-        Assert.expect(reserve2.reservedLiquidity).toEqual(1710078470000000000n);
+        Assert.expect(reserve2.reservedLiquidity).toEqual(1510209085354041326n);
     });
 
     await vm.it('should handle purge reservation spread in multiple block ranges', async () => {

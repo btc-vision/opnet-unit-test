@@ -125,7 +125,7 @@ await opnet('Native Swap - Get Reserve', async (vm: OPNetUnit) => {
         });
 
         Assert.expect(reserveResult.liquidity).toEqual(25000000n);
-        Assert.expect(reserveResult.reservedLiquidity).toEqual(1693147n);
+        Assert.expect(reserveResult.reservedLiquidity).toEqual(1480452n);
         Assert.expect(reserveResult.virtualBTCReserve).toEqual(250000n);
         Assert.expect(reserveResult.virtualTokenReserve).toEqual(25000000n);
     });

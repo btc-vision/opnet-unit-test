@@ -355,12 +355,12 @@ await opnet('Native Swap - Reserve', async (vm: OPNetUnit) => {
         Blockchain.blockNumber = 1000n;
 
         await Assert.expect(async () => {
-            for (let i = 0; i < 61; i++) {
+            for (let i = 0; i < 65; i++) {
                 await helper_reserve(
                     nativeSwap,
                     tokenAddress,
                     Blockchain.generateRandomAddress(),
-                    100000000n,
+                    1000000000n,
                     0n,
                     false,
                     false,
@@ -603,7 +603,7 @@ await opnet('Native Swap - Reserve', async (vm: OPNetUnit) => {
 
         Blockchain.blockNumber++;
 
-        for (let i = 0; i < 11; i++) {
+        for (let i = 0; i < 5; i++) {
             await helper_reserve(
                 nativeSwap,
                 tokenAddress,
@@ -663,7 +663,7 @@ await opnet('Native Swap - Reserve', async (vm: OPNetUnit) => {
             2,
         );
 
-        Assert.expect(result.expectedAmountOut).toEqual(16931470000000000000n);
+        Assert.expect(result.expectedAmountOut).toEqual(14804520000000000000n);
         Assert.expect(result.totalSatoshis).toEqual(100000n);
 
         const reservationCreatedEvent = result.response.events.filter(
@@ -699,7 +699,7 @@ await opnet('Native Swap - Reserve', async (vm: OPNetUnit) => {
             feesAddress,
         );
 
-        Assert.expect(result.expectedAmountOut).toEqual(16931470000000000000n);
+        Assert.expect(result.expectedAmountOut).toEqual(14804520000000000000n);
         Assert.expect(result.totalSatoshis).toEqual(100000n);
 
         const reservationCreatedEvent = result.response.events.filter(

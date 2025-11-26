@@ -5,7 +5,6 @@ import {
     helper_createPool,
     helper_createToken,
     helper_getQuote,
-    helper_getReserve,
     helper_reserve,
     helper_swap,
 } from '../utils/OperationHelper.js';
@@ -92,20 +91,20 @@ await opnet('Native Swap - Get Quote', async (vm: OPNetUnit) => {
             token,
             userAddress,
             initialLiquidityProvider,
-            1000,
+            100000,
             1n,
-            10000n,
-            60,
+            1000000n,
+            100,
             false,
         );
 
-        await helper_reserve(nativeSwap, tokenAddress, provider, 10000n, 0n, false, false, false);
+        await helper_reserve(nativeSwap, tokenAddress, provider, 10000n, 0n, false, false, true);
 
         Blockchain.blockNumber = Blockchain.blockNumber + 3n;
         await helper_swap(nativeSwap, tokenAddress, provider, false);
 
         const quote = await helper_getQuote(nativeSwap, token, 1000n, false);
-        Assert.expect(quote.tokensOut).toEqual(1693n);
+        Assert.expect(quote.tokensOut).toEqual(1436n);
     });
 
     await vm.it(
@@ -129,9 +128,9 @@ await opnet('Native Swap - Get Quote', async (vm: OPNetUnit) => {
                 satoshisIn: 500n,
             });
 
-            Assert.expect(getQuoteResult.price / getQuoteResult.scale).toEqual(16n);
+            Assert.expect(getQuoteResult.price / getQuoteResult.scale).toEqual(14n);
             Assert.expect(getQuoteResult.requiredSatoshis).toEqual(500n);
-            Assert.expect(getQuoteResult.tokensOut).toEqual(8465n);
+            Assert.expect(getQuoteResult.tokensOut).toEqual(7402n);
         },
     );
 
@@ -156,8 +155,8 @@ await opnet('Native Swap - Get Quote', async (vm: OPNetUnit) => {
                 satoshisIn: 1700000n,
             });
 
-            Assert.expect(getQuoteResult.price / getQuoteResult.scale).toEqual(16n);
-            Assert.expect(getQuoteResult.requiredSatoshis).toEqual(118123n);
+            Assert.expect(getQuoteResult.price / getQuoteResult.scale).toEqual(14n);
+            Assert.expect(getQuoteResult.requiredSatoshis).toEqual(135093n);
             Assert.expect(getQuoteResult.tokensOut).toEqual(2000000n);
         },
     );
@@ -191,9 +190,9 @@ await opnet('Native Swap - Get Quote', async (vm: OPNetUnit) => {
 
             const result = await helper_getQuote(nativeSwap, token, 1700000n, false);
 
-            Assert.expect(result.price / result.scale).toEqual(16n);
-            Assert.expect(result.requiredSatoshis).toEqual(108123n);
-            Assert.expect(result.tokensOut).toEqual(1830686n);
+            Assert.expect(result.price / result.scale).toEqual(14n);
+            Assert.expect(result.requiredSatoshis).toEqual(125093n);
+            Assert.expect(result.tokensOut).toEqual(1851955n);
         },
     );
 });

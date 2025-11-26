@@ -17,6 +17,7 @@ await opnet('Native Swap - Reentrancy', async (vm: OPNetUnit) => {
     const userAddress: Address = Blockchain.generateRandomAddress();
     const providerAddress: Address = Address.fromString(
         '0x3aa01777299ad13481fa067374fc369ace93b3c87da319934a6817c6c162a23d',
+        '0x2aa01777299ad13481fa067374fc369ace93b3c87da319934a6817c6c162a23d',
     );
     const tokenAddress: Address = Address.fromString(
         '0x2aa01777299ad13481fa067374fc369ace93b3c87da319934a6817c6c162a23e',
