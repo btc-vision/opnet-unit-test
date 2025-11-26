@@ -1,5 +1,12 @@
 import { Address } from '@btc-vision/transaction';
-import { Assert, Blockchain, gas2USD, OP20, opnet, OPNetUnit, } from '@btc-vision/unit-test-framework';
+import {
+    Assert,
+    Blockchain,
+    gas2USD,
+    OP20,
+    opnet,
+    OPNetUnit,
+} from '@btc-vision/unit-test-framework';
 import { NativeSwap } from '../../contracts/NativeSwap.js';
 import { ReserveResult } from '../../contracts/NativeSwapTypes.js';
 

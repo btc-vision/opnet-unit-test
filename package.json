@@ -6,7 +6,6 @@
     "scripts": {
         "build": "gulp",
         "prepublish": "npm-run-all build",
-        "test:native:cancellisting": "tsx src/tests/native-swap/CancelLiquidity.ts",
         "test:native:onlyowner": "tsx src/tests/native-swap/onlyowner/OnlyOwner.ts",
         "test:native:reentrancy": "tsx src/tests/native-swap/reentrancy/Reentrancy.ts",
         "test:native:listtoken": "tsx src/tests/native-swap/ListLiquidity.ts",
@@ -24,7 +23,7 @@
         "test:native:pause": "tsx src/tests/native-swap/Pause.ts",
         "test:native:swap": "tsx src/tests/native-swap/Swap.ts",
         "test:native:withdraw": "tsx src/tests/native-swap/Withdraw.ts",
-        "test:native": "npm-run-all test:native:cancellisting test:native:onlyowner test:native:reentrancy test:native:listtoken test:native:createpool test:native:purge test:native:addliquidity test:native:stakingfee test:native:fee test:native:fees test:native:staking test:native:getquote test:native:getreserve test:native:reserve test:native:pause test:native:swap test:native:withdraw",
+        "test:native": "npm-run-all test:native:onlyowner test:native:reentrancy test:native:listtoken test:native:createpool test:native:purge test:native:addliquidity test:native:stakingfee test:native:fee test:native:fees test:native:staking test:native:getquote test:native:getreserve test:native:reserve test:native:pause test:native:swap test:native:withdraw",
         "test:track": "tsx src/tests/native-swap/TrackPriceBalance.ts",
         "test:token": "tsx src/tests/token/OP20.ts",
         "test:nft": "tsx src/tests/nft/OP721.ts",

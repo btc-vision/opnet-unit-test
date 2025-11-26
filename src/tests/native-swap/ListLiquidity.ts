@@ -543,7 +543,9 @@ await opnet('NativeSwap: Priority and Normal Queue listLiquidity', async (vm: OP
                     disablePriorityQueueFees: false,
                     network: Blockchain.network,
                 });
-            }).toThrow('NATIVE_SWAP: You must cancel your listings before switching queue type.');
+            }).toThrow(
+                'NATIVE_SWAP: Your current listing must be fully purchased before you can switch the queue type.',
+            );
         },
     );
 
