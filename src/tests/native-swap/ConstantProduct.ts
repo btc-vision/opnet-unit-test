@@ -309,6 +309,13 @@ await opnet('NativeSwap: Virtual Pool Mechanics', async (vm: OPNetUnit) => {
         await createPool();
         Blockchain.blockNumber += 1n;
 
+        const initialReserves = await nativeSwap.getReserve({ token: tokenAddress });
+        const initialT = initialReserves.virtualTokenReserve;
+
+        vm.info('=== INITIAL STATE ===');
+        vm.info(`Virtual Token Reserve: ${BitcoinUtils.formatUnits(initialT, tokenDecimals)}`);
+
+        // List tokens - first 50% applies immediately
         const tokensToList = BitcoinUtils.expandToDecimals(2_000_000, tokenDecimals);
         const sellProvider = Blockchain.generateRandomAddress();
 
@@ -316,68 +323,81 @@ await opnet('NativeSwap: Virtual Pool Mechanics', async (vm: OPNetUnit) => {
         Blockchain.blockNumber += 1n;
 
         const afterListing = await nativeSwap.getReserve({ token: tokenAddress });
-        const kAfterListing = afterListing.virtualBTCReserve * afterListing.virtualTokenReserve;
+        const firstHalfApplied = afterListing.virtualTokenReserve - initialT;
+        const expectedFirstHalf = halfCeil(tokensToList);
 
-        vm.info('=== AFTER LISTING (FIRST 50% APPLIED) ===');
+        vm.info('\n=== AFTER LISTING ===');
         vm.info(
             `Virtual Token Reserve: ${BitcoinUtils.formatUnits(afterListing.virtualTokenReserve, tokenDecimals)}`,
         );
-        vm.info(`k: ${kAfterListing}`);
+        vm.info(`First half applied: ${BitcoinUtils.formatUnits(firstHalfApplied, tokenDecimals)}`);
 
-        // Make reservation and swap to trigger activation
+        Assert.expect(firstHalfApplied).toEqual(expectedFirstHalf);
+        vm.info(`✓ First 50% correctly applied`);
+
+        // Make reservation and swap - triggers provider activation
         const buyer = Blockchain.generateRandomAddress();
-        const btcAmount = 50000000n; // 0.5 BTC
+        const btcAmount = 50000000n;
 
         const reservedTokens = await makeReservation(buyer, btcAmount);
         Blockchain.blockNumber += 1n;
 
-        const beforeSwap = await nativeSwap.getReserve({ token: tokenAddress });
-
-        await executeSwaps();
+        const tokensReceived = await executeSwaps();
         Blockchain.blockNumber += 1n;
 
-        const afterSwap = await nativeSwap.getReserve({ token: tokenAddress });
+        vm.info('\n=== SWAP EXECUTION ===');
+        vm.info(`Tokens reserved: ${BitcoinUtils.formatUnits(reservedTokens, tokenDecimals)}`);
+        vm.info(`Tokens received: ${BitcoinUtils.formatUnits(tokensReceived, tokenDecimals)}`);
 
-        // Calculate expected changes:
-        // 1. Second half added via activation
-        // 2. Tokens removed via buy
-        // Net change = secondHalf - tokensBought
+        // After swap + one more block, check state
+        // The second 50% should now be applied (deferred from activation)
+        const afterSwapSettled = await nativeSwap.getReserve({ token: tokenAddress });
 
+        vm.info('\n=== AFTER SWAP (SETTLED) ===');
+        vm.info(
+            `Virtual Token Reserve: ${BitcoinUtils.formatUnits(afterSwapSettled.virtualTokenReserve, tokenDecimals)}`,
+        );
+
+        // Calculate expected final T:
+        // Initial T + firstHalf + secondHalf - tokensBought
         const secondHalf = halfCeil(tokensToList);
+        const expectedFinalT = initialT + expectedFirstHalf + secondHalf - reservedTokens;
 
-        vm.info('\n=== EXPECTED CHANGES ===');
+        vm.info('\n=== EXPECTED VS ACTUAL ===');
+        vm.info(`Initial T: ${BitcoinUtils.formatUnits(initialT, tokenDecimals)}`);
+        vm.info(`+ First half: ${BitcoinUtils.formatUnits(expectedFirstHalf, tokenDecimals)}`);
+        vm.info(`+ Second half: ${BitcoinUtils.formatUnits(secondHalf, tokenDecimals)}`);
+        vm.info(`- Tokens bought: ${BitcoinUtils.formatUnits(reservedTokens, tokenDecimals)}`);
+        vm.info(`= Expected final T: ${BitcoinUtils.formatUnits(expectedFinalT, tokenDecimals)}`);
         vm.info(
-            `Second half to be activated: ${BitcoinUtils.formatUnits(secondHalf, tokenDecimals)} tokens`,
-        );
-        vm.info(
-            `Tokens bought (reserved): ${BitcoinUtils.formatUnits(reservedTokens, tokenDecimals)} tokens`,
-        );
-        vm.info(
-            `Expected net change: ${BitcoinUtils.formatUnits(secondHalf - reservedTokens, tokenDecimals)} tokens`,
-        );
-
-        const actualTokenChange = afterSwap.virtualTokenReserve - beforeSwap.virtualTokenReserve;
-        vm.info(
-            `\nActual token change: ${BitcoinUtils.formatUnits(actualTokenChange, tokenDecimals)} tokens`,
+            `Actual final T: ${BitcoinUtils.formatUnits(afterSwapSettled.virtualTokenReserve, tokenDecimals)}`,
         );
 
-        // The token change should be approximately (secondHalf - tokensBought)
-        // Allow for fee impact and rounding
-        const expectedNetChange = secondHalf - reservedTokens;
+        const diff =
+            afterSwapSettled.virtualTokenReserve > expectedFinalT
+                ? afterSwapSettled.virtualTokenReserve - expectedFinalT
+                : expectedFinalT - afterSwapSettled.virtualTokenReserve;
 
-        vm.info('\n=== VERIFICATION ===');
+        // Allow small tolerance for rounding
+        const maxDiff = reservedTokens / 100n; // 1% tolerance
 
-        // If secondHalf > reservedTokens, net change is positive (more added than removed)
-        // If secondHalf < reservedTokens, net change is negative (more removed than added)
-        if (expectedNetChange > 0n) {
-            Assert.expect(actualTokenChange > 0n).toEqual(true);
-            vm.info('✓ Net positive token change (activation > buy)');
+        vm.info(`Difference: ${BitcoinUtils.formatUnits(diff, tokenDecimals)}`);
+
+        if (diff <= maxDiff) {
+            vm.info('✓ Final T matches expected within tolerance');
+            Assert.expect(true).toEqual(true);
         } else {
-            Assert.expect(actualTokenChange < 0n).toEqual(true);
-            vm.info('✓ Net negative token change (buy > activation)');
+            vm.info(`✗ Difference too large: ${BitcoinUtils.formatUnits(diff, tokenDecimals)}`);
+            vm.info('This indicates second 50% may not be applying correctly');
+            Assert.expect(false).toEqual(true);
         }
 
-        vm.info('✓ Provider activation applied second 50% during swap');
+        // Verify k is preserved
+        const kInitial = initialReserves.virtualBTCReserve * initialT;
+        const kFinal = afterSwapSettled.virtualBTCReserve * afterSwapSettled.virtualTokenReserve;
+
+        Assert.expect(kFinal >= kInitial).toEqual(true);
+        vm.info('✓ k preserved through listing, activation, and swap');
 
         vm.info('\n==================== PROVIDER ACTIVATION VERIFIED ====================\n');
     });
