@@ -7,21 +7,20 @@ import {
 } from '@btc-vision/unit-test-framework';
 import {
     AddLiquidityResult,
-    CancelListingResult,
     CreatePoolResult,
-    GetProviderDetailsParams,
     GetProviderDetailsResult,
     GetQuoteResult,
     GetReserveResult,
     IActivateProviderEvent,
     IApprovedEvent,
-    IProviderFulfilledEvent,
     ILiquidityAddedEvent,
     ILiquidityListedEvent,
     ILiquidityRemovedEvent,
     ILiquidityReservedEvent,
-    IListingCanceledEvent,
+    IProviderConsumedEvent,
+    IProviderFulfilledEvent,
     IReservationCreatedEvent,
+    IReservationFallbackEvent,
     IReservationPurgedEvent,
     ISwapExecutedEvent,
     ITransferEvent,
@@ -30,12 +29,9 @@ import {
     RemoveLiquidityResult,
     ReserveResult,
     SwapResult,
-    IReservationFallbackEvent,
-    IProviderConsumedEvent,
 } from '../../contracts/NativeSwapTypes.js';
 import { NetEvent } from '@btc-vision/transaction';
 import { NativeSwapTypesCoders } from '../../contracts/NativeSwapTypesCoders.js';
-import { NativeSwap } from '../../contracts/NativeSwap.js';
 
 export function logGetProviderDetailsResult(result: GetProviderDetailsResult): void {
     Blockchain.log(``);
@@ -117,14 +113,6 @@ export function logRemoveLiquidityResult(result: RemoveLiquidityResult): void {
     Blockchain.log(``);
 }
 
-export function logCancelListingResult(result: CancelListingResult): void {
-    Blockchain.log(``);
-    Blockchain.log(`CancelListingResult`);
-    Blockchain.log(`----------`);
-    logGas(result.response);
-    Blockchain.log(``);
-}
-
 export function logGetQuoteResult(result: GetQuoteResult): void {
     Blockchain.log(``);
     Blockchain.log(`GetQuoteResult`);
@@ -174,16 +162,6 @@ export function logLiquidityRemovedEvent(event: ILiquidityRemovedEvent): void {
     Blockchain.log(`satoshisOwed: ${event.satoshisOwed}`);
     Blockchain.log(`tokenAmount: ${event.tokenAmount}`);
     Blockchain.log(`providerId: ${event.providerId}`);
-    Blockchain.log(``);
-}
-
-export function logListingCanceledEvent(event: IListingCanceledEvent): void {
-    Blockchain.log(``);
-    Blockchain.log(`ListingCanceledEvent`);
-    Blockchain.log(`-----------------`);
-    Blockchain.log(`amount: ${event.amount}`);
-    Blockchain.log(`penalty: ${event.penalty}`);
-
     Blockchain.log(``);
 }
 
@@ -295,39 +273,6 @@ export function logRemoveLiquidityEvents(events: NetEvent[]): void {
     Blockchain.log(``);
 }
 
-export function logCancelListingEvents(events: NetEvent[]): void {
-    Blockchain.log(``);
-    Blockchain.log(`CancelListingEvents`);
-    Blockchain.log(`-----------------`);
-    for (let i = 0; i < events.length; i++) {
-        const event = events[i];
-        switch (event.type) {
-            case 'ProviderFulfilled':
-                logProviderFulfilledEvent(
-                    NativeSwapTypesCoders.decodeProviderFulfilledEvent(event.data),
-                );
-                break;
-            case 'Transferred': {
-                logTransferEvent(NativeSwapTypesCoders.decodeTransferEvent(event.data));
-                break;
-            }
-            case 'ListingCanceled': {
-                logListingCanceledEvent(NativeSwapTypesCoders.decodeCancelListingEvent(event.data));
-                break;
-            }
-            case 'ReservationPurged':
-                logReservationPurgedEvent(
-                    NativeSwapTypesCoders.decodeReservationPurgedEvent(event.data),
-                );
-                break;
-            default: {
-                throw new Error(`Unknown event type: ${event.type}`);
-            }
-        }
-    }
-    Blockchain.log(``);
-}
-
 export function logActivateProviderEvent(event: IActivateProviderEvent): void {
     Blockchain.log(``);
     Blockchain.log(`ProviderActivatedEvent`);
@@ -343,7 +288,6 @@ export function logProviderFulfilledEvent(event: IProviderFulfilledEvent): void 
     Blockchain.log(`ProviderFulfilledEvent`);
     Blockchain.log(`-----------------`);
     Blockchain.log(`providerId: ${event.providerId}`);
-    Blockchain.log(`canceled: ${event.canceled}`);
     Blockchain.log(`removalCompleted: ${event.removalCompleted}`);
     Blockchain.log(`stakedAmount: ${event.stakedAmount}`);
     Blockchain.log(``);

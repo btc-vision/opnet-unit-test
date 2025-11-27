@@ -12,7 +12,6 @@ export interface IActivateProviderEvent {
 export interface IProviderFulfilledEvent {
     readonly name: string;
     readonly providerId: bigint;
-    readonly canceled: boolean;
     readonly removalCompleted: boolean;
     readonly stakedAmount: bigint;
 }
@@ -49,12 +48,6 @@ export interface ILiquidityReservedEvent {
     readonly satoshisAmount: bigint;
     readonly providerId: bigint;
     readonly tokenAmount: bigint;
-}
-
-export interface IListingCanceledEvent {
-    readonly name: string;
-    readonly amount: bigint;
-    readonly penalty: bigint;
 }
 
 export interface IReservationCreatedEvent {
@@ -119,7 +112,6 @@ export type AllEvent =
     | ISwapExecutedEvent
     | IApprovedEvent
     | ITransferEvent
-    | IListingCanceledEvent
     | IActivateProviderEvent
     | IProviderFulfilledEvent
     | IReservationPurgedEvent
@@ -277,14 +269,6 @@ export interface ReserveParams {
 export interface ReserveResult {
     readonly expectedAmountOut: bigint;
     readonly totalSatoshis: bigint;
-    readonly response: CallResponse;
-}
-
-export interface CancelListingParams {
-    readonly token: Address;
-}
-
-export interface CancelListingResult {
     readonly response: CallResponse;
 }
 

@@ -1,19 +1,6 @@
 import { Address } from '@btc-vision/transaction';
-import {
-    Assert,
-    Blockchain,
-    gas2BTC,
-    gas2Sat,
-    gas2USD,
-    generateEmptyTransaction,
-    OP20,
-    opnet,
-    OPNetUnit,
-    Transaction,
-} from '@btc-vision/unit-test-framework';
+import { Assert, Blockchain, OP20, opnet, OPNetUnit } from '@btc-vision/unit-test-framework';
 import { NativeSwap } from '../../contracts/NativeSwap.js';
-
-import { NativeSwapTypesCoders } from '../../contracts/NativeSwapTypesCoders.js';
 import {
     helper_createPool,
     helper_listLiquidity,
@@ -258,28 +245,6 @@ await opnet('NativeSwap: pause', async (vm: OPNetUnit) => {
                 false,
                 false,
             );
-        }).toThrow();
-    });
-
-    await vm.it('should fail to call cancelListing when contract is paused', async () => {
-        Blockchain.blockNumber = 1000n;
-
-        Blockchain.msgSender = userAddress;
-        Blockchain.txOrigin = userAddress;
-
-        await nativeSwap.pause();
-        const currentPauseState = await nativeSwap.isPaused();
-        Assert.expect(currentPauseState.isPaused).toEqual(true);
-
-        const randomOwner = Blockchain.generateRandomAddress();
-
-        Blockchain.msgSender = randomOwner;
-        Blockchain.txOrigin = randomOwner;
-
-        await Assert.expect(async () => {
-            await nativeSwap.cancelListing({
-                token: tokenAddress,
-            });
         }).toThrow();
     });
 

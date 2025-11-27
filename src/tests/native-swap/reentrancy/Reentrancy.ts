@@ -230,26 +230,6 @@ await opnet('Native Swap - Reentrancy', async (vm: OPNetUnit) => {
         }).toThrow(/OPNET: ReentrancyGuard: LOCKED/);
     });
 
-    await vm.it('should revert when trying reentrancy call on cancelListing method', async () => {
-        Blockchain.txOrigin = userAddress;
-        Blockchain.msgSender = userAddress;
-
-        Blockchain.blockNumber += 1n;
-        await listTokenRandom(BitcoinUtils.expandToDecimals(100, tokenDecimals));
-
-        Blockchain.blockNumber += 1n;
-
-        await reserve(20_000_000n, providerAddress);
-
-        Blockchain.blockNumber += 3n;
-
-        await token.setCallback('cancelListing(address)');
-
-        await Assert.expect(async () => {
-            await swapAll();
-        }).toThrow(/OPNET: ReentrancyGuard: LOCKED/);
-    });
-
     await vm.it('should revert when trying reentrancy call on withdrawListing method', async () => {
         Blockchain.txOrigin = userAddress;
         Blockchain.msgSender = userAddress;

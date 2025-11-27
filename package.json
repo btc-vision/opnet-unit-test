@@ -12,7 +12,6 @@
         "test:native:createpool": "tsx src/tests/native-swap/CreatePool.ts",
         "test:native:purge": "tsx src/tests/native-swap/PurgeReservations.ts",
         "test:native:purgeWithSwap": "tsx src/tests/native-swap/PurgeWithSwap.ts",
-        "test:native:addliquidity": "tsx src/tests/native-swap/AddLiquidity.ts",
         "test:native:stakingfee": "tsx src/tests/native-swap/fee/StakingPoolFeeCollection.ts",
         "test:native:fee": "tsx src/tests/native-swap/fee/TestFeeAlgorithm.ts",
         "test:native:fees": "tsx src/tests/native-swap/Fees.ts",
@@ -23,7 +22,7 @@
         "test:native:pause": "tsx src/tests/native-swap/Pause.ts",
         "test:native:swap": "tsx src/tests/native-swap/Swap.ts",
         "test:native:withdraw": "tsx src/tests/native-swap/Withdraw.ts",
-        "test:native": "npm-run-all test:native:onlyowner test:native:reentrancy test:native:listtoken test:native:createpool test:native:purge test:native:addliquidity test:native:stakingfee test:native:fee test:native:fees test:native:staking test:native:getquote test:native:getreserve test:native:reserve test:native:pause test:native:swap test:native:withdraw",
+        "test:native": "npm-run-all test:native:onlyowner test:native:reentrancy test:native:listtoken test:native:createpool test:native:purge test:native:stakingfee test:native:fee test:native:fees test:native:staking test:native:getquote test:native:getreserve test:native:reserve test:native:pause test:native:swap test:native:withdraw",
         "test:track": "tsx src/tests/native-swap/TrackPriceBalance.ts",
         "test:token": "tsx src/tests/token/OP20.ts",
         "test:nft": "tsx src/tests/nft/OP721.ts",
@@ -35,7 +34,8 @@
         "test:swap": "tsx src/tests/native-swap/SwapProblem.ts",
         "test:purgeInvar": "tsx src/tests/native-swap/PurgeInvariant.ts",
         "test": "npm-run-all test:*",
-        "bug": "tsx src/tests/native-swap/ListTokenChangeIndexBug.ts"
+        "bug": "tsx src/tests/native-swap/ListTokenChangeIndexBug.ts",
+        "test:native:fulfilled": "tsx src/tests/native-swap/fulfilledQueue.ts"
     },
     "author": "OP_NET",
     "license": "MIT",

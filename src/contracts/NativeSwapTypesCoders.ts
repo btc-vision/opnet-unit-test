@@ -3,8 +3,6 @@ import { CallResponse } from '@btc-vision/unit-test-framework';
 import {
     AddLiquidityParams,
     AddLiquidityResult,
-    CancelListingParams,
-    CancelListingResult,
     CreatePoolParams,
     CreatePoolResult,
     CreatePoolWithSignatureParams,
@@ -29,7 +27,6 @@ import {
     ILiquidityListedEvent,
     ILiquidityRemovedEvent,
     ILiquidityReservedEvent,
-    IListingCanceledEvent,
     IProviderConsumedEvent,
     IProviderFulfilledEvent,
     IReservationCreatedEvent,
@@ -226,14 +223,12 @@ export class NativeSwapTypesCoders {
     public static decodeProviderFulfilledEvent(data: Uint8Array): IProviderFulfilledEvent {
         const reader = new BinaryReader(data);
         const providerId = reader.readU256();
-        const canceled = reader.readBoolean();
         const removalCompleted = reader.readBoolean();
         const stakedAmount = reader.readU256();
 
         return {
             name: 'ProviderFulfilledEvent',
             providerId,
-            canceled,
             removalCompleted,
             stakedAmount,
         };
@@ -293,13 +288,6 @@ export class NativeSwapTypesCoders {
             tokenAmount,
             providerId,
         };
-    }
-
-    public static decodeCancelListingEvent(data: Uint8Array): IListingCanceledEvent {
-        const reader = new BinaryReader(data);
-        const amount = reader.readU128();
-        const penalty = reader.readU128();
-        return { name: 'ListingCanceledEvent', amount, penalty };
     }
 
     public static decodeReservationCreatedEvent(data: Uint8Array): IReservationCreatedEvent {
@@ -810,28 +798,6 @@ export class NativeSwapTypesCoders {
         return {
             expectedAmountOut: decodeEvent.expectedAmountOut,
             totalSatoshis: decodeEvent.totalSatoshis,
-            response: response,
-        };
-    }
-
-    public static encodeCancelListingParams(
-        selector: number,
-        params: CancelListingParams,
-    ): BinaryWriter {
-        const calldata = new BinaryWriter();
-
-        calldata.writeSelector(selector);
-        calldata.writeAddress(params.token);
-
-        return calldata;
-    }
-
-    public static decodeCancelListingResult(response: CallResponse): CancelListingResult {
-        if (!response.response) {
-            throw new Error('No response to decode from cancel listing');
-        }
-
-        return {
             response: response,
         };
     }

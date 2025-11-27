@@ -309,28 +309,6 @@ await opnet('NativeSwap: withdraw mode', async (vm: OPNetUnit) => {
         }).toThrow();
     });
 
-    await vm.it('should fail to call cancelListing when withdraw mode is active', async () => {
-        Blockchain.blockNumber = 1000n;
-
-        Blockchain.msgSender = userAddress;
-        Blockchain.txOrigin = userAddress;
-
-        await nativeSwap.activateWithdrawMode();
-        const currentWithdrawMode = await nativeSwap.isWithdrawModeActive();
-        Assert.expect(currentWithdrawMode.isWithdrawModeActive).toEqual(true);
-
-        const randomOwner = Blockchain.generateRandomAddress();
-
-        Blockchain.msgSender = randomOwner;
-        Blockchain.txOrigin = randomOwner;
-
-        await Assert.expect(async () => {
-            await nativeSwap.cancelListing({
-                token: tokenAddress,
-            });
-        }).toThrow();
-    });
-
     await vm.it('should fail to call createpool when withdraw mode is active', async () => {
         Blockchain.blockNumber = 1000n;
 

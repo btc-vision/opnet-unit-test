@@ -5,8 +5,6 @@ import {
     ActivateWithdrawModeResult,
     AddLiquidityParams,
     AddLiquidityResult,
-    CancelListingParams,
-    CancelListingResult,
     CreatePoolParams,
     CreatePoolResult,
     CreatePoolWithSignatureParams,
@@ -71,10 +69,6 @@ export class NativeSwap extends ContractRuntime {
 
     private readonly listLiquiditySelector: number = Number(
         `0x${this.abiCoder.encodeSelector('listLiquidity(address,bytes,string,uint128,bool)')}`,
-    );
-
-    private readonly cancelListingSelector: number = Number(
-        `0x${this.abiCoder.encodeSelector('cancelListing(address)')}`,
     );
 
     private readonly createPoolSelector: number = Number(
@@ -604,21 +598,6 @@ export class NativeSwap extends ContractRuntime {
         if (result.error) throw this.handleError(result.error);
 
         return NativeSwapTypesCoders.decodeReserveResult(result);
-    }
-
-    public async cancelListing(params: CancelListingParams): Promise<CancelListingResult> {
-        const calldata = NativeSwapTypesCoders.encodeCancelListingParams(
-            this.cancelListingSelector,
-            params,
-        );
-
-        const result = await this.execute({
-            calldata: calldata.getBuffer(),
-        });
-
-        if (result.error) throw this.handleError(result.error);
-
-        return NativeSwapTypesCoders.decodeCancelListingResult(result);
     }
 
     public async swap(params: SwapParams): Promise<SwapResult> {

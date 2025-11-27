@@ -1,1 +1,0 @@
-unzip the scenarios before running tests
