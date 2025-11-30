@@ -222,6 +222,11 @@ export interface RemoveLiquidityResult {
     readonly response: CallResponse;
 }
 
+export enum PoolTypes {
+    Standard = 0,
+    Stable = 1,
+}
+
 export interface CreatePoolParams {
     readonly token: Address;
     readonly floorPrice: bigint;
@@ -232,6 +237,9 @@ export interface CreatePoolParams {
     readonly antiBotMaximumTokensPerReservation: bigint;
     readonly maxReservesIn5BlocksPercent: number; //4000
     readonly network: Network;
+    readonly poolType?: PoolTypes;
+    readonly amplification?: bigint;
+    readonly pegStalenessThreshold?: bigint;
 }
 
 export interface CreatePoolResult {

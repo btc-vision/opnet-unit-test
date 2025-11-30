@@ -40,6 +40,7 @@ import {
     ListLiquidityParams,
     ListLiquidityResult,
     PauseResult,
+    PoolTypes,
     RemoveLiquidityParams,
     RemoveLiquidityResult,
     ReserveParams,
@@ -672,6 +673,13 @@ export class NativeSwapTypesCoders {
     }
 
     public static encodeCreatePoolParams(selector: number, params: CreatePoolParams): BinaryWriter {
+        if (
+            params.poolType === PoolTypes.Stable &&
+            (!params.amplification || !params.pegStalenessThreshold)
+        ) {
+            throw new Error('Amplification parameter is required for stable pools');
+        }
+
         const calldata = new BinaryWriter();
 
         calldata.writeSelector(selector);
@@ -687,6 +695,9 @@ export class NativeSwapTypesCoders {
         calldata.writeU16(params.antiBotEnabledFor);
         calldata.writeU256(params.antiBotMaximumTokensPerReservation);
         calldata.writeU16(params.maxReservesIn5BlocksPercent);
+        calldata.writeU8(params.poolType ?? 0);
+        calldata.writeU64(params.amplification ?? 0n);
+        calldata.writeU64(params.pegStalenessThreshold ?? 0n);
 
         return calldata;
     }

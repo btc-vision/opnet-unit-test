@@ -1,13 +1,6 @@
 import { Blockchain, opnet, OPNetUnit } from '@btc-vision/unit-test-framework';
 import { OperationsHelper } from './helpers/OperationsHelper.js';
-import {
-    CreatePoolOperation,
-    ListLiquidityOperation,
-    ReserveOperation,
-    SwapOperation,
-    SwapOperationUTXOTypes,
-} from '../utils/Operations.js';
-import { ProviderHelper } from './helpers/ProviderHelper.js';
+import { CreatePoolOperation, ListLiquidityOperation } from '../utils/Operations.js';
 
 await opnet('Native Swap - Fulfilled queue', async (vm: OPNetUnit) => {
     const defaultInitialLiquidityAmount: bigint = Blockchain.expandTo18Decimals(1_000_000);
@@ -57,13 +50,13 @@ await opnet('Native Swap - Fulfilled queue', async (vm: OPNetUnit) => {
             Blockchain.blockNumber += 1n;
             Blockchain.log(`Listing providers on block ${Blockchain.blockNumber}`);
             for (let j: bigint = 0n; j < 40n; j++) {
-                const listOperation = new ListLiquidityOperation(
+                const list1Operation = new ListLiquidityOperation(
                     Blockchain.generateRandomAddress(),
                     token0,
                     Blockchain.expandTo18Decimals(500),
                     false,
                 );
-                const lister = await listOperation.execute(opHelper);
+                const lister = await list1Operation.execute(opHelper);
                 listers.push(lister);
             }
         }
@@ -72,7 +65,7 @@ await opnet('Native Swap - Fulfilled queue', async (vm: OPNetUnit) => {
         const reserveOperation: ReserveOperation = new ReserveOperation(
             token0,
             Blockchain.generateRandomAddress(),
-            200000000000n,
+            100000000000n,
             0n,
             1,
         );
