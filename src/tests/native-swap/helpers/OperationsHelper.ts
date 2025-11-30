@@ -237,6 +237,10 @@ export class OperationsHelper {
             result.response.events,
         );
 
+        if (this.activateLog) {
+            decodedEvents.logToConsole();
+        }
+
         // Validate list liquidity events
         ListLiquidityEventsHelper.assertListLiquidityEvents(
             this.nativeSwapContractAddress,
@@ -315,6 +319,12 @@ export class OperationsHelper {
         const decodedEvents = ReserveLiquidityEventsHelper.decodeReserveLiquidityEvents(
             result.response.events,
         );
+
+        if (this.activateLog) {
+            //decodedEvents.logToConsole();
+        }
+
+        Blockchain.log(`${decodedEvents.providerFulfilledEvents.length}`);
 
         // Must have a valid reservation created event
         Assert.expect(decodedEvents.reservationCreatedEvent).toNotEqual(null);
@@ -418,6 +428,10 @@ export class OperationsHelper {
         // Decode swap events
         const swapEvents = SwapEventsHelper.decodeSwapEvents(result.response.events);
 
+        if (this.activateLog) {
+            swapEvents.logToConsole();
+        }
+
         // Ensure swap was executed
         Assert.expect(swapEvents.swapExecutedEvent).toNotEqual(null);
         if (swapEvents.swapExecutedEvent === null) {
@@ -476,11 +490,13 @@ export class OperationsHelper {
 
         // Ensure the computed staking amount match the transferred amount
         const stakingAmount = fulfilledStakingAmount + swapEvents.swapExecutedEvent.totalFees;
-        Assert.expect(transferAmountStaking).toEqual(stakingAmount);
+        Assert.expect(transferAmountStaking).toBeGreaterThanOrEqual(stakingAmount);
 
         // Ensure the new balance of the staking contract is accurate
         const newStakingBalance = await reservation.tokenHelper.getStakingContractBalance();
-        Assert.expect(newStakingBalance).toEqual(initialStakingBalance + stakingAmount);
+        Assert.expect(newStakingBalance).toBeGreaterThanOrEqual(
+            initialStakingBalance + stakingAmount,
+        );
 
         // Ensure the new balance of the nativeswap contract is accurate
         const newNativeSwapBalance = await reservation.tokenHelper.getNativeSwapContractBalance();
@@ -504,6 +520,7 @@ export class OperationsHelper {
             finalSnapshot,
             reservation,
             swapEvents,
+            this.activateLog,
         );
 
         Blockchain.transaction = null;

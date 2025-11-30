@@ -1,5 +1,6 @@
 import {
     ILiquidityListedEvent,
+    IProviderFulfilledEvent,
     IReservationPurgedEvent,
     ITransferEvent,
 } from '../../../contracts/NativeSwapTypes.js';
@@ -8,11 +9,36 @@ import { NativeSwapTypesCoders } from '../../../contracts/NativeSwapTypesCoders.
 import { ProviderHelper } from './ProviderHelper.js';
 import { Assert, Blockchain } from '@btc-vision/unit-test-framework';
 import { CSV_DURATION } from '../../globals.js';
+import {
+    logLiquidityListedEvent,
+    logProviderFulfilledEvent,
+    logReservationPurgedEvent,
+    logTransferEvent,
+} from '../../utils/LoggerHelper.js';
 
 export class ListLiquidityEvents {
     public transferredEvents: ITransferEvent[] = [];
     public liquidityListedEvent: ILiquidityListedEvent | null = null;
     public purgedReservationEvents: IReservationPurgedEvent[] = [];
+    public providerFulfilledEvents: IProviderFulfilledEvent[] = [];
+
+    public logToConsole(): void {
+        Blockchain.log('LIST LIQUIDITY INFO');
+        Blockchain.log('----------');
+        if (this.liquidityListedEvent !== null) {
+            logLiquidityListedEvent(this.liquidityListedEvent);
+        }
+
+        for (let i = 0; i < this.transferredEvents.length; i++) {
+            logTransferEvent(this.transferredEvents[i]);
+        }
+        for (let i = 0; i < this.purgedReservationEvents.length; i++) {
+            logReservationPurgedEvent(this.purgedReservationEvents[i]);
+        }
+        for (let i = 0; i < this.providerFulfilledEvents.length; i++) {
+            logProviderFulfilledEvent(this.providerFulfilledEvents[i]);
+        }
+    }
 }
 
 export class ListLiquidityEventsHelper {
@@ -39,6 +65,11 @@ export class ListLiquidityEventsHelper {
                 case 'ReservationPurged':
                     result.purgedReservationEvents.push(
                         NativeSwapTypesCoders.decodeReservationPurgedEvent(event.data),
+                    );
+                    break;
+                case 'ProviderFulfilled':
+                    result.providerFulfilledEvents.push(
+                        NativeSwapTypesCoders.decodeProviderFulfilledEvent(event.data),
                     );
                     break;
                 default: {

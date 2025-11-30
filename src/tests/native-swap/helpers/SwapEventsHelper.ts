@@ -11,6 +11,14 @@ import { NativeSwapTypesCoders } from '../../../contracts/NativeSwapTypesCoders.
 import { ReserveLiquidityHelper } from './ReserveLiquidityHelper.js';
 import { Assert, Blockchain } from '@btc-vision/unit-test-framework';
 import { ProviderSnapshotHelper } from './ProviderHelper.js';
+import {
+    logActivateProviderEvent,
+    logProviderConsumedEvent,
+    logProviderFulfilledEvent,
+    logReservationFallbackEvent,
+    logSwapExecutedEvent,
+    logTransferEvent,
+} from '../../utils/LoggerHelper.js';
 
 export class SwapEvents {
     public swapExecutedEvent: ISwapExecutedEvent | null = null;
@@ -19,6 +27,31 @@ export class SwapEvents {
     public providerFulfilledEvents: IProviderFulfilledEvent[] = [];
     public providerActivatedEvent: IActivateProviderEvent[] = [];
     public providerConsumedEvent: IProviderConsumedEvent[] = [];
+
+    public logToConsole(): void {
+        Blockchain.log('SWAP INFO');
+        Blockchain.log('----------');
+        if (this.swapExecutedEvent !== null) {
+            logSwapExecutedEvent(this.swapExecutedEvent);
+        }
+
+        if (this.reservationFallbackEvent !== null) {
+            logReservationFallbackEvent(this.reservationFallbackEvent);
+        }
+
+        for (let i = 0; i < this.transferredEvents.length; i++) {
+            logTransferEvent(this.transferredEvents[i]);
+        }
+        for (let i = 0; i < this.providerActivatedEvent.length; i++) {
+            logActivateProviderEvent(this.providerActivatedEvent[i]);
+        }
+        for (let i = 0; i < this.providerFulfilledEvents.length; i++) {
+            logProviderFulfilledEvent(this.providerFulfilledEvents[i]);
+        }
+        for (let i = 0; i < this.providerConsumedEvent.length; i++) {
+            logProviderConsumedEvent(this.providerConsumedEvent[i]);
+        }
+    }
 }
 
 export class SwapEventsHelper {
@@ -78,6 +111,7 @@ export class SwapEventsHelper {
         finalProvidersSnapshot: FastMap<bigint, ProviderSnapshotHelper>,
         reservation: ReserveLiquidityHelper,
         swapEvents: SwapEvents,
+        log: boolean = false,
     ): void {
         for (let i = 0; i < reservation.recipients.length; i++) {
             let dustResets: bigint = 0n;
@@ -108,9 +142,11 @@ export class SwapEventsHelper {
                 dustResets = fulfilledProvider.stakedAmount;
             }
 
-            initialSnapshot.logToConsole();
-            finalSnapshot.logToConsole();
-            Blockchain.log(`dust: ${dustResets}`);
+            if (log) {
+                initialSnapshot.logToConsole();
+                finalSnapshot.logToConsole();
+                Blockchain.log(`dust: ${dustResets}`);
+            }
 
             if (consumedProvider !== undefined) {
                 Assert.expect(finalSnapshot.reserved).toEqual(

@@ -57,13 +57,13 @@ await opnet('Native Swap - Fulfilled queue', async (vm: OPNetUnit) => {
             Blockchain.blockNumber += 1n;
             Blockchain.log(`Listing providers on block ${Blockchain.blockNumber}`);
             for (let j: bigint = 0n; j < 40n; j++) {
-                const list1Operation = new ListLiquidityOperation(
+                const listOperation = new ListLiquidityOperation(
                     Blockchain.generateRandomAddress(),
                     token0,
                     Blockchain.expandTo18Decimals(500),
                     false,
                 );
-                const lister = await list1Operation.execute(opHelper);
+                const lister = await listOperation.execute(opHelper);
                 listers.push(lister);
             }
         }
@@ -72,7 +72,7 @@ await opnet('Native Swap - Fulfilled queue', async (vm: OPNetUnit) => {
         const reserveOperation: ReserveOperation = new ReserveOperation(
             token0,
             Blockchain.generateRandomAddress(),
-            100000000000n,
+            200000000000n,
             0n,
             1,
         );
@@ -88,5 +88,27 @@ await opnet('Native Swap - Fulfilled queue', async (vm: OPNetUnit) => {
         );
 
         await swapOperation.execute(opHelper);
+
+        Blockchain.blockNumber += 10n;
+        Blockchain.log(`List`);
+        const listOperation2 = new ListLiquidityOperation(
+            Blockchain.generateRandomAddress(),
+            token0,
+            Blockchain.expandTo18Decimals(500),
+            false,
+        );
+        const lister2 = await listOperation2.execute(opHelper);
+        listers.push(lister2);
+
+        Blockchain.log(`Reserve`);
+        const reserveOperation2: ReserveOperation = new ReserveOperation(
+            token0,
+            Blockchain.generateRandomAddress(),
+            10000n,
+            0n,
+            1,
+        );
+
+        const reserveResult2 = await reserveOperation2.execute(opHelper);
     });
 });
