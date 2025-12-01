@@ -252,8 +252,6 @@ export class OperationsHelper {
             result.response.events,
         );
 
-        Blockchain.log(`Reset count: ${decodedEvents.providerFulfilledEvents.length}`);
-
         if (this.activateLog) {
             decodedEvents.logToConsole();
         }
@@ -348,7 +346,6 @@ export class OperationsHelper {
             result.response.events,
         );
 
-        Blockchain.log(`Reserve Reset count: ${decodedEvents.providerFulfilledEvents.length}`);
         if (this.activateLog) {
             decodedEvents.logToConsole();
         }
@@ -458,8 +455,6 @@ export class OperationsHelper {
 
         // Decode swap events
         const swapEvents = SwapEventsHelper.decodeSwapEvents(result.response.events);
-
-        Blockchain.log(`Reset count: ${swapEvents.providerFulfilledEvents.length}`);
 
         if (this.activateLog) {
             swapEvents.logToConsole();

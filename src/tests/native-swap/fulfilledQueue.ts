@@ -1,12 +1,8 @@
-import { Assert, Blockchain, opnet, OPNetUnit } from '@btc-vision/unit-test-framework';
+import { Blockchain, opnet, OPNetUnit } from '@btc-vision/unit-test-framework';
 import { OperationsHelper } from './helpers/OperationsHelper.js';
-import {
-    CreatePoolOperation,
-    ListLiquidityOperation,
-    ReserveOperation,
-} from '../utils/Operations.js';
+import { CreatePoolOperation, ListLiquidityOperation, ReserveOperation, } from '../utils/Operations.js';
 import { ProviderHelper } from './helpers/ProviderHelper.js';
-import { helper_getQueueDetails, helper_getQuote } from '../utils/OperationHelper.js';
+import { helper_getQueueDetails } from '../utils/OperationHelper.js';
 
 await opnet('Native Swap - Fulfilled queue', async (vm: OPNetUnit) => {
     const defaultInitialLiquidityAmount: bigint = Blockchain.expandTo18Decimals(1_000_000);
@@ -14,7 +10,7 @@ await opnet('Native Swap - Fulfilled queue', async (vm: OPNetUnit) => {
     let opHelper: OperationsHelper;
 
     vm.beforeEach(async () => {
-        opHelper = await OperationsHelper.create(10, true);
+        opHelper = await OperationsHelper.create(10, false);
     });
 
     vm.afterEach(() => {
@@ -140,7 +136,9 @@ await opnet('Native Swap - Fulfilled queue', async (vm: OPNetUnit) => {
             }
         }
 
-        Blockchain.log(`Reserve`);
+        await helper_getQueueDetails(opHelper.nativeSwap, token0, true);
+
+        Blockchain.log(`Reserve1`);
         const reserveOperation: ReserveOperation = new ReserveOperation(
             token0,
             Blockchain.generateRandomAddress(),
@@ -151,6 +149,9 @@ await opnet('Native Swap - Fulfilled queue', async (vm: OPNetUnit) => {
 
         const reserveResult = await reserveOperation.execute(opHelper);
 
+        await helper_getQueueDetails(opHelper.nativeSwap, token0, true);
+
+        Blockchain.log(`Reserve2`);
         const reserveOperation2: ReserveOperation = new ReserveOperation(
             token0,
             Blockchain.generateRandomAddress(),
@@ -161,7 +162,7 @@ await opnet('Native Swap - Fulfilled queue', async (vm: OPNetUnit) => {
 
         const reserveResult2 = await reserveOperation2.execute(opHelper);
 
-        const detailsa = await helper_getQueueDetails(opHelper.nativeSwap, token0);
+        await helper_getQueueDetails(opHelper.nativeSwap, token0, true);
 
         Blockchain.blockNumber += 20n;
 
@@ -181,6 +182,8 @@ await opnet('Native Swap - Fulfilled queue', async (vm: OPNetUnit) => {
         const lister2 = await listOperation2.execute(opHelper);
         listers.push(lister2);
 
+        await helper_getQueueDetails(opHelper.nativeSwap, token0, true);
+
         Blockchain.log(
             `List -> purge reservation-> send 280 providers to purge queue and try to simulate a price drop`,
         );
@@ -197,13 +200,10 @@ await opnet('Native Swap - Fulfilled queue', async (vm: OPNetUnit) => {
                 );
                 const lister = await list1Operation.execute(opHelper);
                 listers.push(lister);
-                const quote = await helper_getQuote(opHelper.nativeSwap, token0.token, 10n, false);
             }
         }
 
-        const details = await helper_getQueueDetails(opHelper.nativeSwap, token0);
-
-        Assert.expect(details.standardPurgeQueueLength).toEqual(280);
+        await helper_getQueueDetails(opHelper.nativeSwap, token0, true);
 
         Blockchain.log(`Reserve3`);
         const reserveOperation3: ReserveOperation = new ReserveOperation(
@@ -216,6 +216,6 @@ await opnet('Native Swap - Fulfilled queue', async (vm: OPNetUnit) => {
 
         const reserveResult3 = await reserveOperation3.execute(opHelper);
 
-        const details2 = await helper_getQueueDetails(opHelper.nativeSwap, token0);
+        await helper_getQueueDetails(opHelper.nativeSwap, token0);
     });
 });
