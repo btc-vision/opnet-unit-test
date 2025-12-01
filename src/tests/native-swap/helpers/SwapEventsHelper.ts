@@ -45,6 +45,7 @@ export class SwapEvents {
         for (let i = 0; i < this.providerActivatedEvent.length; i++) {
             logActivateProviderEvent(this.providerActivatedEvent[i]);
         }
+
         for (let i = 0; i < this.providerFulfilledEvents.length; i++) {
             logProviderFulfilledEvent(this.providerFulfilledEvents[i]);
         }

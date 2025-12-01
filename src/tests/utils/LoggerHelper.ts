@@ -1,14 +1,9 @@
-import {
-    Blockchain,
-    CallResponse,
-    gas2BTC,
-    gas2Sat,
-    gas2USD,
-} from '@btc-vision/unit-test-framework';
+import { Blockchain, CallResponse, gas2BTC, gas2Sat, gas2USD, } from '@btc-vision/unit-test-framework';
 import {
     AddLiquidityResult,
     CreatePoolResult,
     GetProviderDetailsResult,
+    GetQueueDetailsResult,
     GetQuoteResult,
     GetReserveResult,
     IActivateProviderEvent,
@@ -381,6 +376,18 @@ export function logListLiquidityEvent(events: NetEvent[]): void {
                 logTransferEvent(NativeSwapTypesCoders.decodeTransferEvent(event.data));
                 break;
             }
+            case 'ProviderFulfilled': {
+                logProviderFulfilledEvent(
+                    NativeSwapTypesCoders.decodeProviderFulfilledEvent(event.data),
+                );
+                break;
+            }
+            case 'ReservationPurged': {
+                logReservationPurgedEvent(
+                    NativeSwapTypesCoders.decodeReservationPurgedEvent(event.data),
+                );
+                break;
+            }
             default: {
                 throw new Error(`Unknown event type: ${event.type}`);
             }
@@ -504,4 +511,20 @@ export function logProviderDetailsResult(result: GetProviderDetailsResult): void
     console.log(`queueIndex: ${result.queueIndex}`);
     console.log(`btcReceiver: ${result.btcReceiver}`);
     console.log(`isPriority: ${result.isPriority}`);
+}
+
+export function logQueueDetailsResult(result: GetQueueDetailsResult): void {
+    Blockchain.log(``);
+    console.log(`Queue details result`);
+    console.log(`---------------------`);
+    console.log(`blockWithReservationsLength: ${result.blockWithReservationsLength}`);
+    console.log(`priorityPurgeQueueLength: ${result.priorityPurgeQueueLength}`);
+    console.log(`standardPurgeQueueLength: ${result.standardPurgeQueueLength}`);
+    console.log(`priorityQueueLength: ${result.priorityQueueLength}`);
+    console.log(`standardQueueLength: ${result.standardQueueLength}`);
+    console.log(`lastPurgedBlock: ${result.lastPurgedBlock}`);
+    console.log(`priorityQueueStartingIndex: ${result.priorityQueueStartingIndex}`);
+    console.log(`standardQueueStartingIndex: ${result.standardQueueStartingIndex}`);
+    console.log(`priorityFulfilledQueueLength: ${result.priorityFulfilledQueueLength}`);
+    console.log(`standardFulfilledQueueLength: ${result.standardFulfilledQueueLength}`);
 }

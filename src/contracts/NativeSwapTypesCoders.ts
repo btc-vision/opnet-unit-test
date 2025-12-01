@@ -339,7 +339,6 @@ export class NativeSwapTypesCoders {
                     break;
                 }
                 case 'ProviderFulfilled': {
-                    console.log('Fulfilled a provider in the reserve?', event);
                     break;
                 }
                 default: {
@@ -591,6 +590,8 @@ export class NativeSwapTypesCoders {
         const standardQueueStartingIndex = reader.readU32();
         const priorityPurgeQueueLength = reader.readU32();
         const standardPurgeQueueLength = reader.readU32();
+        const priorityFulfilledQueueLength = reader.readU32();
+        const standardFulfilledQueueLength = reader.readU32();
 
         return {
             lastPurgedBlock: lastPurgedBlock,
@@ -601,6 +602,8 @@ export class NativeSwapTypesCoders {
             standardQueueStartingIndex: standardQueueStartingIndex,
             priorityPurgeQueueLength: priorityPurgeQueueLength,
             standardPurgeQueueLength: standardPurgeQueueLength,
+            priorityFulfilledQueueLength: priorityFulfilledQueueLength,
+            standardFulfilledQueueLength: standardFulfilledQueueLength,
         };
     }
 

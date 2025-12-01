@@ -33,6 +33,10 @@ export class ListLiquidityOperation extends BaseOperation {
         public tokenHelper: TokenHelper,
         public amountIn: bigint,
         public priority: boolean,
+        public checkReset: boolean = false,
+        public expectedReset: number = 0,
+        public checkPurged: boolean = false,
+        public expectedPurged: number = 0,
     ) {
         super();
     }
@@ -43,6 +47,10 @@ export class ListLiquidityOperation extends BaseOperation {
             this.address,
             this.amountIn,
             this.priority,
+            this.checkReset,
+            this.expectedReset,
+            this.checkPurged,
+            this.expectedPurged,
         );
 
         return result;
@@ -55,6 +63,10 @@ export class RelistLiquidityOperation extends BaseOperation {
         public tokenHelper: TokenHelper,
         public amountIn: bigint,
         public priority: boolean,
+        public checkReset: boolean = false,
+        public expectedReset: number = 0,
+        public checkPurged: boolean = false,
+        public expectedPurged: number = 0,
     ) {
         super();
     }
@@ -66,7 +78,15 @@ export class RelistLiquidityOperation extends BaseOperation {
             throw new Error(`Provider ${this.address} not found`);
         }
 
-        await operationHelper.relistLiquidity(provider, this.amountIn, this.priority);
+        await operationHelper.relistLiquidity(
+            provider,
+            this.amountIn,
+            this.priority,
+            this.checkReset,
+            this.expectedReset,
+            this.checkPurged,
+            this.expectedPurged,
+        );
     }
 }
 

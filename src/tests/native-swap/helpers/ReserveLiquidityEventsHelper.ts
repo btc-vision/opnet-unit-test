@@ -7,6 +7,14 @@ import {
 } from '../../../contracts/NativeSwapTypes.js';
 import { NetEvent } from '@btc-vision/transaction';
 import { NativeSwapTypesCoders } from '../../../contracts/NativeSwapTypesCoders.js';
+import { Blockchain } from '@btc-vision/unit-test-framework';
+import {
+    logLiquidityReservedEvent,
+    logProviderFulfilledEvent,
+    logReservationCreatedEvent,
+    logReservationPurgedEvent,
+    logTransferEvent,
+} from '../../utils/LoggerHelper.js';
 
 export class ReserveLiquidityEvents {
     public liquidityReservedEvents: ILiquidityReservedEvent[] = [];
@@ -14,6 +22,34 @@ export class ReserveLiquidityEvents {
     public purgedReservationEvents: IReservationPurgedEvent[] = [];
     public transferredEvents: ITransferEvent[] = [];
     public providerFulfilledEvents: IProviderFulfilledEvent[] = [];
+
+    public logToConsole(): void {
+        Blockchain.log('RESERVATION INFO');
+        Blockchain.log('----------');
+        Blockchain.log(`Purged reservation length: ${this.purgedReservationEvents.length}`);
+
+        Blockchain.log(`Fulfilled length: ${this.providerFulfilledEvents.length}`);
+
+        if (this.reservationCreatedEvent !== null) {
+            logReservationCreatedEvent(this.reservationCreatedEvent);
+        }
+
+        for (let i = 0; i < this.liquidityReservedEvents.length; i++) {
+            logLiquidityReservedEvent(this.liquidityReservedEvents[i]);
+        }
+
+        for (let i = 0; i < this.transferredEvents.length; i++) {
+            logTransferEvent(this.transferredEvents[i]);
+        }
+
+        for (let i = 0; i < this.purgedReservationEvents.length; i++) {
+            logReservationPurgedEvent(this.purgedReservationEvents[i]);
+        }
+
+        for (let i = 0; i < this.providerFulfilledEvents.length; i++) {
+            logProviderFulfilledEvent(this.providerFulfilledEvents[i]);
+        }
+    }
 }
 
 export class ReserveLiquidityEventsHelper {

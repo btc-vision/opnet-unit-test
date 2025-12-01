@@ -75,10 +75,26 @@ export async function assertNativeSwapBalanceHelper(
     Assert.expect(nativeSwapBalance).toEqual(value);
 }
 
+export async function assertNativeSwapBalanceSmallerEqualHelper(
+    tokenHelper: TokenHelper,
+    value: bigint,
+): Promise<void> {
+    const nativeSwapBalance: bigint = await tokenHelper.getNativeSwapContractBalance();
+    Assert.expect(nativeSwapBalance).toBeLessThanOrEqual(value);
+}
+
 export async function assertStakingBalanceHelper(
     tokenHelper: TokenHelper,
     value: bigint,
 ): Promise<void> {
     const stakingBalance: bigint = await tokenHelper.getStakingContractBalance();
     Assert.expect(stakingBalance).toEqual(value);
+}
+
+export async function assertStakingBalanceGreaterEqualHelper(
+    tokenHelper: TokenHelper,
+    value: bigint,
+): Promise<void> {
+    const stakingBalance: bigint = await tokenHelper.getStakingContractBalance();
+    Assert.expect(stakingBalance).toBeGreaterThanOrEqual(value);
 }

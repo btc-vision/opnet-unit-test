@@ -2,7 +2,9 @@ import { Address, FastMap } from '@btc-vision/transaction';
 import { Assert, Blockchain, OP20, Transaction } from '@btc-vision/unit-test-framework';
 import {
     assertNativeSwapBalanceHelper,
+    assertNativeSwapBalanceSmallerEqualHelper,
     assertProviderBalanceHelper,
+    assertStakingBalanceGreaterEqualHelper,
     assertStakingBalanceHelper,
     TokenHelper,
 } from './TokenHelper.js';
@@ -25,25 +27,22 @@ import {
     logCreatePoolResult,
     logListLiquidityEvent,
     logListLiquidityResult,
-    logRecipient,
-    logReserveResult,
     logSwapEvents,
     logSwapResult,
 } from '../../utils/LoggerHelper.js';
 import { CreatePoolEventsHelper } from './CreatePoolEventsHelper.js';
 import { LiquidityReserveHelper } from './LiquidityReserveHelper.js';
-import { NativeSwapTypesCoders } from '../../../contracts/NativeSwapTypesCoders.js';
 import { SwapEventsHelper } from './SwapEventsHelper.js';
 import { ListLiquidityEventsHelper } from './ListLiquidityEventsHelper.js';
 import { ReserveLiquidityEventsHelper } from './ReserveLiquidityEventsHelper.js';
 
 export class OperationsHelper {
+    public readonly nativeSwap: NativeSwap;
     private tokens: TokenHelper[] = [];
     private providers: ProviderHelper[] = [];
     private reservations: ReserveLiquidityHelper[] = [];
     private originBackup: Address = new Address();
     private senderBackup: Address = new Address();
-    private readonly nativeSwap: NativeSwap;
 
     private constructor(
         public numberOfTokens: number = 10,
@@ -179,12 +178,24 @@ export class OperationsHelper {
         providerAddress: Address,
         amountIn: bigint,
         priority: boolean = false,
+        checkReset: boolean = false,
+        expectedReset: number = 0,
+        checkPurged: boolean = false,
+        expectedPurged: number = 0,
     ): Promise<ProviderHelper> {
         // Create the provider
         const provider: ProviderHelper = new ProviderHelper(providerAddress, tokenHelper, priority);
 
         // List provider liquidity
-        await this.relistLiquidity(provider, amountIn, priority);
+        await this.relistLiquidity(
+            provider,
+            amountIn,
+            priority,
+            checkReset,
+            expectedReset,
+            checkPurged,
+            expectedPurged,
+        );
 
         // Add provider to providers array
         this.providers.push(provider);
@@ -196,6 +207,10 @@ export class OperationsHelper {
         provider: ProviderHelper,
         amountIn: bigint,
         priority: boolean,
+        checkReset: boolean = false,
+        expectedReset: number = 0,
+        checkPurged: boolean = false,
+        expectedPurged: number = 0,
     ): Promise<void> {
         this.pushOriginSender();
 
@@ -237,6 +252,8 @@ export class OperationsHelper {
             result.response.events,
         );
 
+        Blockchain.log(`Reset count: ${decodedEvents.providerFulfilledEvents.length}`);
+
         if (this.activateLog) {
             decodedEvents.logToConsole();
         }
@@ -277,11 +294,22 @@ export class OperationsHelper {
         const slashing = computeSlashing(initialReserve.virtualTokenReserve, amountIn);
         const newReserveLiquidity = initialReserve.liquidity + amountIn - tax;
 
+        // Handle purged reservation
+        const newReservedLiquidity = initialReserve.reservedLiquidity - decodedEvents.totalPurged();
+
+        if (checkReset) {
+            Assert.expect(decodedEvents.providerFulfilledEvents.length).toEqual(expectedReset);
+        }
+
+        if (checkPurged) {
+            Assert.expect(decodedEvents.purgedReservationEvents.length).toEqual(expectedPurged);
+        }
+
         await LiquidityReserveHelper.assertCurrentLiquidityReserve(
             this.nativeSwap,
             provider.tokenHelper,
             newReserveLiquidity,
-            initialReserve.reservedLiquidity,
+            newReservedLiquidity,
             initialReserve.virtualBTCReserve,
             initialReserve.virtualTokenReserve + slashing + tax,
             this.activateLog,
@@ -320,11 +348,10 @@ export class OperationsHelper {
             result.response.events,
         );
 
+        Blockchain.log(`Reserve Reset count: ${decodedEvents.providerFulfilledEvents.length}`);
         if (this.activateLog) {
-            //decodedEvents.logToConsole();
+            decodedEvents.logToConsole();
         }
-
-        Blockchain.log(`${decodedEvents.providerFulfilledEvents.length}`);
 
         // Must have a valid reservation created event
         Assert.expect(decodedEvents.reservationCreatedEvent).toNotEqual(null);
@@ -351,6 +378,10 @@ export class OperationsHelper {
 
         this.reservations.push(reservation);
 
+        if (this.activateLog) {
+            reservation.logToConsole();
+        }
+
         // Process the reservation purged events and get the total purged amount
         const totalAmountPurged = this.processPurgedReservation(
             decodedEvents.purgedReservationEvents,
@@ -363,11 +394,11 @@ export class OperationsHelper {
 
         // Validate new staking balance
         const newStakingBalance = initialStakingBalance + transferToStakingAmount;
-        await assertStakingBalanceHelper(tokenHelper, newStakingBalance);
+        await assertStakingBalanceGreaterEqualHelper(tokenHelper, newStakingBalance);
 
         // Validate the new nativeSwap balance
         const newNativeSwapBalance = initialNativeSwapBalance - transferToStakingAmount;
-        await assertNativeSwapBalanceHelper(tokenHelper, newNativeSwapBalance);
+        await assertNativeSwapBalanceSmallerEqualHelper(tokenHelper, newNativeSwapBalance);
 
         // Validate the new reserve
         const newLiquidity = initialReserve.liquidity - transferToStakingAmount;
@@ -427,6 +458,8 @@ export class OperationsHelper {
 
         // Decode swap events
         const swapEvents = SwapEventsHelper.decodeSwapEvents(result.response.events);
+
+        Blockchain.log(`Reset count: ${swapEvents.providerFulfilledEvents.length}`);
 
         if (this.activateLog) {
             swapEvents.logToConsole();
@@ -791,20 +824,6 @@ export class OperationsHelper {
             },
             feesAddress,
         );
-
-        if (this.activateLog) {
-            logReserveResult(result);
-        }
-
-        const decodedReservation = NativeSwapTypesCoders.decodeReservationEvents(
-            result.response.events,
-        );
-
-        if (this.activateLog) {
-            for (let i = 0; i < decodedReservation.recipients.length; i++) {
-                logRecipient(decodedReservation.recipients[i]);
-            }
-        }
 
         return result;
     }

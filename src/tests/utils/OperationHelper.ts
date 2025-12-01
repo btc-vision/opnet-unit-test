@@ -8,6 +8,7 @@ import {
     logGetReserveResult,
     logListLiquidityEvent,
     logListLiquidityResult,
+    logQueueDetailsResult,
     logRecipient,
     logReserveResult,
     logSwapExecutedEvent,
@@ -19,6 +20,7 @@ import { NativeSwap } from '../../contracts/NativeSwap.js';
 import {
     CreatePoolResult,
     GetProviderDetailsResult,
+    GetQueueDetailsResult,
     GetQuoteResult,
     GetReserveResult,
     ListLiquidityResult,
@@ -26,6 +28,7 @@ import {
     ReserveResult,
     SwapResult,
 } from '../../contracts/NativeSwapTypes.js';
+import { TokenHelper } from '../native-swap/helpers/TokenHelper.js';
 
 export interface ReserveData {
     provider: Address;
@@ -298,6 +301,26 @@ export async function helper_getProviderDetailsById(
 
     if (log) {
         logGetProviderDetailsResult(getResult);
+    }
+
+    return getResult;
+}
+
+export async function helper_getQueueDetails(
+    nativeSwap: NativeSwap,
+    token: TokenHelper,
+    log: boolean = true,
+): Promise<GetQueueDetailsResult> {
+    if (log) {
+        logAction('getQueueDetails');
+    }
+
+    const getResult = await nativeSwap.getQueueDetails({
+        token: token.token.address,
+    });
+
+    if (log) {
+        logQueueDetailsResult(getResult);
     }
 
     return getResult;

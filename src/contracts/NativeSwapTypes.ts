@@ -93,6 +93,7 @@ export interface IReservationPurgedEvent {
     readonly purgeIndex: number;
     readonly providerCount: number;
     readonly purgedAmount: bigint;
+    totalPurged(): bigint;
 }
 
 export interface IWithdrawListingEvent {
@@ -198,6 +199,8 @@ export interface GetQueueDetailsResult {
     readonly standardQueueStartingIndex: number;
     readonly priorityPurgeQueueLength: number;
     readonly standardPurgeQueueLength: number;
+    readonly priorityFulfilledQueueLength: number;
+    readonly standardFulfilledQueueLength: number;
 }
 
 export interface GetPriorityQueueCostResult {

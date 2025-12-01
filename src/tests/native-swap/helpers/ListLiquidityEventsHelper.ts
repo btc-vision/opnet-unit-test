@@ -22,9 +22,20 @@ export class ListLiquidityEvents {
     public purgedReservationEvents: IReservationPurgedEvent[] = [];
     public providerFulfilledEvents: IProviderFulfilledEvent[] = [];
 
+    public totalPurged(): bigint {
+        return this.purgedReservationEvents.reduce<bigint>(
+            (acc, evt) => acc + evt.purgedAmount,
+            0n,
+        );
+    }
+
     public logToConsole(): void {
         Blockchain.log('LIST LIQUIDITY INFO');
         Blockchain.log('----------');
+        Blockchain.log(`Transfer count: ${this.transferredEvents.length}`);
+        Blockchain.log(`Purged count: ${this.purgedReservationEvents.length}`);
+        Blockchain.log(`Fulfilled count: ${this.providerFulfilledEvents.length}`);
+
         if (this.liquidityListedEvent !== null) {
             logLiquidityListedEvent(this.liquidityListedEvent);
         }
