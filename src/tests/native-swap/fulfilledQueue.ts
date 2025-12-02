@@ -1,6 +1,12 @@
-import { Blockchain, opnet, OPNetUnit } from '@btc-vision/unit-test-framework';
+import { Assert, Blockchain, opnet, OPNetUnit } from '@btc-vision/unit-test-framework';
 import { OperationsHelper } from './helpers/OperationsHelper.js';
-import { CreatePoolOperation, ListLiquidityOperation, ReserveOperation, } from '../utils/Operations.js';
+import {
+    CreatePoolOperation,
+    ListLiquidityOperation,
+    ReserveOperation,
+    SwapOperation,
+    SwapOperationUTXOTypes,
+} from '../utils/Operations.js';
 import { ProviderHelper } from './helpers/ProviderHelper.js';
 import { helper_getQueueDetails } from '../utils/OperationHelper.js';
 
@@ -16,9 +22,9 @@ await opnet('Native Swap - Fulfilled queue', async (vm: OPNetUnit) => {
     vm.afterEach(() => {
         opHelper.dispose();
     });
-    /*
+
     await vm.it(
-        'should resets 100 providers, push 40 to the fullfiled queue and resets them.',
+        'should resets 200 providers, push 80 to the fullfiled queue and resets them.',
         async () => {
             Blockchain.blockNumber = 1000n;
 
@@ -68,6 +74,15 @@ await opnet('Native Swap - Fulfilled queue', async (vm: OPNetUnit) => {
 
             const reserveResult2 = await reserveOperation2.execute(opHelper);
 
+            let queueDetails = await helper_getQueueDetails(opHelper.nativeSwap, token0, false);
+
+            Assert.expect(queueDetails.priorityQueueStartingIndex).toEqual(0);
+            Assert.expect(queueDetails.standardQueueStartingIndex).toEqual(280);
+            Assert.expect(queueDetails.priorityQueueLength).toEqual(0);
+            Assert.expect(queueDetails.standardQueueLength).toEqual(400);
+            Assert.expect(queueDetails.priorityFulfilledQueueLength).toEqual(0);
+            Assert.expect(queueDetails.standardFulfilledQueueLength).toEqual(0);
+
             Blockchain.blockNumber += 2n;
             Blockchain.log(`Swap`);
 
@@ -84,6 +99,15 @@ await opnet('Native Swap - Fulfilled queue', async (vm: OPNetUnit) => {
             );
 
             await swapOperation2.execute(opHelper);
+
+            queueDetails = await helper_getQueueDetails(opHelper.nativeSwap, token0, false);
+
+            Assert.expect(queueDetails.priorityQueueStartingIndex).toEqual(0);
+            Assert.expect(queueDetails.standardQueueStartingIndex).toEqual(280);
+            Assert.expect(queueDetails.priorityQueueLength).toEqual(0);
+            Assert.expect(queueDetails.standardQueueLength).toEqual(400);
+            Assert.expect(queueDetails.priorityFulfilledQueueLength).toEqual(0);
+            Assert.expect(queueDetails.standardFulfilledQueueLength).toEqual(80);
 
             Blockchain.blockNumber += 10n;
 
@@ -105,93 +129,195 @@ await opnet('Native Swap - Fulfilled queue', async (vm: OPNetUnit) => {
             );
             const lister3 = await listOperation3.execute(opHelper);
             listers.push(lister3);
+            queueDetails = await helper_getQueueDetails(opHelper.nativeSwap, token0, false);
+
+            Assert.expect(queueDetails.priorityQueueStartingIndex).toEqual(0);
+            Assert.expect(queueDetails.standardQueueStartingIndex).toEqual(280);
+            Assert.expect(queueDetails.priorityQueueLength).toEqual(0);
+            Assert.expect(queueDetails.standardQueueLength).toEqual(402);
+            Assert.expect(queueDetails.priorityFulfilledQueueLength).toEqual(0);
+            Assert.expect(queueDetails.standardFulfilledQueueLength).toEqual(0);
         },
-    );*/
+    );
 
-    await vm.it('should sends 280 providers to the purge queue.', async () => {
-        Blockchain.blockNumber = 1000n;
+    await vm.it(
+        'should send normal and priority providers to fulfilled queue and then be resets.',
+        async () => {
+            Blockchain.blockNumber = 1000n;
 
-        const token0 = opHelper.getToken(0);
+            const token0 = opHelper.getToken(0);
 
-        const createPoolOperation = new CreatePoolOperation(
-            token0,
-            defaultInitialLiquidityAmount,
-            defaultfloorPrice,
-        );
-        const token0InitialProvider = await createPoolOperation.execute(opHelper);
-        const listers: ProviderHelper[] = [];
+            const createPoolOperation = new CreatePoolOperation(
+                token0,
+                defaultInitialLiquidityAmount,
+                defaultfloorPrice,
+            );
 
-        for (let i = 0; i < 10; i++) {
-            Blockchain.blockNumber += 1n;
-            Blockchain.log(`Listing providers on block ${Blockchain.blockNumber}`);
-            for (let j: bigint = 0n; j < 40n; j++) {
-                const list1Operation = new ListLiquidityOperation(
-                    Blockchain.generateRandomAddress(),
-                    token0,
-                    Blockchain.expandTo18Decimals(500),
-                    false,
-                );
-                const lister = await list1Operation.execute(opHelper);
-                listers.push(lister);
+            await createPoolOperation.execute(opHelper);
+            const listers: ProviderHelper[] = [];
+
+            // List 400 normal providers
+            for (let i = 0; i < 10; i++) {
+                Blockchain.blockNumber += 1n;
+                Blockchain.log(`Listing normal providers on block ${Blockchain.blockNumber}`);
+                for (let j: bigint = 0n; j < 40n; j++) {
+                    const list1Operation = new ListLiquidityOperation(
+                        Blockchain.generateRandomAddress(),
+                        token0,
+                        Blockchain.expandTo18Decimals(500),
+                        false,
+                    );
+                    const lister = await list1Operation.execute(opHelper);
+                    listers.push(lister);
+                }
             }
-        }
 
-        await helper_getQueueDetails(opHelper.nativeSwap, token0, true);
+            // List 400 priority providers
+            for (let i = 0; i < 10; i++) {
+                Blockchain.blockNumber += 1n;
+                Blockchain.log(`Listing priority providers on block ${Blockchain.blockNumber}`);
+                for (let j: bigint = 0n; j < 40n; j++) {
+                    const list1Operation = new ListLiquidityOperation(
+                        Blockchain.generateRandomAddress(),
+                        token0,
+                        Blockchain.expandTo18Decimals(200),
+                        true,
+                    );
+                    const lister = await list1Operation.execute(opHelper);
+                    listers.push(lister);
+                }
+            }
 
-        Blockchain.log(`Reserve1`);
-        const reserveOperation: ReserveOperation = new ReserveOperation(
-            token0,
-            Blockchain.generateRandomAddress(),
-            1900000000000n,
-            0n,
-            1,
-        );
+            let queueDetails = await helper_getQueueDetails(opHelper.nativeSwap, token0, false);
 
-        const reserveResult = await reserveOperation.execute(opHelper);
+            Assert.expect(queueDetails.priorityQueueStartingIndex).toEqual(0);
+            Assert.expect(queueDetails.standardQueueStartingIndex).toEqual(0);
+            Assert.expect(queueDetails.priorityQueueLength).toEqual(400);
+            Assert.expect(queueDetails.standardQueueLength).toEqual(400);
+            Assert.expect(queueDetails.priorityFulfilledQueueLength).toEqual(0);
+            Assert.expect(queueDetails.standardFulfilledQueueLength).toEqual(0);
 
-        await helper_getQueueDetails(opHelper.nativeSwap, token0, true);
+            // Reserve. Should use 140 priority providers
+            Blockchain.log(`Reserve1`);
+            const reserveOperation: ReserveOperation = new ReserveOperation(
+                token0,
+                Blockchain.generateRandomAddress(),
+                1900000000000n,
+                0n,
+                1,
+            );
 
-        Blockchain.log(`Reserve2`);
-        const reserveOperation2: ReserveOperation = new ReserveOperation(
-            token0,
-            Blockchain.generateRandomAddress(),
-            1900000000000n,
-            0n,
-            1,
-        );
+            await reserveOperation.execute(opHelper);
 
-        const reserveResult2 = await reserveOperation2.execute(opHelper);
+            queueDetails = await helper_getQueueDetails(opHelper.nativeSwap, token0, false);
 
-        await helper_getQueueDetails(opHelper.nativeSwap, token0, true);
+            Assert.expect(queueDetails.priorityQueueStartingIndex).toEqual(140);
+            Assert.expect(queueDetails.standardQueueStartingIndex).toEqual(0);
+            Assert.expect(queueDetails.priorityQueueLength).toEqual(400);
+            Assert.expect(queueDetails.standardQueueLength).toEqual(400);
+            Assert.expect(queueDetails.priorityFulfilledQueueLength).toEqual(0);
+            Assert.expect(queueDetails.standardFulfilledQueueLength).toEqual(0);
 
-        Blockchain.blockNumber += 20n;
+            // Reserve. Should use 140 priority providers
+            Blockchain.log(`Reserve2`);
+            const reserveOperation2: ReserveOperation = new ReserveOperation(
+                token0,
+                Blockchain.generateRandomAddress(),
+                1900000000000n,
+                0n,
+                1,
+            );
 
-        Blockchain.log(`List -> clean expired reservations`);
+            await reserveOperation2.execute(opHelper);
 
-        const listOperation2 = new ListLiquidityOperation(
-            Blockchain.generateRandomAddress(),
-            token0,
-            Blockchain.expandTo18Decimals(500),
-            false,
-            false,
-            0,
-            true,
-            2,
-        );
+            queueDetails = await helper_getQueueDetails(opHelper.nativeSwap, token0, false);
 
-        const lister2 = await listOperation2.execute(opHelper);
-        listers.push(lister2);
+            Assert.expect(queueDetails.priorityQueueStartingIndex).toEqual(280);
+            Assert.expect(queueDetails.standardQueueStartingIndex).toEqual(0);
+            Assert.expect(queueDetails.priorityQueueLength).toEqual(400);
+            Assert.expect(queueDetails.standardQueueLength).toEqual(400);
+            Assert.expect(queueDetails.priorityFulfilledQueueLength).toEqual(0);
+            Assert.expect(queueDetails.standardFulfilledQueueLength).toEqual(0);
 
-        await helper_getQueueDetails(opHelper.nativeSwap, token0, true);
+            Blockchain.blockNumber += 20n;
 
-        Blockchain.log(
-            `List -> purge reservation-> send 280 providers to purge queue and try to simulate a price drop`,
-        );
-        Blockchain.blockNumber += 5n;
-        for (let i = 0; i < 10; i++) {
-            Blockchain.blockNumber += 1n;
-            Blockchain.log(`Listing providers on block ${Blockchain.blockNumber}`);
-            for (let j: bigint = 0n; j < 40n; j++) {
+            // Restore expired reservations. Send providers to purged queue.
+            Blockchain.log(`Restore expired reservations`);
+
+            const listOperation2 = new ListLiquidityOperation(
+                Blockchain.generateRandomAddress(),
+                token0,
+                Blockchain.expandTo18Decimals(500),
+                false,
+                false,
+                0,
+                true,
+                2,
+            );
+
+            const lister2 = await listOperation2.execute(opHelper);
+            listers.push(lister2);
+
+            queueDetails = await helper_getQueueDetails(opHelper.nativeSwap, token0, false);
+
+            Assert.expect(queueDetails.priorityPurgeQueueLength).toEqual(280);
+            Assert.expect(queueDetails.standardPurgeQueueLength).toEqual(0);
+            Assert.expect(queueDetails.priorityQueueLength).toEqual(400);
+            Assert.expect(queueDetails.standardQueueLength).toEqual(401);
+            Assert.expect(queueDetails.priorityFulfilledQueueLength).toEqual(0);
+            Assert.expect(queueDetails.standardFulfilledQueueLength).toEqual(0);
+
+            Blockchain.log(`List -> simulate a price drop`);
+            Blockchain.blockNumber += 5n;
+            for (let i = 0; i < 10; i++) {
+                Blockchain.blockNumber += 1n;
+                Blockchain.log(`Listing normal providers on block ${Blockchain.blockNumber}`);
+                for (let j: bigint = 0n; j < 40n; j++) {
+                    const list1Operation = new ListLiquidityOperation(
+                        Blockchain.generateRandomAddress(),
+                        token0,
+                        Blockchain.expandTo18Decimals(2155500),
+                        false,
+                    );
+                    const lister = await list1Operation.execute(opHelper);
+                    listers.push(lister);
+                }
+            }
+
+            queueDetails = await helper_getQueueDetails(opHelper.nativeSwap, token0, false);
+
+            Assert.expect(queueDetails.priorityPurgeQueueLength).toEqual(280);
+            Assert.expect(queueDetails.standardPurgeQueueLength).toEqual(0);
+            Assert.expect(queueDetails.priorityQueueLength).toEqual(400);
+            Assert.expect(queueDetails.standardQueueLength).toEqual(801);
+            Assert.expect(queueDetails.priorityFulfilledQueueLength).toEqual(0);
+            Assert.expect(queueDetails.standardFulfilledQueueLength).toEqual(0);
+
+            // Do a reservation. Will clear the priority purged queue and resets 100 providers then fill the fulfilled queue.
+            Blockchain.log(`Reserve3`);
+            const reserveOperation3: ReserveOperation = new ReserveOperation(
+                token0,
+                Blockchain.generateRandomAddress(),
+                1900000000000n,
+                0n,
+                1,
+            );
+
+            await reserveOperation3.execute(opHelper);
+
+            queueDetails = await helper_getQueueDetails(opHelper.nativeSwap, token0, false);
+
+            Assert.expect(queueDetails.priorityPurgeQueueLength).toEqual(0);
+            Assert.expect(queueDetails.standardPurgeQueueLength).toEqual(0);
+            Assert.expect(queueDetails.priorityQueueLength).toEqual(400);
+            Assert.expect(queueDetails.standardQueueLength).toEqual(801);
+            Assert.expect(queueDetails.priorityFulfilledQueueLength).toEqual(300);
+            Assert.expect(queueDetails.standardFulfilledQueueLength).toEqual(401);
+
+            Blockchain.log(`Empty the fulfilled queues`);
+            for (let i = 0; i < 18; i++) {
+                Blockchain.blockNumber += 1n;
+                Blockchain.log(`Listing providers on block ${Blockchain.blockNumber}`);
                 const list1Operation = new ListLiquidityOperation(
                     Blockchain.generateRandomAddress(),
                     token0,
@@ -201,21 +327,15 @@ await opnet('Native Swap - Fulfilled queue', async (vm: OPNetUnit) => {
                 const lister = await list1Operation.execute(opHelper);
                 listers.push(lister);
             }
-        }
 
-        await helper_getQueueDetails(opHelper.nativeSwap, token0, true);
+            queueDetails = await helper_getQueueDetails(opHelper.nativeSwap, token0, false);
 
-        Blockchain.log(`Reserve3`);
-        const reserveOperation3: ReserveOperation = new ReserveOperation(
-            token0,
-            Blockchain.generateRandomAddress(),
-            1900000000000n,
-            0n,
-            1,
-        );
-
-        const reserveResult3 = await reserveOperation3.execute(opHelper);
-
-        await helper_getQueueDetails(opHelper.nativeSwap, token0);
-    });
+            Assert.expect(queueDetails.priorityPurgeQueueLength).toEqual(0);
+            Assert.expect(queueDetails.standardPurgeQueueLength).toEqual(140);
+            Assert.expect(queueDetails.priorityQueueLength).toEqual(400);
+            Assert.expect(queueDetails.standardQueueLength).toEqual(819);
+            Assert.expect(queueDetails.priorityFulfilledQueueLength).toEqual(0);
+            Assert.expect(queueDetails.standardFulfilledQueueLength).toEqual(0);
+        },
+    );
 });
