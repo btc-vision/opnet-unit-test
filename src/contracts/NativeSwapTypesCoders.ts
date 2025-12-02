@@ -206,6 +206,9 @@ export class NativeSwapTypesCoders {
             purgeIndex,
             providerCount,
             purgedAmount,
+            totalPurged: (): bigint => {
+                return 0n;
+            },
         };
     }
 
