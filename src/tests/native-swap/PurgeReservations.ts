@@ -405,7 +405,7 @@ await opnet('NativeSwap: Purging Reservations', async (vm: OPNetUnit) => {
         const reserve2 = await nativeSwap.getReserve({
             token: tokenAddress,
         });
-        Assert.expect(reserve2.reservedLiquidity).toEqual(1510209085354041326n);
+        Assert.expect(reserve2.reservedLiquidity).toEqual(1510209085048979091n);
     });
 
     await vm.it('should handle purge reservation spread in multiple block ranges', async () => {

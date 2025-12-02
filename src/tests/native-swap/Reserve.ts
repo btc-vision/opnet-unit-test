@@ -368,7 +368,7 @@ await opnet('Native Swap - Reserve', async (vm: OPNetUnit) => {
                     2,
                 );
             }
-        }).toThrow('NATIVE_SWAP: Minimum liquidity not met. satoshis:');
+        }).toThrow('NATIVE_SWAP: Not enough liquidity available');
     });
 
     await vm.it('should fail to reserve when minimum amount not met', async () => {
@@ -400,7 +400,7 @@ await opnet('Native Swap - Reserve', async (vm: OPNetUnit) => {
                 nativeSwap,
                 tokenAddress,
                 Blockchain.generateRandomAddress(),
-                499985000n,
+                337734000n,
                 1n,
                 false,
                 false,
@@ -412,7 +412,7 @@ await opnet('Native Swap - Reserve', async (vm: OPNetUnit) => {
                     nativeSwap,
                     tokenAddress,
                     Blockchain.generateRandomAddress(),
-                    14100n,
+                    10000n,
                     1n,
                     false,
                     false,

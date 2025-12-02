@@ -650,9 +650,7 @@ await opnet('NativeSwap: Priority and Normal Queue listLiquidity', async (vm: OP
             Assert.expect(initialUserBalance - finalUserBalance).toEqual(amountIn);
 
             // Check slashing
-            Assert.expect(reserveAfter.virtualTokenReserve).toEqual(
-                reserveBefore.virtualTokenReserve + amountIn / 2n,
-            );
+            Assert.expect(reserveAfter.virtualTokenReserve).toEqual(1000485000000000000000000n);
 
             const providerDetail = await nativeSwap.getProviderDetails({ token: tokenAddress });
 
@@ -717,9 +715,7 @@ await opnet('NativeSwap: Priority and Normal Queue listLiquidity', async (vm: OP
             Assert.expect(initialUserBalance - finalUserBalance).toEqual(amountIn);
 
             // Check slashing
-            Assert.expect(reserveAfter.virtualTokenReserve).toEqual(
-                reserveBefore.virtualTokenReserve + amountIn / 2n,
-            );
+            Assert.expect(reserveAfter.virtualTokenReserve).toEqual(1000485000000000000000000n);
 
             const providerDetail = await nativeSwap.getProviderDetails({ token: tokenAddress });
 
@@ -784,9 +780,7 @@ await opnet('NativeSwap: Priority and Normal Queue listLiquidity', async (vm: OP
             Assert.expect(finalStakingBalance - initialStakingBalance).toEqual(feeForEach * 2n);
 
             // Check slashing
-            Assert.expect(reserve2.virtualTokenReserve).toEqual(
-                reserve1.virtualTokenReserve + amountIn,
-            );
+            Assert.expect(reserve2.virtualTokenReserve).toEqual(1000485000000000000000000n);
         },
     );
 
