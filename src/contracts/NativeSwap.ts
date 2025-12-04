@@ -50,7 +50,7 @@ export class NativeSwap extends ContractRuntime {
     public static PURGE_AT_LEAST_X_PROVIDERS: number = 150;
 
     public static feeRecipient: string =
-        'bcrt1plz0svv3wl05qrrv0dx8hvh5mgqc7jf3mhqgtw8jnj3l3d3cs6lzsfc3mxh';
+        'bcrt1qup339pnfsgz7rwu5qvw7e3pgdjmpda9zlwlg8ua70v3p8xl3tnqsjm472h';
 
     public static feeRecipientTestnet: string =
         'tb1p823gdnqvk8a90f8cu30w8ywvk29uh8txtqqnsmk6f5ktd7hlyl0q3cyz4c';
