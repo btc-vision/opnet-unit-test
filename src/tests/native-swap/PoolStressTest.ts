@@ -670,7 +670,54 @@ await opnet('Native Swap - Pool Stress Test (12 Phases)', async (vm: OPNetUnit) 
         vm.log(`  After listings:    ${quoteAfterListings}`);
         vm.log(`  Final:             ${finalQuote}`);
         vm.log('');
-        vm.log('SUCCESS: All 12 phases completed without swap reverts!');
+
+        // ==================== ECONOMIC VALIDATION ====================
+        vm.log('=== ECONOMIC VALIDATION ===');
+
+        const DECIMALS_FACTOR = 10n ** 18n;
+        const totalPoolTokens = BigInt(POOL_TOKENS) * DECIMALS_FACTOR;
+
+        // Validate quote relationships
+        // After buys: quote should decrease (tokens more expensive)
+        // After listings/sells: quote should increase (tokens cheaper)
+
+        // Big purchase should decrease quote
+        Assert.expect(quoteAfterBigPurchase).toBeLessThan(initialQuote);
+        vm.log('  ✓ Quote decreased after big purchase (tokens more expensive)');
+
+        // Listings should increase quote (or at least not decrease much)
+        // Using >= comparison manually since toBeGreaterThanOrEqualTo may not exist
+        if (quoteAfterListings < quoteAfterBigPurchase) {
+            vm.fail('Quote should not decrease after listings');
+        }
+        vm.log('  ✓ Quote increased after listings (tokens cheaper)');
+
+        // Calculate price changes
+        const priceDropAfterBigBuy =
+            ((initialQuote - quoteAfterBigPurchase) * 10000n) / initialQuote;
+        vm.log(`  Price impact of 10 BTC buy: ${priceDropAfterBigBuy} bps (${priceDropAfterBigBuy / 100n}.${priceDropAfterBigBuy % 100n}%)`);
+
+        // Validate big purchase tokens
+        // bigPurchaseTokens should be reasonable for 10 BTC at ~10k sats/token
+        // 10 BTC = 1B sats, at 10k sats/token = 100k tokens expected
+        // With 18 decimals: 100k * 10^18 = 10^23
+        const bigPurchaseTokensHuman = bigPurchaseTokens / DECIMALS_FACTOR;
+        vm.log(`  Big purchase received: ${bigPurchaseTokensHuman} tokens for 10 BTC`);
+
+        const expectedTokensApprox = LARGE_PURCHASE_SATS * DECIMALS_FACTOR / (FLOOR_PRICE / DECIMALS_FACTOR);
+        const percentOfExpected = (bigPurchaseTokens * 100n) / expectedTokensApprox;
+        vm.log(`  Expected ~${expectedTokensApprox / DECIMALS_FACTOR} tokens, got ${percentOfExpected}% of expected`);
+
+        // Should get at least 90% of expected (accounting for fees and slippage)
+        Assert.expect(percentOfExpected).toBeGreaterThan(90n);
+        vm.log('  ✓ Received at least 90% of expected tokens');
+
+        // Final quote should be reasonable
+        const finalPriceChange = ((initialQuote - finalQuote) * 10000n) / initialQuote;
+        vm.log(`  Total price change from start to end: ${finalPriceChange} bps`);
+
+        vm.log('');
+        vm.log('SUCCESS: All 12 phases completed with valid economics!');
     });
 
     await vm.it('should handle 12 BTC large purchase without revert', async () => {
@@ -872,6 +919,88 @@ await opnet('Native Swap - Pool Stress Test (12 Phases)', async (vm: OPNetUnit) 
         vm.log(`Total 12 BTC purchases: 3 (36 BTC total)`);
         vm.log(`Tokens received: ${tokensReceived} + ${tokensReceived2} + ${tokensReceived3}`);
         vm.log('');
-        vm.log('SUCCESS: 12 BTC test completed without swap reverts!');
+
+        // ==================== ECONOMIC VALIDATION ====================
+        vm.log('=== ECONOMIC VALIDATION ===');
+
+        // Pool setup: 10M tokens with 18 decimals, floor price = 10,000 sats/token
+        // Initial value: 10M tokens * 10,000 sats = 100 BTC worth
+        const DECIMALS_FACTOR = 10n ** 18n;
+        const totalPoolTokens = BigInt(POOL_TOKENS) * DECIMALS_FACTOR; // 10M tokens with 18 decimals
+
+        // Quote is tokens per 1 BTC (100M sats), scaled by QUOTE_SCALE (1e8)
+        // initialQuote12 = 10000000000000000000000 = 10^22
+        // This means: for 1 BTC you get 10^22 / 10^8 = 10^14 raw tokens
+        // With 18 decimals: 10^14 / 10^18 = 0.0001 tokens per satoshi
+        // Or: 1 token = 10,000 sats (matches FLOOR_PRICE)
+
+        // Validate initial quote matches floor price
+        // quote = tokens_per_btc * QUOTE_SCALE
+        // tokens_per_btc = quote / QUOTE_SCALE = 10^22 / 10^8 = 10^14 (raw)
+        // In human terms: 10^14 / 10^18 = 0.0001 tokens per sat = 10,000 sats per token
+        const tokensPerBtcInitial = initialQuote12 / QUOTE_SCALE;
+        const satsPerTokenInitial = (ONE_BTC_SATS * DECIMALS_FACTOR) / tokensPerBtcInitial;
+        vm.log(`Initial price: ${satsPerTokenInitial} sats per token (floor: ${FLOOR_PRICE / DECIMALS_FACTOR})`);
+
+        // Validate 12 BTC purchase economics
+        // At initial quote, 12 BTC should buy approximately:
+        // 12 BTC * (quote / QUOTE_SCALE) = 12 * 10^8 * 10^14 / 10^8 = 12 * 10^14 = 1.2 * 10^15 tokens (raw)
+        // With 18 decimals: 1.2 * 10^15 / 10^18 = 0.0012 * 10^6 = 1200 tokens (human readable)
+        // Wait, that's wrong. Let me recalculate.
+
+        // Quote is tokens (with decimals) you get for 1 BTC
+        // tokensReceived is in raw format (with 18 decimals)
+        // Convert to human-readable:
+        const tokensReceived1Human = tokensReceived / DECIMALS_FACTOR;
+        const tokensReceived2Human = tokensReceived2 / DECIMALS_FACTOR;
+        const tokensReceived3Human = tokensReceived3 / DECIMALS_FACTOR;
+
+        vm.log(`First 12 BTC purchase: ${tokensReceived1Human} tokens (${tokensReceived} raw)`);
+        vm.log(`Second 12 BTC purchase: ${tokensReceived2Human} tokens (${tokensReceived2} raw)`);
+        vm.log(`Third 12 BTC purchase: ${tokensReceived3Human} tokens (${tokensReceived3} raw)`);
+
+        // Calculate effective price paid per token for each purchase
+        const effectivePrice1 = (TWELVE_BTC_SATS * DECIMALS_FACTOR) / tokensReceived;
+        const effectivePrice2 = (TWELVE_BTC_SATS * DECIMALS_FACTOR) / tokensReceived2;
+        const effectivePrice3 = (TWELVE_BTC_SATS * DECIMALS_FACTOR) / tokensReceived3;
+
+        vm.log(`Effective price paid:`);
+        vm.log(`  1st purchase: ${effectivePrice1} sats/token`);
+        vm.log(`  2nd purchase: ${effectivePrice2} sats/token`);
+        vm.log(`  3rd purchase: ${effectivePrice3} sats/token`);
+
+        // Validate price increases with each purchase (fewer tokens received)
+        Assert.expect(tokensReceived).toBeGreaterThan(tokensReceived2);
+        vm.log('  ✓ 1st purchase got more tokens than 2nd (price increased)');
+
+        Assert.expect(tokensReceived2).toBeGreaterThan(tokensReceived3);
+        vm.log('  ✓ 2nd purchase got more tokens than 3rd (price increased)');
+
+        // Validate tokens received is reasonable (not zero, not more than pool)
+        Assert.expect(tokensReceived).toBeGreaterThan(0n);
+        Assert.expect(tokensReceived).toBeLessThan(totalPoolTokens);
+        vm.log('  ✓ Tokens received within valid range');
+
+        // Calculate total tokens received vs pool size
+        const totalTokensReceived = tokensReceived + tokensReceived2 + tokensReceived3;
+        const percentOfPool = (totalTokensReceived * 100n) / totalPoolTokens;
+        vm.log(`Total tokens received: ${totalTokensReceived / DECIMALS_FACTOR} (${percentOfPool}% of pool)`);
+
+        // Calculate total BTC spent vs tokens received
+        const totalBtcSpent = TWELVE_BTC_SATS * 3n; // 36 BTC in sats
+        const avgPricePerToken = (totalBtcSpent * DECIMALS_FACTOR) / totalTokensReceived;
+        vm.log(`Average price: ${avgPricePerToken} sats/token for 36 BTC total`);
+
+        // Final quote validation
+        const tokensPerBtcFinal = finalQuote12 / QUOTE_SCALE;
+        const satsPerTokenFinal = (ONE_BTC_SATS * DECIMALS_FACTOR) / tokensPerBtcFinal;
+        vm.log(`Final price: ${satsPerTokenFinal} sats per token`);
+
+        // Price should have increased after big buys (fewer tokens per BTC)
+        Assert.expect(finalQuote12).toBeLessThan(initialQuote12);
+        vm.log('  ✓ Final quote less than initial (tokens more expensive after buys)');
+
+        vm.log('');
+        vm.log('SUCCESS: 12 BTC test completed with valid economics!');
     });
 });
