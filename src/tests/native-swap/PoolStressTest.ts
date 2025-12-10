@@ -25,7 +25,10 @@ const TWELVE_BTC_SATS = 1_200_000_000n; // 12 BTC = 1.2B sats
 const ONE_BTC_SATS = 100_000_000n; // 1 BTC = 100M sats
 const POOL_TOKENS = 10_000_000; // 10M tokens (before decimals)
 const TOKEN_DECIMALS = 18;
-const FLOOR_PRICE = 100_000_000_000_000n; // 1 token = 10,000 sats
+// Floor price formula: 10^18 / tokens_per_btc
+// For 100 BTC pool with 10M tokens: 10M/100 = 100k tokens/BTC
+// floorPrice = 10^18 / 100000 = 10^13
+const FLOOR_PRICE = 10_000_000_000_000n; // 10^13 = 100k tokens per BTC = 1000 sats/token
 const QUOTE_SCALE = 100_000_000n;
 
 // ==================== TYPES ====================
@@ -704,7 +707,12 @@ await opnet('Native Swap - Pool Stress Test (12 Phases)', async (vm: OPNetUnit) 
         const bigPurchaseTokensHuman = bigPurchaseTokens / DECIMALS_FACTOR;
         vm.log(`  Big purchase received: ${bigPurchaseTokensHuman} tokens for 10 BTC`);
 
-        const expectedTokensApprox = LARGE_PURCHASE_SATS * DECIMALS_FACTOR / (FLOOR_PRICE / DECIMALS_FACTOR);
+        // FLOOR_PRICE = 10^13 means 100k tokens per BTC = 1000 sats/token
+        // At floor price of 1,000 sats/token, 10 BTC (1B sats) buys 1,000,000 tokens
+        // expectedTokens = sats / (sats_per_token) = 1B / 1k = 1M tokens
+        // In raw: 1M * 10^18 = 10^24
+        const satsPerToken = 1000n; // floor price in sats
+        const expectedTokensApprox = (LARGE_PURCHASE_SATS / satsPerToken) * DECIMALS_FACTOR;
         const percentOfExpected = (bigPurchaseTokens * 100n) / expectedTokensApprox;
         vm.log(`  Expected ~${expectedTokensApprox / DECIMALS_FACTOR} tokens, got ${percentOfExpected}% of expected`);
 
@@ -983,8 +991,15 @@ await opnet('Native Swap - Pool Stress Test (12 Phases)', async (vm: OPNetUnit) 
 
         // Calculate total tokens received vs pool size
         const totalTokensReceived = tokensReceived + tokensReceived2 + tokensReceived3;
-        const percentOfPool = (totalTokensReceived * 100n) / totalPoolTokens;
-        vm.log(`Total tokens received: ${totalTokensReceived / DECIMALS_FACTOR} (${percentOfPool}% of pool)`);
+        const percentOfPool = (totalTokensReceived * 10000n) / totalPoolTokens; // basis points
+        const totalTokensHuman = totalTokensReceived / DECIMALS_FACTOR;
+        vm.log(`Total tokens received: ${totalTokensHuman} tokens (${percentOfPool / 100n}.${percentOfPool % 100n}% of 10M pool)`);
+
+        // Sanity check: at 1k sats/token, 36 BTC should buy ~3.6M tokens (36% of pool)
+        // Pool is worth 100 BTC and contains 10M tokens at 1000 sats/token
+        const expectedTokensFor36BTC = (TWELVE_BTC_SATS * 3n) / 1000n; // 3,600,000 tokens
+        const percentOfExpected36 = (totalTokensHuman * 100n) / expectedTokensFor36BTC;
+        vm.log(`Expected ~${expectedTokensFor36BTC} tokens at floor price, got ${percentOfExpected36}%`);
 
         // Calculate total BTC spent vs tokens received
         const totalBtcSpent = TWELVE_BTC_SATS * 3n; // 36 BTC in sats
