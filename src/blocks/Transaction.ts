@@ -18,7 +18,6 @@ import {
     RustContract,
     Transaction as BitcoinTransaction,
 } from '@btc-vision/unit-test-framework';
-import { NativeSwapTypesCoders } from '../contracts/NativeSwapTypesCoders.js';
 
 export interface ParsedEvent {
     contractAddress: Address;
@@ -56,10 +55,11 @@ export class Transaction extends Logger {
     readonly calldata: Buffer;
     readonly contractAddress: string;
     readonly contractSecret: Buffer;
-    readonly contractTweakedPublicKey: Address;
+    readonly contractPublicKey: Address;
 
     readonly events: ParsedEvent[];
     readonly from: Address;
+    readonly fromLegacy: Buffer;
     readonly gasUsed: bigint;
     readonly txId: Buffer;
     readonly index: number;
@@ -69,7 +69,7 @@ export class Transaction extends Logger {
     readonly preimage: Buffer;
     readonly priorityFee: bigint;
     readonly raw: Buffer;
-    readonly receipt: Buffer;
+    readonly receipt: Buffer | null;
     readonly receiptProofs: string[];
     readonly revert: Buffer | null;
     readonly reward: bigint;
@@ -88,24 +88,12 @@ export class Transaction extends Logger {
         this.calldata = Transaction.binaryToBuffer(raw.calldata);
         this.contractAddress = raw.contractAddress;
         this.contractSecret = Transaction.binaryToBuffer(raw.contractSecret);
-        this.contractTweakedPublicKey = new Address(
-            Transaction.binaryToBuffer(raw.contractTweakedPublicKey),
-        );
-
-        let address: Address;
+        this.contractPublicKey = new Address(Transaction.binaryToBuffer(raw.contractPublicKey));
 
         const buf = Transaction.binaryToBuffer(raw.from);
-        if (buf.length === 33) {
-            const tempAddress = new Address(deadBuffer, buf);
-            address = new Address(
-                tempAddress.tweakedPublicKeyToBuffer(),
-                tempAddress.tweakedPublicKeyToBuffer(),
-            );
-        } else {
-            address = new Address(buf);
-        }
+        this.fromLegacy = Transaction.binaryToBuffer(raw.fromLegacy);
 
-        this.from = address;
+        this.from = new Address(buf, this.fromLegacy);
         this.gasUsed = Transaction.decimal128ToBigint(raw.gasUsed);
         this.txId = Transaction.binaryToBuffer(raw.id);
         this.index = raw.index;
@@ -113,7 +101,7 @@ export class Transaction extends Logger {
         this.preimage = Transaction.binaryToBuffer(raw.preimage);
         this.priorityFee = Transaction.decimal128ToBigint(raw.priorityFee);
         this.raw = Transaction.binaryToBuffer(raw.raw);
-        this.receipt = Transaction.binaryToBuffer(raw.receipt);
+        this.receipt = Transaction.binaryToBuffer(raw.receipt || '');
         this.receiptProofs = [...raw.receiptProofs];
         this.revert = raw.revert ? Transaction.binaryToBuffer(raw.revert) : null;
         this.reward = Transaction.int64ToBigint(raw.reward);
@@ -181,7 +169,7 @@ export class Transaction extends Logger {
 
     public async execute(): Promise<void> {
         const txId = this.txId.toString('hex');
-        const contract = Blockchain.getContract(this.contractTweakedPublicKey);
+        const contract = Blockchain.getContract(this.contractPublicKey);
 
         const tx: BitcoinTransaction = generateEmptyTransaction(false);
         this.createInputs(tx);
@@ -196,7 +184,7 @@ export class Transaction extends Logger {
             txOrigin: this.from,
         });
 
-        if (
+        /*if (
             txId === 'e67e98baea4d877b4e5607ed9e1602f358a4c26322753e4c95a5afb6b4bb49eb' ||
             txId === ''
         ) {
@@ -205,7 +193,7 @@ export class Transaction extends Logger {
                 events[0].data,
             );
             console.log('events', events, 'decoded', decodedEvents);
-        }
+        }*/
 
         if (result.error) {
             this.fail(
@@ -243,7 +231,7 @@ export class Transaction extends Logger {
         out.push(`calldata                 : ${toHex(this.calldata)}`);
         out.push(`contractAddress          : ${this.contractAddress}`);
         out.push(`contractSecret           : ${toHex(this.contractSecret)}`);
-        out.push(`contractTweakedPublicKey : ${this.contractTweakedPublicKey.toString()}`);
+        out.push(`contractPublicKey : ${this.contractPublicKey.toString()}`);
         out.push(`from                     : ${this.from.toString()}`);
         out.push(`gasUsed                  : ${toBig(this.gasUsed)}`);
         out.push(`txId                     : ${toHex(this.txId)}`);
@@ -320,15 +308,14 @@ export class Transaction extends Logger {
             calldata: Transaction.bufferToBinary(this.calldata),
             contractAddress: this.contractAddress,
             contractSecret: Transaction.bufferToBinary(this.contractSecret),
-            contractTweakedPublicKey: Transaction.bufferToBinary(
-                this.contractTweakedPublicKey.toBuffer(),
-            ),
+            contractPublicKey: Transaction.bufferToBinary(this.contractPublicKey.toBuffer()),
             events: this.events.map((e) => ({
                 contractAddress: Transaction.bufferToBinary(e.contractAddress.toBuffer()),
                 data: Transaction.bufferToBinary(e.data),
                 type: Transaction.bufferToBinary(e.type),
             })),
             from: Transaction.bufferToBinary(this.from.toBuffer()),
+            fromLegacy: Transaction.bufferToBinary(this.fromLegacy),
             gasUsed: { $numberDecimal: this.gasUsed.toString() },
             id: Transaction.bufferToBinary(this.txId),
             index: this.index,
@@ -351,7 +338,7 @@ export class Transaction extends Logger {
             preimage: Transaction.bufferToBinary(this.preimage),
             priorityFee: { $numberDecimal: this.priorityFee.toString() },
             raw: Transaction.bufferToBinary(this.raw),
-            receipt: Transaction.bufferToBinary(this.receipt),
+            receipt: this.receipt ? Transaction.bufferToBinary(this.receipt) : this.receipt,
             receiptProofs: [...this.receiptProofs],
             revert: this.revert ? Transaction.bufferToBinary(this.revert) : null,
             reward: this.reward.toString(),

@@ -39,7 +39,7 @@ export class BlockReplay extends Logger {
 
         for (const tx of this.transactions) {
             if (this.settings.ignoreUnknownContracts) {
-                if (!Blockchain.isContract(tx.contractTweakedPublicKey)) {
+                if (!Blockchain.isContract(tx.contractPublicKey)) {
                     //this.info(`Ignored unknown contract ${tx.contractAddress}`);
                     continue;
                 }
@@ -62,17 +62,17 @@ export class BlockReplay extends Logger {
         const contracts: AddressSet = new AddressSet();
 
         for (const tx of this.transactions) {
-            if (contracts.has(tx.contractTweakedPublicKey)) {
+            if (contracts.has(tx.contractPublicKey)) {
                 continue;
             }
-            contracts.add(tx.contractTweakedPublicKey);
+            contracts.add(tx.contractPublicKey);
 
             if (
-                !Blockchain.isContract(tx.contractTweakedPublicKey) &&
+                !Blockchain.isContract(tx.contractPublicKey) &&
                 !this.settings.ignoreUnknownContracts
             ) {
                 this.fail(
-                    `Block ${this.blockHeight} transaction ${tx.id} requires contract ${tx.contractTweakedPublicKey} to be present, but it is not registered.`,
+                    `Block ${this.blockHeight} transaction ${tx.id} requires contract ${tx.contractPublicKey} to be present, but it is not registered.`,
                 );
                 return false;
             }

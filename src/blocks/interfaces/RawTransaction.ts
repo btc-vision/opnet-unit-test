@@ -44,9 +44,10 @@ export interface TransactionDocument {
     calldata: BinaryData;
     contractAddress: string;
     contractSecret: BinaryData;
-    contractTweakedPublicKey: BinaryData;
+    contractPublicKey: BinaryData;
     events: Event[];
     from: BinaryData;
+    fromLegacy: BinaryData;
     gasUsed: Decimal128;
     id: BinaryData;
     index: number;
@@ -56,7 +57,7 @@ export interface TransactionDocument {
     preimage: BinaryData;
     priorityFee: Decimal128;
     raw: BinaryData;
-    receipt: BinaryData;
+    receipt: BinaryData | null;
     receiptProofs: string[];
     revert: null | BinaryData;
     reward: Int64;

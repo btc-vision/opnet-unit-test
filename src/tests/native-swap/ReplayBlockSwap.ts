@@ -1,12 +1,5 @@
 import { Address, FastMap } from '@btc-vision/transaction';
-import {
-    Blockchain,
-    BytecodeManager,
-    OP20,
-    opnet,
-    OPNetUnit,
-    StateHandler,
-} from '@btc-vision/unit-test-framework';
+import { Blockchain, BytecodeManager, OP20, opnet, OPNetUnit, StateHandler, } from '@btc-vision/unit-test-framework';
 import { NativeSwap } from '../../contracts/NativeSwap.js';
 import { networks } from '@btc-vision/bitcoin';
 import { BlockReplay } from '../../blocks/BlockReplay.js';
@@ -177,59 +170,59 @@ class ContractManager {
 // Main configuration - just add contracts here
 const CONTRACTS: ContractConfig[] = [
     {
-        address: '0x32d5c3490be026cda337526b72bc13036d278400ce823e29a00cb5aef15b5d53',
+        address: '0xd7bf1ef160a5cc688682b16f36128cdba4710578541a5dc5fe9b2e88d975907a',
         type: ContractType.NativeSwap,
         name: 'NativeSwap',
         initParams: [590_000_000_000n],
         overrideContract: 'NativeSwap',
     },
     {
-        address: '0xb7e01bd7c583ef6d2e4fd0e3bb9835f275c54b5dc5af44a442b526ebaeeebfb9',
+        address: '0x0a6732489a31e6de07917a28ff7df311fc5f98f6e1664943ac1c3fe7893bdab5',
         type: ContractType.OP20,
         name: 'MOTO',
         decimals: tokenDecimals,
-        overrideContract: 'MyToken',
+        //overrideContract: 'MyToken',
     },
     {
-        address: '0x798dd7cd3b5818a3fcfe81420c6757d84a30e098f88cca9afb140205d24f4049',
+        address: '0x2e955b42e6ff0934ccb3d4f1ba4d0e219ba22831dfbcabe3ff5e185bdf942a5e',
         type: ContractType.OP20,
         name: 'Staking',
         decimals: tokenDecimals,
-        overrideContract: 'staking',
+        //overrideContract: 'staking',
     },
     {
-        address: '0x186f943f8b0f803be7a44fce28739ff65953cf2bd83687a392186adaf293a336',
+        address: '0xfb7df2f08d8042d4df0506c0d4cee3cfa5f2d7b02ef01ec76dd699551393a438',
         type: ContractType.OP20,
         name: 'PILL',
         decimals: tokenDecimals,
-        overrideContract: 'pill',
+        //overrideContract: 'pill',
     },
     {
-        address: '0xb65d29d27c454ff0c5b3b4200d1bb6cbb36db10ca3f2f8622e4d2c9587888cba',
+        address: '0xc573930e4c67f47246589ce6fa2dbd1b91b58c8fdd7ace336ce79e65120f79eb',
         type: ContractType.OP20,
         name: 'OD',
         decimals: tokenDecimals,
-        overrideContract: 'MyToken',
+        //overrideContract: 'MyToken',
     },
     {
-        address: '0xb1cff60e445799e592fa6534ff1147c01f0ebf68181c5338b633da999850a6a1',
+        address: '0x24d5678cbef43f6597e0b4ebca14b4d31ec23231853280b16258b3faa365a522',
         type: ContractType.OP20,
         name: 'Noclue',
         decimals: tokenDecimals,
-        overrideContract: 'MyToken',
-    },
+        //overrideContract: 'MyToken',
+    } /*
     {
         address: '0xe12d29f947d183bda359e8ad250e7b183fbd085d2b5d3a3ccf281224277997a1',
         type: ContractType.OP20,
         name: 'Noclue2',
         decimals: tokenDecimals,
         overrideContract: 'MyToken',
-    },
+    },*/,
 ];
 
-const ADMIN_ADDRESS = '0xcbe1fb2adf81b16ba4afbb38743f4738ccb28170d2efc35a3ca9366ce64ea451';
-const SEARCHED_BLOCK: bigint = 20307n;
-const MAX_BLOCK_TO_REPLAY: number = 2;
+const ADMIN_ADDRESS = '0xc91330dab7a5877adacf13f53197c7d6f577703424b675e02829cff35a92eee5';
+const SEARCHED_BLOCK: bigint = 26547n;
+const MAX_BLOCK_TO_REPLAY: number = 5;
 const KEEP_NEW_STATES: boolean = false;
 
 await opnet('NativeSwap: Debug', async (vm: OPNetUnit) => {
@@ -253,7 +246,7 @@ await opnet('NativeSwap: Debug', async (vm: OPNetUnit) => {
         Blockchain.blockNumber = SEARCHED_BLOCK;
         Blockchain.network = networks.regtest;
 
-        const ODSY = CONTRACTS[4];
+        const ODSY = CONTRACTS[1];
 
         // Get contract instances with type safety
         const nativeSwap = manager.getContract<NativeSwap>(CONTRACTS[0].address);
