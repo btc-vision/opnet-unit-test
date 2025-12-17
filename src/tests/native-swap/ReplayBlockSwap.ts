@@ -210,18 +210,18 @@ const CONTRACTS: ContractConfig[] = [
         name: 'Noclue',
         decimals: tokenDecimals,
         //overrideContract: 'MyToken',
-    } /*
+    },
     {
-        address: '0xe12d29f947d183bda359e8ad250e7b183fbd085d2b5d3a3ccf281224277997a1',
+        address: '0x6304f56682dff8bc61a97f5dc299f613320346dc9a5b17f706a9f4b088bb116a',
         type: ContractType.OP20,
         name: 'Noclue2',
         decimals: tokenDecimals,
-        overrideContract: 'MyToken',
-    },*/,
+        //overrideContract: 'MyToken',
+    },
 ];
 
 const ADMIN_ADDRESS = '0xc91330dab7a5877adacf13f53197c7d6f577703424b675e02829cff35a92eee5';
-const SEARCHED_BLOCK: bigint = 26547n;
+const SEARCHED_BLOCK: bigint = 26544n;
 const MAX_BLOCK_TO_REPLAY: number = 5;
 const KEEP_NEW_STATES: boolean = false;
 
