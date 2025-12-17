@@ -1,5 +1,12 @@
 import { Address, FastMap } from '@btc-vision/transaction';
-import { Blockchain, BytecodeManager, OP20, opnet, OPNetUnit, StateHandler, } from '@btc-vision/unit-test-framework';
+import {
+    Blockchain,
+    BytecodeManager,
+    OP20,
+    opnet,
+    OPNetUnit,
+    StateHandler,
+} from '@btc-vision/unit-test-framework';
 import { NativeSwap } from '../../contracts/NativeSwap.js';
 import { networks } from '@btc-vision/bitcoin';
 import { BlockReplay } from '../../blocks/BlockReplay.js';
