@@ -35,6 +35,7 @@
         "test:purgeInvar": "tsx src/tests/native-swap/PurgeInvariant.ts",
         "test": "npm-run-all test:*",
         "bug": "tsx src/tests/native-swap/ListTokenChangeIndexBug.ts",
+        "gas": "tsx src/tests/gas.ts",
         "test:native:fulfilled": "tsx src/tests/native-swap/fulfilledQueue.ts"
     },
     "author": "OP_NET",
