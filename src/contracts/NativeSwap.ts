@@ -560,12 +560,7 @@ export class NativeSwap extends ContractRuntime {
                 }
             }
 
-            createFeeOutput(
-                NativeSwap.priorityQueueFees,
-                recipient,
-                Blockchain.txOrigin.toCSV(1n, Blockchain.network).address,
-                params.amountIn,
-            );
+            createFeeOutput(NativeSwap.priorityQueueFees, recipient, undefined, undefined);
         }
 
         const calldata = NativeSwapTypesCoders.encodeListLiquidityParams(
@@ -591,6 +586,10 @@ export class NativeSwap extends ContractRuntime {
             } else {
                 recipient = NativeSwap.feeRecipient;
             }
+        }
+
+        if (params.maximumAmountIn > 18446744073709551615n) {
+            throw new Error(`maximumAmountIn must be less than 18446744073709551615`);
         }
 
         createFeeOutput(

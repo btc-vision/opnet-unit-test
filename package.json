@@ -49,7 +49,7 @@
         "@btc-vision/op-vm": "^1.0.0-rc.1",
         "@btc-vision/opnet-transform": "^1.2.0",
         "@btc-vision/transaction": "^1.8.0-rc.8",
-        "@btc-vision/unit-test-framework": "^1.0.0-rc.2",
+        "@btc-vision/unit-test-framework": "^1.0.0-rc.3",
         "gulp-logger-new": "^1.0.1",
         "npm-run-all": "^4.1.5",
         "opnet": "^1.8.1-rc.11",

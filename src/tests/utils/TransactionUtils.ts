@@ -4,14 +4,15 @@ import { Recipient } from '../../contracts/NativeSwapTypes.js';
 export function createFeeOutput(
     value: bigint,
     recipient: string,
-    proveFunds: string,
-    funds: bigint,
+    proveFunds: string | undefined,
+    funds: bigint | undefined,
 ): void {
     const tx: Transaction = generateEmptyTransaction();
     tx.addOutput(value, recipient);
-    tx.addOutput(funds, proveFunds);
 
-    console.log(funds, proveFunds);
+    if (funds !== undefined && proveFunds !== undefined) {
+        tx.addOutput(funds, proveFunds);
+    }
 
     Blockchain.transaction = tx;
 }

@@ -192,7 +192,7 @@ async function randomReserve(
         token: token.address,
         maximumAmountIn: amount,
         minimumAmountOut: 0n,
-        activationDelay: 0,
+        activationDelay: 1,
     });
 
     const decoded = NativeSwapTypesCoders.decodeReservationEvents(r.response.events);

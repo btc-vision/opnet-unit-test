@@ -77,7 +77,7 @@ await opnet('NativeSwap – purge watermark invariants', async (vm: OPNetUnit) =
                 token: tokenAddr,
                 maximumAmountIn: sat,
                 minimumAmountOut: 0n,
-                activationDelay: 0,
+                activationDelay: 1,
             });
         }
     }

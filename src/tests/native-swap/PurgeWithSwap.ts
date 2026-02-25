@@ -171,7 +171,7 @@ await opnet('NativeSwap: Purging Reservations', async (vm: OPNetUnit) => {
             token: tokenAddress,
             maximumAmountIn: amount,
             minimumAmountOut: 0n,
-            activationDelay: 0,
+            activationDelay: 1,
         });
 
         const decoded = NativeSwapTypesCoders.decodeReservationEvents(r.response.events);

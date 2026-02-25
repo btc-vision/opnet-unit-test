@@ -94,7 +94,7 @@ await opnet('NativeSwap: Virtual Pool Mechanics', async (vm: OPNetUnit) => {
             token: tokenAddress,
             maximumAmountIn: satIn,
             minimumAmountOut: 0n,
-            activationDelay: 0,
+            activationDelay: 1,
         });
 
         const decoded = NativeSwapTypesCoders.decodeReservationEvents(resp.response.events);
@@ -802,7 +802,7 @@ await opnet('NativeSwap: Virtual Pool Mechanics', async (vm: OPNetUnit) => {
                 token: tokenAddress,
                 maximumAmountIn: 50000000n, // 0.5 BTC
                 minimumAmountOut: 0n,
-                activationDelay: 0,
+                activationDelay: 1,
             });
 
             const reservedAmount = reserveResp.expectedAmountOut;
@@ -836,7 +836,7 @@ await opnet('NativeSwap: Virtual Pool Mechanics', async (vm: OPNetUnit) => {
                 token: tokenAddress,
                 maximumAmountIn: 10000000n, // 0.1 BTC
                 minimumAmountOut: 0n,
-                activationDelay: 0,
+                activationDelay: 1,
             });
 
             Blockchain.blockNumber += 1n;
