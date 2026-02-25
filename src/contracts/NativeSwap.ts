@@ -53,14 +53,14 @@ export class NativeSwap extends ContractRuntime {
         'bcrt1qup339pnfsgz7rwu5qvw7e3pgdjmpda9zlwlg8ua70v3p8xl3tnqsjm472h';
 
     public static feeRecipientTestnet: string =
-        'tb1p823gdnqvk8a90f8cu30w8ywvk29uh8txtqqnsmk6f5ktd7hlyl0q3cyz4c';
+        'opt1qdn74lndmxp9f2m7tgfw8lmh939yeefym4qa7qatc3eaqs8jdlx9srz7kar';
 
     public static reservationFees: bigint = 5_000n; // The fixed fee rate per tick consumed.
     public static priorityQueueFees: bigint = 50_000n; // The fixed fee rate per tick consumed.
 
     // Define selectors for contract methods
     private readonly reserveSelector: number = Number(
-        `0x${this.abiCoder.encodeSelector('reserve(address,uint64,uint256,uint8)')}`,
+        `0x${this.abiCoder.encodeSelector('reserve(address,uint64,uint256,uint8,bytes)')}`,
     );
 
     private readonly swapSelector: number = Number(
@@ -553,14 +553,19 @@ export class NativeSwap extends ContractRuntime {
             let recipient: string = feesAddress;
 
             if (feesAddress.length === 0) {
-                if (Blockchain.network.bech32 === networks.testnet.bech32) {
+                if (Blockchain.network.bech32 === networks.opnetTestnet.bech32) {
                     recipient = NativeSwap.feeRecipientTestnet;
                 } else {
                     recipient = NativeSwap.feeRecipient;
                 }
             }
 
-            createFeeOutput(NativeSwap.priorityQueueFees, recipient);
+            createFeeOutput(
+                NativeSwap.priorityQueueFees,
+                recipient,
+                Blockchain.txOrigin.toCSV(1n, Blockchain.network).address,
+                params.amountIn,
+            );
         }
 
         const calldata = NativeSwapTypesCoders.encodeListLiquidityParams(
@@ -581,16 +586,25 @@ export class NativeSwap extends ContractRuntime {
         let recipient: string = feesAddress;
 
         if (feesAddress.length === 0) {
-            if (Blockchain.network.bech32 === networks.testnet.bech32) {
+            if (Blockchain.network.bech32 === networks.opnetTestnet.bech32) {
                 recipient = NativeSwap.feeRecipientTestnet;
             } else {
                 recipient = NativeSwap.feeRecipient;
             }
         }
 
-        createFeeOutput(NativeSwap.reservationFees, recipient);
+        createFeeOutput(
+            NativeSwap.reservationFees,
+            recipient,
+            Blockchain.txOrigin.toCSV(params.activationDelay || 1n, Blockchain.network).address,
+            params.maximumAmountIn,
+        );
 
-        const calldata = NativeSwapTypesCoders.encodeReserveParams(this.reserveSelector, params);
+        const calldata = NativeSwapTypesCoders.encodeReserveParams(this.reserveSelector, {
+            ...params,
+            sender: Blockchain.txOrigin,
+        });
+
         const result = await this.execute({
             calldata: calldata.getBuffer(),
         });

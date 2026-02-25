@@ -51,6 +51,7 @@ await opnet('Native Swap - Get Reserve', async (vm: OPNetUnit) => {
             token: token.address,
             maximumAmountIn: amount,
             minimumAmountOut: 0n,
+            activationDelay: 1,
         });
 
         Blockchain.txOrigin = backup;

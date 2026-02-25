@@ -1,5 +1,13 @@
 import { Address, BufferHelper, FastMap } from '@btc-vision/transaction';
-import { Assert, Blockchain, gas2USD, OP20, opnet, OPNetUnit, StateHandler, } from '@btc-vision/unit-test-framework';
+import {
+    Assert,
+    Blockchain,
+    gas2USD,
+    OP20,
+    opnet,
+    OPNetUnit,
+    StateHandler,
+} from '@btc-vision/unit-test-framework';
 
 import fs from 'fs';
 import { BitcoinUtils } from 'opnet';
@@ -355,7 +363,7 @@ await opnet('NativeSwap: Debug', async (vm: OPNetUnit) => {
 
     await vm.it('should debug', async () => {
         Blockchain.blockNumber = SEARCHED_BLOCK + 1n;
-        Blockchain.network = networks.testnet;
+        Blockchain.network = networks.opnetTestnet;
 
         const addy = Address.fromString(
             `0xa7afeb3b520f1ed45dcb8248de4ae980a1f4daa25e1f9ee31d3058cc7947e95f`,

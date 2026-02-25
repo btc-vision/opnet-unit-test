@@ -33,7 +33,7 @@ await opnet('Native Swap - Fees', async (vm: OPNetUnit) => {
     await vm.it(
         'should correctly sets fees default values when contract is deploying',
         async () => {
-            Blockchain.changeNetwork(networks.regtest);
+            Blockchain.changeNetwork(networks.opnetTestnet);
             const fees = await nativeSwap.getFees();
             const feesAddress = await nativeSwap.getFeesAddress();
 

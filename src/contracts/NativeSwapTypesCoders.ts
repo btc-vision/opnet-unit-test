@@ -43,7 +43,7 @@ import {
     PoolTypes,
     RemoveLiquidityParams,
     RemoveLiquidityResult,
-    ReserveParams,
+    ReserveParams, ReserveParamsWithSender,
     ReserveResult,
     SetFeesAddressParams,
     SetFeesAddressResult,
@@ -784,14 +784,18 @@ export class NativeSwapTypesCoders {
         };
     }
 
-    public static encodeReserveParams(selector: number, params: ReserveParams): BinaryWriter {
+    public static encodeReserveParams(
+        selector: number,
+        params: ReserveParamsWithSender,
+    ): BinaryWriter {
         const calldata = new BinaryWriter();
 
         calldata.writeSelector(selector);
         calldata.writeAddress(params.token);
         calldata.writeU64(params.maximumAmountIn);
         calldata.writeU256(params.minimumAmountOut);
-        calldata.writeU8(params.activationDelay ?? 2);
+        calldata.writeU8(params.activationDelay);
+        calldata.writeBytesWithLength(params.sender.originalPublicKeyBuffer());
 
         return calldata;
     }

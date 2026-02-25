@@ -274,7 +274,11 @@ export interface ReserveParams {
     readonly token: Address;
     readonly maximumAmountIn: bigint;
     readonly minimumAmountOut: bigint;
-    readonly activationDelay?: number;
+    readonly activationDelay: number;
+}
+
+export interface ReserveParamsWithSender extends ReserveParams {
+    readonly sender: Address;
 }
 
 export interface ReserveResult {

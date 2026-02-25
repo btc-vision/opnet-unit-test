@@ -6,6 +6,9 @@ import { BitcoinUtils } from 'opnet';
 import { createRecipientsOutput } from '../utils/TransactionUtils.js';
 import { NativeSwapTypesCoders } from '../../contracts/NativeSwapTypesCoders.js';
 import { MotoContract } from '../../contracts/MotoContract.js';
+import bitcoin from '@btc-vision/bitcoin';
+
+Blockchain.changeNetwork(bitcoin.networks.opnetTestnet);
 
 await opnet('NativeSwap: Purging Reservations', async (vm: OPNetUnit) => {
     let nativeSwap: NativeSwap;
@@ -19,8 +22,6 @@ await opnet('NativeSwap: Purging Reservations', async (vm: OPNetUnit) => {
     const tokenAddress: Address = Blockchain.generateRandomAddress();
     const nativeAddress: Address = Blockchain.generateRandomAddress();
     const tokenDecimals = 18;
-
-    //Blockchain.changeNetwork(bitcoin.networks.testnet);
 
     async function createPool(
         floorPrice: bigint,
@@ -211,6 +212,7 @@ await opnet('NativeSwap: Purging Reservations', async (vm: OPNetUnit) => {
             token: tokenAddress,
             maximumAmountIn: satIn,
             minimumAmountOut: minOut,
+            activationDelay: 1,
         });
 
         vm.info(

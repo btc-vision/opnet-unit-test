@@ -18,6 +18,7 @@ import {
     RustContract,
     Transaction as BitcoinTransaction,
 } from '@btc-vision/unit-test-framework';
+import { toBase64 } from '@btc-vision/bitcoin';
 
 export interface ParsedEvent {
     contractAddress: Address;
@@ -163,8 +164,8 @@ export class Transaction extends Logger {
         };
     }
 
-    private static bufferToBinary(buf: Buffer): BinaryData {
-        return buf.toString('base64');
+    private static bufferToBinary(buf: Uint8Array): BinaryData {
+        return toBase64(buf);
     }
 
     public async execute(): Promise<void> {

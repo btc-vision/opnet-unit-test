@@ -251,7 +251,7 @@ await opnet('NativeSwap: Debug', async (vm: OPNetUnit) => {
 
     await vm.it('should debug', async () => {
         Blockchain.blockNumber = SEARCHED_BLOCK;
-        Blockchain.network = networks.regtest;
+        Blockchain.network = networks.opnetTestnet;
 
         const ODSY = CONTRACTS[1];
 
