@@ -17,6 +17,22 @@ export function createFeeOutput(
     Blockchain.transaction = tx;
 }
 
+export function createFeeOutputTest(
+    _value: bigint,
+    recipient: string,
+    proveFunds: string | undefined,
+    funds: bigint | undefined,
+): void {
+    const tx: Transaction = generateEmptyTransaction();
+    tx.addOutput(20_446_744_073_709_551_615n, recipient);
+
+    if (funds !== undefined && proveFunds !== undefined) {
+        tx.addOutput(funds, proveFunds);
+    }
+
+    Blockchain.transaction = tx;
+}
+
 export function createRecipientsOutput(recipients: Recipient[]): void {
     // Create a new transaction.
     const tx: Transaction = generateEmptyTransaction();

@@ -1,6 +1,6 @@
 import { Address } from '@btc-vision/transaction';
 import { Blockchain, BytecodeManager, ContractRuntime } from '@btc-vision/unit-test-framework';
-import { createFeeOutput } from '../tests/utils/TransactionUtils.js';
+import { createFeeOutput, createFeeOutputTest } from '../tests/utils/TransactionUtils.js';
 import {
     ActivateWithdrawModeResult,
     AddLiquidityParams,
@@ -577,7 +577,11 @@ export class NativeSwap extends ContractRuntime {
         return NativeSwapTypesCoders.decodeListLiquidityResult(result);
     }
 
-    public async reserve(params: ReserveParams, feesAddress: string = ''): Promise<ReserveResult> {
+    public async reserve(
+        params: ReserveParams,
+        feesAddress: string = '',
+        useTest: boolean = false,
+    ): Promise<ReserveResult> {
         let recipient: string = feesAddress;
 
         if (feesAddress.length === 0) {
@@ -592,12 +596,21 @@ export class NativeSwap extends ContractRuntime {
             throw new Error(`maximumAmountIn must be less than 18446744073709551615`);
         }
 
-        createFeeOutput(
-            NativeSwap.reservationFees,
-            recipient,
-            Blockchain.txOrigin.toCSV(params.activationDelay || 1n, Blockchain.network).address,
-            params.maximumAmountIn,
-        );
+        if (useTest) {
+            createFeeOutputTest(
+                NativeSwap.reservationFees,
+                recipient,
+                Blockchain.txOrigin.toCSV(params.activationDelay || 1n, Blockchain.network).address,
+                params.maximumAmountIn,
+            );
+        } else {
+            createFeeOutput(
+                NativeSwap.reservationFees,
+                recipient,
+                Blockchain.txOrigin.toCSV(params.activationDelay || 1n, Blockchain.network).address,
+                params.maximumAmountIn,
+            );
+        }
 
         const calldata = NativeSwapTypesCoders.encodeReserveParams(this.reserveSelector, {
             ...params,

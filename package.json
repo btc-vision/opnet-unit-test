@@ -5,7 +5,6 @@
     "description": "OP_NET unit test harness and associated mocks",
     "scripts": {
         "build": "gulp",
-        "prepublish": "npm-run-all build",
         "test:native:onlyowner": "tsx src/tests/native-swap/onlyowner/OnlyOwner.ts",
         "test:native:reentrancy": "tsx src/tests/native-swap/reentrancy/Reentrancy.ts",
         "test:native:listtoken": "tsx src/tests/native-swap/ListLiquidity.ts",
@@ -36,6 +35,7 @@
         "test": "npm-run-all test:*",
         "bug": "tsx src/tests/native-swap/ListTokenChangeIndexBug.ts",
         "gas": "tsx src/tests/gas.ts",
+        "crash": "tsx src/tests/native-swap/TestThis.ts",
         "test:native:fulfilled": "tsx src/tests/native-swap/fulfilledQueue.ts"
     },
     "author": "OP_NET",
@@ -48,18 +48,18 @@
         "@btc-vision/logger": "^1.0.8",
         "@btc-vision/op-vm": "^1.0.0-rc.1",
         "@btc-vision/opnet-transform": "^1.2.0",
-        "@btc-vision/transaction": "^1.8.0-rc.8",
-        "@btc-vision/unit-test-framework": "^1.0.0-rc.3",
+        "@btc-vision/transaction": "^1.8.0-rc.9",
+        "@btc-vision/unit-test-framework": "^1.0.0-rc.1",
         "gulp-logger-new": "^1.0.1",
         "npm-run-all": "^4.1.5",
-        "opnet": "^1.8.1-rc.11",
+        "opnet": "^1.8.1-rc.15",
         "stream-chain": "^3.4.0",
         "stream-json": "^1.9.1",
         "typescript": "^5.9.3"
     },
     "devDependencies": {
         "@eslint/js": "^10.0.1",
-        "@types/node": "^25.3.0",
+        "@types/node": "^25.3.2",
         "@types/stream-json": "^1.7.8",
         "@typescript-eslint/eslint-plugin": "^8.56.1",
         "@typescript-eslint/parser": "^8.56.1",
